@@ -1,64 +1,336 @@
 <!doctype html>
-<html lang="en">
+<html lang="zh-Hant">
 <head>
 <meta charset="utf-8"/>
-<meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>Story Player</title>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Learn English with Stories – Player</title>
 <style>
-  body { margin: 0; display: flex; height: 100vh; background:#0b1324; color:#e7eaf3; font-family: sans-serif; }
-  .video { flex: 45%; display:flex; justify-content:center; align-items:center; background:#000; }
-  .video video { max-width: 100%; max-height: 100%; }
-  .side { flex: 55%; display:flex; flex-direction:column; border-left:2px solid #1e2a4a; }
-  .tabs { display:flex; }
-  .tab { flex:1; text-align:center; padding:10px; cursor:pointer; background:#111a33; }
-  .tab.active { background:#2b3a6b; }
-  .content { flex:1; overflow:auto; padding:10px; }
+  :root{
+    --bg:#0b1324; --fg:#e7eaf3; --muted:#9aa4bf;
+    --panel:#111a33; --panel-2:#0f1730; --border:#203055;
+    --brand:#3d68ff; --accent:#5ad1ff; --cue-font:18px;
+    --toolbar:#101a34;
+  }
+  .light{
+    --bg:#ffffff; --fg:#1b2337; --muted:#5d6b8a;
+    --panel:#f3f6ff; --panel-2:#eef2ff; --border:#dbe3ff;
+    --toolbar:#e9efff;
+  }
+  *{box-sizing:border-box}
+  html,body{height:100%}
+  body{margin:0;background:var(--bg);color:var(--fg);font-family:system-ui,-apple-system,Segoe UI,Roboto,Noto Sans TC,sans-serif}
+  header{padding:10px 16px;border-bottom:1px solid var(--border);background:var(--panel-2);display:flex;gap:12px;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:10}
+  header .title{font-weight:700}
+  .container{display:grid;grid-template-columns:1fr 1fr;gap:0;height:calc(100% - 54px);}
+  .left, .right{height:100%;overflow:hidden}
+  .left{display:flex;flex-direction:column;background:#000}
+  video{width:100%;height:100%;background:#000;display:block}
+  .toolbar{background:var(--toolbar);border-top:1px solid var(--border);display:flex;flex-wrap:wrap;gap:8px;padding:10px 12px;align-items:center}
+  .btn{background:var(--panel);border:1px solid var(--border);color:var(--fg);padding:8px 10px;border-radius:10px;cursor:pointer}
+  .btn[data-active="true"]{outline:2px solid var(--brand)}
+  .sp{flex:1}
+  .right{display:flex;flex-direction:column;background:var(--panel-2);border-left:1px solid var(--border)}
+  .tabs{display:grid;grid-template-columns:1fr 1fr}
+  .tabs button{padding:12px 10px;border:0;background:var(--panel-2);color:var(--muted);cursor:pointer;border-bottom:2px solid transparent}
+  .tabs button.active{color:var(--fg);border-color:var(--brand);background:var(--panel)}
+  .pane{flex:1;overflow:auto;background:var(--panel)}
+  .subwrap{padding:8px 10px}
+  .cue{padding:8px 10px;border-radius:8px;cursor:pointer;font-size:var(--cue-font);line-height:1.5;white-space:pre-wrap}
+  .cue+.cue{margin-top:4px}
+  .cue .time{color:var(--muted);margin-right:6px}
+  .cue.active{background:#20355f}
+  .lang-zh .en{display:none}
+  .lang-en .zh{display:none}
+  .lang-bi .en,.lang-bi .zh{display:inline}
+  /* transcript drawer */
+  .drawer{position:fixed;right:16px;bottom:16px;width:min(560px,90vw);max-height:70vh;background:var(--panel);border:1px solid var(--border);border-radius:16px;box-shadow:0 8px 30px rgba(0,0,0,.3);display:none;overflow:auto}
+  .drawer h3{margin:0;padding:12px 14px;border-bottom:1px solid var(--border)}
+  .drawer .content{padding:12px 14px}
+  .drawer .close{position:sticky;top:0;float:right;margin:8px 10px 0 0}
+  /* quiz */
+  .quiz{padding:12px 14px}
+  .q{background:var(--panel-2);border:1px solid var(--border);border-radius:12px;padding:12px;margin-bottom:12px}
+  .q h4{margin:0 0 10px}
+  .opt{display:block;margin:6px 0;padding:8px 10px;border-radius:8px;border:1px solid var(--border);cursor:pointer}
+  .opt input{margin-right:8px}
+  .submit-wrap{position:sticky;bottom:0;background:var(--panel);border-top:1px solid var(--border);padding:10px}
+  .score{font-weight:700}
+  @media (max-width: 980px){
+    .container{grid-template-columns:1fr}
+    .right{height:60vh}
+  }
 </style>
 </head>
-<body>
-<div class="video"><video id="video" controls></video></div>
-<div class="side">
-  <div class="tabs">
-    <div id="tab-cues" class="tab active">字幕</div>
-    <div id="tab-quiz" class="tab">測驗</div>
+<body class="dark lang-bi">
+<header>
+  <div class="title">看故事學英文 · 單一頁互動版</div>
+  <div>
+    <button class="btn" id="btnTheme" title="亮/暗模式">亮/暗</button>
   </div>
-  <div id="cues" class="content"></div>
-  <div id="quiz" class="content" style="display:none"></div>
-</div>
-<script>
-function qs(k) {
-  return new URLSearchParams(location.search).get(k);
-}
-async function boot(){
-  const slug = qs("slug");
-  const res = await fetch('data/index.json');
-  const data = await res.json();
-  const item = data.items.find(x => x.slug === slug);
-  if(!item) return;
-  document.getElementById('video').src = item.video;
-  // load cues
-  const cues = await fetch(item.cues).then(r=>r.json());
-  document.getElementById('cues').innerHTML = cues.map(c=>`<div>[${c.time}] ${c.text}</div>`).join('');
-  // load quiz
-  const quiz = await fetch(item.quiz).then(r=>r.json());
-  document.getElementById('quiz').innerHTML = quiz.map((q,i)=>`
-    <div><b>Q${i+1}: ${q.q}</b><br>${q.a.map(a=>`<div>- ${a}</div>`).join('')}</div><hr>`).join('');
-}
-boot();
+</header>
 
-// 切換 tab
-document.getElementById('tab-cues').onclick = ()=>{
-  document.getElementById('cues').style.display="block";
-  document.getElementById('quiz').style.display="none";
-  document.getElementById('tab-cues').classList.add("active");
-  document.getElementById('tab-quiz').classList.remove("active");
-};
-document.getElementById('tab-quiz').onclick = ()=>{
-  document.getElementById('cues').style.display="none";
-  document.getElementById('quiz').style.display="block";
-  document.getElementById('tab-quiz').classList.add("active");
-  document.getElementById('tab-cues').classList.remove("active");
-};
+<div class="container">
+  <section class="left">
+    <video id="player" controls playsinline></video>
+
+    <!-- 功能列 -->
+    <div class="toolbar">
+      <button class="btn" id="btnPlay">播放/暫停</button>
+      <button class="btn" id="btnSubToggle" data-active="true">字幕 ON/OFF</button>
+      <button class="btn" id="btnLangEn">英文</button>
+      <button class="btn" id="btnLangZh">中文</button>
+      <button class="btn" id="btnLangBi" data-active="true">雙語</button>
+      <button class="btn" id="btnPrev">上一句</button>
+      <button class="btn" id="btnNext">下一句</button>
+      <button class="btn" id="btnRepeat">重複此句</button>
+      <div class="sp"></div>
+      <button class="btn" id="btnFontS">字小</button>
+      <button class="btn" id="btnFontM" data-active="true">中字</button>
+      <button class="btn" id="btnFontL">字大</button>
+      <button class="btn" id="btnTranscript">全文稿</button>
+      <button class="btn" id="btnGotoQuiz">測驗</button>
+    </div>
+  </section>
+
+  <section class="right">
+    <div class="tabs">
+      <button class="tab btn-tab active" data-tab="sub">字幕</button>
+      <button class="tab btn-tab" data-tab="quiz">測驗</button>
+    </div>
+    <div class="pane" id="paneSub">
+      <div class="subwrap" id="subwrap"></div>
+    </div>
+    <div class="pane" id="paneQuiz" style="display:none">
+      <div class="quiz" id="quizWrap"></div>
+      <div class="submit-wrap">
+        <button class="btn" id="btnSubmitQuiz">送出測驗</button>
+        <span class="score" id="scoreText"></span>
+      </div>
+    </div>
+  </section>
+</div>
+
+<!-- 全文稿抽屜 -->
+<div class="drawer" id="drawer">
+  <h3>全文稿 <button class="btn close" id="btnCloseDrawer">關閉</button></h3>
+  <div class="content" id="transcript"></div>
+</div>
+
+<script>
+(async function(){
+  // ---- utils ----
+  const qs = new URLSearchParams(location.search);
+  const slug = qs.get('slug') || 'mid-autumn';
+  const $ = (s,root=document)=>root.querySelector(s);
+  const $$ = (s,root=document)=>Array.from(root.querySelectorAll(s));
+  const fmtTime = t => {
+    const m = Math.floor(t/60).toString().padStart(2,'0');
+    const s = Math.floor(t%60).toString().padStart(2,'0');
+    return `[${m}:${s}]`;
+  };
+  const clamp = (n,min,max)=>Math.max(min,Math.min(max,n));
+
+  // ---- fetch index.json then cues/quiz ----
+  const index = await fetch('data/index.json').then(r=>r.json());
+  const item = (index.items||[]).find(x=>x.slug===slug) || index.items?.[0];
+  if(!item){ alert('找不到對應項目'); return; }
+
+  const videoUrl = item.video;
+  const cuesUrl  = item.cues;
+  const quizUrl  = item.quiz;
+
+  const video = $('#player');
+  video.src = videoUrl;
+
+  // cues: support {t,en,zh} or {time,text_en,text_zh}
+  const rawCues = await fetch(cuesUrl).then(r=>r.json());
+  const cues = (rawCues.cues || rawCues.items || rawCues || []).map((c,i)=>({
+    t: Number(c.t ?? c.time ?? 0),
+    en: String(c.en ?? c.text_en ?? c.text ?? ''),
+    zh: String(c.zh ?? c.text_zh ?? c.zh_tw ?? '')
+  })).sort((a,b)=>a.t-b.t);
+
+  // quiz format: {questions:[{q,options:[…],a:0}]} or array
+  const rawQuiz = await fetch(quizUrl).then(r=>r.json());
+  const questions = (rawQuiz.questions || rawQuiz || []).slice(0,20);
+
+  // ---- state ----
+  let langMode = 'bi'; // 'en' | 'zh' | 'bi'
+  let subVisible = true;
+  let activeIdx = -1;
+  let repeatCurrent = false;
+  let fontSize = 'M'; // S M L
+
+  // ---- render subtitles list ----
+  const subwrap = $('#subwrap');
+  function renderCues(){
+    subwrap.innerHTML = cues.map((c,idx)=>`
+      <div class="cue" data-idx="${idx}">
+        <span class="time">${fmtTime(c.t)}</span>
+        <span class="en">${c.en}</span>
+        ${c.zh ? `<br><span class="zh">${c.zh}</span>`:''}
+      </div>
+    `).join('');
+    applyLang();
+  }
+  renderCues();
+
+  // click to seek
+  subwrap.addEventListener('click',e=>{
+    const el = e.target.closest('.cue');
+    if(!el) return;
+    const idx = Number(el.dataset.idx);
+    video.currentTime = cues[idx].t + 0.01;
+    video.play();
+  });
+
+  // highlight active line while playing
+  video.addEventListener('timeupdate', ()=>{
+    const t = video.currentTime;
+    // find last cue whose t <= current
+    let i = cues.findIndex((c,idx)=> t < (cues[idx+1]?.t ?? 1e9) && t >= c.t );
+    if(i<0 && t>= (cues.at(-1)?.t??1e9)) i = cues.length-1;
+    if(i !== activeIdx){
+      if(activeIdx>=0){
+        const oldEl = subwrap.querySelector(`.cue[data-idx="${activeIdx}"]`);
+        oldEl && oldEl.classList.remove('active');
+      }
+      activeIdx = i;
+      const el = subwrap.querySelector(`.cue[data-idx="${i}"]`);
+      el && el.classList.add('active');
+      // scroll into view
+      if(el){
+        const top = el.offsetTop - 120;
+        subwrap.parentElement.scrollTo({top,behavior:'smooth'});
+      }
+    }
+    // repeat-current logic
+    if(repeatCurrent && activeIdx>=0){
+      const start = cues[activeIdx].t;
+      const end   = cues[activeIdx+1]?.t ?? (start+4);
+      if(t >= end - 0.05) video.currentTime = start + 0.01;
+    }
+  });
+
+  // transcript drawer content
+  function renderTranscript(){
+    $('#transcript').innerHTML = cues.map(c=>`
+      <div style="margin:6px 0">
+        <span style="color:var(--muted)">${fmtTime(c.t)}</span>
+        <div><strong>${c.en}</strong></div>
+        ${c.zh?`<div>${c.zh}</div>`:''}
+      </div>
+    `).join('');
+  }
+  renderTranscript();
+
+  // ---- quiz render ----
+  const quizWrap = $('#quizWrap');
+  function renderQuiz(){
+    quizWrap.innerHTML = questions.map((q,qi)=>`
+      <div class="q" data-qi="${qi}">
+        <h4>Q${qi+1}. ${q.q || q.question}</h4>
+        ${(q.options||q.choices||[]).map((opt,oi)=>`
+          <label class="opt">
+            <input type="radio" name="q${qi}" value="${oi}"> ${String.fromCharCode(65+oi)}. ${opt}
+          </label>
+        `).join('')}
+      </div>
+    `).join('');
+  }
+  renderQuiz();
+
+  $('#btnSubmitQuiz').addEventListener('click', ()=>{
+    let correct=0,total=questions.length;
+    questions.forEach((q,qi)=>{
+      const sel = quizWrap.querySelector(`input[name="q${qi}"]:checked`);
+      const a = Number(q.a ?? q.answer ?? 0);
+      if(sel && Number(sel.value)===a) correct++;
+    });
+    $('#scoreText').textContent = `得分：${correct} / ${total}（${Math.round(correct/total*100)}%）`;
+  });
+
+  // ---- tabs ----
+  $$('.btn-tab').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      $$('.btn-tab').forEach(b=>b.classList.remove('active'));
+      btn.classList.add('active');
+      const tab = btn.dataset.tab;
+      $('#paneSub').style.display = tab==='sub' ? '' : 'none';
+      $('#paneQuiz').style.display = tab==='quiz' ? '' : 'none';
+    });
+  });
+  $('#btnGotoQuiz').addEventListener('click', ()=>{
+    document.querySelector('.btn-tab[data-tab="quiz"]').click();
+  });
+
+  // ---- toolbar actions ----
+  const setActive = (el,yes)=>el.setAttribute('data-active',yes?'true':'false');
+
+  $('#btnPlay').addEventListener('click', ()=>{
+    if(video.paused) video.play(); else video.pause();
+  });
+
+  $('#btnSubToggle').addEventListener('click', e=>{
+    subVisible = !subVisible;
+    $('#paneSub').style.display = subVisible? '' : 'none';
+    setActive(e.currentTarget, subVisible);
+  });
+
+  function applyLang(){
+    document.body.classList.remove('lang-en','lang-zh','lang-bi');
+    document.body.classList.add(`lang-${langMode}`);
+    setActive($('#btnLangEn'), langMode==='en');
+    setActive($('#btnLangZh'), langMode==='zh');
+    setActive($('#btnLangBi'), langMode==='bi');
+  }
+  $('#btnLangEn').onclick = ()=>{langMode='en'; applyLang();};
+  $('#btnLangZh').onclick = ()=>{langMode='zh'; applyLang();};
+  $('#btnLangBi').onclick = ()=>{langMode='bi'; applyLang();};
+
+  $('#btnPrev').addEventListener('click', ()=>{
+    if(activeIdx<=0) { video.currentTime = clamp((cues[0]?.t||0)-.01,0,1e9); return; }
+    video.currentTime = cues[activeIdx-1].t + .01;
+  });
+  $('#btnNext').addEventListener('click', ()=>{
+    if(activeIdx<0) { video.currentTime = (cues[0]?.t||0)+.01; return; }
+    const next = cues[activeIdx+1]?.t;
+    if(next!=null) video.currentTime = next + .01;
+  });
+
+  $('#btnRepeat').addEventListener('click', e=>{
+    repeatCurrent = !repeatCurrent;
+    setActive(e.currentTarget, repeatCurrent);
+  });
+
+  function setFont(size){ // S/M/L
+    fontSize = size;
+    const px = size==='S'?14 : size==='M'?18 : 22;
+    document.documentElement.style.setProperty('--cue-font', px+'px');
+    setActive($('#btnFontS'), size==='S');
+    setActive($('#btnFontM'), size==='M');
+    setActive($('#btnFontL'), size==='L');
+  }
+  $('#btnFontS').onclick = ()=>setFont('S');
+  $('#btnFontM').onclick = ()=>setFont('M');
+  $('#btnFontL').onclick = ()=>setFont('L');
+
+  $('#btnTranscript').onclick = ()=>{
+    $('#drawer').style.display = 'block';
+  };
+  $('#btnCloseDrawer').onclick = ()=>{
+    $('#drawer').style.display = 'none';
+  };
+
+  $('#btnTheme').onclick = ()=>{
+    document.body.classList.toggle('light');
+  };
+
+  // 初始
+  setFont('M');
+  applyLang();
+
+})();
 </script>
 </body>
 </html>
