@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>Learn English with Stories</title>
+<style>
+  :root { --gap: 12px; }
+  body { margin: 0; font-family: system-ui, -apple-system, Segoe UI, Roboto, Noto Sans, sans-serif; background:#0b1324; color:#e7eaf3; }
+  header { padding: 16px 20px; border-bottom: 1px solid #1e2a4a; position: sticky; top: 0; background:#0b1324; z-index: 10; }
+  h1 { margin: 0; font-size: 20px; letter-spacing: .3px; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: var(--gap); padding: 16px; }
+  .card { background: #111a33; border:1px solid #1f2b50; border-radius: 14px; padding: 16px; }
+  .title { font-weight: 700; margin-bottom: 4px; }
+  .sub { opacity: .8; font-size: 13px; }
+  a.button { display: inline-block; margin-top: 12px; padding: 10px 12px; border-radius: 10px; background: #2b3a6b; color: #fff; text-decoration: none; }
+  a.button:hover { filter: brightness(1.1); }
+</style>
+</head>
+<body>
+<header><h1>看故事學英文 · Learn English with Stories</h1></header>
+<main>
+  <div id="grid" class="grid"></div>
+</main>
+<script>
+async function boot() {
+  try {
+    const res = await fetch('data/index.json');
+    if (!res.ok) throw new Error("HTTP " + res.status);
+    const data = await res.json();
+    const grid = document.getElementById('grid');
+    grid.innerHTML = data.items.map(item => `
+      <div class="card">
+        <div class="title">${item.title_zh}</div>
+        <div class="sub">${item.title_en}</div>
+        <a class="button" href="player.html?slug=${item.slug}">Open</a>
+      </div>
+    `).join('');
+  } catch (err) {
+    document.getElementById('grid').innerHTML = 
+      `<div style="padding:20px;background:#1a223d;border-radius:10px;">載入清單失敗<br>${err.message}<br><br><a class="button" href="data/index.json">查看 index.json</a></div>`;
+  }
+}
+boot();
+</script>
+</body>
+</html>

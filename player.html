@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>Story Player</title>
+<style>
+  body { margin: 0; display: flex; height: 100vh; background:#0b1324; color:#e7eaf3; font-family: sans-serif; }
+  .video { flex: 45%; display:flex; justify-content:center; align-items:center; background:#000; }
+  .video video { max-width: 100%; max-height: 100%; }
+  .side { flex: 55%; display:flex; flex-direction:column; border-left:2px solid #1e2a4a; }
+  .tabs { display:flex; }
+  .tab { flex:1; text-align:center; padding:10px; cursor:pointer; background:#111a33; }
+  .tab.active { background:#2b3a6b; }
+  .content { flex:1; overflow:auto; padding:10px; }
+</style>
+</head>
+<body>
+<div class="video"><video id="video" controls></video></div>
+<div class="side">
+  <div class="tabs">
+    <div id="tab-cues" class="tab active">字幕</div>
+    <div id="tab-quiz" class="tab">測驗</div>
+  </div>
+  <div id="cues" class="content"></div>
+  <div id="quiz" class="content" style="display:none"></div>
+</div>
+<script>
+function qs(k) {
+  return new URLSearchParams(location.search).get(k);
+}
+async function boot(){
+  const slug = qs("slug");
+  const res = await fetch('data/index.json');
+  const data = await res.json();
+  const item = data.items.find(x => x.slug === slug);
+  if(!item) return;
+  document.getElementById('video').src = item.video;
+  // load cues
+  const cues = await fetch(item.cues).then(r=>r.json());
+  document.getElementById('cues').innerHTML = cues.map(c=>`<div>[${c.time}] ${c.text}</div>`).join('');
+  // load quiz
+  const quiz = await fetch(item.quiz).then(r=>r.json());
+  document.getElementById('quiz').innerHTML = quiz.map((q,i)=>`
+    <div><b>Q${i+1}: ${q.q}</b><br>${q.a.map(a=>`<div>- ${a}</div>`).join('')}</div><hr>`).join('');
+}
+boot();
+
+// 切換 tab
+document.getElementById('tab-cues').onclick = ()=>{
+  document.getElementById('cues').style.display="block";
+  document.getElementById('quiz').style.display="none";
+  document.getElementById('tab-cues').classList.add("active");
+  document.getElementById('tab-quiz').classList.remove("active");
+};
+document.getElementById('tab-quiz').onclick = ()=>{
+  document.getElementById('cues').style.display="none";
+  document.getElementById('quiz').style.display="block";
+  document.getElementById('tab-quiz').classList.add("active");
+  document.getElementById('tab-cues').classList.remove("active");
+};
+</script>
+</body>
+</html>
