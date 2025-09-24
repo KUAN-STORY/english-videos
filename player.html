@@ -9,43 +9,48 @@
     --bg:#0b1324; --panel:#0f1a33; --border:#203057;
     --text:#e7eaf3; --muted:#a9b3cf; --brand:#3c7cff; --ok:#14b86e; --warn:#f5a524;
     --gap:12px; --zoom:1;
-    --vbar-h:74px; /* 影片工具列高度 */
   }
   *{box-sizing:border-box}
   html,body{height:100%;margin:0;background:var(--bg);color:var(--text);font-family:system-ui,-apple-system,Segoe UI,Roboto,Noto Sans,sans-serif}
 
-  /* 版面：左右各 50% */
-  .layout{display:grid;grid-template-columns: 1fr 1fr;gap:var(--gap);height:100%;padding:var(--gap)}
+  /* 版面：左右各 50%（minmax(0,1fr) 避免內容把欄位撐破） */
+  .layout{
+    display:grid;
+    grid-template-columns: minmax(0,1fr) minmax(0,1fr);
+    gap:var(--gap);
+    height:100%;
+    padding:var(--gap);
+  }
   @media(max-width:1024px){ .layout{grid-template-columns:1fr} }
 
-  /* 左：影片區 */
-  .videoCol{display:grid; grid-template-rows: 1fr var(--vbar-h); min-height:0; background:#000; border:1px solid var(--border); border-radius:12px; overflow:hidden}
-  .videoWrap{position:relative; display:flex; align-items:center; justify-content:center; background:#000; min-height:0}
-  .videoStage{transform:scale(var(--zoom)); transform-origin:center center; transition:transform .08s linear}
-  video{max-width:100%;max-height:100%;width:100%;height:100%;object-fit:contain; background:#000}
+  /* 左欄：影片 + 固定工具列（欄內固定，不會漂走） */
+  .videoCol{display:flex;flex-direction:column;min-height:0;background:#000;border:1px solid var(--border);border-radius:12px;overflow:hidden}
+  .videoWrap{position:relative;flex:1;min-height:0;display:flex;align-items:center;justify-content:center;background:#000}
+  .videoStage{transform:scale(var(--zoom));transform-origin:center center;transition:transform .08s linear;max-width:100%;max-height:100%}
+  video{width:100%;height:100%;max-width:100%;max-height:100%;object-fit:contain;background:#000}
 
-  /* 影片工具列（固定在左欄內底部） */
-  .vbar{display:flex; align-items:center; gap:8px; padding:10px; background:#101b39; border-top:1px solid var(--border)}
+  .vbar{
+    display:flex;flex-wrap:wrap; /* 超窄時允許換行，避免擠爆變形 */
+    align-items:center;gap:8px;
+    padding:10px;background:#101b39;border-top:1px solid var(--border)
+  }
   .btn{padding:8px 10px;border:1px solid var(--border);background:#15224a;color:var(--text);border-radius:10px;cursor:pointer;user-select:none}
   .btn:hover{filter:brightness(1.08)}
   .btn.on{background:#1a2c66;border-color:#2d4ea7}
-  .seg{margin:0 6px; opacity:.5}
-  .rangeRow{display:flex; align-items:center; gap:8px; margin-left:auto}
-  .label{color:var(--muted); margin-right:2px}
+  .seg{margin:0 6px;opacity:.5}
+  .rowGrow{margin-left:auto;display:flex;align-items:center;gap:8px}
+  .label{color:var(--muted)}
   input[type="range"]{accent-color:#8a1d1d}
 
-  /* 右：側欄 */
-  .side{display:flex;flex-direction:column;background:var(--panel);border:1px solid var(--border);border-radius:12px;overflow:hidden}
+  /* 右欄 */
+  .side{display:flex;flex-direction:column;background:var(--panel);border:1px solid var(--border);border-radius:12px;overflow:hidden;min-width:0}
   .tabs{display:flex;border-bottom:1px solid var(--border)}
   .tab{flex:1;padding:10px 12px;text-align:center;cursor:pointer;color:var(--muted);user-select:none}
   .tab.active{color:var(--text);background:#132046;font-weight:700}
   .toolbar{display:flex;gap:8px;align-items:center;padding:8px;border-bottom:1px solid var(--border)}
   .chip{padding:6px 9px;border:1px solid var(--border);border-radius:8px;background:#121d3d;color:var(--muted);cursor:pointer}
   .chip.active{background:#1a2c66;color:#fff;border-color:#2d4ea7}
-
-  .panel{flex:1;overflow:auto;padding:12px}
-  .muted{color:var(--muted)}
-  .row{display:flex;gap:8px;align-items:center}
+  .panel{flex:1;overflow:auto;padding:12px;min-height:0}
 
   /* 字幕 */
   .line{line-height:1.55;margin:6px 0;padding:2px 6px;border-radius:8px}
@@ -64,8 +69,8 @@
   .stickyFoot{position:sticky;bottom:0;background:linear-gradient(180deg,rgba(11,19,36,0),rgba(11,19,36,1) 30%);padding-top:12px}
   .footBar{display:flex;gap:8px;justify-content:space-between;align-items:center;background:#101b39;border:1px solid var(--border);border-radius:12px;padding:10px}
 
-  /* 亮/暗主題切換 */
-  .light{--bg:#f7f8fb;--panel:#ffffff;--border:#e4e7f0;--text:#222;--muted:#667; background:#fff;color:#222}
+  /* 亮/暗主題 */
+  .light{--bg:#f7f8fb;--panel:#fff;--border:#e4e7f0;--text:#222;--muted:#667;background:#fff;color:#222}
   .light .vbar{background:#f5f7fc}
   .light .btn,.light .chip{background:#f4f6fb;border-color:#e4e7f0;color:#333}
   .light .tab.active{background:#eaf1ff}
@@ -74,7 +79,7 @@
 </head>
 <body>
 <div class="layout">
-  <!-- 左欄：影片 + 工具列 -->
+  <!-- 左：影片 + 底部工具列 -->
   <section class="videoCol">
     <div class="videoWrap">
       <div class="videoStage">
@@ -96,7 +101,7 @@
       <span class="seg">|</span>
       <button id="btnFit" class="btn">🖼 適應畫面</button>
 
-      <div class="rangeRow">
+      <div class="rowGrow">
         <span class="label">變焦</span>
         <input id="zoom" type="range" min="0.8" max="1.4" step="0.02" value="1">
         <span class="label">速度</span>
@@ -106,7 +111,7 @@
     </div>
   </section>
 
-  <!-- 右欄：字幕 / 測驗 -->
+  <!-- 右：字幕 / 測驗 -->
   <aside class="side">
     <div class="tabs">
       <div id="tabTranscript" class="tab active">字幕</div>
@@ -124,10 +129,8 @@
       <button id="btnTheme" class="chip">主題</button>
     </div>
 
-    <!-- 字幕面板 -->
     <div id="panelTranscript" class="panel"></div>
 
-    <!-- 測驗面板 -->
     <div id="panelQuiz" class="panel" style="display:none">
       <div id="quizBox"></div>
       <div class="stickyFoot">
@@ -145,149 +148,124 @@
 </div>
 
 <script>
-/* ------------------ 小工具 ------------------ */
-const $  = (sel, root=document)=> root.querySelector(sel);
-const $$ = (sel, root=document)=> [...root.querySelectorAll(sel)];
-const qs = new URLSearchParams(location.search);
-const slug = qs.get('slug') || '';
+/* ---------- 工具 ---------- */
+const $  = (s, r=document)=> r.querySelector(s);
+const $$ = (s, r=document)=> [...r.querySelectorAll(s)];
+const slug = new URLSearchParams(location.search).get('slug') || '';
 
-let FONT = 'M';                      // S/M/L
-let cues = [];                       // [{t,text,startSec}]
-let currentIdx = -1;                 // 目前句索引
-let instantAB = false;               // 點句即循環模式
-let abA = null, abB = null;          // A/B 時間（秒）
-let autoPause = false;               // 逐句自動暫停
-let loopAll = false;                 // 全片循環
-let followTranscript = true;         // 字幕跟隨影片
-let followPauseTimer = null;         // 捲動暫停計時
-let fitContain = true;               // contain / cover
+let cues = [];                // [{idx,t,text,startSec}]
+let currentIdx = -1;
+let instantAB=false, abA=null, abB=null;
+let autoPause=false, loopAll=false;
+let followTranscript=true;
+let followPauseTimer=null;
+let fitContain=true;
 
-/* 外觀 */
-function setFont(size){
-  FONT = size;
-  const map = {S:'13px', M:'15px', L:'17px'};
-  $$('#panelTranscript, #panelQuiz, .q').forEach(el=> el.style.fontSize = map[size]||'15px');
-  $$('.chip').forEach(b=>b.classList.remove('active'));
-  ({S:'#fS',M:'#fM',L:'#fL'}[size] && $(({S:'#fS',M:'#fM',L:'#fL'}[size])).classList.add('active'));
+function setFont(sz){
+  const map={S:'13px',M:'15px',L:'17px'};
+  $$('#panelTranscript, #panelQuiz, .q').forEach(el=> el.style.fontSize = map[sz]||'15px');
+  ['#fS','#fM','#fL'].forEach(id=>$(id).classList.remove('active'));
+  ({S:'#fS',M:'#fM',L:'#fL'}[sz] && $(({S:'#fS',M:'#fM',L:'#fL'}[sz])).classList.add('active'));
 }
-function scrollIntoViewCentered(el, container){
-  if(!el || !container) return;
-  const box = container.getBoundingClientRect();
-  const r   = el.getBoundingClientRect();
-  if (r.top < box.top + 20 || r.bottom > box.bottom - 20) {
+function centerScroll(el, container){
+  if(!el||!container) return;
+  const box=container.getBoundingClientRect();
+  const r=el.getBoundingClientRect();
+  if(r.top < box.top+20 || r.bottom > box.bottom-20){
     container.scrollTo({
-      top: container.scrollTop + (r.top - box.top) - (box.height/2 - r.height/2),
-      behavior: 'smooth'
+      top:container.scrollTop + (r.top - box.top) - (box.height/2 - r.height/2),
+      behavior:'smooth'
     });
   }
 }
 
-/* ------------------ 索引/影片/字幕 ------------------ */
+/* ---------- 讀取索引/字幕 ---------- */
 async function loadMeta(){
-  const res = await fetch('data/index.json');
+  const res=await fetch('data/index.json');
   if(!res.ok) throw new Error('index.json 載入失敗');
-  const meta = await res.json();
-  const item = (meta.items||[]).find(x=> x.slug===slug) || meta.items?.[0];
+  const json=await res.json();
+  const item=(json.items||[]).find(x=>x.slug===slug)||json.items?.[0];
   if(!item) throw new Error('index.json 無對應項目');
   return item;
 }
-function setupVideo(src){
-  const v = $('#player');
-  v.src = src;
-}
+function setupVideo(src){ $('#player').src=src; }
 async function loadCues(path){
-  const res = await fetch(path);
+  const res=await fetch(path);
   if(!res.ok) throw new Error('字幕 JSON 載入失敗');
-  const raw = await res.json();
+  const raw=await res.json();
   const arr = Array.isArray(raw)? raw : (raw.items||[]);
-  // 正規化
   cues = arr.map((row,i)=>{
-    const t = row.time || row.t || row.start || '';
-    const s = row.text || row.en || row.caption || '';
-    const [mm,ss] = (t||'0:0').toString().split(':').map(n=>parseInt(n,10)||0);
-    return {idx:i, t, text:s, startSec:mm*60+ss};
-  }).sort((a,b)=> a.startSec - b.startSec);
+    const t=row.time||row.t||row.start||'0:0';
+    const s=row.text||row.en||row.caption||'';
+    const [m,ss]=(t+'').split(':').map(n=>parseInt(n,10)||0);
+    return {idx:i,t, text:s, startSec:m*60+ss};
+  }).sort((a,b)=>a.startSec-b.startSec);
 }
 function renderTranscript(){
-  const box = $('#panelTranscript'); box.innerHTML='';
+  const box=$('#panelTranscript'); box.innerHTML='';
   cues.forEach(row=>{
-    const div = document.createElement('div');
+    const div=document.createElement('div');
     div.className='line'; div.dataset.idx=row.idx;
     div.innerHTML=`<span class="time">[${row.t}]</span>${row.text}`;
-    div.onclick = ()=>{
+    div.onclick=()=>{
       const v=$('#player');
       if(instantAB){
-        abA = row.startSec;
-        const next = cues[row.idx+1];
-        abB = next ? next.startSec-0.05 : (v.duration||abA+3);
-        v.currentTime = abA; v.play();
+        abA=row.startSec;
+        const next=cues[row.idx+1];
+        abB= next? next.startSec-0.05 : (v.duration||abA+3);
+        v.currentTime=abA; v.play();
       }else{
-        v.currentTime = row.startSec; v.play();
+        v.currentTime=row.startSec; v.play();
       }
     };
     box.appendChild(div);
   });
 }
 
-/* ------------------ 影片控制 / 逐句邏輯 ------------------ */
-function findCurrentIdx(t){
-  // 找 <= t 的最後一句
-  let i=0; for(; i<cues.length; i++){ if(cues[i].startSec > t+0.02) break; }
-  return Math.max(0, i-1);
+/* ---------- 逐句/控制 ---------- */
+function findIdx(t){
+  let i=0; for(;i<cues.length;i++){ if(cues[i].startSec > t+0.02) break; }
+  return Math.max(0,i-1);
 }
 function highlight(i){
   currentIdx=i;
-  $$('.line').forEach(el=> el.classList.remove('active'));
-  const el = $(`.line[data-idx="${i}"]`);
+  $$('.line').forEach(el=>el.classList.remove('active'));
+  const el=$(`.line[data-idx="${i}"]`);
   if(el){
     el.classList.add('active');
-    if (followTranscript) scrollIntoViewCentered(el, $('#panelTranscript'));
+    if(followTranscript) centerScroll(el,$('#panelTranscript'));
   }
 }
 function jumpTo(i){
   if(i<0||i>=cues.length) return;
-  $('#player').currentTime = cues[i].startSec;
-  $('#player').play();
+  const v=$('#player'); v.currentTime=cues[i].startSec; v.play();
 }
-function nextLine(){ jumpTo(Math.min(cues.length-1, currentIdx+1)); }
 function prevLine(){
-  const now = $('#player').currentTime;
-  const cur = findCurrentIdx(now);
-  // 若剛開始 0.6 秒內，跳到前一句；否則回到本句開頭
-  if(now - cues[cur].startSec > .6) jumpTo(cur);
-  else jumpTo(Math.max(0, cur-1));
+  const v=$('#player'); const cur=findIdx(v.currentTime);
+  if(v.currentTime - cues[cur].startSec > .6) jumpTo(cur);
+  else jumpTo(Math.max(0,cur-1));
 }
-/* 重複本句：設為 A-B 循環 */
-function repeatThisLine(){
+function nextLine(){ jumpTo(Math.min(cues.length-1,currentIdx+1)); }
+function repeatThis(){
   const v=$('#player');
-  const a = cues[currentIdx]?.startSec ?? 0;
-  const b = cues[currentIdx+1]?.startSec ?? (v.duration||a+3);
+  const a=cues[currentIdx]?.startSec ?? 0;
+  const b=cues[currentIdx+1]?.startSec ?? (v.duration||a+3);
   abA=a; abB=b-0.05; v.currentTime=a; v.play();
 }
-/* 每句結尾暫停 */
-function toggleAutoPause(){
-  autoPause = !autoPause;
-  $('#btnAutoPause').classList.toggle('on', autoPause);
-}
-/* 全片循環 */
-function toggleLoopAll(){
-  loopAll=!loopAll;
-  $('#btnLoopAll').classList.toggle('on', loopAll);
-}
-/* 點句即循環 */
-function toggleInstantAB(){
-  instantAB = !instantAB;
-  $('#btnInstantAB').classList.toggle('on', instantAB);
-}
-/* 取消循環 */
-function cancelLoop(){ abA=null; abB=null; }
 
-/* 跟隨開關與使用者手動捲動暫停 */
-function setupFollow(){
+/* ---------- UI 綁定 ---------- */
+function setupTopUI(){
+  const t1=$('#tabTranscript'),p1=$('#panelTranscript');
+  const t2=$('#tabQuiz'),p2=$('#panelQuiz');
+  t1.onclick=()=>{t1.classList.add('active');t2.classList.remove('active');p1.style.display='block';p2.style.display='none'};
+  t2.onclick=()=>{t2.classList.add('active');t1.classList.remove('active');p2.style.display='block';p1.style.display='none'};
+  $('#fS').onclick=()=>setFont('S'); $('#fM').onclick=()=>setFont('M'); $('#fL').onclick=()=>setFont('L');
+  $('#btnTheme').onclick=()=>document.body.classList.toggle('light');
   $('#btnFollow').onclick=()=>{
     followTranscript=!followTranscript;
     $('#btnFollow').classList.toggle('active', followTranscript);
   };
+  // 使用者手動捲動 → 暫停跟隨 5 秒
   ['wheel','touchstart','pointerdown'].forEach(ev=>{
     $('#panelTranscript').addEventListener(ev, ()=>{
       followTranscript=false;
@@ -299,152 +277,112 @@ function setupFollow(){
       }, 5000);
     }, {passive:true});
   });
+  setFont('M');
 }
-
-/* 工具列：變焦 / 速度 / 適應 */
-function setupTools(){
-  $('#zoom').oninput = e=>{
-    document.documentElement.style.setProperty('--zoom', e.target.value);
-  };
+function setupVBar(){
   const v=$('#player');
-  $('#rate').oninput = e=>{
-    v.playbackRate = parseFloat(e.target.value);
-    $('#rateVal').textContent = v.playbackRate.toFixed(2)+'×';
-  };
-  $('#btnFit').onclick = ()=>{
-    fitContain=!fitContain;
-    v.style.objectFit = fitContain? 'contain':'cover';
+  $('#btnPrev').onclick=prevLine;
+  $('#btnPlay').onclick=()=> v.paused ? v.play() : v.pause();
+  $('#btnNext').onclick=nextLine;
+  $('#btnRepeatLine').onclick=repeatThis;
+  $('#btnAutoPause').onclick=()=>{$('#btnAutoPause').classList.toggle('on', (autoPause=!autoPause));};
+  $('#btnLoopAll').onclick=()=>{$('#btnLoopAll').classList.toggle('on', (loopAll=!loopAll));};
+  $('#btnInstantAB').onclick=()=>{$('#btnInstantAB').classList.toggle('on', (instantAB=!instantAB));};
+  $('#btnCancelLoop').onclick=()=>{abA=null;abB=null;};
+  $('#btnFit').onclick=()=>{
+    fitContain=!fitContain; v.style.objectFit = fitContain? 'contain':'cover';
     $('#btnFit').classList.toggle('on', !fitContain);
   };
-  $('#btnPlay').onclick = ()=> v.paused ? v.play() : v.pause();
-  $('#btnPrev').onclick = prevLine;
-  $('#btnNext').onclick = nextLine;
-  $('#btnRepeatLine').onclick = repeatThisLine;
-  $('#btnAutoPause').onclick = toggleAutoPause;
-  $('#btnLoopAll').onclick = toggleLoopAll;
-  $('#btnInstantAB').onclick = toggleInstantAB;
-  $('#btnCancelLoop').onclick = cancelLoop;
+  $('#zoom').oninput=e=> document.documentElement.style.setProperty('--zoom', e.target.value);
+  $('#rate').oninput=e=>{ v.playbackRate=parseFloat(e.target.value); $('#rateVal').textContent=v.playbackRate.toFixed(2)+'×'; };
 }
 
-/* 分頁/字級/主題 */
-function setupUI(){
-  const t1=$('#tabTranscript'), p1=$('#panelTranscript');
-  const t2=$('#tabQuiz'),       p2=$('#panelQuiz');
-  t1.onclick=()=>{t1.classList.add('active');t2.classList.remove('active');p1.style.display='block';p2.style.display='none'};
-  t2.onclick=()=>{t2.classList.add('active');t1.classList.remove('active');p2.style.display='block';p1.style.display='none'};
-  $('#fS').onclick=()=>setFont('S'); $('#fM').onclick=()=>setFont('M'); $('#fL').onclick=()=>setFont('L');
-  $('#btnTheme').onclick=()=>document.body.classList.toggle('light');
-  setFont('M');
-  setupFollow();
-  setupTools();
-}
-
-/* 測驗載入與渲染（20 題） */
+/* ---------- 測驗 ---------- */
 async function loadQuiz(path){
-  const res=await fetch(path);
-  if(!res.ok) throw new Error('測驗 JSON 載入失敗');
+  const res=await fetch(path); if(!res.ok) throw new Error('測驗 JSON 載入失敗');
   const raw=await res.json();
-  let arr = Array.isArray(raw)? raw : (raw.items||raw.questions||[]);
+  const arr=Array.isArray(raw)? raw : (raw.items||raw.questions||[]);
   return arr.slice(0,20).map((x,i)=>{
-    const q = x.question||x.q||x.title||`Q${i+1}`;
-    const opts = (x.options||x.choices||x.a||[]).map(o=>o.text||o);
-    let ans = x.answerIndex ?? x.correct ?? x.ans ?? 0;
-    if(typeof ans!=='number'){
-      const idx = opts.findIndex(o=>o===ans); ans = idx>=0? idx : 0;
-    }
-    return {q, opts, ans};
+    const q=x.question||x.q||x.title||`Q${i+1}`;
+    const opts=(x.options||x.choices||x.a||[]).map(o=>o.text||o);
+    let ans=x.answerIndex ?? x.correct ?? x.ans ?? 0;
+    if(typeof ans!=='number'){ const k=opts.findIndex(o=>o===ans); ans=k>=0?k:0; }
+    return {q,opts,ans};
   });
 }
 function renderQuiz(questions){
   const box=$('#quizBox'); box.innerHTML='';
   questions.forEach((q,i)=>{
-    const wrap=document.createElement('div'); wrap.className='q';
-    wrap.innerHTML=`<h4>${i+1}. ${q.q}</h4>`;
-    q.opts.forEach((opt,j)=>{
+    const w=document.createElement('div'); w.className='q';
+    w.innerHTML=`<h4>${i+1}. ${q.q}</h4>`;
+    q.opts.forEach((op,j)=>{
       const line=document.createElement('label'); line.className='opt';
-      line.innerHTML=`<input type="radio" name="q${i}" value="${j}"><span>${opt}</span>`;
-      wrap.appendChild(line);
-    });
-    box.appendChild(wrap);
+      line.innerHTML=`<input type="radio" name="q${i}" value="${j}"><span>${op}</span>`;
+      w.appendChild(line);
+    }); box.appendChild(w);
   });
   $('#quizProgress').textContent=`0 / ${questions.length}`;
-  box.addEventListener('change', ()=>{
-    const done = questions.filter((_,i)=> $('input[name="q'+i+'"]:checked',box)).length;
-    $('#quizProgress').textContent = `${done} / ${questions.length}`;
+  $('#quizBox').addEventListener('change',()=>{
+    const done=questions.filter((_,i)=>$('input[name="q'+i+'"]:checked',box)).length;
+    $('#quizProgress').textContent=`${done} / ${questions.length}`;
   });
   $('#btnCheck').onclick=()=>{
-    let correct=0;
-    questions.forEach((q,i)=>{
-      const picked=$('input[name="q'+i+'"]:checked',box);
-      if(picked && parseInt(picked.value,10)===q.ans) correct++;
-    });
-    const ratio=Math.round(correct/questions.length*100);
-    const res=$('#quizResult');
-    res.style.display='block'; res.className='result '+(ratio>=80?'pass':'fail');
-    res.textContent=`分數：${correct} / ${questions.length}（${ratio}%）`+(ratio>=80?'  👍 太棒了！':'  再接再厲！');
+    let ok=0; questions.forEach((q,i)=>{ const p=$('input[name="q'+i+'"]:checked',box); if(p && +p.value===q.ans) ok++; });
+    const ratio=Math.round(ok/questions.length*100);
+    const res=$('#quizResult'); res.style.display='block'; res.className='result '+(ratio>=80?'pass':'fail');
+    res.textContent=`分數：${ok} / ${questions.length}（${ratio}%）`+(ratio>=80?'  👍 太棒了！':'  再接再厲！');
     $('#btnRetry').style.display='inline-block';
   };
   $('#btnRetry').onclick=()=>{
-    $$('input[type="radio"]',box).forEach(r=> r.checked=false);
+    $$('input[type="radio"]',box).forEach(r=>r.checked=false);
     $('#quizProgress').textContent=`0 / ${questions.length}`;
     $('#quizResult').style.display='none';
     $('#btnRetry').style.display='none';
   };
 }
 
-/* 影片事件 */
+/* ---------- 影片事件 ---------- */
 function attachVideoEvents(){
   const v=$('#player');
   v.addEventListener('timeupdate', ()=>{
     const t=v.currentTime;
 
-    // A-B 循環
-    if(abA!=null && abB!=null){
-      if(t<abA || t>abB) v.currentTime=abA;
-      return;
-    }
-    // 全片循環
-    if(loopAll && v.duration){
-      if(t>=v.duration-0.05) v.currentTime=0;
-    }
+    // A-B
+    if(abA!=null && abB!=null){ if(t<abA||t>abB) v.currentTime=abA; return; }
+    // 整段循環
+    if(loopAll && v.duration && t>=v.duration-0.05) v.currentTime=0;
 
-    // 高亮當前句
-    const idx = findCurrentIdx(t);
+    // 高亮 + 跟隨
+    const idx=findIdx(t);
     if(idx!==currentIdx) highlight(idx);
 
-    // 逐句自動暫停：到下一句開頭就暫停
+    // 逐句自動暫停
     if(autoPause){
-      const next = cues[idx+1];
-      if(next && t >= next.startSec-0.02 && t < next.startSec+0.2){
-        v.pause();
-      }
+      const next=cues[idx+1];
+      if(next && t >= next.startSec-0.02 && t < next.startSec+0.2) v.pause();
     }
   });
-
   v.addEventListener('play', ()=> $('#btnPlay').textContent='⏸ 暫停');
   v.addEventListener('pause',()=> $('#btnPlay').textContent='▶️ 播放');
 }
 
-/* ------------------ 啟動 ------------------ */
-(async ()=>{
+/* ---------- 啟動 ---------- */
+(async()=>{
   try{
-    setupUI();
+    setupTopUI();
+    setupVBar();
     attachVideoEvents();
-    const meta = await loadMeta();
-    setupVideo(meta.video);
 
+    const meta=await loadMeta();
+    setupVideo(meta.video);
     await loadCues(meta.cues);
     renderTranscript();
 
-    if(meta.quiz){
-      const qs = await loadQuiz(meta.quiz);
-      renderQuiz(qs);
-    }else{
-      $('#tabQuiz').style.display='none';
-    }
-  }catch(err){
-    console.error(err);
-    $('#panelTranscript').innerHTML = `<div class="muted">載入失敗：${err.message}</div>`;
+    if(meta.quiz){ const qs=await loadQuiz(meta.quiz); renderQuiz(qs); }
+    else $('#tabQuiz').style.display='none';
+  }catch(e){
+    console.error(e);
+    $('#panelTranscript').innerHTML=`<div class="muted">載入失敗：${e.message}</div>`;
   }
 })();
 </script>
