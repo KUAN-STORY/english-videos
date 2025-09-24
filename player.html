@@ -9,35 +9,21 @@
     --bg:#0b1324; --panel:#0f1a33; --border:#203057;
     --text:#e7eaf3; --muted:#a9b3cf; --brand:#3c7cff; --ok:#14b86e; --warn:#f5a524;
     --gap:12px;
-    --safe-bottom: calc(env(safe-area-inset-bottom, 0px) + 16px);
   }
-  html,body{
-    height:100dvh; margin:0;
-    background:var(--bg); color:var(--text);
-    font-family:system-ui,-apple-system,Segoe UI,Roboto,Noto Sans,sans-serif;
-  }
-  .layout{
-    display:grid;
-    grid-template-columns: 1fr 1fr;   /* 左右 50% */
-    gap:var(--gap);
-    height:100%;
-    padding:8px 8px var(--safe-bottom);
-    box-sizing:border-box;
-  }
-  @media(max-width:1024px){
-    .layout{grid-template-columns:1fr}
-  }
-  .videoWrap{
-    display:flex; align-items:center; justify-content:center;
-    background:#000; position:relative;
-    padding:8px; box-sizing:border-box;
-    overflow:auto;
-  }
-  video{
-    width:100%; height:auto;
-    max-height:calc(100dvh - var(--safe-bottom) - 16px);
-    object-fit:contain; background:#000;
-  }
+  html,body{height:100%;margin:0;background:var(--bg);color:var(--text);font-family:system-ui,-apple-system,Segoe UI,Roboto,Noto Sans,sans-serif}
+  .layout{display:grid;grid-template-columns:1fr 1fr;gap:var(--gap);height:100dvh;box-sizing:border-box}
+  @media(max-width:1024px){ .layout{grid-template-columns:1fr} }
+
+  /* 左側影片 */
+  .videoWrap{display:flex;flex-direction:column;align-items:center;justify-content:flex-start;background:#000;position:relative;overflow:hidden;padding:8px;box-sizing:border-box}
+  video{width:100%;height:auto;max-height:calc(100dvh - 200px);object-fit:contain;background:#000;display:block}
+
+  /* 工具列 */
+  .toolBar{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;align-items:center;background:#101b39;border:1px solid var(--border);border-radius:12px;padding:10px;margin-top:8px}
+  .btn{padding:6px 10px;border:1px solid var(--border);background:#15224a;color:#fff;border-radius:8px;cursor:pointer;font-size:14px}
+  .btn:hover{filter:brightness(1.2)}
+  .sliderBox{display:flex;align-items:center;gap:6px;margin-left:10px}
+  .sliderBox input{width:120px}
 
   /* 右側欄 */
   .side{display:flex;flex-direction:column;background:var(--panel);border-left:1px solid var(--border)}
@@ -45,15 +31,10 @@
   .tab{flex:1;padding:10px 12px;text-align:center;cursor:pointer;color:var(--muted);user-select:none}
   .tab.active{color:var(--text);background:#132046;font-weight:700}
   .toolbar{display:flex;gap:8px;align-items:center;padding:8px;border-bottom:1px solid var(--border)}
-  .btn{padding:8px 10px;border:1px solid var(--border);background:#15224a;color:var(--text);border-radius:10px;cursor:pointer}
-  .btn:hover{filter:brightness(1.1)}
   .chip{padding:6px 8px;border:1px solid var(--border);border-radius:8px;background:#121d3d;color:var(--muted);cursor:pointer}
   .chip.active{background:#1a2c66;color:#fff;border-color:#2d4ea7}
   .panel{flex:1;overflow:auto;padding:12px}
   .muted{color:var(--muted)}
-  .row{display:flex;gap:8px;align-items:center}
-
-  /* 字幕 */
   .line{line-height:1.5;margin:8px 0}
   .time{color:var(--muted);font-variant-numeric:tabular-nums;margin-right:6px}
   .line:hover{background:#15224a;border-radius:8px;padding:4px}
@@ -68,19 +49,32 @@
   .result.fail{background:rgba(245,165,36,.12);border:1px solid var(--warn)}
   .stickyFoot{position:sticky;bottom:0;background:linear-gradient(180deg,rgba(11,19,36,0),rgba(11,19,36,1) 30%);padding-top:12px}
   .footBar{display:flex;gap:8px;justify-content:space-between;align-items:center;background:#101b39;border:1px solid var(--border);border-radius:12px;padding:10px}
-
-  /* 亮/暗主題切換 */
-  .light{--bg:#f7f8fb;--panel:#ffffff;--border:#e4e7f0;--text:#222;--muted:#667; background:#fff;color:#222}
-  .light .videoWrap{background:#111}
-  .light .btn,.light .chip{background:#f4f6fb;border-color:#e4e7f0;color:#333}
-  .light .tab.active{background:#eaf1ff}
 </style>
 </head>
 <body>
 <div class="layout">
-  <!-- 左：影片 -->
+  <!-- 左：影片 + 工具列 -->
   <div class="videoWrap">
     <video id="player" controls preload="metadata"></video>
+
+    <!-- 學習工具列 -->
+    <div class="toolBar">
+      <button class="btn" id="btnPrev">上一句</button>
+      <button class="btn" id="btnPlayPause">播放/暫停</button>
+      <button class="btn" id="btnNext">下一句</button>
+      <button class="btn" id="btnRepeat">重複本句</button>
+      <button class="btn" id="btnAB">A-B 循環</button>
+      <button class="btn" id="btnCancelAB">取消循環</button>
+      <button class="btn" id="btnAutoPause">逐句自動暫停</button>
+      <button class="btn" id="btnLoopAll">整段循環</button>
+      <div class="sliderBox">
+        <label>變焦</label><input type="range" id="zoomSlider" min="0.5" max="1.5" step="0.1" value="1">
+      </div>
+      <div class="sliderBox">
+        <label>速度</label><input type="range" id="speedSlider" min="0.5" max="2" step="0.1" value="1">
+        <span id="speedLabel">1.0×</span>
+      </div>
+    </div>
   </div>
 
   <!-- 右：字幕/測驗 -->
@@ -89,26 +83,15 @@
       <div id="tabTranscript" class="tab active">字幕</div>
       <div id="tabQuiz" class="tab">測驗</div>
     </div>
-
-    <!-- 工具列 -->
     <div class="toolbar">
-      <div class="row">
-        <span class="muted">字級</span>
-        <button id="fS" class="chip">S</button>
-        <button id="fM" class="chip active">M</button>
-        <button id="fL" class="chip">L</button>
-      </div>
-      <div style="flex:1"></div>
-      <button id="btnTheme" class="btn">主題</button>
+      <span class="muted">字級</span>
+      <button id="fS" class="chip">S</button>
+      <button id="fM" class="chip active">M</button>
+      <button id="fL" class="chip">L</button>
     </div>
-
-    <!-- 字幕面板 -->
     <div id="panelTranscript" class="panel"></div>
-
-    <!-- 測驗面板 -->
     <div id="panelQuiz" class="panel" style="display:none">
       <div id="quizBox"></div>
-
       <div class="stickyFoot">
         <div class="footBar">
           <div class="muted" id="quizProgress">0 / 0</div>
@@ -124,164 +107,80 @@
 </div>
 
 <script>
-/* ------------------ 小工具 ------------------ */
 const $ = (sel, root=document)=> root.querySelector(sel);
 const $$ = (sel, root=document)=> [...root.querySelectorAll(sel)];
 const qs = new URLSearchParams(location.search);
 const slug = qs.get('slug') || '';
-let FONT = 'M'; // S/M/L
+let FONT='M', cues=[], abA=null, abB=null, autoPause=false;
 
+/* 字級 */
 function setFont(size){
-  FONT = size;
-  const map = {S:'13px', M:'15px', L:'17px'};
-  document.documentElement.style.setProperty('--font-size', map[size]||'15px');
-  $$('#panelTranscript, #panelQuiz, .q').forEach(el=> el.style.fontSize = map[size]||'15px');
+  FONT=size; const map={S:'13px',M:'15px',L:'17px'};
+  $$('#panelTranscript, #panelQuiz, .q').forEach(el=> el.style.fontSize=map[size]);
   $$('.chip').forEach(b=>b.classList.remove('active'));
   ({S:'#fS',M:'#fM',L:'#fL'}[size] && $(({S:'#fS',M:'#fM',L:'#fL'}[size])).classList.add('active'));
 }
 
-/* ------------------ 載入索引 ------------------ */
+/* 載入 meta */
 async function loadMeta(){
-  const res = await fetch('data/index.json');
-  if(!res.ok) throw new Error('index.json 載入失敗');
-  const meta = await res.json();
-  const item = (meta.items||[]).find(x=> x.slug===slug) || meta.items?.[0];
-  if(!item) throw new Error('index.json 無對應項目');
-  return item; // {video,cues,quiz,title_zh...}
+  const res=await fetch('data/index.json'); if(!res.ok) throw new Error('index.json 載入失敗');
+  const meta=await res.json(); return (meta.items||[]).find(x=>x.slug===slug)||meta.items?.[0];
 }
-
-/* ------------------ 設定影片 ------------------ */
-function setupVideo(src){
-  const v = $('#player');
-  v.src = src;
-}
-
-/* ------------------ 載入字幕 ------------------ */
-async function loadCues(path){
-  const res = await fetch(path);
-  if(!res.ok) throw new Error('字幕 JSON 載入失敗');
-  return await res.json();
-}
+async function loadCues(path){const r=await fetch(path);return await r.json();}
 function renderTranscript(data){
-  const box = $('#panelTranscript');
-  box.innerHTML = '';
-  const list = Array.isArray(data)? data : (data.items||[]);
-  list.forEach(row=>{
-    const t = row.time || row.t || row.start || '';
-    const s = row.text || row.en || row.caption || '';
-    const div = document.createElement('div');
-    div.className = 'line';
-    div.innerHTML = `<span class="time">[${t}]</span>${s}`;
-    div.onclick = ()=>{
-      const [m,s] = (t||'0:0').split(':').map(n=>parseInt(n,10)||0);
-      $('#player').currentTime = m*60 + s;
-      $('#player').play();
-    };
+  cues = Array.isArray(data)?data:data.items||[];
+  const box=$('#panelTranscript'); box.innerHTML='';
+  cues.forEach((row,i)=>{
+    const t=row.time||row.t||row.start||'', s=row.text||row.en||row.caption||'';
+    const div=document.createElement('div'); div.className='line';
+    div.innerHTML=`<span class="time">[${t}]</span>${s}`;
+    div.onclick=()=>{const [m,ss]=t.split(':').map(n=>+n||0);$('#player').currentTime=m*60+ss;$('#player').play();}
     box.appendChild(div);
   });
 }
 
-/* ------------------ 測驗 ------------------ */
-async function loadQuiz(path){
-  const res = await fetch(path);
-  if(!res.ok) throw new Error('測驗 JSON 載入失敗');
-  const raw = await res.json();
-  let arr = Array.isArray(raw)? raw : (raw.items||raw.questions||[]);
-  return arr.slice(0,20).map((x,i)=>{
-    const q = x.question || x.q || x.title || `Q${i+1}`;
-    const opts = x.options || x.choices || x.a || [];
-    let ans = x.answerIndex ?? x.correct ?? x.ans ?? 0;
-    if(typeof ans!=='number'){
-      const idx = opts.findIndex(o=> (o.text||o)===ans);
-      ans = idx>=0? idx : 0;
-    }
-    return {q, opts:opts.map(o=> (o.text||o)), ans, explain: x.explain || x.note || ''};
-  });
-}
-function renderQuiz(questions){
-  const box = $('#quizBox');
-  box.innerHTML = '';
-  questions.forEach((q,i)=>{
-    const wrap = document.createElement('div');
-    wrap.className = 'q';
-    wrap.innerHTML = `<h4>${i+1}. ${q.q}</h4>`;
-    q.opts.forEach((opt, j)=>{
-      const id = `q${i}_o${j}`;
-      const line = document.createElement('label');
-      line.className = 'opt';
-      line.innerHTML = `<input type="radio" name="q${i}" value="${j}" id="${id}"/>
-                        <span>${opt}</span>`;
-      wrap.appendChild(line);
-    });
-    box.appendChild(wrap);
-  });
-  $('#quizProgress').textContent = `0 / ${questions.length}`;
+/* 工具列功能 */
+function setupTools(){
+  const v=$('#player');
+  $('#btnPlayPause').onclick=()=> v.paused?v.play():v.pause();
+  $('#btnPrev').onclick=()=> jump(-1);
+  $('#btnNext').onclick=()=> jump(1);
+  $('#btnRepeat').onclick=()=> repeatCurrent();
+  $('#btnAB').onclick=()=> setAB(v.currentTime);
+  $('#btnCancelAB').onclick=()=>{abA=abB=null;};
+  $('#btnAutoPause').onclick=()=> autoPause=!autoPause;
+  $('#btnLoopAll').onclick=()=>{v.loop=!v.loop;}
+  $('#zoomSlider').oninput=e=> v.style.transform=`scale(${e.target.value})`;
+  $('#speedSlider').oninput=e=>{v.playbackRate=e.target.value;$('#speedLabel').textContent=parseFloat(e.target.value).toFixed(2)+'×';}
 
-  box.addEventListener('change', ()=>{
-    const done = questions.filter((_,i)=> $('input[name="q'+i+'"]:checked', box)).length;
-    $('#quizProgress').textContent = `${done} / ${questions.length}`;
-  });
-
-  $('#btnCheck').onclick = ()=>{
-    let correct = 0;
-    questions.forEach((q,i)=>{
-      const picked = $('input[name="q'+i+'"]:checked', box);
-      const val = picked ? parseInt(picked.value,10) : -1;
-      if(val===q.ans) correct++;
-    });
-    const ratio = Math.round(correct/questions.length*100);
-    const res = $('#quizResult');
-    res.style.display = 'block';
-    res.className = 'result ' + (ratio>=80 ? 'pass':'fail');
-    res.textContent = `分數：${correct} / ${questions.length}（${ratio}%）` + (ratio>=80?'  👍 太棒了！':'  再接再厲！');
-    $('#btnRetry').style.display = 'inline-block';
-  };
-  $('#btnRetry').onclick = ()=>{
-    $$('input[type="radio"]', box).forEach(r=> r.checked=false);
-    $('#quizProgress').textContent = `0 / ${questions.length}`;
-    const res = $('#quizResult'); res.style.display='none';
-    $('#btnRetry').style.display = 'none';
-  };
-}
-
-/* ------------------ 分頁切換 ------------------ */
-function setupTabs(){
-  const t1 = $('#tabTranscript'), p1 = $('#panelTranscript');
-  const t2 = $('#tabQuiz'),       p2 = $('#panelQuiz');
-  t1.onclick = ()=>{ t1.classList.add('active'); t2.classList.remove('active'); p1.style.display='block'; p2.style.display='none'; };
-  t2.onclick = ()=>{ t2.classList.add('active'); t1.classList.remove('active'); p2.style.display='block'; p1.style.display='none'; };
-}
-
-/* ------------------ 事件綁定 ------------------ */
-function bindUI(){
-  $('#fS').onclick = ()=> setFont('S');
-  $('#fM').onclick = ()=> setFont('M');
-  $('#fL').onclick = ()=> setFont('L');
-  $('#btnTheme').onclick = ()=> document.body.classList.toggle('light');
-}
-
-/* ------------------ 啟動 ------------------ */
-(async ()=>{
-  try{
-    setupTabs();
-    bindUI();
-    setFont('M');
-
-    const meta = await loadMeta();
-    setupVideo(meta.video);
-    const cues = await loadCues(meta.cues);
-    renderTranscript(cues);
-
-    if(meta.quiz){
-      const qs = await loadQuiz(meta.quiz);
-      renderQuiz(qs);
-    }else{
-      $('#tabQuiz').style.display='none';
-    }
-  }catch(err){
-    console.error(err);
-    $('#panelTranscript').innerHTML = `<div class="muted">載入失敗：${err.message}</div>`;
+  v.ontimeupdate=()=>{
+    if(abA!=null && abB!=null && v.currentTime>=abB) v.currentTime=abA;
   }
+}
+function jump(dir){
+  const v=$('#player'); let t=v.currentTime;
+  for(let i=0;i<cues.length;i++){
+    const [m,s]= (cues[i].time||'0:0').split(':').map(n=>+n||0);
+    const sec=m*60+s;
+    if(sec>t && dir>0){v.currentTime=sec;return;}
+    if(sec<t && dir<0){v.currentTime=sec;return;}
+  }
+}
+function repeatCurrent(){
+  const v=$('#player'); let t=v.currentTime;
+  for(let i=cues.length-1;i>=0;i--){
+    const [m,s]=(cues[i].time||'0:0').split(':').map(n=>+n||0);
+    const sec=m*60+s; if(t>=sec){v.currentTime=sec;return;}
+  }
+}
+function setAB(time){ if(abA==null) abA=time; else abB=time; }
+
+/* 啟動 */
+(async()=>{
+  setFont('M');
+  const meta=await loadMeta(); $('#player').src=meta.video;
+  const cueData=await loadCues(meta.cues); renderTranscript(cueData);
+  setupTools();
 })();
 </script>
 </body>
