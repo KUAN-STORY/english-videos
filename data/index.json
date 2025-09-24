@@ -1,0 +1,21 @@
+{
+  "$schema": "https://example.com/learn-english-stories/index.schema.json",
+  "items": [
+    {
+      "slug": "mid-autumn",
+      "title_en": "Mid-Autumn Festival",
+      "title_zh": "中秋節",
+      "video": "videos/mid-autumn.mp4",
+      "cues": "data/cues-mid-autumn.json",
+      "quiz": "data/quiz-mid-autumn.json"
+    },
+    {
+      "slug": "houyi",
+      "title_en": "Hou Yi Shoots the Suns",
+      "title_zh": "后羿射日",
+      "video": "videos/houyi.mp4",
+      "cues": "data/cues-houyi.json",
+      "quiz": "data/quiz-houyi.json"
+    }
+  ]
+}
