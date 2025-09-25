@@ -1,8 +1,98 @@
-{
-  "title": "Mid-Autumn Vocabulary",
-  "items": [
-    { "time": "00:08", "word": "lantern", "pos": "n.", "zh": "燈籠", "en": "a light with a protective case", "example": "People carry lanterns at night." },
-    { "time": "00:15", "word": "moon-gazing", "pos": "n.", "zh": "賞月", "en": "the activity of watching the moon", "example": "Families enjoy moon-gazing." },
-    { "time": "00:22", "word": "mooncake", "pos": "n.", "zh": "月餅", "en": "a round pastry eaten at the festival", "example": "They share mooncakes together." }
-  ]
-}
+[
+  {
+    "word": "moon",
+    "pos": "n.",
+    "time": "00:01",
+    "zh": "月亮",
+    "en": "the round object that moves around the earth",
+    "ex": "The moon is bright on Mid-Autumn night."
+  },
+  {
+    "word": "family",
+    "pos": "n.",
+    "time": "00:05",
+    "zh": "家人",
+    "en": "a group of parents and children",
+    "ex": "Families gather together."
+  },
+  {
+    "word": "festival",
+    "pos": "n.",
+    "time": "00:08",
+    "zh": "節日",
+    "en": "a special day of celebration",
+    "ex": "Mid-Autumn Festival is a traditional holiday."
+  },
+  {
+    "word": "celebrate",
+    "pos": "v.",
+    "time": "00:10",
+    "zh": "慶祝",
+    "en": "to do something special because of a happy event",
+    "ex": "People celebrate with mooncakes."
+  },
+  {
+    "word": "mooncake",
+    "pos": "n.",
+    "time": "00:12",
+    "zh": "月餅",
+    "en": "a round pastry eaten during Mid-Autumn Festival",
+    "ex": "They enjoy eating mooncakes."
+  },
+  {
+    "word": "legend",
+    "pos": "n.",
+    "time": "00:16",
+    "zh": "傳說",
+    "en": "an old traditional story",
+    "ex": "There is a legend about Hou Yi and Chang’e."
+  },
+  {
+    "word": "archer",
+    "pos": "n.",
+    "time": "00:20",
+    "zh": "弓箭手",
+    "en": "a person skilled with a bow",
+    "ex": "Hou Yi was a great archer."
+  },
+  {
+    "word": "immortal",
+    "pos": "adj.",
+    "time": "00:25",
+    "zh": "不死的",
+    "en": "living forever",
+    "ex": "Chang’e became immortal after drinking the elixir."
+  },
+  {
+    "word": "palace",
+    "pos": "n.",
+    "time": "00:30",
+    "zh": "宮殿",
+    "en": "a large house where a king or queen lives",
+    "ex": "She flew to the Moon Palace."
+  },
+  {
+    "word": "reunion",
+    "pos": "n.",
+    "time": "00:35",
+    "zh": "團圓",
+    "en": "a time when people come together again",
+    "ex": "The festival is a time for family reunion."
+  },
+  {
+    "word": "lantern",
+    "pos": "n.",
+    "time": "00:40",
+    "zh": "燈籠",
+    "en": "a light inside a container",
+    "ex": "People light colorful lanterns."
+  },
+  {
+    "word": "tradition",
+    "pos": "n.",
+    "time": "00:45",
+    "zh": "傳統",
+    "en": "a custom passed down through time",
+    "ex": "Mid-Autumn Festival is a Chinese tradition."
+  }
+]
