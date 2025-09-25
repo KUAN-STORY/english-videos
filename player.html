@@ -10,86 +10,102 @@
     --text:#e7eaf3; --muted:#a9b3cf; --brand:#3c7cff;
     --ok:#14b86e; --warn:#f5a524; --gap:12px;
   }
-  html,body{height:100%;margin:0;background:var(--bg);color:var(--text);font-family:system-ui,-apple-system,Segoe UI,Roboto,Noto Sans,sans-serif}
-  /* 50/50 兩欄；小螢幕改單欄 */
-  .layout{display:grid;grid-template-columns:1fr 1fr;gap:var(--gap);height:100vh}
-  @media(max-width:1024px){ .layout{grid-template-columns:1fr} }
-
-  /* 左：影片區（維持你習慣的樣子） */
-  .videoWrap{position:relative;background:#000;display:flex;align-items:center;justify-content:center}
-  .videoStage{width:100%;max-width:960px; /* 你影片寬度上限 */ }
-  video{width:100%;height:auto;display:block;background:#000}
-
-  /* 底部工具列（固定在影片區內底部） */
-  .toolDock{
-    position:absolute;left:0;right:0;bottom:0;
-    background:linear-gradient(180deg,rgba(11,19,36,0),rgba(11,19,36,.95) 45%);
-    padding:10px 8px 14px;box-sizing:border-box;
+  html,body{
+    height:100%; margin:0; background:var(--bg); color:var(--text);
+    font-family:system-ui,-apple-system,Segoe UI,Roboto,Noto Sans,sans-serif;
   }
-  .toolRow{display:flex;flex-wrap:wrap;gap:8px;align-items:center;justify-content:flex-start}
-  .btn{padding:8px 12px;border-radius:10px;border:1px solid var(--border);background:#14234a;color:#fff;cursor:pointer}
-  .btn:hover{filter:brightness(1.1)}
-  .sliderRow{display:flex;align-items:center;gap:8px;margin-left:auto}
-  .lab{color:var(--muted);margin-right:6px}
-  .slider{accent-color:#922; height:6px}
 
-  /* 右：字幕／測驗 */
-  .side{display:flex;flex-direction:column;background:var(--panel);border-left:1px solid var(--border)}
-  .tabs{display:flex;border-bottom:1px solid var(--border)}
-  .tab{flex:1;padding:10px 12px;text-align:center;cursor:pointer;color:var(--muted);user-select:none}
-  .tab.active{color:var(--text);background:#132046;font-weight:700}
-  .toolbar{display:flex;gap:8px;align-items:center;padding:8px;border-bottom:1px solid var(--border)}
-  .chip{padding:6px 8px;border:1px solid var(--border);border-radius:8px;background:#121d3d;color:var(--muted);cursor:pointer}
-  .chip.active{background:#1a2c66;color:#fff;border-color:#2d4ea7}
+  /* 整體 50/50：左影片 / 右面板 */
+  .layout{
+    display:grid; grid-template-columns: 1fr 1fr; gap:var(--gap); height:100vh;
+  }
+  @media(max-width:1024px){
+    .layout{ grid-template-columns: 1fr; grid-template-rows: auto auto; height:auto; }
+  }
 
-  .panel{flex:1;overflow:auto;padding:12px}
-  .muted{color:var(--muted)}
+  /* 左欄：上方影片 1fr + 下方工具列 auto（你的版型原封不動） */
+  .videoColumn{
+    display:grid; grid-template-rows: 1fr auto; min-height:0;
+    border-right:1px solid var(--border);
+  }
+  .videoStage{
+    min-height:0; display:flex; align-items:center; justify-content:center;
+    background:#000; overflow:hidden;
+  }
+  video{
+    max-width:100%; max-height:100%;
+    width:auto; height:auto; object-fit:contain; background:#000;
+    transform-origin:center center; /* 給變焦用 */
+  }
+  .toolBar{
+    position:relative; z-index:2;
+    padding:10px 12px; background:#101b39;
+    border-top:1px solid var(--border);
+    display:flex; flex-wrap:wrap; gap:8px; align-items:center;
+  }
+  .btn,.chip{
+    border:1px solid var(--border); background:#15224a; color:#fff;
+    border-radius:10px; padding:8px 10px; cursor:pointer; user-select:none;
+  }
+  .btn:hover,.chip:hover{ filter:brightness(1.1); }
+  .chip.active{ background:#1a2c66; border-color:#2d4ea7; }
 
-  /* 字幕列表 */
-  .line{line-height:1.55;margin:6px 0;padding:6px 8px;border-radius:8px;cursor:pointer}
-  .time{color:var(--muted);font-variant-numeric:tabular-nums;margin-right:8px}
-  .line:hover{background:#15224a}
-  .line.active{background:#233366; outline:1px solid #3957b7}
+  /* 右欄：字幕/測驗 */
+  .side{ display:flex; flex-direction:column; min-height:0; background:var(--panel); }
+  .tabs{ display:flex; border-bottom:1px solid var(--border); }
+  .tab{ flex:1; padding:10px 12px; text-align:center; cursor:pointer; color:var(--muted); user-select:none; }
+  .tab.active{ color:var(--text); background:#132046; font-weight:700; }
+  .toolbar{ display:flex; gap:8px; align-items:center; padding:8px; border-bottom:1px solid var(--border); }
+  .panel{ flex:1; overflow:auto; padding:12px; }
 
-  /* 亮色主題（保留按鈕接口用，預設不顯示） */
-  .light{--bg:#f7f8fb;--panel:#fff;--border:#e5e9f4;--text:#222;--muted:#667}
-  .light body{background:#fff;color:#222}
-  .light .btn,.light .chip{background:#f4f6fb;border-color:#e5e9f4;color:#333}
-  .light .tab.active{background:#eaf1ff}
+  /* 字幕列 */
+  .line{ line-height:1.55; margin:6px 0; padding:6px 8px; border-radius:8px; cursor:pointer; }
+  .line:hover{ background:#15224a; }
+  .line.active{ background:#233366; outline:1px solid #3957b7; }
+  .time{ color:var(--muted); margin-right:8px; font-variant-numeric:tabular-nums; }
+
+  /* 測驗 */
+  .q{ padding:12px; border:1px solid var(--border); border-radius:12px; background:#0f1a33; margin:12px 0; }
+  .q h4{ margin:0 0 8px 0; font-weight:700; }
+  .opt{ display:flex; gap:8px; align-items:flex-start; margin:6px 0; cursor:pointer; }
+  .opt input{ margin-top:4px; }
+  .stickyFoot{ position:sticky; bottom:0; background:linear-gradient(180deg,rgba(11,19,36,0),rgba(11,19,36,1) 35%); padding-top:12px; }
+  .footBar{ display:flex; gap:8px; justify-content:space-between; align-items:center; background:#101b39; border:1px solid var(--border); border-radius:12px; padding:10px; }
+  .result{ margin-top:10px; padding:10px; border-radius:10px; display:none; }
+  .result.pass{ background:rgba(20,184,110,.12); border:1px solid var(--ok); }
+  .result.fail{ background:rgba(245,165,36,.12); border:1px solid var(--warn); }
+  .muted{ color:var(--muted); }
 </style>
 </head>
 <body>
 <div class="layout">
 
-  <!-- 左：影片（維持原來體驗與工具列） -->
-  <section class="videoWrap">
+  <!-- 左：影片（你的版型，不動） -->
+  <section class="videoColumn">
     <div class="videoStage">
       <video id="player" controls preload="metadata"></video>
     </div>
 
-    <!-- 底部工具列（上一句／播放／下一句／重複本句／A-B／取消／速度／變焦） -->
-    <div class="toolDock">
-      <div class="toolRow">
-        <button id="btnPrev" class="btn">上一句</button>
-        <button id="btnPlay" class="btn">播放/暫停</button>
-        <button id="btnNext" class="btn">下一句</button>
-        <button id="btnRepeat" class="btn">重複本句</button>
-        <button id="btnAB" class="btn">A-B 循環</button>
-        <button id="btnABClear" class="btn">取消循環</button>
+    <div class="toolBar">
+      <button class="btn" id="btnPrev">上一句</button>
+      <button class="btn" id="btnPlay">播放/暫停</button>
+      <button class="btn" id="btnNext">下一句</button>
 
-        <div class="sliderRow">
-          <span class="lab">速度</span>
-          <input id="speed" type="range" min="0.5" max="2" step="0.05" value="1" class="slider" style="width:220px"/>
-          <span id="speedVal" class="lab">1.00×</span>
+      <button class="btn" id="btnRepeatOne">重複本句</button>
+      <button class="btn" id="btnAB">A-B 循環</button>
+      <button class="btn" id="btnABClear">取消循環</button>
 
-          <span class="lab" style="margin-left:14px">變焦</span>
-          <input id="zoom" type="range" min="0.8" max="1.25" step="0.01" value="1.00" class="slider" style="width:260px"/>
-        </div>
-      </div>
+      <label class="chip">變焦
+        <input id="zoom" type="range" min="1" max="2" step="0.05" value="1" style="vertical-align:middle; width:140px; margin-left:8px;">
+      </label>
+      <label class="chip">速度
+        <input id="rate" type="range" min="0.5" max="2" step="0.05" value="1" style="vertical-align:middle; width:160px; margin-left:8px;">
+        <span id="rateLabel" style="margin-left:6px">1.00×</span>
+      </label>
     </div>
   </section>
 
-  <!-- 右：字幕（固定跟隨高亮）／測驗（可選） -->
+  <!-- 右：字幕（自動跟隨）／測驗（20 題） -->
   <aside class="side">
     <div class="tabs">
       <div id="tabTranscript" class="tab active">字幕</div>
@@ -97,160 +113,200 @@
     </div>
 
     <div class="toolbar">
-      <span class="muted">字級</span>
+      <span style="color:#a9b3cf">字級</span>
       <button id="fS" class="chip">S</button>
       <button id="fM" class="chip active">M</button>
       <button id="fL" class="chip">L</button>
       <div style="flex:1"></div>
-      <!-- 顏色主題按鈕若之後想要可放回：<button id="btnTheme" class="btn">主題</button> -->
     </div>
 
-    <!-- 字幕面板：會自動跟隨高亮與置中 -->
     <div id="panelTranscript" class="panel"></div>
 
-    <!-- 測驗面板（存在 quiz 檔才顯示） -->
-    <div id="panelQuiz" class="panel" style="display:none"></div>
+    <div id="panelQuiz" class="panel" style="display:none">
+      <div id="quizBox"></div>
+      <div class="stickyFoot">
+        <div class="footBar">
+          <div class="muted" id="quizProgress">0 / 0</div>
+          <div>
+            <button id="btnCheck" class="btn">交卷</button>
+            <button id="btnRetry" class="btn" style="display:none">再試一次</button>
+          </div>
+        </div>
+        <div id="quizResult" class="result"></div>
+      </div>
+    </div>
   </aside>
 </div>
 
 <script>
-/* ================== 小工具 ================== */
-const $  = (sel, root=document)=> root.querySelector(sel);
-const $$ = (sel, root=document)=> [...root.querySelectorAll(sel)];
+/* ========== 小工具 ========== */
+const $  = (s,r=document)=>r.querySelector(s);
+const $$ = (s,r=document)=>[...r.querySelectorAll(s)];
 const qs = new URLSearchParams(location.search);
 const slug = qs.get('slug') || '';
 
-/* 影片與控制 */
-const v = $('#player');
-let cues = [];                 // [{tSec, time, text}]
-let currentIdx = -1;           // 目前高亮的字幕索引
-let A = null, B = null;        // A-B 迴圈點
-let REPEAT_ONCE = false;       // 重複本句一次
-
-/* 版面字級 */
-function setFont(size){
-  const map = {S:'13px', M:'15px', L:'17px'};
-  $$('#panelTranscript, #panelQuiz').forEach(el=> el.style.fontSize = map[size]);
-  $$('.chip').forEach(b=>b.classList.remove('active'));
-  ({S:'#fS',M:'#fM',L:'#fL'}[size] && $(({S:'#fS',M:'#fM',L:'#fL'}[size])).classList.add('active'));
-}
-
-/* ============ 載入索引 → 影片、字幕、（可選）測驗 ============ */
+/* ========== 載入 meta ========== */
 async function loadMeta(){
   const res = await fetch('data/index.json');
   if(!res.ok) throw new Error('index.json 載入失敗');
   const meta = await res.json();
-  const item = (meta.items||[]).find(x=> x.slug===slug) || meta.items?.[0];
+  const item = (meta.items||[]).find(x=>x.slug===slug) || meta.items?.[0];
   if(!item) throw new Error('index.json 無對應項目');
-  return item; // {video,cues,quiz,...}
+  return item; // {video,cues,quiz}
 }
 
-function setupVideo(src){ v.src = src; }
+/* ========== 左邊影片（維持你的操作） ========== */
+const v = $('#player');
+let cueList = [];             // [{tSec,time,text,el}]
+let A=null,B=null,abTimer=null,repeatOne=false;
+function toSec(t){ const [m=0,s=0]=String(t||'0:0').split(':').map(n=>parseInt(n,10)||0); return m*60+s; }
 
-/* ============ 字幕 ============ */
-async function loadCues(path){
-  const res = await fetch(path);
-  if(!res.ok) throw new Error('字幕 JSON 載入失敗');
-  const raw = await res.json();
-  const arr = Array.isArray(raw)? raw : (raw.items||[]);
-  // 支援 time:"MM:SS" / tSec / start
-  return arr.map(row=>{
-    const t = row.tSec ?? row.sec ?? (()=>{ const [m=0,s=0]=(row.time||row.start||'0:0').split(':').map(n=>parseInt(n,10)||0);return m*60+s;})();
-    const show = row.time || row.start || new Date(t*1000).toISOString().substr(14,5);
-    const text = row.text || row.en || row.caption || '';
-    return { tSec:t, time:show, text };
-  }).sort((a,b)=> a.tSec-b.tSec);
-}
-
-function renderTranscript(list){
-  cues = list;
-  const box = $('#panelTranscript');
-  box.innerHTML = '';
-  list.forEach((r,i)=>{
-    const div = document.createElement('div');
-    div.className = 'line';
-    div.dataset.idx = i;
-    div.innerHTML = `<span class="time">[${r.time}]</span>${r.text}`;
-    div.onclick = ()=>{
-      v.currentTime = r.tSec + 0.01;
-      v.play();
-    };
-    box.appendChild(div);
-  });
-  currentIdx = -1; // reset
-}
-
-/* 依播放時間同步高亮與自動置中 */
-function syncTranscript(){
-  if(!cues.length || v.readyState<1) return;
+function jumpPrev(){
   const t = v.currentTime;
+  const prev = [...cueList].reverse().find(c=>c.tSec < t - 0.05);
+  if(prev){ v.currentTime = prev.tSec + 0.01; v.play(); }
+}
+function jumpNext(){
+  const t = v.currentTime;
+  const next = cueList.find(c=>c.tSec > t + 0.05);
+  if(next){ v.currentTime = next.tSec + 0.01; v.play(); }
+}
+function setRepeatOne(){
+  repeatOne = true;
+  const t = v.currentTime;
+  let i = 0;
+  for(let k=0;k<cueList.length;k++){ if(cueList[k].tSec<=t) i=k; else break; }
+  A = cueList[i].tSec;
+  B = (i+1<cueList.length ? cueList[i+1].tSec : null);
+  clearInterval(abTimer);
+  abTimer = setInterval(()=>{ if(B!=null && v.currentTime>=B) v.currentTime = A + 0.01; },120);
+}
+function setAB(){
+  if(A==null){ A=v.currentTime; alert('已設定 A 點'); }
+  else if(B==null){ B=v.currentTime; alert('已設定 B 點；開始循環'); startAB(); }
+  else { A=v.currentTime; B=null; alert('已重設 A 點，請再按一次設定 B 點'); }
+}
+function startAB(){
+  repeatOne=false; clearInterval(abTimer);
+  abTimer = setInterval(()=>{ if(B!=null && v.currentTime>=B) v.currentTime = A + 0.01; },120);
+}
+function clearLoop(){ repeatOne=false; A=null; B=null; clearInterval(abTimer); }
 
-  // 找到 <= t 的最後一行
-  let idx = currentIdx;
-  if(idx<0 || t < cues[idx].tSec || (idx+1<cues.length && t >= cues[idx+1].tSec)){
-    // 二分搜尋
-    let lo=0, hi=cues.length-1, mid=0;
-    while(lo<=hi){
-      mid = (lo+hi)>>1;
-      if(cues[mid].tSec<=t) lo = mid+1; else hi = mid-1;
-    }
-    idx = Math.max(0, Math.min(cues.length-1, hi));
-  }
-  if(idx===currentIdx) return; // 不變就不刷
+$('#btnPrev').onclick = jumpPrev;
+$('#btnNext').onclick = jumpNext;
+$('#btnPlay').onclick = ()=> v.paused ? v.play() : v.pause();
+$('#btnRepeatOne').onclick = setRepeatOne;
+$('#btnAB').onclick = setAB;
+$('#btnABClear').onclick = clearLoop;
+$('#rate').oninput = e=>{ v.playbackRate = +e.target.value; $('#rateLabel').textContent = v.playbackRate.toFixed(2)+'×'; };
+$('#zoom').oninput = e=>{ v.style.transform = `scale(${+e.target.value})`; };
 
-  // 更新高亮
-  const box = $('#panelTranscript');
-  if(currentIdx>=0){ const prev = box.querySelector(`.line[data-idx="${currentIdx}"]`); prev && prev.classList.remove('active'); }
-  currentIdx = idx;
-  const cur = box.querySelector(`.line[data-idx="${currentIdx}"]`);
-  if(cur){
-    cur.classList.add('active');
-    // 自動置中（永遠跟隨）
-    cur.scrollIntoView({behavior:'smooth', block:'center'});
-  }
+/* ========== 右邊字幕（自動跟隨＋點選跳播） ========== */
+let currentIdx = -1;
+function renderTranscript(data){
+  const list = Array.isArray(data)? data : (data.items||[]);
+  const box = $('#panelTranscript'); box.innerHTML='';
+  cueList = list.map((row,i)=>{
+    const tStr = row.time || row.t || row.start || '0:00';
+    const sec  = row.tSec ?? toSec(tStr);
+    const text = row.text || row.en || row.caption || '';
+    const el = document.createElement('div');
+    el.className='line';
+    el.dataset.idx = i;
+    el.innerHTML = `<span class="time">[${tStr}]</span>${text}`;
+    el.onclick = ()=>{ v.currentTime = sec + 0.01; v.play(); };
+    box.appendChild(el);
+    return { tSec:sec, time:tStr, text, el };
+  });
+  currentIdx = -1;
 }
 
-/* ============ 測驗（保留接口；有檔案就顯示） ============ */
+function syncTranscript(){
+  if(!cueList.length || v.readyState<1) return;
+  const t = v.currentTime;
+  // 找到 <= t 的最後一行（簡單線性或二分都可；這裡用二分）
+  let lo=0, hi=cueList.length-1, mid=0;
+  while(lo<=hi){ mid=(lo+hi)>>1; if(cueList[mid].tSec<=t) lo=mid+1; else hi=mid-1; }
+  const idx = Math.max(0, Math.min(cueList.length-1, hi));
+  if(idx===currentIdx) return;
+  if(currentIdx>=0){ cueList[currentIdx].el.classList.remove('active'); }
+  currentIdx = idx;
+  const curEl = cueList[currentIdx].el;
+  curEl.classList.add('active');
+  // 永遠跟隨：置中
+  curEl.scrollIntoView({behavior:'smooth', block:'center'});
+}
+
+/* 字級 */
+function setFont(size){
+  const map={S:'13px',M:'15px',L:'17px'};
+  $('#panelTranscript').style.fontSize = map[size]||'15px';
+  $$('.chip').forEach(b=>b.classList.remove('active'));
+  ({S:'#fS',M:'#fM',L:'#fL'}[size] && $(({S:'#fS',M:'#fM',L:'#fL'}[size])).classList.add('active'));
+}
+$('#fS').onclick=()=>setFont('S'); $('#fM').onclick=()=>setFont('M'); $('#fL').onclick=()=>setFont('L');
+
+/* ========== 測驗（前 20 題） ========== */
 async function loadQuiz(path){
   const res = await fetch(path);
   if(!res.ok) return null;
   const raw = await res.json();
   const arr = Array.isArray(raw)? raw : (raw.items||raw.questions||[]);
-  if(!arr.length) return null;
-  $('#tabQuiz').style.display='';
-  $('#panelQuiz').style.display='block'; // 仍保留；實作可之後再補
-  return arr;
+  return arr.slice(0,20).map((x,i)=>{
+    const q = x.question || x.q || x.title || `Q${i+1}`;
+    const opts = x.options || x.choices || x.a || [];
+    let ans = x.answerIndex ?? x.correct ?? x.ans ?? 0;
+    if(typeof ans!=='number'){
+      const idx = opts.findIndex(o => (o.text||o)===ans);
+      ans = idx>=0? idx : 0;
+    }
+    return { q, opts:opts.map(o=>o.text||o), ans };
+  });
+}
+function renderQuiz(questions){
+  if(!questions?.length){ $('#tabQuiz').style.display='none'; return; }
+  const box = $('#quizBox'); box.innerHTML='';
+  questions.forEach((q,i)=>{
+    const wrap = document.createElement('div');
+    wrap.className='q';
+    wrap.innerHTML = `<h4>${i+1}. ${q.q}</h4>`;
+    q.opts.forEach((opt,j)=>{
+      const id = `q${i}_o${j}`;
+      const line = document.createElement('label');
+      line.className='opt';
+      line.innerHTML = `<input type="radio" name="q${i}" value="${j}" id="${id}"><span>${opt}</span>`;
+      wrap.appendChild(line);
+    });
+    box.appendChild(wrap);
+  });
+  $('#quizProgress').textContent = `0 / ${questions.length}`;
+  box.addEventListener('change', ()=>{
+    const done = questions.filter((_,i)=> $('input[name="q'+i+'"]:checked', box)).length;
+    $('#quizProgress').textContent = `${done} / ${questions.length}`;
+  });
+  $('#btnCheck').onclick = ()=>{
+    let correct=0;
+    questions.forEach((q,i)=>{
+      const picked = $('input[name="q'+i+'"]:checked', box);
+      const val = picked ? +picked.value : -1;
+      if(val===q.ans) correct++;
+    });
+    const ratio = Math.round(correct/questions.length*100);
+    const res = $('#quizResult');
+    res.style.display='block';
+    res.className = 'result ' + (ratio>=80?'pass':'fail');
+    res.textContent = `分數：${correct} / ${questions.length}（${ratio}%）` + (ratio>=80?' 👍 很棒！':' 再接再厲！');
+    $('#btnRetry').style.display='inline-block';
+  };
+  $('#btnRetry').onclick = ()=>{
+    $$('input[type="radio"]', box).forEach(r=>r.checked=false);
+    $('#quizProgress').textContent = `0 / ${questions.length}`;
+    const res=$('#quizResult'); res.style.display='none';
+    $('#btnRetry').style.display='none';
+  };
 }
 
-/* ============ 左側工具列控制（不動你的習慣） ============ */
-let abStart=null, abEnd=null;
-function secondsOfLine(i){ return cues[i]?.tSec ?? null; }
-
-function jumpToLine(delta){
-  if(!cues.length) return;
-  if(currentIdx<0) currentIdx = 0;
-  const next = Math.min(Math.max(currentIdx + delta, 0), cues.length-1);
-  v.currentTime = cues[next].tSec + 0.01;
-  v.play();
-}
-
-$('#btnPrev').onclick   = ()=> jumpToLine(-1);
-$('#btnNext').onclick   = ()=> jumpToLine(+1);
-$('#btnPlay').onclick   = ()=> v.paused ? v.play() : v.pause();
-$('#btnRepeat').onclick = ()=>{
-  if(currentIdx>=0){ REPEAT_ONCE = true; v.currentTime = cues[currentIdx].tSec + 0.01; v.play(); }
-};
-$('#btnAB').onclick = ()=>{
-  if(abStart==null){ abStart = v.currentTime; $('#btnAB').textContent='A-B 循環 (已設 A)'; }
-  else if(abEnd==null){ abEnd = Math.max(v.currentTime, abStart+0.1); $('#btnAB').textContent='A-B 循環 (生效中)'; }
-  else { abStart = v.currentTime; abEnd=null; $('#btnAB').textContent='A-B 循環 (已重設 A)'; }
-};
-$('#btnABClear').onclick = ()=>{ abStart=abEnd=null; $('#btnAB').textContent='A-B 循環'; };
-
-$('#speed').oninput = (e)=>{ v.playbackRate = +e.target.value; $('#speedVal').textContent = v.playbackRate.toFixed(2)+'×'; };
-$('#zoom').oninput  = (e)=>{ const z=+e.target.value; $('.videoStage').style.transform=`scale(${z})`; $('.videoStage').style.transformOrigin='center bottom'; };
-
-/* ============ 分頁（保留） ============ */
+/* ========== 分頁 ========== */
 function setupTabs(){
   const t1=$('#tabTranscript'), p1=$('#panelTranscript');
   const t2=$('#tabQuiz'),       p2=$('#panelQuiz');
@@ -258,40 +314,32 @@ function setupTabs(){
   t2.onclick=()=>{ t2.classList.add('active'); t1.classList.remove('active'); p2.style.display='block'; p1.style.display='none'; };
 }
 
-/* ============ 啟動 ============ */
+/* ========== 啟動 ========== */
 (async ()=>{
   try{
     setupTabs();
     setFont('M');
-    $('#fS').onclick = ()=> setFont('S');
-    $('#fM').onclick = ()=> setFont('M');
-    $('#fL').onclick = ()=> setFont('L');
 
     const meta = await loadMeta();
-    setupVideo(meta.video);
+    v.src = meta.video;
 
-    const list = await loadCues(meta.cues);
-    renderTranscript(list);
+    // 字幕
+    const cueRes = await fetch(meta.cues);
+    const cueJson = await cueRes.json();
+    renderTranscript(cueJson);
 
-    // 可選：有 quiz 檔就載入（版位保留，不影響）
-    if(meta.quiz){ await loadQuiz(meta.quiz); } else { $('#tabQuiz').style.display='none'; }
+    // 測驗（若存在）
+    if(meta.quiz){
+      const qs = await loadQuiz(meta.quiz);
+      if(qs?.length){ renderQuiz(qs); } else { $('#tabQuiz').style.display='none'; }
+    }else{
+      $('#tabQuiz').style.display='none';
+    }
 
-    // 影片事件
+    // 播放事件
     v.addEventListener('timeupdate', ()=>{
-      // A-B 循環
-      if(abStart!=null && abEnd!=null){
-        if(v.currentTime > abEnd) v.currentTime = abStart + 0.01;
-      }
-      // 重複本句一次
-      if(REPEAT_ONCE && currentIdx>=0){
-        const end = cues[currentIdx+1]?.tSec ?? (v.duration||1e9);
-        if(v.currentTime >= end - 0.02){
-          REPEAT_ONCE = false;
-          v.currentTime = cues[currentIdx].tSec + 0.01;
-          v.play();
-        }
-      }
-      // 同步字幕（固定跟隨＋高亮）
+      if(A!=null && B!=null && v.currentTime>B) v.currentTime = A + 0.01;
+      if(repeatOne && B!=null && v.currentTime>=B) v.currentTime = A + 0.01;
       syncTranscript();
     });
 
@@ -303,4 +351,3 @@ function setupTabs(){
 </script>
 </body>
 </html>
-
