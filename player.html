@@ -3,51 +3,57 @@
 <head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>Learn English with Stories · Player</title>
+<title>Learn English with Stories · Player (含對點工具)</title>
 <style>
   :root{
     --bg:#0b1324; --panel:#0f1a33; --border:#203057;
-    --text:#e7eaf3; --muted:#a9b3cf; --brand:#3c7cff;
+    --text:#e7eaf3; --muted:#a9b3cf; --brand:#3c7cff; --ok:#14b86e; --warn:#f5a524;
     --gap:12px;
   }
   html,body{height:100%;margin:0;background:var(--bg);color:var(--text);
-    font-family:system-ui,-apple-system,Segoe UI,Roboto,Noto Sans,sans-serif;}
+    font-family:system-ui,-apple-system,Segoe UI,Roboto,Noto Sans,sans-serif}
 
-  .layout{display:grid; grid-template-columns:1fr 1fr; gap:var(--gap); height:100vh;}
-  @media(max-width:1024px){.layout{grid-template-columns:1fr; grid-template-rows:auto auto; height:auto;}}
+  /* 兩欄：左影片 / 右面板 */
+  .layout{ display:grid; grid-template-columns: 1fr 1fr; gap:var(--gap); height:100vh; }
+  @media(max-width:1024px){ .layout{ grid-template-columns: 1fr; grid-template-rows: auto auto; height:auto; } }
 
-  /* 左欄影片 */
-  .videoColumn{display:grid; grid-template-rows:1fr auto; min-height:0; border-right:1px solid var(--border);}
-  .videoStage{min-height:0; display:flex; align-items:center; justify-content:center; background:#000; overflow:hidden;}
-  video{max-width:100%; max-height:100%; object-fit:contain; background:#000;}
-  .toolBar{padding:10px 12px; background:#101b39; border-top:1px solid var(--border);
-    display:flex; flex-wrap:wrap; gap:8px; align-items:center;}
-  .btn,.chip{border:1px solid var(--border); background:#15224a; color:#fff; border-radius:10px; padding:6px 10px; cursor:pointer;}
-  .btn:hover,.chip:hover{filter:brightness(1.1)}
-  .chip.active{background:#1a2c66; border-color:#2d4ea7;}
+  /* 左欄：上影片舞台 + 下工具列（固定可見） */
+  .videoColumn{ display:grid; grid-template-rows: 1fr auto; min-height:0; border-right:1px solid var(--border); }
+  .videoStage{ min-height:0; display:flex; align-items:center; justify-content:center; background:#000; overflow:hidden; }
+  video{ max-width:100%; max-height:100%; width:auto; height:auto; object-fit:contain; background:#000; transform-origin:center center; }
+  .toolBar{ padding:10px 12px; background:#101b39; border-top:1px solid var(--border);
+    display:flex; flex-wrap:wrap; gap:8px; align-items:center; }
+  .btn,.chip{ border:1px solid var(--border); background:#15224a; color:#fff;
+    border-radius:10px; padding:6px 10px; cursor:pointer; user-select:none; }
+  .btn:hover,.chip:hover{ filter:brightness(1.1); }
+  .chip.active{ background:#1a2c66; border-color:#2d4ea7; }
+  .range{ vertical-align:middle; width:140px; margin-left:6px; }
 
   /* 右欄 */
-  .side{display:flex;flex-direction:column;min-height:0;background:var(--panel);}
-  .tabs{display:flex;border-bottom:1px solid var(--border)}
-  .tab{flex:1;padding:10px 12px;text-align:center;cursor:pointer;color:var(--muted)}
-  .tab.active{color:var(--text);background:#132046;font-weight:700}
-  .toolbar{display:flex;gap:8px;align-items:center;padding:8px;border-bottom:1px solid var(--border)}
-  .panel{flex:1;overflow:auto;padding:12px}
+  .side{ display:flex; flex-direction:column; min-height:0; background:var(--panel); }
+  .tabs{ display:flex; border-bottom:1px solid var(--border) }
+  .tab{ flex:1; padding:10px 12px; text-align:center; cursor:pointer; color:var(--muted) }
+  .tab.active{ color:var(--text); background:#132046; font-weight:700 }
+  .toolbar{ display:flex; gap:8px; align-items:center; flex-wrap:wrap; padding:8px; border-bottom:1px solid var(--border) }
+  .panel{ flex:1; overflow:auto; padding:12px }
 
-  /* 字幕 */
-  table.subs{width:100%; border-collapse:collapse; font-size:15px;}
-  table.subs td{padding:6px 8px; border-bottom:1px solid #203057; vertical-align:top;}
-  table.subs tr.active{background:#1a2c66}
-  .time{color:var(--muted); font-variant-numeric:tabular-nums; cursor:pointer;}
+  /* 三欄字幕表 */
+  table.subs{ width:100%; border-collapse:collapse; font-size:15px; }
+  .subs th,.subs td{ padding:6px 8px; border-bottom:1px solid var(--border); vertical-align:top; }
+  .subs th{ color:var(--muted); font-weight:600; position:sticky; top:0; background:var(--panel); }
+  .subs tr.active{ background:#1a2c66; }
+  .subs td.time{ color:var(--muted); width:72px; font-variant-numeric:tabular-nums; cursor:pointer; }
 
   /* 測驗 */
-  .q{padding:12px;border:1px solid var(--border);border-radius:12px;background:#0f1a33;margin:10px 0}
-  .q h4{margin:0 0 8px 0}
-  .opt{margin:6px 0;cursor:pointer}
-  .result{margin-top:12px;padding:8px;border-radius:10px;display:none}
-  .result.pass{background:rgba(20,184,110,.12);border:1px solid #14b86e}
-  .result.fail{background:rgba(245,165,36,.12);border:1px solid #f5a524}
-  .stickyFoot{position:sticky;bottom:0;background:#101b39;padding:8px;border-top:1px solid var(--border)}
+  .q{ padding:12px; border:1px solid var(--border); border-radius:12px; background:#0f1a33; margin:10px 0 }
+  .q h4{ margin:0 0 8px 0; font-weight:700 }
+  .opt{ display:flex; gap:8px; align-items:flex-start; margin:6px 0; cursor:pointer }
+  .opt input{ margin-top:4px }
+  .fill{ width:100%; padding:6px; border-radius:6px; border:1px solid var(--border); background:#15224a; color:#fff }
+  .result{ margin-top:12px; padding:8px; border-radius:10px; display:none }
+  .result.pass{ background:rgba(20,184,110,.12); border:1px solid var(--ok) }
+  .result.fail{ background:rgba(245,165,36,.12); border:1px solid var(--warn) }
+  .footBar{ display:flex; gap:8px; justify-content:space-between; align-items:center; background:#101b39; border:1px solid var(--border); border-radius:12px; padding:10px; margin-top:12px }
 </style>
 </head>
 <body>
@@ -55,7 +61,9 @@
 
   <!-- 左 -->
   <section class="videoColumn">
-    <div class="videoStage"><video id="player" controls preload="metadata"></video></div>
+    <div class="videoStage">
+      <video id="player" controls preload="metadata"></video>
+    </div>
     <div class="toolBar">
       <button class="btn" id="btnPrev">上一句</button>
       <button class="btn" id="btnPlay">播放/暫停</button>
@@ -63,15 +71,9 @@
       <button class="btn" id="btnRepeatOne">重複本句</button>
       <button class="btn" id="btnAB">A-B 循環</button>
       <button class="btn" id="btnABClear">取消循環</button>
-      <label class="chip">速度
-        <input id="rate" type="range" min="0.5" max="2" step="0.05" value="1"
-          style="vertical-align:middle;width:120px;margin-left:6px;">
-        <span id="rateLabel">1.00×</span>
-      </label>
-      <label class="chip">變焦
-        <input id="zoom" type="range" min="1" max="2" step="0.05" value="1"
-          style="vertical-align:middle;width:120px;margin-left:6px;">
-      </label>
+      <label class="chip">變焦<input id="zoom" class="range" type="range" min="1" max="2" step="0.05" value="1"></label>
+      <label class="chip">速度<input id="rate" class="range" type="range" min="0.5" max="2" step="0.05" value="1">
+        <span id="rateLabel" style="margin-left:6px">1.00×</span></label>
     </div>
   </section>
 
@@ -82,81 +84,274 @@
       <div id="tabQuiz" class="tab">測驗</div>
     </div>
 
+    <!-- 工具列：字級 + 對點工具 -->
     <div class="toolbar">
       <span style="color:#a9b3cf">字級</span>
-      <button id="fS" class="chip">S</button><button id="fM" class="chip active">M</button><button id="fL" class="chip">L</button>
+      <button id="fS" class="chip">S</button>
+      <button id="fM" class="chip active">M</button>
+      <button id="fL" class="chip">L</button>
+
       <div style="flex:1"></div>
+
       <button id="btnFollow" class="btn">跟隨</button>
-      <button id="btnTheme" class="btn">主題</button>
+      <button id="btnTiming" class="btn">對點模式</button>
+      <button id="btnSetCurrent" class="btn">此行=現在</button>
+      <button id="btnShiftUp" class="btn">提早0.5秒</button>
+      <button id="btnShiftDown" class="btn">延後0.5秒</button>
+      <button id="btnExport" class="btn">匯出JSON</button>
     </div>
 
-    <div id="panelTranscript" class="panel"></div>
+    <!-- 字幕面板：三欄表 + 可點選 -->
+    <div id="panelTranscript" class="panel">
+      <input id="searchSub" type="text" placeholder="搜尋英文/中文…" style="width:100%;padding:6px;border-radius:8px;border:1px solid var(--border);margin-bottom:8px;background:#15224a;color:#fff">
+      <table class="subs">
+        <thead><tr><th>時間</th><th>英文</th><th>中文</th></tr></thead>
+        <tbody id="subsBody"></tbody>
+      </table>
+    </div>
+
+    <!-- 測驗 -->
     <div id="panelQuiz" class="panel" style="display:none">
       <div id="quizBox"></div>
-      <div class="stickyFoot">
-        <div class="result" id="quizResult"></div>
-        <button class="btn" id="btnCheck">交卷</button>
-        <button class="btn" id="btnRetry" style="display:none">再試一次</button>
+      <div class="footBar">
+        <div class="muted" id="quizProgress">0 / 0</div>
+        <div>
+          <button id="btnCheck" class="btn">交卷</button>
+          <button id="btnRetry" class="btn" style="display:none">再試一次</button>
+        </div>
       </div>
+      <div id="quizResult" class="result"></div>
     </div>
   </aside>
 </div>
 
 <script>
-const $=(s,r=document)=>r.querySelector(s);const $$=(s,r=document)=>[...r.querySelectorAll(s)];
-const qs=new URLSearchParams(location.search);const slug=qs.get('slug')||'';
+/* ===== 小工具 ===== */
+const $=(s,r=document)=>r.querySelector(s), $$=(s,r=document)=>[...r.querySelectorAll(s)];
+const qs=new URLSearchParams(location.search); const slug=qs.get('slug')||'';
+const toSec=t=>{const [m,s]=String(t||'0:0').split(':').map(n=>parseInt(n,10)||0);return m*60+s;}
+const fmt=sec=>String(Math.max(0,Math.floor(sec/60))).padStart(2,'0')+':'+String(Math.max(0,Math.floor(sec%60))).padStart(2,'0');
 
+/* ===== 載入索引 ===== */
 async function loadMeta(){
-  const res=await fetch('data/index.json');const meta=await res.json();
-  return (meta.items||[]).find(x=>x.slug===slug)||meta.items?.[0];
+  const res=await fetch('data/index.json'); if(!res.ok) throw new Error('index.json 載入失敗');
+  const meta=await res.json(); const item=(meta.items||[]).find(x=>x.slug===slug)||meta.items?.[0];
+  if(!item) throw new Error('index.json 無對應項目'); return item; // {video,cues,quiz}
 }
 
-/* 字幕 */
-let cueList=[];
-function toSec(t){const [m,s]=String(t||'0:0').split(':').map(n=>parseInt(n,10)||0);return m*60+s;}
-function renderTranscript(data){
-  const list=Array.isArray(data)?data:(data.items||[]);const box=$('#panelTranscript');box.innerHTML='';
-  cueList=list.map(r=>{
-    const t=r.time||'0:0',en=r.en||r.text||'',zh=r.zh||'';
-    const tr=document.createElement('tr');tr.innerHTML=`<td class="time">[${t}]</td><td>${en}</td><td style="color:#a9b3cf">${zh}</td>`;
-    tr.onclick=()=>{$('#player').currentTime=toSec(t);$('#player').play();};
-    box.appendChild(document.createElement('table')).className='subs';
-    return {tSec:toSec(t),el:tr};
+/* ===== 字幕 ===== */
+let cues=[];          // 原始資料 [{time,en,zh}]
+let cueList=[];       // 工作陣列 [{tSec,en,zh,tr}]
+let currentIdx=-1;    // 高亮索引
+let selectedIdx=-1;   // 對點選取索引
+let follow=false, timingMode=false;
+
+async function loadCues(path){
+  const res=await fetch(path); if(!res.ok) throw new Error('字幕 JSON 載入失敗');
+  const raw=await res.json(); cues=Array.isArray(raw)?raw:(raw.items||[]);
+}
+
+function renderTranscript(){
+  const body=$('#subsBody'); body.innerHTML='';
+  cueList=cues.map((row,i)=>{
+    const t=row.time||'00:00', en=row.en||row.text||'', zh=row.zh||'';
+    const tr=document.createElement('tr');
+    tr.innerHTML=`<td class="time">[${t}]</td><td>${en}</td><td>${zh}</td>`;
+    tr.onclick=()=>{
+      selectedIdx=i;
+      if(timingMode){
+        // 對點：把此行時間設成目前播放時間
+        const sec=$('#player').currentTime;
+        cueList[i].tSec=sec; cues[i].time=fmt(sec);
+        tr.querySelector('.time').textContent='['+fmt(sec)+']';
+      }else{
+        // 一般：跳播
+        $('#player').currentTime=cueList[i].tSec; $('#player').play();
+      }
+      // 視覺上標示選取
+      $$('#subsBody tr').forEach(row=>row.style.outline='none');
+      tr.style.outline='2px solid #3c7cff';
+      tr.style.outlineOffset='-2px';
+    };
+    body.appendChild(tr);
+    return { tSec: toSec(t), en, zh, tr };
   });
-  const tbl=document.createElement('table');tbl.className='subs';cueList.forEach(c=>tbl.appendChild(c.el));box.appendChild(tbl);
+  currentIdx=-1; selectedIdx=-1;
 }
-function highlight(cur){let idx=-1;for(let i=0;i<cueList.length;i++){if(cueList[i].tSec<=cur)idx=i;else break;}
-  cueList.forEach(c=>c.el.classList.remove('active'));if(idx>=0){cueList[idx].el.classList.add('active');if(follow)cueList[idx].el.scrollIntoView({block:'center'});}}
 
-/* 測驗 */
+function syncHighlight(){
+  const t=$('#player').currentTime;
+  // 找到 <= t 的最後一行（二分）
+  let lo=0, hi=cueList.length-1, mid, idx=-1;
+  while(lo<=hi){ mid=(lo+hi)>>1; if(cueList[mid].tSec<=t){ idx=mid; lo=mid+1; } else hi=mid-1; }
+  if(idx===currentIdx) return;
+  if(currentIdx>=0) cueList[currentIdx].tr.classList.remove('active');
+  currentIdx=idx;
+  if(idx>=0){
+    const tr=cueList[idx].tr;
+    tr.classList.add('active');
+    if(follow) tr.scrollIntoView({block:'center',behavior:'smooth'});
+  }
+}
+
+/* 搜尋過濾（英文/中文都可） */
+$('#searchSub').addEventListener('input',e=>{
+  const kw=e.target.value.trim().toLowerCase();
+  cueList.forEach(c=>{
+    const show = (c.en+' '+c.zh).toLowerCase().includes(kw);
+    c.tr.style.display = show ? '' : 'none';
+  });
+});
+
+/* ===== 測驗（最多 20 題，選擇 + 填空） ===== */
 async function loadQuiz(path){
-  const res=await fetch(path);const raw=await res.json();let arr=Array.isArray(raw)?raw:(raw.items||[]);
-  return arr.slice(0,20).map((q,i)=>({q:q.q||q.question||`Q${i+1}`,opts:q.options||q.choices||q.a||[],ans:q.ans||q.answerIndex||0}));
+  const res=await fetch(path); if(!res.ok) return null;
+  const raw=await res.json(); let arr=Array.isArray(raw)?raw:(raw.items||raw.questions||[]);
+  return arr.slice(0,20).map((q,i)=>{
+    const type=q.type || (String(q.q||q.question||'').includes('___')?'fill':'choice');
+    let ans = q.answerIndex ?? q.correct ?? q.ans;
+    return { q: q.q||q.question||`Q${i+1}`, opts: q.a||q.options||q.choices||[], ans, type };
+  });
 }
-function renderQuiz(list){
-  const box=$('#quizBox');box.innerHTML='';list.forEach((q,i)=>{const d=document.createElement('div');d.className='q';d.innerHTML=`<h4>${i+1}. ${q.q}</h4>`;q.opts.forEach((o,j)=>{d.innerHTML+=`<label class="opt"><input type="radio" name="q${i}" value="${j}"> ${o}</label>`});box.appendChild(d);});
-  $('#btnCheck').onclick=()=>{let c=0;list.forEach((q,i)=>{const sel=$(`input[name="q${i}"]:checked`,box);if(sel&&+sel.value===q.ans)c++;});const r=$('#quizResult');r.style.display='block';r.className='result '+(c/list.length>=0.8?'pass':'fail');r.textContent=`得分 ${c}/${list.length}`;$('#btnRetry').style.display='inline-block';};
-  $('#btnRetry').onclick=()=>{$$('input[type=radio]',box).forEach(r=>r.checked=false);$('#quizResult').style.display='none';$('#btnRetry').style.display='none';};
+function renderQuiz(questions){
+  if(!questions?.length){ $('#tabQuiz').style.display='none'; return; }
+  const box=$('#quizBox'); box.innerHTML='';
+  questions.forEach((q,i)=>{
+    const wrap=document.createElement('div'); wrap.className='q';
+    wrap.innerHTML = `<h4>${i+1}. ${q.q}</h4>`;
+    if(q.type==='fill'){
+      wrap.innerHTML += `<input class="fill" name="q${i}" placeholder="輸入答案…">`;
+    }else{
+      q.opts.forEach((opt,j)=>{
+        wrap.innerHTML += `<label class="opt"><input type="radio" name="q${i}" value="${j}"><span>${opt}</span></label>`;
+      });
+    }
+    box.appendChild(wrap);
+  });
+  $('#quizProgress').textContent = `0 / ${questions.length}`;
+  box.addEventListener('input', ()=>{
+    let done=0;
+    questions.forEach((q,i)=>{
+      if(q.type==='fill') { if($(`input[name="q${i}"]`,box)?.value.trim()) done++; }
+      else { if($(`input[name="q${i}"]:checked`,box)) done++; }
+    });
+    $('#quizProgress').textContent = `${done} / ${questions.length}`;
+  });
+  $('#btnCheck').onclick=()=>{
+    let correct=0;
+    questions.forEach((q,i)=>{
+      if(q.type==='fill'){
+        const val = $(`input[name="q${i}"]`,box)?.value.trim().toLowerCase() || '';
+        const acc = Array.isArray(q.ans)? q.ans : (q.ans==null? [] : [q.ans]);
+        if(acc.map(x=>String(x).toLowerCase()).includes(val)) correct++;
+      }else{
+        const picked = $(`input[name="q${i}"]:checked`,box);
+        if(picked && +picked.value === (typeof q.ans==='number'? q.ans : -1)) correct++;
+      }
+    });
+    const ratio = Math.round(correct/questions.length*100);
+    const res = $('#quizResult');
+    res.style.display='block';
+    res.className='result '+(ratio>=80?'pass':'fail');
+    res.textContent = `分數：${correct} / ${questions.length}（${ratio}%）`;
+    $('#btnRetry').style.display='inline-block';
+  };
+  $('#btnRetry').onclick=()=>renderQuiz(questions);
 }
 
-/* 左工具列 */
-$('#btnPrev').onclick=()=>{const t=$('#player').currentTime;const p=[...cueList].reverse().find(c=>c.tSec<t);if(p)$('#player').currentTime=p.tSec;}
-$('#btnNext').onclick=()=>{const t=$('#player').currentTime;const n=cueList.find(c=>c.tSec>t);if(n)$('#player').currentTime=n.tSec;}
-$('#btnPlay').onclick=()=>{const v=$('#player');v.paused?v.play():v.pause();}
-$('#rate').oninput=e=>{$('#player').playbackRate=+e.target.value;$('#rateLabel').textContent=(+e.target.value).toFixed(2)+'×';}
-$('#zoom').oninput=e=>{$('#player').style.transform=`scale(${+e.target.value})`;}
-let follow=false;$('#btnFollow').onclick=()=>{follow=!follow;$('#btnFollow').textContent=follow?'跟隨中':'跟隨';}
+/* ===== Tabs ===== */
+function setupTabs(){
+  const t1=$('#tabTranscript'), p1=$('#panelTranscript');
+  const t2=$('#tabQuiz'),       p2=$('#panelQuiz');
+  t1.onclick=()=>{ t1.classList.add('active'); t2.classList.remove('active'); p1.style.display='block'; p2.style.display='none'; };
+  t2.onclick=()=>{ t2.classList.add('active'); t1.classList.remove('active'); p2.style.display='block'; p1.style.display='none'; };
+}
 
-/* Tab */
-$('#tabTranscript').onclick=()=>{$('#tabTranscript').classList.add('active');$('#tabQuiz').classList.remove('active');$('#panelTranscript').style.display='block';$('#panelQuiz').style.display='none';}
-$('#tabQuiz').onclick=()=>{$('#tabQuiz').classList.add('active');$('#tabTranscript').classList.remove('active');$('#panelQuiz').style.display='block';$('#panelTranscript').style.display='none';}
+/* ===== 左工具列 ===== */
+let A=null,B=null,abTimer=null;
+function jumpPrev(){const t=$('#player').currentTime; const prev=[...cueList].reverse().find(c=>c.tSec<t-0.05); if(prev){ $('#player').currentTime=prev.tSec; $('#player').play(); }}
+function jumpNext(){const t=$('#player').currentTime; const next=cueList.find(c=>c.tSec>t+0.05); if(next){ $('#player').currentTime=next.tSec; $('#player').play(); }}
+function setRepeatOne(){const t=$('#player').currentTime; let i=cueList.findIndex((c,idx)=>c.tSec<=t&&(!cueList[idx+1]||cueList[idx+1].tSec>t)); if(i<0)i=0; A=cueList[i].tSec; B=(cueList[i+1]?cueList[i+1].tSec:null); clearInterval(abTimer); abTimer=setInterval(()=>{const v=$('#player'); if(B && v.currentTime>=B) v.currentTime=A+0.01;},120);}
+function setAB(){const v=$('#player'); if(A==null){A=v.currentTime; alert('已設定 A');} else if(B==null){B=v.currentTime; alert('已設定 B；開始循環'); startAB();} else {A=v.currentTime; B=null; alert('已重設 A，請再按一次設定 B');}}
+function startAB(){clearInterval(abTimer); abTimer=setInterval(()=>{const v=$('#player'); if(B && v.currentTime>=B) v.currentTime=A+0.01;},120);}
+function clearLoop(){A=null; B=null; clearInterval(abTimer);}
+function bindLeftToolbar(){
+  $('#btnPrev').onclick=jumpPrev; $('#btnNext').onclick=jumpNext;
+  $('#btnPlay').onclick=()=>{const v=$('#player'); v.paused?v.play():v.pause();};
+  $('#btnRepeatOne').onclick=setRepeatOne; $('#btnAB').onclick=setAB; $('#btnABClear').onclick=clearLoop;
+  $('#rate').oninput=e=>{const v=$('#player'); v.playbackRate=+e.target.value; $('#rateLabel').textContent=v.playbackRate.toFixed(2)+'×';};
+  $('#zoom').oninput=e=>{ $('#player').style.transform=`scale(${+e.target.value})`; };
+}
 
-/* 啟動 */
+/* ===== 右工具列（跟隨/對點/匯出/整體偏移） ===== */
+function bindRightToolbar(){
+  const setFont=s=>{ const map={S:'13px',M:'15px',L:'17px'}; $('#panelTranscript').style.fontSize=map[s]||'15px';
+    $$('#fS,#fM,#fL').forEach(b=>b.classList.remove('active')); ({S:'#fS',M:'#fM',L:'#fL'}[s] && $(({S:'#fS',M:'#fM',L:'#fL'}[s])).classList.add('active')); };
+  $('#fS').onclick=()=>setFont('S'); $('#fM').onclick=()=>setFont('M'); $('#fL').onclick=()=>setFont('L'); setFont('M');
+
+  $('#btnFollow').onclick=()=>{ follow=!follow; $('#btnFollow').textContent=follow?'跟隨中':'跟隨'; };
+  $('#btnTiming').onclick=()=>{ timingMode=!timingMode; $('#btnTiming').textContent=timingMode?'對點中…':'對點模式'; };
+
+  $('#btnSetCurrent').onclick=()=>{
+    if(selectedIdx<0){ alert('請先點選一行字幕'); return; }
+    const sec=$('#player').currentTime;
+    cueList[selectedIdx].tSec=sec; cues[selectedIdx].time=fmt(sec);
+    cueList[selectedIdx].tr.querySelector('.time').textContent='['+fmt(sec)+']';
+  };
+
+  const shiftAll = (delta)=>{
+    cueList.forEach((c,i)=>{ c.tSec=Math.max(0,c.tSec+delta); cues[i].time=fmt(c.tSec); c.tr.querySelector('.time').textContent='['+fmt(c.tSec)+']'; });
+  };
+  $('#btnShiftUp').onclick = ()=> shiftAll(-0.5);   // 提早
+  $('#btnShiftDown').onclick = ()=> shiftAll(+0.5); // 延後
+
+  $('#btnExport').onclick=()=>{
+    const json = JSON.stringify(cues.map(c=>({time:c.time||'00:00', en:c.en||c.text||'', zh:c.zh||''})), null, 2);
+    const blob = new Blob([json], {type:'application/json'});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a'); a.href=url; a.download='cues-fixed.json'; a.click();
+    URL.revokeObjectURL(url);
+  };
+}
+
+/* ===== 啟動 ===== */
 (async()=>{
-  const meta=await loadMeta();$('#player').src=meta.video;
-  const cues=await (await fetch(meta.cues)).json();renderTranscript(cues);
-  $('#player').addEventListener('timeupdate',()=>highlight($('#player').currentTime));
-  if(meta.quiz){const qs=await loadQuiz(meta.quiz);renderQuiz(qs);}else{$('#tabQuiz').style.display='none';}
+  try{
+    const meta = await loadMeta();
+    $('#player').src = meta.video;
+
+    await loadCues(meta.cues);
+    renderTranscript();
+
+    // 播放時間 -> 高亮 + 置中（在跟隨開啟時）
+    $('#player').addEventListener('timeupdate', ()=> syncHighlight());
+
+    // 測驗（若有）
+    if(meta.quiz){
+      const qs = await loadQuiz(meta.quiz);
+      if(qs?.length){
+        renderQuiz(qs);
+      }else{
+        $('#tabQuiz').style.display='none';
+      }
+    }else{
+      $('#tabQuiz').style.display='none';
+    }
+
+    // 綁定工具列 & 分頁
+    bindLeftToolbar();
+    bindRightToolbar();
+    (function setupTabs(){
+      const t1=$('#tabTranscript'), p1=$('#panelTranscript');
+      const t2=$('#tabQuiz'), p2=$('#panelQuiz');
+      t1.onclick=()=>{ t1.classList.add('active'); t2.classList.remove('active'); p1.style.display='block'; p2.style.display='none'; };
+      t2.onclick=()=>{ t2.classList.add('active'); t1.classList.remove('active'); p2.style.display='block'; p1.style.display='none'; };
+    })();
+
+  }catch(err){
+    console.error(err);
+    $('#panelTranscript').innerHTML = `<div style="color:#f88">載入失敗：${err.message}</div>`;
+  }
 })();
 </script>
 </body>
