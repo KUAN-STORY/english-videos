@@ -1,8 +1,21 @@
 {
   "title": "Mid-Autumn Vocabulary",
   "items": [
-    { "time": "00:08", "word": "lantern", "pos": "n.", "zh": "燈籠", "en": "a light with a protective case", "example": "People carry lanterns at night." },
-    { "time": "00:15", "word": "moon-gazing", "pos": "n.", "zh": "賞月", "en": "the activity of watching the moon", "example": "Families enjoy moon-gazing." },
-    { "time": "00:22", "word": "mooncake", "pos": "n.", "zh": "月餅", "en": "a round pastry eaten at the festival", "example": "They share mooncakes together." }
+    { "time": "00:01", "word": "festival", "pos": "n.", "zh": "節日", "en": "a day of celebration", "example": "The Mid-Autumn Festival is a family holiday." },
+    { "time": "00:06", "word": "moon", "pos": "n.", "zh": "月亮", "en": "Earth’s natural satellite", "example": "People admire the full moon." },
+    { "time": "00:12", "word": "lantern", "pos": "n.", "zh": "燈籠", "en": "a light with a cover of paper or silk", "example": "Children carry colorful lanterns." },
+    { "time": "00:18", "word": "mooncake", "pos": "n.", "zh": "月餅", "en": "a round pastry eaten at Mid-Autumn", "example": "They share mooncakes with tea." },
+    { "time": "00:24", "word": "gather", "pos": "v.", "zh": "團聚；聚集", "en": "to come together", "example": "Families gather for dinner." },
+    { "time": "00:30", "word": "legend", "pos": "n.", "zh": "傳說", "en": "a very old and famous story", "example": "There is a legend about Chang’e." },
+    { "time": "00:36", "word": "goddess", "pos": "n.", "zh": "女神", "en": "a female god", "example": "Chang’e is a moon goddess." },
+    { "time": "00:42", "word": "Chang’e", "pos": "n.", "zh": "嫦娥", "en": "the lady who lives on the moon", "example": "People tell the story of Chang’e." },
+    { "time": "00:48", "word": "Hou Yi", "pos": "n.", "zh": "后羿", "en": "the archer who shot down suns", "example": "Hou Yi appears in the legend." },
+    { "time": "00:54", "word": "archer", "pos": "n.", "zh": "弓箭手", "en": "a person who uses a bow and arrows", "example": "The archer aimed at the sky." },
+    { "time": "01:00", "word": "elixir", "pos": "n.", "zh": "仙丹", "en": "a magical drink for immortality", "example": "The elixir made one immortal." },
+    { "time": "01:06", "word": "celebrate", "pos": "v.", "zh": "慶祝", "en": "to do something special for an occasion", "example": "People celebrate with lantern shows." },
+    { "time": "01:12", "word": "harvest", "pos": "n.", "zh": "收穫", "en": "the time of gathering crops", "example": "The festival thanks the harvest." },
+    { "time": "01:18", "word": "admire", "pos": "v.", "zh": "欣賞", "en": "to look at with pleasure", "example": "Families admire the bright moon." },
+    { "time": "01:24", "word": "tradition", "pos": "n.", "zh": "傳統", "en": "a custom passed down over time", "example": "Eating mooncakes is a tradition." }
   ]
 }
+
