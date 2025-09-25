@@ -7,245 +7,297 @@
 <style>
   :root{
     --bg:#0b1324; --panel:#0f1a33; --border:#203057;
-    --text:#e7eaf3; --muted:#a9b3cf; --brand:#3c7cff; --ok:#14b86e; --warn:#f5a524;
-    --gap:12px;
+    --text:#e7eaf3; --muted:#a9b3cf; --brand:#3c7cff;
+    --ok:#14b86e; --warn:#f5a524; --gap:12px;
   }
-  html,body{height:100%;margin:0;background:var(--bg);color:var(--text);font-family:system-ui,-apple-system,Segoe UI,Roboto,"Noto Sans TC","Noto Sans",sans-serif}
-
-  /* 兩欄佈局：保持你現有的比例與左側外觀 */
-  .layout{display:grid;grid-template-columns:minmax(320px,1fr) 420px;gap:var(--gap);height:100%}
+  html,body{height:100%;margin:0;background:var(--bg);color:var(--text);font-family:system-ui,-apple-system,Segoe UI,Roboto,Noto Sans,sans-serif}
+  /* 50/50 兩欄；小螢幕改單欄 */
+  .layout{display:grid;grid-template-columns:1fr 1fr;gap:var(--gap);height:100vh}
   @media(max-width:1024px){ .layout{grid-template-columns:1fr} }
 
-  /* 左側影片區（不改你的版） */
-  .videoWrap{display:flex;flex-direction:column;height:100%}
-  .videoBox{flex:1;display:flex;align-items:center;justify-content:center;background:#000;position:relative}
-  video{width:100%;height:100%;max-height:100vh;object-fit:contain;background:#000}
-  .vtools{position:sticky;bottom:0;background:#0d1733;border-top:1px solid var(--border);padding:10px 12px}
-  .row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
-  .btn{padding:8px 12px;border:1px solid var(--border);border-radius:10px;background:#14224a;color:#fff;cursor:pointer}
-  .btn:hover{filter:brightness(1.1)}
-  label.slider{display:flex;align-items:center;gap:8px;margin-left:10px}
-  input[type="range"]{accent-color:#8b1d1d}
+  /* 左：影片區（維持你習慣的樣子） */
+  .videoWrap{position:relative;background:#000;display:flex;align-items:center;justify-content:center}
+  .videoStage{width:100%;max-width:960px; /* 你影片寬度上限 */ }
+  video{width:100%;height:auto;display:block;background:#000}
 
-  /* 右側：字幕/測驗外框（樣式延用你的結構） */
-  .side{display:flex;flex-direction:column;background:var(--panel);border-left:1px solid var(--border);min-height:0}
+  /* 底部工具列（固定在影片區內底部） */
+  .toolDock{
+    position:absolute;left:0;right:0;bottom:0;
+    background:linear-gradient(180deg,rgba(11,19,36,0),rgba(11,19,36,.95) 45%);
+    padding:10px 8px 14px;box-sizing:border-box;
+  }
+  .toolRow{display:flex;flex-wrap:wrap;gap:8px;align-items:center;justify-content:flex-start}
+  .btn{padding:8px 12px;border-radius:10px;border:1px solid var(--border);background:#14234a;color:#fff;cursor:pointer}
+  .btn:hover{filter:brightness(1.1)}
+  .sliderRow{display:flex;align-items:center;gap:8px;margin-left:auto}
+  .lab{color:var(--muted);margin-right:6px}
+  .slider{accent-color:#922; height:6px}
+
+  /* 右：字幕／測驗 */
+  .side{display:flex;flex-direction:column;background:var(--panel);border-left:1px solid var(--border)}
   .tabs{display:flex;border-bottom:1px solid var(--border)}
-  .tab{flex:1;text-align:center;padding:10px 12px;color:var(--muted);cursor:pointer;user-select:none}
-  .tab.active{color:#fff;background:#132046;font-weight:700}
-  .toolbar{display:flex;gap:8px;align-items:center;padding:8px 12px;border-bottom:1px solid var(--border)}
+  .tab{flex:1;padding:10px 12px;text-align:center;cursor:pointer;color:var(--muted);user-select:none}
+  .tab.active{color:var(--text);background:#132046;font-weight:700}
+  .toolbar{display:flex;gap:8px;align-items:center;padding:8px;border-bottom:1px solid var(--border)}
   .chip{padding:6px 8px;border:1px solid var(--border);border-radius:8px;background:#121d3d;color:var(--muted);cursor:pointer}
   .chip.active{background:#1a2c66;color:#fff;border-color:#2d4ea7}
-  .panel{flex:1;min-height:0;overflow:auto;padding:12px}
 
-  /* 字幕清單（新增高亮與滑過色），其餘不動 */
-  .line{line-height:1.55;margin:6px 0;padding:6px 8px;border-radius:8px;transition:background .15s}
+  .panel{flex:1;overflow:auto;padding:12px}
+  .muted{color:var(--muted)}
+
+  /* 字幕列表 */
+  .line{line-height:1.55;margin:6px 0;padding:6px 8px;border-radius:8px;cursor:pointer}
   .time{color:var(--muted);font-variant-numeric:tabular-nums;margin-right:8px}
-  .line:hover{background:#122147}
-  .line.active{background:#1e335f;outline:1px solid #2d4ea7}
+  .line:hover{background:#15224a}
+  .line.active{background:#233366; outline:1px solid #3957b7}
 
-  /* 亮色主題（若你有在用，保留） */
-  .light{--bg:#f7f8fb;--panel:#fff;--border:#e6e8f2;--text:#222;--muted:#667}
-  .light .videoBox{background:#111}
-  .light .side{border-color:#e6e8f2}
-  .light .btn,.light .chip{background:#f4f6fb;color:#333;border-color:#e6e8f2}
-  .light .line:hover{background:#eef3ff}
-  .light .line.active{background:#dfe9ff;outline-color:#8fb3ff}
+  /* 亮色主題（保留按鈕接口用，預設不顯示） */
+  .light{--bg:#f7f8fb;--panel:#fff;--border:#e5e9f4;--text:#222;--muted:#667}
+  .light body{background:#fff;color:#222}
+  .light .btn,.light .chip{background:#f4f6fb;border-color:#e5e9f4;color:#333}
+  .light .tab.active{background:#eaf1ff}
 </style>
 </head>
 <body>
 <div class="layout">
-  <!-- 左：影片（維持原樣） -->
+
+  <!-- 左：影片（維持原來體驗與工具列） -->
   <section class="videoWrap">
-    <div class="videoBox">
+    <div class="videoStage">
       <video id="player" controls preload="metadata"></video>
     </div>
-    <!-- 你的底部工具列：上一句/播放/下一句/重複本句/A-B/取消/速度/變焦 -->
-    <div class="vtools">
-      <div class="row">
-        <button class="btn" id="prevLine">上一句</button>
-        <button class="btn" id="playPause">播放/暫停</button>
-        <button class="btn" id="nextLine">下一句</button>
-        <button class="btn" id="repeatLine">重複本句</button>
-        <button class="btn" id="abToggle">A-B 循環</button>
-        <button class="btn" id="abClear">取消循環</button>
-        <label class="slider">速度
-          <input id="rate" type="range" min="0.5" max="2" step="0.05" value="1">
-          <span id="rateVal">1.00×</span>
-        </label>
-        <label class="slider">變焦
-          <input id="zoom" type="range" min="0.8" max="1.2" step="0.02" value="1">
-        </label>
+
+    <!-- 底部工具列（上一句／播放／下一句／重複本句／A-B／取消／速度／變焦） -->
+    <div class="toolDock">
+      <div class="toolRow">
+        <button id="btnPrev" class="btn">上一句</button>
+        <button id="btnPlay" class="btn">播放/暫停</button>
+        <button id="btnNext" class="btn">下一句</button>
+        <button id="btnRepeat" class="btn">重複本句</button>
+        <button id="btnAB" class="btn">A-B 循環</button>
+        <button id="btnABClear" class="btn">取消循環</button>
+
+        <div class="sliderRow">
+          <span class="lab">速度</span>
+          <input id="speed" type="range" min="0.5" max="2" step="0.05" value="1" class="slider" style="width:220px"/>
+          <span id="speedVal" class="lab">1.00×</span>
+
+          <span class="lab" style="margin-left:14px">變焦</span>
+          <input id="zoom" type="range" min="0.8" max="1.25" step="0.01" value="1.00" class="slider" style="width:260px"/>
+        </div>
       </div>
     </div>
   </section>
 
-  <!-- 右：字幕/測驗 -->
+  <!-- 右：字幕（固定跟隨高亮）／測驗（可選） -->
   <aside class="side">
     <div class="tabs">
-      <div id="tabTrans" class="tab active">字幕</div>
+      <div id="tabTranscript" class="tab active">字幕</div>
       <div id="tabQuiz" class="tab">測驗</div>
     </div>
 
     <div class="toolbar">
-      <span style="color:var(--muted)">字級</span>
+      <span class="muted">字級</span>
       <button id="fS" class="chip">S</button>
       <button id="fM" class="chip active">M</button>
       <button id="fL" class="chip">L</button>
       <div style="flex:1"></div>
-      <button id="btnTheme" class="btn">主題</button>
+      <!-- 顏色主題按鈕若之後想要可放回：<button id="btnTheme" class="btn">主題</button> -->
     </div>
 
-    <!-- 字幕面板 -->
-    <div id="panelTrans" class="panel"></div>
+    <!-- 字幕面板：會自動跟隨高亮與置中 -->
+    <div id="panelTranscript" class="panel"></div>
 
-    <!-- 測驗面板（先保留） -->
-    <div id="panelQuiz" class="panel" style="display:none">
-      <div class="line" style="opacity:.7">小測驗之後再補；目前僅保留面板。</div>
-    </div>
+    <!-- 測驗面板（存在 quiz 檔才顯示） -->
+    <div id="panelQuiz" class="panel" style="display:none"></div>
   </aside>
 </div>
 
 <script>
-/* ========= 快速選取 ========= */
-const $ = (s, r=document)=>r.querySelector(s);
-const $$ = (s, r=document)=>[...r.querySelectorAll(s)];
+/* ================== 小工具 ================== */
+const $  = (sel, root=document)=> root.querySelector(sel);
+const $$ = (sel, root=document)=> [...root.querySelectorAll(sel)];
 const qs = new URLSearchParams(location.search);
 const slug = qs.get('slug') || '';
 
-/* ========= 字級 ========= */
-function setFont(size='M'){
-  const map={S:'13px',M:'15px',L:'17px'};
-  $('#panelTrans').style.fontSize = map[size]||'15px';
-  $$('.chip').forEach(c=>c.classList.remove('active'));
+/* 影片與控制 */
+const v = $('#player');
+let cues = [];                 // [{tSec, time, text}]
+let currentIdx = -1;           // 目前高亮的字幕索引
+let A = null, B = null;        // A-B 迴圈點
+let REPEAT_ONCE = false;       // 重複本句一次
+
+/* 版面字級 */
+function setFont(size){
+  const map = {S:'13px', M:'15px', L:'17px'};
+  $$('#panelTranscript, #panelQuiz').forEach(el=> el.style.fontSize = map[size]);
+  $$('.chip').forEach(b=>b.classList.remove('active'));
   ({S:'#fS',M:'#fM',L:'#fL'}[size] && $(({S:'#fS',M:'#fM',L:'#fL'}[size])).classList.add('active'));
 }
 
-/* ========= 讀取索引 & 檔案 ========= */
+/* ============ 載入索引 → 影片、字幕、（可選）測驗 ============ */
 async function loadMeta(){
-  const res=await fetch('data/index.json');
+  const res = await fetch('data/index.json');
   if(!res.ok) throw new Error('index.json 載入失敗');
-  const meta=await res.json();
-  const it=(meta.items||[]).find(x=>x.slug===slug) || meta.items?.[0];
-  if(!it) throw new Error('index.json 無對應項目');
-  return it; // {video,cues,quiz}
-}
-function toSec(t){
-  if(typeof t==='number') return t;
-  if(!t) return 0;
-  const m=String(t).trim().split(':').map(n=>parseInt(n,10)||0);
-  if(m.length===3) return m[0]*3600+m[1]*60+m[2];
-  return m[0]*60+(m[1]||0);
+  const meta = await res.json();
+  const item = (meta.items||[]).find(x=> x.slug===slug) || meta.items?.[0];
+  if(!item) throw new Error('index.json 無對應項目');
+  return item; // {video,cues,quiz,...}
 }
 
-/* ========= 字幕渲染 & 自動跟隨 ========= */
-let cues=[];            // [{t,text,el}]
-let lastActive=-1;
-const AUTO_MARGIN=120;  // 自動捲動緩衝
+function setupVideo(src){ v.src = src; }
 
+/* ============ 字幕 ============ */
 async function loadCues(path){
-  const res=await fetch(path);
+  const res = await fetch(path);
   if(!res.ok) throw new Error('字幕 JSON 載入失敗');
-  const raw=await res.json();
-  const list=Array.isArray(raw)?raw:(raw.items||raw.lines||[]);
-  return list.map(r=>({ t:toSec(r.time||r.start||r.t), text:r.text||r.en||r.caption||'' }))
-             .sort((a,b)=>a.t-b.t);
+  const raw = await res.json();
+  const arr = Array.isArray(raw)? raw : (raw.items||[]);
+  // 支援 time:"MM:SS" / tSec / start
+  return arr.map(row=>{
+    const t = row.tSec ?? row.sec ?? (()=>{ const [m=0,s=0]=(row.time||row.start||'0:0').split(':').map(n=>parseInt(n,10)||0);return m*60+s;})();
+    const show = row.time || row.start || new Date(t*1000).toISOString().substr(14,5);
+    const text = row.text || row.en || row.caption || '';
+    return { tSec:t, time:show, text };
+  }).sort((a,b)=> a.tSec-b.tSec);
 }
-function renderTranscript(arr){
-  const box=$('#panelTrans'); box.innerHTML='';
-  cues = arr.map((row,i)=>{
-    const div=document.createElement('div');
-    div.className='line';
-    div.dataset.idx=i;
-    div.innerHTML=`<span class="time">[${fmt(row.t)}]</span>${row.text}`;
-    div.onclick=()=>{ player.currentTime=row.t+0.01; player.play(); };
+
+function renderTranscript(list){
+  cues = list;
+  const box = $('#panelTranscript');
+  box.innerHTML = '';
+  list.forEach((r,i)=>{
+    const div = document.createElement('div');
+    div.className = 'line';
+    div.dataset.idx = i;
+    div.innerHTML = `<span class="time">[${r.time}]</span>${r.text}`;
+    div.onclick = ()=>{
+      v.currentTime = r.tSec + 0.01;
+      v.play();
+    };
     box.appendChild(div);
-    return {...row, el:div};
   });
+  currentIdx = -1; // reset
 }
-function fmt(sec){ const m=Math.floor(sec/60), s=Math.floor(sec%60); return `${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`; }
 
-function syncHighlight(time){
+/* 依播放時間同步高亮與自動置中 */
+function syncTranscript(){
+  if(!cues.length || v.readyState<1) return;
+  const t = v.currentTime;
+
+  // 找到 <= t 的最後一行
+  let idx = currentIdx;
+  if(idx<0 || t < cues[idx].tSec || (idx+1<cues.length && t >= cues[idx+1].tSec)){
+    // 二分搜尋
+    let lo=0, hi=cues.length-1, mid=0;
+    while(lo<=hi){
+      mid = (lo+hi)>>1;
+      if(cues[mid].tSec<=t) lo = mid+1; else hi = mid-1;
+    }
+    idx = Math.max(0, Math.min(cues.length-1, hi));
+  }
+  if(idx===currentIdx) return; // 不變就不刷
+
+  // 更新高亮
+  const box = $('#panelTranscript');
+  if(currentIdx>=0){ const prev = box.querySelector(`.line[data-idx="${currentIdx}"]`); prev && prev.classList.remove('active'); }
+  currentIdx = idx;
+  const cur = box.querySelector(`.line[data-idx="${currentIdx}"]`);
+  if(cur){
+    cur.classList.add('active');
+    // 自動置中（永遠跟隨）
+    cur.scrollIntoView({behavior:'smooth', block:'center'});
+  }
+}
+
+/* ============ 測驗（保留接口；有檔案就顯示） ============ */
+async function loadQuiz(path){
+  const res = await fetch(path);
+  if(!res.ok) return null;
+  const raw = await res.json();
+  const arr = Array.isArray(raw)? raw : (raw.items||raw.questions||[]);
+  if(!arr.length) return null;
+  $('#tabQuiz').style.display='';
+  $('#panelQuiz').style.display='block'; // 仍保留；實作可之後再補
+  return arr;
+}
+
+/* ============ 左側工具列控制（不動你的習慣） ============ */
+let abStart=null, abEnd=null;
+function secondsOfLine(i){ return cues[i]?.tSec ?? null; }
+
+function jumpToLine(delta){
   if(!cues.length) return;
-  let i = cues.findIndex(c=>c.t>time) - 1;
-  if(i<0) i= cues.length-1;
-  if(i===lastActive) return;
-
-  if(lastActive>=0) cues[lastActive].el.classList.remove('active');
-  cues[i].el.classList.add('active');
-  lastActive=i;
-
-  // 永遠自動捲動：把當前句移到面板中央
-  const el=cues[i].el, box=$('#panelTrans');
-  const top = el.offsetTop - box.scrollTop;
-  if(top < AUTO_MARGIN || top > box.clientHeight - AUTO_MARGIN){
-    el.scrollIntoView({block:'center',behavior:'smooth'});
-  }
+  if(currentIdx<0) currentIdx = 0;
+  const next = Math.min(Math.max(currentIdx + delta, 0), cues.length-1);
+  v.currentTime = cues[next].tSec + 0.01;
+  v.play();
 }
 
-/* ========= 左側工具列（延用你現在的互動） ========= */
-const player = $('#player');
-let A=null,B=null;
-
-$('#playPause').onclick = ()=> player.paused ? player.play() : player.pause();
-$('#rate').oninput = e=>{ player.playbackRate=parseFloat(e.target.value); $('#rateVal').textContent=player.playbackRate.toFixed(2)+'×'; };
-$('#zoom').oninput = e=>{ const z=parseFloat(e.target.value); player.style.transform=`scale(${z})`; player.style.transformOrigin='center center'; };
-
-$('#abToggle').onclick=()=>{
-  const ct=player.currentTime;
-  if(A===null){A=ct;B=null;$('#abToggle').textContent='A-B 循環：已設 A';}
-  else if(B===null && ct>A){B=ct;$('#abToggle').textContent='A-B 循環：啟用';}
-  else {A=ct;B=null;$('#abToggle').textContent='A-B 循環：已更新 A';}
+$('#btnPrev').onclick   = ()=> jumpToLine(-1);
+$('#btnNext').onclick   = ()=> jumpToLine(+1);
+$('#btnPlay').onclick   = ()=> v.paused ? v.play() : v.pause();
+$('#btnRepeat').onclick = ()=>{
+  if(currentIdx>=0){ REPEAT_ONCE = true; v.currentTime = cues[currentIdx].tSec + 0.01; v.play(); }
 };
-$('#abClear').onclick=()=>{A=null;B=null;$('#abToggle').textContent='A-B 循環';};
-$('#repeatLine').onclick=()=>{
-  if(lastActive>=0){
-    const t0=cues[lastActive].t, t1=(cues[lastActive+1]?.t ?? (t0+3));
-    player.currentTime=t0+0.01; player.play(); A=t0; B=t1;
-  }
+$('#btnAB').onclick = ()=>{
+  if(abStart==null){ abStart = v.currentTime; $('#btnAB').textContent='A-B 循環 (已設 A)'; }
+  else if(abEnd==null){ abEnd = Math.max(v.currentTime, abStart+0.1); $('#btnAB').textContent='A-B 循環 (生效中)'; }
+  else { abStart = v.currentTime; abEnd=null; $('#btnAB').textContent='A-B 循環 (已重設 A)'; }
 };
-$('#prevLine').onclick=()=>{
-  const t=player.currentTime-0.1;
-  let i=cues.findIndex(c=>c.t>t)-1; if(i<0) i=0;
-  player.currentTime=cues[i].t+0.01;
-};
-$('#nextLine').onclick=()=>{
-  const t=player.currentTime+0.05;
-  let i=cues.findIndex(c=>c.t>t); if(i<0) i=cues.length-1;
-  player.currentTime=cues[i].t+0.01;
-};
+$('#btnABClear').onclick = ()=>{ abStart=abEnd=null; $('#btnAB').textContent='A-B 循環'; };
 
-player.addEventListener('timeupdate', ()=>{
-  const t=player.currentTime;
-  if(A!==null && B!==null && B>A && t>=B) player.currentTime=A+0.01;
-  syncHighlight(t);
-});
+$('#speed').oninput = (e)=>{ v.playbackRate = +e.target.value; $('#speedVal').textContent = v.playbackRate.toFixed(2)+'×'; };
+$('#zoom').oninput  = (e)=>{ const z=+e.target.value; $('.videoStage').style.transform=`scale(${z})`; $('.videoStage').style.transformOrigin='center bottom'; };
 
-/* ========= 右側按鈕 ========= */
-$('#fS').onclick=()=>setFont('S');
-$('#fM').onclick=()=>setFont('M');
-$('#fL').onclick=()=>setFont('L');
-$('#btnTheme').onclick=()=>document.body.classList.toggle('light');
+/* ============ 分頁（保留） ============ */
+function setupTabs(){
+  const t1=$('#tabTranscript'), p1=$('#panelTranscript');
+  const t2=$('#tabQuiz'),       p2=$('#panelQuiz');
+  t1.onclick=()=>{ t1.classList.add('active'); t2.classList.remove('active'); p1.style.display='block'; p2.style.display='none'; };
+  t2.onclick=()=>{ t2.classList.add('active'); t1.classList.remove('active'); p2.style.display='block'; p1.style.display='none'; };
+}
 
-/* 分頁切換（測驗先保留） */
-(function tabs(){
-  const t1=$('#tabTrans'), p1=$('#panelTrans');
-  const t2=$('#tabQuiz'),  p2=$('#panelQuiz');
-  t1.onclick=()=>{t1.classList.add('active');t2.classList.remove('active');p1.style.display='block';p2.style.display='none';};
-  t2.onclick=()=>{t2.classList.add('active');t1.classList.remove('active');p2.style.display='block';p1.style.display='none';};
-})();
-
-/* ========= 啟動 ========= */
+/* ============ 啟動 ============ */
 (async ()=>{
   try{
+    setupTabs();
     setFont('M');
-    const meta=await loadMeta();
-    player.src = meta.video;
-    const arr=await loadCues(meta.cues);
-    renderTranscript(arr);
-    if(!meta.quiz){ $('#tabQuiz').style.display='none'; }
+    $('#fS').onclick = ()=> setFont('S');
+    $('#fM').onclick = ()=> setFont('M');
+    $('#fL').onclick = ()=> setFont('L');
+
+    const meta = await loadMeta();
+    setupVideo(meta.video);
+
+    const list = await loadCues(meta.cues);
+    renderTranscript(list);
+
+    // 可選：有 quiz 檔就載入（版位保留，不影響）
+    if(meta.quiz){ await loadQuiz(meta.quiz); } else { $('#tabQuiz').style.display='none'; }
+
+    // 影片事件
+    v.addEventListener('timeupdate', ()=>{
+      // A-B 循環
+      if(abStart!=null && abEnd!=null){
+        if(v.currentTime > abEnd) v.currentTime = abStart + 0.01;
+      }
+      // 重複本句一次
+      if(REPEAT_ONCE && currentIdx>=0){
+        const end = cues[currentIdx+1]?.tSec ?? (v.duration||1e9);
+        if(v.currentTime >= end - 0.02){
+          REPEAT_ONCE = false;
+          v.currentTime = cues[currentIdx].tSec + 0.01;
+          v.play();
+        }
+      }
+      // 同步字幕（固定跟隨＋高亮）
+      syncTranscript();
+    });
+
   }catch(err){
     console.error(err);
-    $('#panelTrans').innerHTML = `<div class="line" style="opacity:.7">載入失敗：${err.message}</div>`;
+    $('#panelTranscript').innerHTML = `<div class="muted">載入失敗：${err.message}</div>`;
   }
 })();
 </script>
