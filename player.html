@@ -7,52 +7,53 @@
 <style>
   :root{
     --bg:#0b1324; --panel:#0f1a33; --border:#203057;
-    --text:#e7eaf3; --muted:#a9b3cf; --brand:#3c7cff;
+    --text:#e7eaf3; --muted:#a9b3cf; --brand:#3c7cff; --ok:#14b86e; --warn:#f5a524;
     --gap:12px;
   }
   html,body{height:100%;margin:0;background:var(--bg);color:var(--text);
-    font-family:system-ui,-apple-system,Segoe UI,Roboto,Noto Sans,sans-serif}
+    font-family:system-ui,-apple-system,Segoe UI,Roboto,Noto Sans,sans-serif;}
+
+  /* 兩欄佈局 */
+  .layout{display:grid; grid-template-columns: 1fr 1fr; gap:var(--gap); height:100vh;}
+  @media(max-width:1024px){ .layout{grid-template-columns:1fr; height:auto;} }
+
+  /* 左欄：影片舞台 + 工具列（固定在左欄底部） */
+  .videoColumn{display:grid; grid-template-rows: 1fr auto; min-height:0; border-right:1px solid var(--border);}
+  .videoStage{min-height:0; display:flex; align-items:center; justify-content:center; background:#000; overflow:hidden;}
+  video{max-width:100%; max-height:100%; width:auto; height:auto; object-fit:contain; background:#000}
+  .toolBar{position:relative; z-index:2; padding:10px 12px; background:#101b39;
+    border-top:1px solid var(--border); display:flex; flex-wrap:wrap; gap:8px; align-items:center}
+  .btn,.chip{border:1px solid var(--border); background:#15224a; color:#fff; border-radius:10px; padding:8px 10px; cursor:pointer; user-select:none}
+  .btn:hover,.chip:hover{filter:brightness(1.08)}
+  .chip.active{background:#1a2c66; border-color:#2d4ea7}
+
+  /* 右欄 */
+  .side{display:flex; flex-direction:column; min-height:0; background:var(--panel)}
+  .tabs{display:flex; border-bottom:1px solid var(--border)}
+  .tab{flex:1; padding:10px 12px; text-align:center; cursor:pointer; color:var(--muted); user-select:none}
+  .tab.active{color:var(--text); background:#132046; font-weight:700}
+  .toolbar{display:flex; gap:8px; align-items:center; padding:8px; border-bottom:1px solid var(--border)}
+  .panel{flex:1; overflow:auto; padding:12px}
   .muted{color:var(--muted)}
-  .btn{padding:8px 10px;border:1px solid var(--border);background:#15224a;color:#fff;border-radius:10px;cursor:pointer}
-  .btn:hover{filter:brightness(1.1)}
-  .chip{padding:6px 8px;border:1px solid var(--border);border-radius:8px;background:#121d3d;color:#cdd3ea}
-  .chip.active{background:#1a2c66;color:#fff;border-color:#2d4ea7}
 
-  /* --- 版型：左右兩欄各 50% --- */
-  .layout{display:grid;grid-template-columns:1fr 1fr;gap:var(--gap);height:100vh}
-  @media(max-width:1024px){ .layout{grid-template-columns:1fr;grid-template-rows:auto auto;height:auto} }
+  /* 字幕三欄表格 */
+  .tbar{display:flex; gap:8px; align-items:center; padding:8px 12px; border-bottom:1px solid var(--border)}
+  .tbar input{flex:1; background:#0e1a34; border:1px solid var(--border); color:var(--text); padding:8px 10px; border-radius:10px}
+  table.cues{width:100%; border-collapse:collapse; table-layout:fixed}
+  .cues th,.cues td{border-bottom:1px solid #12214a; padding:10px; vertical-align:top}
+  .cues th{color:#8ea4d6; text-align:left; font-weight:600; background:#0f1e3e; position:sticky; top:0}
+  .cues tr.active{background:#15224a}
+  .time{font-variant-numeric:tabular-nums; color:#a9b3cf; white-space:nowrap; width:92px}
 
-  /* 左欄：影片舞台 + 底部工具列 */
-  .videoColumn{display:grid;grid-template-rows:1fr auto;min-height:0;border-right:1px solid var(--border)}
-  .videoStage{min-height:0;display:flex;align-items:center;justify-content:center;background:#000;overflow:hidden}
-  video{max-width:100%;max-height:100%;object-fit:contain;background:#000}
-  .toolBar{position:relative;z-index:2;padding:10px 12px;background:#101b39;border-top:1px solid var(--border);
-    display:flex;flex-wrap:wrap;gap:8px;align-items:center}
-  .toolBar label{display:flex;align-items:center;gap:8px}
-  .toolBar input[type="range"]{width:160px}
-
-  /* 右欄：字幕 */
-  .side{display:flex;flex-direction:column;min-height:0;background:var(--panel)}
-  .tabs{display:flex;border-bottom:1px solid var(--border)}
-  .tab{flex:1;padding:10px 12px;text-align:center;cursor:pointer;color:var(--muted);user-select:none}
-  .tab.active{color:var(--text);background:#132046;font-weight:700}
-  .toolbar{display:flex;gap:8px;align-items:center;padding:8px;border-bottom:1px solid var(--border)}
-  .panel{flex:1;min-height:0;overflow:auto;padding:0}
-  /* 字幕表格 */
-  .tbar{display:flex;gap:8px;align-items:center;padding:10px;border-bottom:1px solid var(--border)}
-  .tbar input{flex:1;min-width:160px;border-radius:8px;border:1px solid var(--border);background:#0f1a33;color:#e7eaf3;padding:8px}
-  .table{width:100%;border-collapse:collapse}
-  .thead{position:sticky;top:0;background:#0e1a32;border-bottom:1px solid var(--border)}
-  .thead th{padding:10px;text-align:left;font-weight:700;color:#cfd6ef}
-  .tbody td{padding:10px;border-bottom:1px dashed #1a2a4d;vertical-align:top}
-  .col-time{width:90px;font-variant-numeric:tabular-nums;color:#a9b3cf}
-  .row.active{background:#132046}
-  .row:hover{background:#162651;cursor:pointer}
-
-  /* 亮/暗主題(保留鈕，暫未切換全站) */
-  .light{--bg:#f7f8fb;--panel:#ffffff;--border:#e4e7f0;--text:#222;--muted:#667;background:#fff;color:#222}
-  .light .table .thead{background:#f4f6fb}
-  .light .btn,.light .chip{background:#f4f6fb;border-color:#e4e7f0;color:#333}
+  /* 測驗 */
+  .q{padding:12px; border:1px solid var(--border); border-radius:12px; background:#0f1a33; margin:12px 0}
+  .q h4{margin:0 0 8px 0; font-weight:700}
+  .opt{display:flex; gap:8px; align-items:flex-start; margin:6px 0; cursor:pointer}
+  .result{margin-top:12px; padding:10px; border-radius:10px; display:none}
+  .pass{background:rgba(20,184,110,.12); border:1px solid var(--ok)}
+  .fail{background:rgba(245,165,36,.12); border:1px solid var(--warn)}
+  .foot{position:sticky; bottom:0; background:linear-gradient(180deg,rgba(11,19,36,0),rgba(11,19,36,1) 30%); padding-top:12px}
+  .footBar{display:flex; gap:8px; justify-content:space-between; align-items:center; background:#101b39; border:1px solid var(--border); border-radius:12px; padding:10px}
 </style>
 </head>
 <body>
@@ -64,319 +65,303 @@
       <video id="player" controls preload="metadata"></video>
     </div>
 
-    <!-- 固定在左欄底部的工具列 -->
+    <!-- 工具列（上一句／播放／下一句／重複本句／AB 循環／取消循環／變焦／速度） -->
     <div class="toolBar">
       <button class="btn" id="btnPrev">上一句</button>
       <button class="btn" id="btnPlay">播放/暫停</button>
       <button class="btn" id="btnNext">下一句</button>
+
       <button class="btn" id="btnRepeatOne">重複本句</button>
       <button class="btn" id="btnAB">A-B 循環</button>
       <button class="btn" id="btnABClear">取消循環</button>
 
-      <label class="chip">速度
-        <input id="rate" type="range" min="0.5" max="2" step="0.05" value="1">
-        <span id="rateLabel">1.00×</span>
-      </label>
       <label class="chip">變焦
-        <input id="zoom" type="range" min="1" max="2" step="0.05" value="1">
+        <input id="zoom" type="range" min="1" max="2" step="0.05" value="1" style="vertical-align:middle;width:140px;margin-left:8px">
+      </label>
+      <label class="chip">速度
+        <input id="rate" type="range" min="0.5" max="2" step="0.05" value="1" style="vertical-align:middle;width:160px;margin-left:8px">
+        <span id="rateLabel" style="margin-left:6px">1.00×</span>
       </label>
     </div>
   </section>
 
-  <!-- 右：字幕 -->
+  <!-- 右：字幕 / 測驗 -->
   <aside class="side">
     <div class="tabs">
       <div id="tabTranscript" class="tab active">字幕</div>
       <div id="tabQuiz" class="tab">測驗</div>
     </div>
 
-    <!-- 工具列：字級 / 跟隨 / 校準 -->
-    <div class="toolbar">
+    <!-- 字幕工具列 -->
+    <div class="tbar" id="tbTranscript">
+      <input id="searchBox" placeholder="搜尋字幕…（支援英文或中文）" />
+      <button id="btnFollow" class="btn">跟隨</button>
       <span class="muted">字級</span>
       <button id="fS" class="chip">S</button>
       <button id="fM" class="chip active">M</button>
       <button id="fL" class="chip">L</button>
-
-      <div style="flex:1"></div>
-
-      <button id="btnFollow" class="btn">跟隨</button>
-
-      <div class="chip" style="display:flex;gap:6px;align-items:center">
-        <span>校準</span>
-        <button id="offMinus" class="btn">-0.25s</button>
-        <span id="offValue" class="muted">0.00s</span>
-        <button id="offPlus" class="btn">+0.25s</button>
-        <button id="offReset" class="btn">重設</button>
-      </div>
     </div>
 
-    <!-- 字幕面板 -->
+    <!-- 字幕面板（三欄表格） -->
     <div id="panelTranscript" class="panel">
-      <!-- 搜尋列 -->
-      <div class="tbar">
-        <input id="searchBox" placeholder="搜尋字幕（支援中英文字）…">
-      </div>
-
-      <!-- 三欄表格 -->
-      <table class="table" style="font-size:15px" id="table">
-        <thead class="thead">
+      <table class="cues" id="cueTable">
+        <thead>
           <tr>
-            <th class="col-time">時間</th>
+            <th style="width:92px">時間</th>
             <th>英文</th>
             <th>中文</th>
           </tr>
         </thead>
-        <tbody class="tbody" id="tableBody"></tbody>
+        <tbody id="cueTbody"></tbody>
       </table>
     </div>
 
-    <!-- 測驗面板（先留白，之後補） -->
-    <div id="panelQuiz" class="panel" style="display:none"></div>
+    <!-- 測驗面板 -->
+    <div id="panelQuiz" class="panel" style="display:none">
+      <div id="quizBox"></div>
+      <div class="foot">
+        <div class="footBar">
+          <div class="muted" id="quizProgress">0 / 0</div>
+          <div>
+            <button id="btnCheck" class="btn">交卷</button>
+            <button id="btnRetry" class="btn" style="display:none">再試一次</button>
+          </div>
+        </div>
+        <div id="quizResult" class="result"></div>
+      </div>
+    </div>
   </aside>
 </div>
 
 <script>
-/* ===== 工具 ===== */
-const $  = (s, r=document)=>r.querySelector(s);
-const $$ = (s, r=document)=>[...r.querySelectorAll(s)];
+/* ========== 工具 ========== */
+const $ = (s, r=document)=> r.querySelector(s);
+const $$ = (s, r=document)=> [...r.querySelectorAll(s)];
 const qs = new URLSearchParams(location.search);
 const slug = qs.get('slug') || '';
+const toSec = (t)=>{ const [m,s]=String(t||'0:0').split(':').map(n=>parseInt(n,10)||0); return m*60+s; };
+let FOLLOW = true;                 // 跟隨模式 ON
+let FONT = 'M';                    // 字級
+let cueList = [];                  // {tSec,en,zh,tr}
+let A=null,B=null,abTimer=null,repeatOne=false;
 
-function toSec(t){
-  // 支援 "mm:ss" 或 "m:s"
-  const [m,s] = String(t||'0:0').split(':').map(n=>parseInt(n,10)||0);
-  return m*60 + s;
-}
-function fmtTime(sec){
-  const m = Math.floor(sec/60), s = Math.floor(sec%60);
-  return `[${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}]`;
-}
-
-/* ====== 全域字幕資料 ====== */
-const OFFSET_KEY = s => `offset:${s}`;
-let OFFSET = 0;         // 字幕整體偏移秒數（可正可負）
-let RAW_CUES = [];      // [{sec,en,zh}]
-let CUES = [];          // 已套用 OFFSET 的字幕（排序後）
-let follow = false;     // 是否跟隨
-
-function loadOffset(){
-  OFFSET = parseFloat(localStorage.getItem(OFFSET_KEY(slug)) || '0');
-  if(isNaN(OFFSET)) OFFSET = 0;
-  $('#offValue').textContent = (OFFSET>=0?'+':'') + OFFSET.toFixed(2) + 's';
-}
-function saveOffset(){
-  localStorage.setItem(OFFSET_KEY(slug), String(OFFSET));
-  $('#offValue').textContent = (OFFSET>=0?'+':'') + OFFSET.toFixed(2) + 's';
-}
-function rebuildCues(){
-  CUES = RAW_CUES.map(r=>({
-    sec: Math.max(0, r.sec + OFFSET),
-    en: r.en, zh: r.zh
-  })).sort((a,b)=>a.sec-b.sec);
-  renderTranscriptTable(CUES);
+/* ========== 載入 index.json 取得影片/字幕/測驗路徑 ========== */
+async function loadMeta(){
+  const res = await fetch('data/index.json');
+  if(!res.ok) throw new Error('index.json 載入失敗');
+  const meta = await res.json();
+  return (meta.items||[]).find(x=>x.slug===slug) || meta.items?.[0];
 }
 
-function nudge(delta){
-  const v = $('#player');
-  const now = v.currentTime;
-  OFFSET = +(OFFSET + delta).toFixed(2);
-  saveOffset();
-  rebuildCues();
-  highlightByTime(now);
-}
-function resetOffset(){
-  OFFSET = 0; saveOffset(); rebuildCues();
+/* ========== 設定影片 ========== */
+function setupVideo(src){
+  const v = $('#player'); v.src = src;
 }
 
-/* ====== 右側：渲染三欄字幕表格 ====== */
-function renderTranscriptTable(list){
-  const body = $('#tableBody'); body.innerHTML = '';
-  list.forEach((c,i)=>{
-    const tr = document.createElement('tr');
-    tr.className = 'row';
-    tr.dataset.index = i;
-    tr.innerHTML = `
-      <td class="col-time">${fmtTime(c.sec)}</td>
-      <td>${c.en || ''}</td>
-      <td>${c.zh || ''}</td>
-    `;
-    tr.onclick = ()=>{
-      const v = $('#player');
-      v.currentTime = c.sec; v.play();
-      highlightByTime(v.currentTime);
-    };
-    body.appendChild(tr);
-  });
+/* ========== 字幕載入與渲染（支援 en/zh 雙語） ========== */
+async function loadCues(path){
+  const res = await fetch(path);
+  if(!res.ok) throw new Error('字幕 JSON 載入失敗');
+  return await res.json();
+}
+function buildCueRow(row){
+  const tr=document.createElement('tr');
+  tr.dataset.sec = row.tSec;
+  const tdT=document.createElement('td'); tdT.className='time'; tdT.textContent = '[' + (row.time||secToStr(row.tSec)) + ']';
+  const tdE=document.createElement('td'); tdE.textContent=row.en||row.text||'';
+  const tdZ=document.createElement('td'); tdZ.textContent=row.zh||'';
+  tr.append(tdT,tdE,tdZ);
+  tr.onclick=()=>{ $('#player').currentTime=row.tSec; $('#player').play(); };
+  return tr;
+}
+function secToStr(sec){ const m=Math.floor(sec/60), s=Math.floor(sec%60); return (m+'').padStart(2,'0')+':'+(s+'').padStart(2,'0'); }
+
+function renderTranscript(raw){
+  // 允許格式：[{time,en,zh}] 或 [{time,text}]；內部標準化為 {tSec,en,zh,time}
+  const arr = Array.isArray(raw)? raw : (raw.items||[]);
+  cueList = arr.map(x=>{
+    const t = x.time || x.t || x.start || '';
+    return { tSec: toSec(t), en: x.en || x.text || '', zh: x.zh || x.cn || '', time: t };
+  }).sort((a,b)=> a.tSec-b.tSec);
+
+  const tbody = $('#cueTbody'); tbody.innerHTML='';
+  cueList.forEach(r=> tbody.appendChild(buildCueRow(r)));
+  applyFont(FONT);
 }
 
-/* 搜尋過濾 */
+function highlightByTime(sec){
+  let idx = -1;
+  for(let i=0;i<cueList.length;i++){ if(cueList[i].tSec<=sec) idx=i; else break; }
+  $$('#cueTbody tr').forEach(tr=> tr.classList.remove('active'));
+  if(idx>=0){
+    const tr = $$('#cueTbody tr')[idx];
+    tr.classList.add('active');
+    if(FOLLOW) tr.scrollIntoView({block:'center', behavior:'smooth'});
+  }
+}
+
+/* 搜尋（英文或中文） */
 function bindSearch(){
   $('#searchBox').addEventListener('input', e=>{
     const q = e.target.value.trim().toLowerCase();
-    $$('#tableBody .row').forEach((tr,i)=>{
-      if(!q){ tr.style.display=''; return; }
-      const {en, zh} = CUES[i];
-      const hit = (en||'').toLowerCase().includes(q) || (zh||'').toLowerCase().includes(q);
-      tr.style.display = hit ? '' : 'none';
+    $$('#cueTbody tr').forEach(tr=>{
+      const text = tr.children[1].textContent.toLowerCase() + ' ' + tr.children[2].textContent.toLowerCase();
+      tr.style.display = q? (text.includes(q)? '' : 'none') : '';
     });
   });
 }
 
-/* 高亮 & 跟隨 */
-function activeIndexByTime(t){
-  let idx = -1;
-  for(let i=0;i<CUES.length;i++){
-    if(CUES[i].sec <= t) idx = i; else break;
-  }
-  return idx;
+/* 字級 & 跟隨 */
+function applyFont(size){
+  const map={S:'13px',M:'15px',L:'17px'};
+  $('#panelTranscript').style.fontSize = map[size]||'15px';
+  $$('.chip').forEach(b=>b.classList.remove('active'));
+  ({S:'#fS',M:'#fM',L:'#fL'}[size] && $(({S:'#fS',M:'#fM',L:'#fL'}[size])).classList.add('active'));
 }
-function highlightByTime(t){
-  const idx = activeIndexByTime(t);
-  $$('#tableBody .row').forEach(tr=>tr.classList.remove('active'));
-  if(idx>=0){
-    const row = $$('#tableBody .row')[idx];
-    if(row){
-      row.classList.add('active');
-      if(follow) row.scrollIntoView({behavior:'smooth', block:'center'});
-    }
-  }
+function bindTranscriptToolbar(){
+  $('#btnFollow').onclick = ()=>{ FOLLOW=!FOLLOW; $('#btnFollow').textContent = FOLLOW? '跟隨' : '取消跟隨'; };
+  $('#fS').onclick = ()=> applyFont('S');
+  $('#fM').onclick = ()=> applyFont('M');
+  $('#fL').onclick = ()=> applyFont('L');
 }
 
-/* 把 JSON 轉為 RAW_CUES（相容多格式） */
-function setRawCuesFromJson(json){
-  const arr = Array.isArray(json) ? json : (json.items || []);
-  RAW_CUES = arr.map(x=>{
-    const t  = x.time || x.t || x.start || '0:0';
-    const en = x.en || x.text || x.caption || '';
-    const zh = x.zh || x.cn || x.tw || '';
-    return {sec:toSec(t), en, zh};
-  }).sort((a,b)=>a.sec-b.sec);
-  rebuildCues();
-}
-
-/* ====== 左邊：播放器工具列 ====== */
-let A=null, B=null, abTimer=null;
-
+/* ========== 左邊工具列 ========== */
 function jumpPrev(){
-  const v = $('#player'), t = v.currentTime;
-  const prev = [...CUES].reverse().find(c=>c.sec < t - 0.05);
-  if(prev){ v.currentTime = prev.sec; v.play(); }
+  const t=$('#player').currentTime;
+  const prev=[...cueList].reverse().find(c=>c.tSec < t-0.05);
+  if(prev){ $('#player').currentTime=prev.tSec; $('#player').play(); }
 }
 function jumpNext(){
-  const v = $('#player'), t = v.currentTime;
-  const next = CUES.find(c=>c.sec > t + 0.05);
-  if(next){ v.currentTime = next.sec; v.play(); }
+  const t=$('#player').currentTime;
+  const next=cueList.find(c=>c.tSec > t+0.05);
+  if(next){ $('#player').currentTime=next.tSec; $('#player').play(); }
 }
 function setRepeatOne(){
-  const v = $('#player');
-  const t = v.currentTime;
-  let i = activeIndexByTime(t);
-  if(i<0) i = 0;
-  A = CUES[i].sec;
-  B = (i+1<CUES.length ? CUES[i+1].sec : null);
+  repeatOne=true;
+  const t=$('#player').currentTime;
+  let i=cueList.findIndex(c=>c.tSec<=t);
+  if(i<0) i=0;
+  A=cueList[i].tSec;
+  B=(i+1<cueList.length)? cueList[i+1].tSec : null;
   clearInterval(abTimer);
-  abTimer = setInterval(()=>{ if(B!=null && v.currentTime>=B) v.currentTime = A; }, 120);
+  abTimer=setInterval(()=>{ const v=$('#player'); if(B!=null && v.currentTime>=B) v.currentTime=A; },120);
 }
 function setAB(){
-  const v = $('#player');
+  const v=$('#player');
   if(A==null){ A=v.currentTime; alert('已設定 A 點'); }
   else if(B==null){ B=v.currentTime; alert('已設定 B 點；開始循環'); startAB(); }
   else { A=v.currentTime; B=null; alert('已重設 A 點，請再按一次設定 B 點'); }
 }
-function startAB(){
-  const v = $('#player');
-  clearInterval(abTimer);
-  abTimer = setInterval(()=>{ if(B!=null && v.currentTime>=B) v.currentTime = A; }, 120);
+function startAB(){ repeatOne=false; clearInterval(abTimer);
+  abTimer=setInterval(()=>{ const v=$('#player'); if(B!=null && v.currentTime>=B) v.currentTime=A; },120);
 }
-function clearLoop(){ A=null; B=null; clearInterval(abTimer); }
+function clearLoop(){ repeatOne=false; A=null; B=null; clearInterval(abTimer); }
 
 function bindLeftToolbar(){
-  $('#btnPrev').onclick = jumpPrev;
-  $('#btnNext').onclick = jumpNext;
-  $('#btnPlay').onclick = ()=>{ const v=$('#player'); v.paused?v.play():v.pause(); };
-  $('#btnRepeatOne').onclick = setRepeatOne;
-  $('#btnAB').onclick = setAB;
-  $('#btnABClear').onclick = clearLoop;
+  $('#btnPrev').onclick=jumpPrev;
+  $('#btnNext').onclick=jumpNext;
+  $('#btnPlay').onclick=()=>{ const v=$('#player'); v.paused? v.play(): v.pause(); };
+  $('#btnRepeatOne').onclick=setRepeatOne;
+  $('#btnAB').onclick=setAB;
+  $('#btnABClear').onclick=clearLoop;
+  $('#rate').oninput=e=>{ const v=$('#player'); v.playbackRate=+e.target.value; $('#rateLabel').textContent=v.playbackRate.toFixed(2)+'×'; };
+  $('#zoom').oninput=e=>{ const z=+e.target.value; const v=$('#player'); v.style.transform=`scale(${z})`; v.style.transformOrigin='center center'; };
+}
 
-  $('#rate').oninput = e=>{
-    const v = $('#player'); v.playbackRate = +e.target.value;
-    $('#rateLabel').textContent = v.playbackRate.toFixed(2)+'×';
+/* ========== 測驗：載入、渲染、計分 ========== */
+async function loadQuiz(path){
+  const res = await fetch(path);
+  if(!res.ok) throw new Error('測驗 JSON 載入失敗');
+  const raw = await res.json();
+  const arr = Array.isArray(raw)? raw : (raw.items||raw.questions||[]);
+  // 標準化
+  return arr.slice(0,20).map((x,i)=>{
+    const q = x.q || x.question || x.title || `Q${i+1}`;
+    const opts = x.options || x.choices || x.a || [];
+    let ans = x.answerIndex ?? x.correct ?? x.ans ?? 0;
+    if(typeof ans!=='number'){ // 若是文字，轉成索引
+      const idx = opts.findIndex(o=> (o.text||o)===ans);
+      ans = idx>=0 ? idx : 0;
+    }
+    return { q, opts: opts.map(o=> (o.text||o)), ans, explain: x.explain || x.note || '' };
+  });
+}
+function renderQuiz(questions){
+  const box = $('#quizBox'); box.innerHTML='';
+  questions.forEach((q,i)=>{
+    const wrap=document.createElement('div'); wrap.className='q';
+    wrap.innerHTML=`<h4>${i+1}. ${q.q}</h4>`;
+    q.opts.forEach((opt,j)=>{
+      const id=`q${i}_o${j}`;
+      const line=document.createElement('label'); line.className='opt';
+      line.innerHTML=`<input type="radio" name="q${i}" value="${j}" id="${id}"><span>${opt}</span>`;
+      wrap.appendChild(line);
+    });
+    box.appendChild(wrap);
+  });
+  $('#quizProgress').textContent=`0 / ${questions.length}`;
+  box.addEventListener('change', ()=>{
+    const done = questions.filter((_,i)=> $('input[name="q'+i+'"]:checked', box)).length;
+    $('#quizProgress').textContent=`${done} / ${questions.length}`;
+  });
+
+  $('#btnCheck').onclick=()=>{
+    let correct=0;
+    questions.forEach((q,i)=>{
+      const picked=$('input[name="q'+i+'"]:checked', box);
+      const val=picked? parseInt(picked.value,10) : -1;
+      if(val===q.ans) correct++;
+    });
+    const ratio=Math.round(correct/questions.length*100);
+    const res=$('#quizResult'); res.style.display='block';
+    res.className='result ' + (ratio>=80 ? 'pass':'fail');
+    res.textContent=`分數：${correct} / ${questions.length}（${ratio}%）` + (ratio>=80?'  👍 太棒了！':'  再接再厲！');
+    $('#btnRetry').style.display='inline-block';
   };
-  $('#zoom').oninput = e=>{
-    const z = +e.target.value;
-    const v = $('#player');
-    v.style.transform = `scale(${z})`;
-    v.style.transformOrigin = 'center center';
+  $('#btnRetry').onclick=()=>{
+    $$('input[type="radio"]', box).forEach(r=> r.checked=false);
+    $('#quizProgress').textContent=`0 / ${questions.length}`;
+    const res=$('#quizResult'); res.style.display='none';
+    $('#btnRetry').style.display='none';
   };
 }
 
-/* ====== 右側工具列 ====== */
-function bindRightToolbar(){
-  // 字級
-  const setFont = s=>{
-    const px = {S:13, M:15, L:17}[s] || 15;
-    $('#table').style.fontSize = px+'px';
-    $$('.toolbar .chip').forEach(b=>b.classList.remove('active'));
-    ({S:'#fS',M:'#fM',L:'#fL'}[s] && $(({S:'#fS',M:'#fM',L:'#fL'}[s])).classList.add('active'));
-  };
-  $('#fS').onclick = ()=>setFont('S');
-  $('#fM').onclick = ()=>setFont('M');
-  $('#fL').onclick = ()=>setFont('L');
-  setFont('M');
-
-  // 跟隨
-  $('#btnFollow').onclick = ()=>{
-    follow = !follow;
-    $('#btnFollow').textContent = follow? '跟隨中' : '跟隨';
-  };
-
-  // 校準
-  $('#offMinus').onclick = ()=> nudge(-0.25);
-  $('#offPlus').onclick  = ()=> nudge(+0.25);
-  $('#offReset').onclick = resetOffset;
-
-  bindSearch();
+/* ========== 分頁切換 ========== */
+function setupTabs(){
+  const t1=$('#tabTranscript'), p1=$('#panelTranscript'), tb1=$('#tbTranscript');
+  const t2=$('#tabQuiz'),       p2=$('#panelQuiz');
+  t1.onclick=()=>{ t1.classList.add('active'); t2.classList.remove('active'); p1.style.display='block'; tb1.style.display='flex'; p2.style.display='none'; };
+  t2.onclick=()=>{ t2.classList.add('active'); t1.classList.remove('active'); p2.style.display='block'; p1.style.display='none'; tb1.style.display='none'; };
 }
 
-/* ====== 啟動 ====== */
+/* ========== 啟動 ========== */
 (async ()=>{
   try{
-    // 讀索引，找當前項目
-    const metaRes = await fetch('data/index.json');
-    if(!metaRes.ok) throw new Error('index.json 載入失敗');
-    const metaJson = await metaRes.json();
-    const item = (metaJson.items||[]).find(x=>x.slug===slug) || metaJson.items?.[0];
-    if(!item) throw new Error('index.json 無對應項目');
-
-    // 設定影片
-    $('#player').src = item.video;
-
-    // 載入字幕、建表
-    const cuesRes = await fetch(item.cues);
-    if(!cuesRes.ok) throw new Error('字幕 JSON 載入失敗');
-    const cuesJson = await cuesRes.json();
-
-    loadOffset();
-    setRawCuesFromJson(cuesJson);
-
-    // 綁 UI
+    setupTabs();
     bindLeftToolbar();
-    bindRightToolbar();
+    bindTranscriptToolbar();
+    bindSearch();
+    applyFont('M');
 
-    // 播放時間 → 高亮
-    $('#player').addEventListener('timeupdate', ()=> {
-      highlightByTime($('#player').currentTime);
-    });
+    const meta = await loadMeta();
+    setupVideo(meta.video);
 
-    // 分頁（暫留）
-    const t1 = $('#tabTranscript'), p1 = $('#panelTranscript');
-    const t2 = $('#tabQuiz'),       p2 = $('#panelQuiz');
-    t1.onclick = ()=>{ t1.classList.add('active'); t2.classList.remove('active'); p1.style.display='block'; p2.style.display='none'; };
-    t2.onclick = ()=>{ t2.classList.add('active'); t1.classList.remove('active'); p2.style.display='block'; p1.style.display='none'; };
+    const cuesJson = await loadCues(meta.cues);
+    renderTranscript(cuesJson);
 
+    // 播放時間驅動高亮
+    $('#player').addEventListener('timeupdate', ()=> highlightByTime($('#player').currentTime));
+
+    // 測驗（可選）
+    if(meta.quiz){
+      const qs = await loadQuiz(meta.quiz);
+      renderQuiz(qs);
+    }else{
+      $('#tabQuiz').style.display='none';
+    }
   }catch(err){
     console.error(err);
-    $('#panelTranscript').innerHTML = `<div style="padding:16px" class="muted">載入失敗：${err.message}</div>`;
+    $('#panelTranscript').innerHTML = `<div class="muted">載入失敗：${err.message}</div>`;
   }
 })();
 </script>
