@@ -1,8 +1,98 @@
-{
-  "title": "Hou Yi Vocabulary",
-  "items": [
-    { "time": "00:06", "word": "bow", "pos": "n.", "zh": "弓", "en": "a weapon for shooting arrows", "example": "Hou Yi draws his bow." },
-    { "time": "00:12", "word": "arrow", "pos": "n.", "zh": "箭", "en": "a thin stick shot from a bow", "example": "He shot an arrow at the sun." },
-    { "time": "00:18", "word": "scorch", "pos": "v.", "zh": "灼燒", "en": "to burn the surface of something", "example": "The suns scorched the earth." }
-  ]
-}
+[
+  {
+    "word": "sun",
+    "pos": "n.",
+    "time": "00:01",
+    "zh": "太陽",
+    "en": "the star that gives light and heat to the earth",
+    "ex": "There were ten suns in the sky."
+  },
+  {
+    "word": "scorch",
+    "pos": "v.",
+    "time": "00:06",
+    "zh": "灼燒",
+    "en": "to burn with strong heat",
+    "ex": "The suns scorched the earth."
+  },
+  {
+    "word": "archer",
+    "pos": "n.",
+    "time": "00:10",
+    "zh": "弓箭手",
+    "en": "a person who shoots arrows with a bow",
+    "ex": "Hou Yi was a great archer."
+  },
+  {
+    "word": "bow",
+    "pos": "n.",
+    "time": "00:12",
+    "zh": "弓",
+    "en": "a weapon used for shooting arrows",
+    "ex": "Hou Yi drew his bow."
+  },
+  {
+    "word": "arrow",
+    "pos": "n.",
+    "time": "00:15",
+    "zh": "箭",
+    "en": "a thin pointed stick shot from a bow",
+    "ex": "He shot arrows at the suns."
+  },
+  {
+    "word": "valley",
+    "pos": "n.",
+    "time": "00:20",
+    "zh": "山谷",
+    "en": "a low area between hills or mountains",
+    "ex": "The goddess Xihe lived in the Valley of Light."
+  },
+  {
+    "word": "goddess",
+    "pos": "n.",
+    "time": "00:22",
+    "zh": "女神",
+    "en": "a female god",
+    "ex": "Xihe was the goddess of the suns."
+  },
+  {
+    "word": "lake",
+    "pos": "n.",
+    "time": "00:26",
+    "zh": "湖",
+    "en": "a large body of water surrounded by land",
+    "ex": "She washed the suns in the lake."
+  },
+  {
+    "word": "fusang tree",
+    "pos": "n.",
+    "time": "00:28",
+    "zh": "扶桑樹",
+    "en": "a mythical tree where the suns rested",
+    "ex": "She placed them on the Fusang tree."
+  },
+  {
+    "word": "hero",
+    "pos": "n.",
+    "time": "00:35",
+    "zh": "英雄",
+    "en": "a brave person admired for doing something good",
+    "ex": "Hou Yi became a hero to the people."
+  },
+  {
+    "word": "heat",
+    "pos": "n.",
+    "time": "00:40",
+    "zh": "熱",
+    "en": "the quality of being hot",
+    "ex": "The heat made plants and animals suffer."
+  },
+  {
+    "word": "save",
+    "pos": "v.",
+    "time": "00:50",
+    "zh": "拯救",
+    "en": "to keep someone or something safe",
+    "ex": "Hou Yi saved the world."
+  }
+]
