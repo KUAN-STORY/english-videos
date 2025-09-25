@@ -1,21 +1,21 @@
 {
   "title": "Hou Yi Vocabulary",
   "items": [
-    { "time": "00:02", "word": "sun", "pos": "n.", "zh": "太陽", "en": "the star that gives Earth light", "example": "Many suns scorched the earth." },
-    { "time": "00:06", "word": "scorch", "pos": "v.", "zh": "灼燒；炙熱", "en": "to burn the surface by great heat", "example": "The suns scorched the fields." },
-    { "time": "00:12", "word": "earth", "pos": "n.", "zh": "大地；地球", "en": "the ground; the world we live on", "example": "People on earth suffered." },
-    { "time": "00:18", "word": "archer", "pos": "n.", "zh": "弓箭手", "en": "a person who shoots arrows", "example": "Hou Yi was a skilled archer." },
-    { "time": "00:24", "word": "draw", "pos": "v.", "zh": "拉弓；拔出", "en": "to pull back a bow before shooting", "example": "He drew his bow." },
-    { "time": "00:30", "word": "bow", "pos": "n.", "zh": "弓", "en": "a weapon for shooting arrows", "example": "The bow was strong and heavy." },
-    { "time": "00:36", "word": "shoot down", "pos": "v.", "zh": "射下", "en": "to hit and make fall", "example": "He shot down the suns." },
-    { "time": "00:42", "word": "emperor", "pos": "n.", "zh": "皇帝", "en": "a ruler of an empire", "example": "The emperor praised Hou Yi." },
-    { "time": "00:48", "word": "reward", "pos": "n.", "zh": "獎賞；報酬", "en": "something given for good service", "example": "He received a great reward." },
-    { "time": "00:54", "word": "immortality", "pos": "n.", "zh": "不死；永生", "en": "living forever", "example": "The elixir gave immortality." },
-    { "time": "01:00", "word": "elixir", "pos": "n.", "zh": "仙丹", "en": "a magical drink of life", "example": "The elixir was very precious." },
-    { "time": "01:06", "word": "jealous", "pos": "adj.", "zh": "嫉妒的", "en": "feeling upset about another’s success", "example": "Some people were jealous of him." },
-    { "time": "01:12", "word": "moon", "pos": "n.", "zh": "月亮", "en": "Earth’s natural satellite", "example": "The story ends on the moon." },
-    { "time": "01:18", "word": "brave", "pos": "adj.", "zh": "勇敢的", "en": "showing no fear", "example": "He was a brave hero." },
-    { "time": "01:24", "word": "arrow", "pos": "n.", "zh": "箭", "en": "a pointed stick shot from a bow", "example": "He fired many arrows at the suns." }
+    { "time": "00:02", "word": "sun", "pos": "n.", "zh": "太陽", "en": "the star that gives Earth light and heat", "example": "There were ten suns in the sky.", "grammar": "可數/不可數皆可；一般指唯一的太陽前加 the（the sun）" },
+    { "time": "00:06", "word": "scorch", "pos": "v.", "zh": "灼燒；炙熱", "en": "to burn the surface with great heat", "example": "The suns scorched the earth.", "grammar": "及物/不及物皆可：scorch something / something scorches" },
+    { "time": "00:10", "word": "archer", "pos": "n.", "zh": "弓箭手", "en": "a person who shoots with a bow and arrow", "example": "Hou Yi was a great archer.", "grammar": "可數名詞；複數 archers" },
+    { "time": "00:12", "word": "bow", "pos": "n.", "zh": "弓", "en": "a weapon for shooting arrows", "example": "He drew his bow.", "grammar": "名詞；常見片語 draw a bow（拉弓）" },
+    { "time": "00:15", "word": "arrow", "pos": "n.", "zh": "箭", "en": "a thin pointed stick shot from a bow", "example": "The arrow flew across the sky.", "grammar": "可數名詞；複數 arrows" },
+    { "time": "00:20", "word": "goddess", "pos": "n.", "zh": "女神", "en": "a female god", "example": "Xihe was the goddess of the suns.", "grammar": "可數名詞；對應 god（男神）" },
+    { "time": "00:24", "word": "valley", "pos": "n.", "zh": "山谷", "en": "a low area between hills or mountains", "example": "They lived in a valley of light.", "grammar": "可數名詞；複數 valleys" },
+    { "time": "00:28", "word": "fusang tree", "pos": "n.", "zh": "扶桑樹（傳說）", "en": "a mythical tree where the suns rested", "example": "They climbed the fusang tree.", "grammar": "專有名詞片語；通常前加 the" },
+    { "time": "00:33", "word": "suffer", "pos": "v.", "zh": "受苦；遭受", "en": "to experience pain or hardship", "example": "People suffered from the heat.", "grammar": "常接介系詞 from：suffer from N" },
+    { "time": "00:38", "word": "hero", "pos": "n.", "zh": "英雄", "en": "a brave person admired for good deeds", "example": "Hou Yi became a hero.", "grammar": "可數名詞；複數 heroes" },
+    { "time": "00:44", "word": "aim", "pos": "v.", "zh": "瞄準", "en": "to point a weapon at a target", "example": "He aimed at the suns.", "grammar": "搭配 at：aim at + 目標" },
+    { "time": "00:50", "word": "shoot down", "pos": "v.", "zh": "射下；擊落", "en": "to hit and make something fall", "example": "He shot down nine suns.", "grammar": "可分級動詞：shoot something down" },
+    { "time": "00:56", "word": "emperor", "pos": "n.", "zh": "皇帝", "en": "a male ruler of an empire", "example": "The emperor heard about Hou Yi.", "grammar": "可數名詞；對應 empress（皇后）" },
+    { "time": "01:02", "word": "elixir", "pos": "n.", "zh": "仙丹；長生藥", "en": "a magical drink that brings immortality", "example": "He received an elixir as a reward.", "grammar": "可數名詞；常與 of life 並用（elixir of life）" },
+    { "time": "01:08", "word": "immortality", "pos": "n.", "zh": "不死；永生", "en": "the state of living forever", "example": "Some legends speak of immortality.", "grammar": "不可數名詞；形容詞 immortal" }
   ]
 }
 
