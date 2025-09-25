@@ -1,1 +1,22 @@
-[{"time":"00:01","text":"The moon is bright."},{"time":"00:05","text":"Families gather together."}]
+[
+  {"time":"00:01","en":"The Mid-Autumn Festival falls on the fifteenth day of the eighth lunar month.","zh":"中秋節是在農曆八月十五日。"},
+  {"time":"00:06","en":"It is a time to admire the big, round moon.","zh":"這是一個仰望又大又圓的月亮的時刻。"},
+  {"time":"00:11","en":"This has been a special day in China for a very long time.","zh":"這一天在中國已經是特別的日子很久很久了。"},
+  {"time":"00:16","en":"Long ago, there were ten suns in the sky and people were unhappy.","zh":"很久以前，天上曾經有十個太陽，人們很痛苦。"},
+  {"time":"00:21","en":"A brave man named Hou Yi helped them.","zh":"一位名叫后羿的勇士幫助了大家。"},
+  {"time":"00:26","en":"He climbed a tall mountain and shot down nine suns with his strong bow.","zh":"他登上高山，用強大的弓箭射下九個太陽。"},
+  {"time":"00:31","en":"Everyone loved Hou Yi for saving them.","zh":"人們因為后羿拯救了他們，都非常愛戴他。"},
+  {"time":"00:36","en":"Hou Yi had a kind and beautiful wife named Chang’e.","zh":"后羿有一位善良又美麗的妻子，名叫嫦娥。"},
+  {"time":"00:41","en":"One day, he met the Queen Mother of the West, who gave him an elixir.","zh":"一天，他遇見西王母，西王母送給他一顆靈藥。"},
+  {"time":"00:46","en":"It could make a person immortal, but Hou Yi loved his wife too much.","zh":"這顆仙藥能讓人長生不死；但后羿非常愛妻子。"},
+  {"time":"00:51","en":"He asked Chang’e to keep it safe.","zh":"於是他把靈藥交給嫦娥保存。"},
+  {"time":"00:56","en":"A bad man named Peng Meng tried to steal the elixir when Hou Yi was away.","zh":"后羿不在時，一個名叫逢蒙的惡人闖入想奪走靈藥。"},
+  {"time":"01:01","en":"Unable to fight him, Chang’e quickly swallowed the elixir.","zh":"嫦娥無法抵抗，只好立刻把靈藥吞下。"},
+  {"time":"01:06","en":"She felt light and floated up to the moon.","zh":"她感覺身子變得輕盈，慢慢飄到月亮上。"},
+  {"time":"01:11","en":"Hou Yi was heartbroken when he found out what happened.","zh":"后羿得知此事後十分悲傷。"},
+  {"time":"01:16","en":"He set out Chang’e’s favorite foods to share with her from afar.","zh":"他把嫦娥最喜歡的食物擺出來，希望能與她分享。"},
+  {"time":"01:21","en":"Villagers also offered food and prayed to Chang’e for blessings.","zh":"村裡的人們也擺上供品，向嫦娥祈求保佑。"},
+  {"time":"01:26","en":"Today, people celebrate by moon-gazing and eating mooncakes.","zh":"現在，人們會在中秋節賞月、吃月餅。"},
+  {"time":"01:31","en":"The festival is a time for families to reunite and share happiness.","zh":"這個節日是一家人團聚、分享快樂的時刻。"},
+  {"time":"01:36","en":"Under the full moon, love and reunion are remembered.","zh":"在滿月下，人們記得團圓與思念。"}
+]
