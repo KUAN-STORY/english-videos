@@ -1,0 +1,8 @@
+{
+  "title": "Hou Yi Vocabulary",
+  "items": [
+    { "time": "00:06", "word": "bow", "pos": "n.", "zh": "弓", "en": "a weapon for shooting arrows", "example": "Hou Yi draws his bow." },
+    { "time": "00:12", "word": "arrow", "pos": "n.", "zh": "箭", "en": "a thin stick shot from a bow", "example": "He shot an arrow at the sun." },
+    { "time": "00:18", "word": "scorch", "pos": "v.", "zh": "灼燒", "en": "to burn the surface of something", "example": "The suns scorched the earth." }
+  ]
+}
