@@ -1,8 +1,98 @@
-{
-  "title": "Lantern Festival Vocabulary",
-  "items": [
-    { "time": "00:11", "word": "festival", "pos": "n.", "zh": "節日", "en": "a day of celebration", "example": "The Lantern Festival is a fun holiday." },
-    { "time": "00:20", "word": "float", "pos": "v.", "zh": "漂浮", "en": "to stay on the surface of water or air", "example": "Lanterns float into the sky." },
-    { "time": "00:37", "word": "plan", "pos": "n./v.", "zh": "計畫", "en": "a set of actions for doing something", "example": "She told them the plan in secret." }
-  ]
-}
+[
+  {
+    "word": "lantern",
+    "pos": "n.",
+    "time": "00:01",
+    "zh": "燈籠",
+    "en": "a light in a paper or silk container",
+    "ex": "People light colorful lanterns during the festival."
+  },
+  {
+    "word": "festival",
+    "pos": "n.",
+    "time": "00:03",
+    "zh": "節日",
+    "en": "a special day of celebration",
+    "ex": "Lantern Festival is the last day of the New Year celebration."
+  },
+  {
+    "word": "reunion",
+    "pos": "n.",
+    "time": "00:06",
+    "zh": "團圓",
+    "en": "a time when family members gather together",
+    "ex": "Families enjoy reunion dinners."
+  },
+  {
+    "word": "dumpling",
+    "pos": "n.",
+    "time": "00:08",
+    "zh": "湯圓",
+    "en": "sweet rice balls eaten during Lantern Festival",
+    "ex": "People eat sweet dumplings called tangyuan."
+  },
+  {
+    "word": "parade",
+    "pos": "n.",
+    "time": "00:12",
+    "zh": "遊行",
+    "en": "a public procession with music and celebration",
+    "ex": "There is a lantern parade in the city."
+  },
+  {
+    "word": "fireworks",
+    "pos": "n.",
+    "time": "00:15",
+    "zh": "煙火",
+    "en": "bright lights that explode in the sky",
+    "ex": "Fireworks light up the night sky."
+  },
+  {
+    "word": "dragon dance",
+    "pos": "n.",
+    "time": "00:20",
+    "zh": "舞龍",
+    "en": "a traditional performance with a dragon costume",
+    "ex": "The dragon dance is exciting to watch."
+  },
+  {
+    "word": "riddle",
+    "pos": "n.",
+    "time": "00:25",
+    "zh": "謎語",
+    "en": "a puzzling question to solve",
+    "ex": "People enjoy guessing lantern riddles."
+  },
+  {
+    "word": "tradition",
+    "pos": "n.",
+    "time": "00:30",
+    "zh": "傳統",
+    "en": "a custom handed down through generations",
+    "ex": "The Lantern Festival is an old Chinese tradition."
+  },
+  {
+    "word": "light",
+    "pos": "v.",
+    "time": "00:34",
+    "zh": "點亮",
+    "en": "to make something bright",
+    "ex": "They light lanterns at night."
+  },
+  {
+    "word": "celebrate",
+    "pos": "v.",
+    "time": "00:38",
+    "zh": "慶祝",
+    "en": "to take part in an enjoyable activity for a holiday",
+    "ex": "People celebrate the Lantern Festival happily."
+  },
+  {
+    "word": "joy",
+    "pos": "n.",
+    "time": "00:42",
+    "zh": "喜悅",
+    "en": "a feeling of great happiness",
+    "ex": "The festival brings joy to everyone."
+  }
+]
