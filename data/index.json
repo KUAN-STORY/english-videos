@@ -1,24 +1,25 @@
 {
+  "$schema": "https://example.com/learn-english-stories/index.schema.json",
   "items": [
     {
-      "slug": "houyi",
-      "title_en": "The Legend of Hou Yi",
-      "title_zh": "后羿射日",
-      "video": "videos/houyi.mp4",
-      "cues": "data/cues-houyi.json",
-      "quiz": "data/quiz-houyi.json"
-    },
-    {
       "slug": "mid-autumn",
-      "title_en": "The Mid-Autumn Festival",
+      "title_en": "Mid-Autumn Festival",
       "title_zh": "中秋節",
       "video": "videos/mid-autumn.mp4",
       "cues": "data/cues-mid-autumn.json",
       "quiz": "data/quiz-mid-autumn.json"
     },
     {
+      "slug": "houyi",
+      "title_en": "Hou Yi Shoots the Suns",
+      "title_zh": "后羿射日",
+      "video": "videos/houyi.mp4",
+      "cues": "data/cues-houyi.json",
+      "quiz": "data/quiz-houyi.json"
+    },
+    {
       "slug": "lantern",
-      "title_en": "The Lantern Festival",
+      "title_en": "Lantern Festival",
       "title_zh": "元宵節",
       "video": "videos/lantern.mp4",
       "cues": "data/cues-lantern.json",
