@@ -1,29 +1,34 @@
 {
-  "$schema": "https://example.com/learn-english-stories/index.schema.json",
   "items": [
     {
       "slug": "mid-autumn",
       "title_en": "Mid-Autumn Festival",
       "title_zh": "中秋節",
       "video": "videos/mid-autumn.mp4",
-      "cues": "data/cues-mid-autumn.json",
-      "quiz": "data/quiz-mid-autumn.json"
+      "poster": "images/mid-autumn.jpg",
+      "free": true,
+      "length": "短篇",
+      "tags": ["中秋節", "月亮"]
     },
     {
       "slug": "houyi",
       "title_en": "Hou Yi Shoots the Suns",
       "title_zh": "后羿射日",
       "video": "videos/houyi.mp4",
-      "cues": "data/cues-houyi.json",
-      "quiz": "data/quiz-houyi.json"
+      "poster": "images/houyi.jpg",
+      "free": false,
+      "length": "短篇",
+      "tags": ["神話", "太陽"]
     },
     {
       "slug": "lantern",
       "title_en": "Lantern Festival",
       "title_zh": "元宵節",
       "video": "videos/lantern.mp4",
-      "cues": "data/cues-lantern.json",
-      "quiz": "data/quiz-lantern.json"
+      "poster": "images/lantern.jpg",
+      "free": false,
+      "length": "短篇",
+      "tags": ["燈籠", "元宵"]
     }
   ]
 }
