@@ -1,292 +1,33 @@
-<!doctype html>
-<html lang="zh-Hant">
-<head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>看故事學英文 · Stories</title>
 <style>
-  :root{
-    --bg:#0b1324; --panel:#0f1a33; --border:#203057;
-    --text:#e7eaf3; --muted:#a9b3cf; --brand:#3c7cff; --ok:#15c37e; --warn:#f59e0b;
+  .card-cover-wrap{position:relative;overflow:hidden;border-radius:12px;background:#0b1324;height:200px}
+  .card-cover{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block}
+  .card-cover-wrap::after{
+    content:"";position:absolute;inset:0;background:linear-gradient(180deg,transparent 60%,rgba(0,0,0,.55));
   }
-  html,body{height:100%;margin:0;background:var(--bg);color:var(--text);font-family:system-ui,-apple-system,Segoe UI,Roboto,Noto Sans,sans-serif}
-  a{color:inherit;text-decoration:none}
-  .wrap{max-width:1100px;margin:0 auto;padding:28px 16px 80px}
-  header{display:flex;align-items:center;gap:12px;justify-content:space-between;margin-bottom:8px}
-  .title{font-size:28px;font-weight:800;letter-spacing:.02em}
-  .actions{display:flex;gap:8px}
-  .btn{padding:8px 14px;border:1px solid var(--border);background:#132046;color:#fff;border-radius:12px;cursor:pointer}
-  .btn:hover{filter:brightness(1.08)}
-  .note{margin:14px 0 22px 0;color:var(--muted)}
-  .bar{display:flex;gap:8px;margin:14px 0 22px 0}
-  .input{flex:1;min-width:220px;padding:10px 12px;border-radius:12px;border:1px solid var(--border);background:#0f1a33;color:#fff}
-  .chips{display:flex;gap:8px;flex-wrap:wrap}
-  .chip{padding:8px 12px;border:1px solid var(--border);background:#101b39;border-radius:999px;color:#c6d0ef;cursor:pointer}
-  .chip.active{background:#18306b;color:#fff;border-color:#2d4ea7}
-
-  .grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
-  @media(max-width:1024px){ .grid{grid-template-columns:repeat(2,1fr)} }
-  @media(max-width:640px){ .grid{grid-template-columns:1fr} }
-
-  .card{display:flex;flex-direction:column;gap:10px;background:var(--panel);border:1px solid var(--border);border-radius:16px;overflow:hidden}
-  .thumbBox{position:relative;height:210px;background:linear-gradient(160deg,#152548,#0b1324)}
-  .thumb{width:100%;height:100%;object-fit:cover;display:block}
-  .badge{position:absolute;top:10px;left:10px;padding:6px 10px;border-radius:10px;font-size:12px;font-weight:700}
-  .badge.free{background:rgba(21,195,126,.15);color:#82f5c3;border:1px solid rgba(130,245,195,.4)}
-  .badge.lock{background:rgba(245,158,11,.15);color:#ffd08a;border:1px solid rgba(245,158,11,.35)}
-  .titleBox{padding:12px 14px 2px 14px;font-size:18px;font-weight:700}
-  .meta{display:flex;align-items:center;justify-content:space-between;color:var(--muted);padding:0 14px 12px 14px}
-  .linkRow{display:flex;gap:8px;padding:0 14px 14px 14px}
-  .link{padding:7px 10px;border:1px solid var(--border);background:#12214a;color:#cfe3ff;border-radius:10px}
-
-  .foot{margin-top:28px;color:#7a86a6}
-  .small{font-size:12px;color:#8f9abc}
-
-  /* 登入對話框 */
-  .modalMask{position:fixed;inset:0;background:rgba(0,0,0,.5);display:none;align-items:center;justify-content:center}
-  .modal{background:#0f1a33;border:1px solid var(--border);width:min(92vw,420px);border-radius:16px;padding:18px}
-  .modal h3{margin:0 0 8px 0}
-  .modal p{color:var(--muted);margin:0 0 14px 0}
-  .modal .row{display:flex;gap:8px;justify-content:flex-end}
 </style>
-</head>
-<body>
-<div class="wrap">
-  <header>
-    <div class="title">用故事學英文：雙語字幕、測驗與單字</div>
-    <div class="actions">
-      <button class="btn" id="btnLogin">登入</button>
-      <a class="btn" href="https://github.com/kuan-story/english-videos" target="_blank" rel="noopener">GitHub</a>
-    </div>
-  </header>
-
-  <div class="note">從下方卡片選故事開始。大多數內容需登入後觀看，〈中秋節〉為免費試看。</div>
-
-  <div class="bar">
-    <input id="kw" class="input" placeholder="輸入關鍵字搜尋（中/英標題/標籤）…" />
-    <div class="chips">
-      <button class="chip active" data-filter="all">全部</button>
-      <button class="chip" data-filter="short">短篇</button>
-      <button class="chip" data-filter="long">長篇</button>
-    </div>
-  </div>
-
-  <div id="grid" class="grid"></div>
-
-  <div class="foot small">© 2025 KUAN-STORY • Made for learning on GitHub Pages</div>
-</div>
-
-<!-- 假登入對話框（先擋住直接觀看，日後可接 Supabase/OAuth） -->
-<div id="mask" class="modalMask">
-  <div class="modal">
-    <h3>請先登入</h3>
-    <p>此內容僅限會員觀看。您可以先逛逛免費影片〈中秋節〉🙂</p>
-    <div class="row">
-      <button class="btn" id="btnClose">取消</button>
-      <button class="btn" id="btnGoLogin">去登入</button>
-    </div>
-  </div>
-</div>
-
 <script>
-const $  = (s, r=document)=> r.querySelector(s);
-const $$ = (s, r=document)=> [...r.querySelectorAll(s)];
-
-let allItems = [];
-let filterKind = 'all';
-let kw = '';
-let isLogin = false; // 假登入旗標（之後可改接 Supabase）
-
-/* 生成卡片 */
-function render(items){
-  const grid = $('#grid');
-  grid.innerHTML = '';
-  if(!items?.length){
-    grid.innerHTML = '<div class="small" style="opacity:.75">找不到符合條件的故事。</div>';
-    return;
-  }
-  items.forEach(it=>{
-    const card = document.createElement('div');
-    card.className = 'card';
-
-    const thumbBox = document.createElement('div');
-    thumbBox.className = 'thumbBox';
-
-    // badge
-    const badge = document.createElement('div');
-    badge.className = 'badge ' + (it.free?'free':'lock');
-    badge.textContent = it.free ? '免費試看' : '需登入';
-    thumbBox.appendChild(badge);
-
-    // 圖
-    const img = document.createElement('img');
-    img.className = 'thumb';
-    img.alt = it.title_en || it.title_zh || it.slug;
-    // 若 JSON 有提供 poster 先放，避免白圖
-    if(it.poster) img.src = it.poster;
-    thumbBox.appendChild(img);
-
-    card.appendChild(thumbBox);
-
-    const title = document.createElement('div');
-    title.className = 'titleBox';
-    title.textContent = it.title_en || it.title_zh || it.slug;
-    card.appendChild(title);
-
-    const meta = document.createElement('div');
-    meta.className = 'meta';
-    meta.innerHTML = `<span>${it.title_zh || ''}</span><span>${it.length || ''}</span>`;
-    card.appendChild(meta);
-
-    const links = document.createElement('div');
-    links.className = 'linkRow';
-
-    const aPlay = document.createElement('a');
-    aPlay.className = 'link';
-    aPlay.textContent = '前往 ▶';
-    aPlay.href = `player.html?slug=${encodeURIComponent(it.slug)}`;
-
-    // 非免費 → 攔截點擊顯示登入
-    aPlay.addEventListener('click', (ev)=>{
-      if(!it.free && !isLogin){
-        ev.preventDefault();
-        openLogin();
-      }
+  function renderCards(list){
+    const grid = document.getElementById('grid'); // 你的卡片容器
+    grid.innerHTML = '';
+    list.forEach(item=>{
+      const el = document.createElement('a');
+      el.className = 'card';
+      el.href = `player.html?slug=${encodeURIComponent(item.slug)}`;
+      el.innerHTML = `
+        <div class="card-cover-wrap">
+          <img class="card-cover" src="${item.cover || ''}" loading="lazy"
+               onerror="this.style.display='none'">
+        </div>
+        <div class="p-4">
+          ${item.is_free ? '<span class="chip chip-free">免費試看</span>' : '<span class="chip chip-lock">需登入</span>'}
+          <h3 class="title">${item.title_en}</h3>
+          <div class="muted">${item.title_zh} · ${item.length}</div>
+          <div class="row mt-2">
+            <a class="btn sm" href="player.html?slug=${encodeURIComponent(item.slug)}">前往 ▶</a>
+            <a class="btn sm ghost" href="player.html?slug=${encodeURIComponent(item.slug)}&tab=quiz">測驗</a>
+          </div>
+        </div>`;
+      grid.appendChild(el);
     });
-
-    const aQuiz = document.createElement('a');
-    aQuiz.className = 'link';
-    aQuiz.textContent = '測驗';
-    aQuiz.href = `player.html?slug=${encodeURIComponent(it.slug)}#quiz`;
-    // 測驗同樣做門檻
-    aQuiz.addEventListener('click', (ev)=>{
-      if(!it.free && !isLogin){
-        ev.preventDefault();
-        openLogin();
-      }
-    });
-
-    links.appendChild(aPlay);
-    links.appendChild(aQuiz);
-    card.appendChild(links);
-
-    grid.appendChild(card);
-
-    // 嘗試擷取影片縮圖（第 1 秒）
-    if(it.video){
-      makeThumb(it.video, 1).then(url=>{
-        if(url) img.src = url;
-      }).catch(()=>{/* ignore */});
-    }
-  });
-}
-
-/* 從影片擷取指定秒數的縮圖（更穩版本） */
-function makeThumb(src, sec=1){
-  return new Promise((resolve)=>{
-    let done = false;
-    const finish = (url)=>{ if(!done){ done=true; resolve(url||''); } };
-
-    const v = document.createElement('video');
-    v.crossOrigin = 'anonymous';        // 保險
-    v.preload   = 'metadata';
-    v.muted     = true;                 // 某些瀏覽器要靜音才允許 programmatic
-    v.playsInline = true;
-    v.src = src;
-
-    const onError = ()=> finish('');
-    v.onerror = onError;
-
-    v.addEventListener('loadedmetadata', ()=>{
-      // 避免超出長度
-      let t = Math.max(0, Math.min(sec, (v.duration||sec) - 0.1));
-      const seeked = ()=>{
-        v.removeEventListener('seeked', seeked);
-        try{
-          const w = v.videoWidth || 640, h = v.videoHeight || 360;
-          if(!w || !h) return finish('');
-          const canvas = document.createElement('canvas');
-          canvas.width = w; canvas.height = h;
-          const ctx = canvas.getContext('2d');
-          ctx.drawImage(v, 0, 0, w, h);
-          finish(canvas.toDataURL('image/jpeg', 0.8));
-        }catch(e){ finish(''); }
-      };
-      v.addEventListener('seeked', seeked);
-      try{ v.currentTime = t; }catch{ seeked(); } // 有些環境不能 seek 就直接畫第一幀
-    }, {once:true});
-
-    // 多一個 canplay 保險
-    v.addEventListener('canplay', ()=>{
-      if(!done){
-        try{
-          const w = v.videoWidth || 640, h = v.videoHeight || 360;
-          const c = document.createElement('canvas');
-          c.width = w; c.height = h;
-          c.getContext('2d').drawImage(v,0,0,w,h);
-          finish(c.toDataURL('image/jpeg', .8));
-        }catch{ finish(''); }
-      }
-    }, {once:true});
-
-    // 3 秒還沒成功就放棄
-    setTimeout(()=>finish(''), 3000);
-  });
-}
-
-/* 濾器 */
-function applyFilter(){
-  const words = kw.trim().toLowerCase();
-  let list = allItems.filter(it=>{
-    if(filterKind==='short' && it.length!=='短篇') return false;
-    if(filterKind==='long'  && it.length!=='長篇') return false;
-    if(!words) return true;
-    const keys = [
-      it.title_en||'', it.title_zh||'',
-      (it.tags||[]).join(' ')
-    ].join(' ').toLowerCase();
-    return keys.includes(words);
-  });
-  render(list);
-}
-
-/* 登入對話框（示意） */
-function openLogin(){ $('#mask').style.display = 'flex'; }
-function closeLogin(){ $('#mask').style.display = 'none'; }
-// 假登入：點「去登入」就設為已登入
-$('#btnGoLogin').onclick = ()=>{ isLogin = true; closeLogin(); alert('已模擬登入，可開啟付費內容。'); };
-$('#btnClose').onclick   = closeLogin;
-$('#btnLogin').onclick   = openLogin;
-
-/* 初始化 */
-(async function(){
-  try{
-    const res = await fetch('data/index.json');
-    const json = await res.json();
-    // 期望：
-    // { items: [{slug,title_en,title_zh,video,poster,free,length,tags}] }
-    allItems = (json.items||[]).map(it=>({
-      ...it,
-      poster: it.poster || '',           // 建議提供海報檔加速顯示
-      free: !!it.free,                   // true=免費試看
-      length: it.length || ''            // "短篇"/"長篇"
-    }));
-    applyFilter();
-  }catch(e){
-    $('#grid').innerHTML = `<div class="small">讀取 <code>data/index.json</code> 失敗。</div>`;
   }
-
-  // 事件
-  $('#kw').addEventListener('input', (e)=>{ kw = e.target.value; applyFilter(); });
-  $$('.chip').forEach(c=>{
-    c.onclick = ()=>{
-      $$('.chip').forEach(x=>x.classList.remove('active'));
-      c.classList.add('active');
-      filterKind = c.dataset.filter;
-      applyFilter();
-    };
-  });
-})();
 </script>
-</body>
-</html>
