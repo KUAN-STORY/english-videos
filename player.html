@@ -7,80 +7,92 @@
 <style>
   :root{
     --bg:#0b1324; --panel:#0f1a33; --border:#203057;
-    --text:#e7eaf3; --muted:#a9b3cf; --brand:#3c7cff;
+    --text:#e7eaf3; --muted:#a9b3cf; --brand:#3c7cff; --ok:#14b86e; --warn:#f5a524;
     --gap:12px;
   }
   html,body{height:100%;margin:0;background:var(--bg);color:var(--text);
-    font-family:system-ui,-apple-system,Segoe UI,Roboto,Noto Sans,sans-serif;}
+    font-family:system-ui,-apple-system,Segoe UI,Roboto,Noto Sans,sans-serif}
 
-  .layout{
-    display:grid; grid-template-columns: 1fr 1fr; gap:var(--gap); height:100vh;
-  }
-  @media(max-width:1024px){
-    .layout{ grid-template-columns: 1fr; grid-template-rows: auto auto; height:auto; }
-  }
+  .layout{display:grid;grid-template-columns: 1fr 1fr;gap:var(--gap);height:100vh}
+  @media(max-width:1024px){ .layout{grid-template-columns:1fr;grid-template-rows:auto auto;height:auto} }
 
-  .videoColumn{
-    display:grid; grid-template-rows: 1fr auto; min-height:0;
-    border-right:1px solid var(--border);
-  }
-  .videoStage{
-    min-height:0; display:flex; align-items:center; justify-content:center;
-    background:#000; overflow:hidden;
-  }
-  video{
-    max-width:100%; max-height:100%;
-    width:auto; height:auto; object-fit:contain; background:#000;
-  }
-  .toolBar{
-    position:relative; z-index:2;
-    padding:10px 12px; background:#101b39;
-    border-top:1px solid var(--border);
-    display:flex; flex-wrap:wrap; gap:8px; align-items:center;
-  }
-  .btn,.chip{
-    border:1px solid var(--border); background:#15224a; color:#fff;
-    border-radius:10px; padding:8px 10px; cursor:pointer; user-select:none;
-  }
-  .btn:hover,.chip:hover{ filter:brightness(1.1); }
-  .chip.active{ background:#1a2c66; border-color:#2d4ea7; }
+  /* 左欄：影片區 + 固定工具列 */
+  .videoColumn{display:grid;grid-template-rows:1fr auto;min-height:0;border-right:1px solid var(--border)}
+  .videoStage{min-height:0;display:flex;align-items:center;justify-content:center;background:#000;overflow:hidden}
+  video{max-width:100%;max-height:100%;width:auto;height:auto;object-fit:contain;background:#000}
 
-  .side{
-    display:flex; flex-direction:column; min-height:0;
-    background:var(--panel);
-  }
+  .toolBar{position:relative;z-index:2;padding:10px 12px;background:#101b39;border-top:1px solid var(--border);
+    display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+  .btn,.chip{border:1px solid var(--border);background:#15224a;color:#fff;border-radius:10px;padding:8px 10px;cursor:pointer;user-select:none}
+  .btn:hover,.chip:hover{filter:brightness(1.1)}
+  .chip.active{background:#1a2c66;border-color:#2d4ea7}
+
+  /* 右欄 */
+  .side{display:flex;flex-direction:column;min-height:0;background:var(--panel)}
   .tabs{display:flex;border-bottom:1px solid var(--border)}
-  .tab{flex:1;padding:10px 12px;text-align:center;cursor:pointer;
-       color:var(--muted);user-select:none}
+  .tab{flex:1;padding:10px 12px;text-align:center;cursor:pointer;color:var(--muted);user-select:none}
   .tab.active{color:var(--text);background:#132046;font-weight:700}
   .toolbar{display:flex;gap:8px;align-items:center;padding:8px;border-bottom:1px solid var(--border)}
   .panel{flex:1;overflow:auto;padding:12px}
-  .line{line-height:1.5;margin:8px 0;border-radius:6px}
-  .line.active{background:#1a2c66}
-  .time{color:var(--muted);margin-right:6px;font-variant-numeric:tabular-nums}
+  .muted{color:var(--muted)}
+  .row{display:flex;gap:8px;align-items:center}
+
+  /* 字幕三欄 */
+  .table{width:100%;border-collapse:collapse}
+  .table th,.table td{border-bottom:1px solid #132046;padding:10px 8px;vertical-align:top}
+  .table th{color:#cad3f5;text-align:left;background:#0f1c3a;position:sticky;top:0}
+  .timeCell{white-space:nowrap;color:#a9b3cf}
+  .line.active{background:#1a2c66;border-radius:6px}
+  .search{width:100%;padding:10px;border:1px solid var(--border);border-radius:10px;background:#0e1b3b;color:#fff;outline:none}
+
+  /* 測驗（保留） */
+  .q{padding:12px;border:1px solid var(--border);border-radius:12px;background:#0f1a33;margin:10px 0}
+  .q h4{margin:0 0 8px 0;font-weight:700}
+  .opt{display:flex;gap:8px;align-items:flex-start;margin:6px 0;cursor:pointer}
+  .opt input{margin-top:4px}
+  .result{margin-top:12px;padding:8px;border-radius:10px;display:none}
+  .result.pass{background:rgba(20,184,110,.12);border:1px solid var(--ok)}
+  .result.fail{background:rgba(245,165,36,.12);border:1px solid var(--warn)}
+  .stickyFoot{position:sticky;bottom:0;background:linear-gradient(180deg,rgba(11,19,36,0),rgba(11,19,36,1) 30%);padding-top:12px}
+  .footBar{display:flex;gap:8px;justify-content:space-between;align-items:center;background:#101b39;border:1px solid var(--border);border-radius:12px;padding:10px}
+
+  /* 單字卡（填空模式） */
+  .vcard{border:1px solid var(--border);border-radius:14px;background:#0f1a33;margin:12px 0;padding:12px}
+  .vhead{display:flex;align-items:center;gap:10px}
+  .tag{font-size:12px;color:#a9b3cf;border:1px solid var(--border);padding:2px 8px;border-radius:999px}
+  .jump{margin-left:auto}
+  .cloze{font-size:16px;line-height:1.7;margin:10px 0}
+  .input{padding:6px 10px;border:1px solid var(--border);border-radius:10px;background:#0e1b3b;color:#fff;outline:none}
+  .ok{color:#23d18b;margin-left:8px}
+  .bad{color:#f5a524;margin-left:8px}
+  .grammar{margin-top:6px;color:#a9b3cf}
 </style>
 </head>
 <body>
 <div class="layout">
 
-  <!-- 左：影片 -->
+  <!-- 左：影片（上：舞台，下：工具列） -->
   <section class="videoColumn">
     <div class="videoStage">
       <video id="player" controls preload="metadata"></video>
     </div>
+
+    <!-- 固定在左欄底部的工具列 -->
     <div class="toolBar">
       <button class="btn" id="btnPrev">上一句</button>
       <button class="btn" id="btnPlay">播放/暫停</button>
       <button class="btn" id="btnNext">下一句</button>
+
       <button class="btn" id="btnRepeatOne">重複本句</button>
       <button class="btn" id="btnAB">A-B 循環</button>
       <button class="btn" id="btnABClear">取消循環</button>
-      <label class="chip">變焦
-        <input id="zoom" type="range" min="1" max="2" step="0.05" value="1" style="vertical-align:middle; width:140px; margin-left:8px;">
-      </label>
+
       <label class="chip">速度
         <input id="rate" type="range" min="0.5" max="2" step="0.05" value="1" style="vertical-align:middle; width:160px; margin-left:8px;">
         <span id="rateLabel" style="margin-left:6px">1.00×</span>
+      </label>
+      <label class="chip">變焦
+        <input id="zoom" type="range" min="1" max="2" step="0.05" value="1" style="vertical-align:middle; width:140px; margin-left:8px;">
       </label>
     </div>
   </section>
@@ -93,24 +105,406 @@
       <div id="tabVocab" class="tab">單字</div>
     </div>
 
+    <!-- 右側工具列（跟隨 + 校準 + 字級） -->
     <div class="toolbar">
-      <span style="color:#a9b3cf">字級</span>
+      <input id="searchBox" class="search" placeholder="搜尋字幕…（支援英文或中文）" />
+      <div style="flex:1"></div>
+      <button id="btnFollow" class="btn">跟隨</button>
+      <button id="btnSyncBack" class="btn">提早0.5秒</button>
+      <button id="btnSyncFwd" class="btn">延後0.5秒</button>
+      <span class="muted" id="offsetLabel">偏移 0.00s</span>
+      <div style="width:12px"></div>
+      <span class="muted">字級</span>
       <button id="fS" class="chip">S</button>
       <button id="fM" class="chip active">M</button>
       <button id="fL" class="chip">L</button>
-      <div style="flex:1"></div>
-      <button id="btnFollow" class="btn">跟隨</button>
     </div>
 
+    <!-- 字幕面板 -->
     <div id="panelTranscript" class="panel"></div>
-    <div id="panelQuiz" class="panel" style="display:none"></div>
-    <div id="panelVocab" class="panel" style="display:none"></div>
+
+    <!-- 測驗面板（保留現有 20 題簡易選擇題） -->
+    <div id="panelQuiz" class="panel" style="display:none">
+      <div id="quizBox"></div>
+      <div class="stickyFoot">
+        <div class="footBar">
+          <div class="muted" id="quizProgress">0 / 0</div>
+          <div class="row">
+            <button id="btnCheck" class="btn">交卷</button>
+            <button id="btnRetry" class="btn" style="display:none">再試一次</button>
+          </div>
+        </div>
+        <div id="quizResult" class="result"></div>
+      </div>
+    </div>
+
+    <!-- 單字面板（改為填空模式） -->
+    <div id="panelVocab" class="panel" style="display:none">
+      <h3 id="vocabTitle" style="margin:0 0 8px 0">單字解釋</h3>
+      <input id="vocabSearch" class="search" placeholder="搜尋單字或中文解釋…" style="margin-bottom:10px"/>
+      <div id="vocabBox"></div>
+    </div>
   </aside>
 </div>
 
 <script>
-/* 原本 JS 功能保持不變（省略，保留你原來的字幕、測驗、單字渲染邏輯） */
-/* 注意：這裡已刪掉 #searchTranscript 和 #searchVocab 相關的輸入框 */
+/* ================== 工具 ================== */
+const $ = (s, r=document)=> r.querySelector(s);
+const $$ = (s, r=document)=> [...r.querySelectorAll(s)];
+const qs = new URLSearchParams(location.search);
+const slug = qs.get('slug') || '';
+
+function toSec(t){ // "mm:ss" => seconds
+  const [m,s] = String(t||'0:0').split(':').map(n=>parseInt(n,10)||0);
+  return m*60 + s;
+}
+function pad(n){return String(n).padStart(2,'0')}
+function secToMMSS(sec){
+  sec = Math.max(0, Math.round(sec));
+  const m = Math.floor(sec/60), s = sec%60;
+  return `${pad(m)}:${pad(s)}`
+}
+
+/* ================== 載入 meta ================== */
+async function loadMeta(){
+  const res = await fetch('data/index.json');
+  if(!res.ok) throw new Error('index.json 載入失敗');
+  const meta = await res.json();
+  const item = (meta.items||[]).find(x=>x.slug===slug) || meta.items?.[0];
+  if(!item) throw new Error('index.json 無對應項目');
+  return item; // {video,cues,quiz,title_zh...}
+}
+
+/* ================== 影片與字幕 ================== */
+let cueList = []; // [{tSec, en, zh, elTr}]
+let follow=false, offset=0;
+
+function renderTranscript(data){
+  const panel = $('#panelTranscript'); panel.innerHTML = '';
+  const box = document.createElement('div');
+
+  // 搜尋框監聽
+  $('#searchBox').oninput = ()=>{
+    const kw = $('#searchBox').value.trim().toLowerCase();
+    $$('.line', box).forEach(row=>{
+      const hit = row.dataset.hit.includes(kw);
+      row.style.display = (kw && !hit) ? 'none':'table-row';
+    });
+  };
+
+  // 表頭
+  const table = document.createElement('table');
+  table.className = 'table';
+  table.innerHTML = `
+    <thead><tr>
+      <th style="width:90px">時間</th>
+      <th>英文</th>
+      <th style="width:34%">中文</th>
+    </tr></thead>
+    <tbody></tbody>`;
+  const tbody = $('tbody', table);
+  panel.appendChild(table);
+
+  // items
+  const list = Array.isArray(data)? data : (data.items||[]);
+  cueList = list.map(row=>{
+    const t = row.time || row.t || row.start || '0:0';
+    const en = row.text || row.en || '';
+    const zh = row.zh || row.cn || row.tw || '';
+    const tr = document.createElement('tr');
+    tr.className = 'line';
+    tr.dataset.hit = (en+' '+zh).toLowerCase();
+
+    tr.innerHTML = `
+      <td class="timeCell">[${t}]</td>
+      <td>${en || '&nbsp;'}</td>
+      <td>${zh || '&nbsp;'}</td>
+    `;
+    tr.onclick = ()=>{
+      const sec = toSec(t) + offset;
+      const v = $('#player');
+      v.currentTime = Math.max(0, sec);
+      v.play();
+      highlightByTime(v.currentTime);
+    };
+    tbody.appendChild(tr);
+    return { tSec: toSec(t), en, zh, elTr: tr };
+  });
+}
+
+function highlightByTime(current){
+  // 找到 <= current 的最後一句
+  let idx = -1;
+  for(let i=0;i<cueList.length;i++){
+    if(cueList[i].tSec + offset <= current) idx = i; else break;
+  }
+  cueList.forEach(c=>c.elTr.classList.remove('active'));
+  if(idx>=0){
+    const el = cueList[idx].elTr;
+    el.classList.add('active');
+    if(follow){
+      el.scrollIntoView({block:'center', behavior:'smooth'});
+    }
+  }
+}
+
+/* ================== 左欄工具列（上一句/下一句/AB） ================== */
+let A=null,B=null,abTimer=null;
+function jumpPrev(){
+  const t = $('#player').currentTime - offset;
+  const prev = [...cueList].reverse().find(c=> c.tSec < t - 0.05);
+  if(prev){ $('#player').currentTime = Math.max(0, prev.tSec + offset); $('#player').play(); }
+}
+function jumpNext(){
+  const t = $('#player').currentTime - offset;
+  const next = cueList.find(c=> c.tSec > t + 0.05);
+  if(next){ $('#player').currentTime = Math.max(0, next.tSec + offset); $('#player').play(); }
+}
+function setRepeatOne(){
+  const v = $('#player');
+  const t = v.currentTime - offset;
+  let i = cueList.findIndex(c=> c.tSec <= t);
+  if(i<0) i=0;
+  A = cueList[i].tSec + offset;
+  B = (i+1<cueList.length ? cueList[i+1].tSec + offset : null);
+  clearInterval(abTimer);
+  abTimer = setInterval(()=>{ if(B!=null && v.currentTime>=B) v.currentTime = A; }, 120);
+}
+function setAB(){
+  const v = $('#player');
+  if(A==null){ A = v.currentTime; alert('已設定 A 點'); }
+  else if(B==null){ B = v.currentTime; alert('已設定 B 點；開始循環'); startAB(); }
+  else { A=v.currentTime; B=null; alert('已重設 A 點，請再按一次設定 B 點'); }
+}
+function startAB(){
+  clearInterval(abTimer);
+  abTimer = setInterval(()=>{ const v=$('#player'); if(B!=null && v.currentTime>=B) v.currentTime=A; }, 120);
+}
+function clearLoop(){ A=null; B=null; clearInterval(abTimer); }
+
+function bindLeftToolbar(){
+  $('#btnPrev').onclick = jumpPrev;
+  $('#btnNext').onclick = jumpNext;
+  $('#btnPlay').onclick = ()=>{ const v=$('#player'); v.paused?v.play():v.pause(); };
+  $('#btnRepeatOne').onclick = setRepeatOne;
+  $('#btnAB').onclick = setAB;
+  $('#btnABClear').onclick = clearLoop;
+  $('#rate').oninput = e=>{ const v=$('#player'); v.playbackRate=+e.target.value; $('#rateLabel').textContent=v.playbackRate.toFixed(2)+'×' };
+  $('#zoom').oninput = e=>{ const z=+e.target.value; const v=$('#player'); v.style.transform=`scale(${z})`; v.style.transformOrigin='center center'; };
+}
+
+/* ================== 右欄工具列（跟隨 / 校準 / 字級） ================== */
+function bindRightToolbar(){
+  $('#btnFollow').onclick = ()=>{ follow=!follow; $('#btnFollow').textContent = follow? '跟隨中' : '跟隨'; };
+  $('#btnSyncBack').onclick = ()=>{ offset -= 0.5; $('#offsetLabel').textContent = `偏移 ${offset.toFixed(2)}s`; };
+  $('#btnSyncFwd').onclick  = ()=>{ offset += 0.5; $('#offsetLabel').textContent = `偏移 ${offset.toFixed(2)}s`; };
+  const setFont = s=>{
+    const map={S:'13px',M:'15px',L:'17px'};
+    $('#panelTranscript').style.fontSize = map[s]||'15px';
+    $('#panelQuiz').style.fontSize = map[s]||'15px';
+    $('#panelVocab').style.fontSize = map[s]||'15px';
+    $$('.chip').forEach(b=>b.classList.remove('active'));
+    ({S:'#fS',M:'#fM',L:'#fL'}[s] && $(({S:'#fS',M:'#fM',L:'#fL'}[s])).classList.add('active'));
+  };
+  $('#fS').onclick=()=>setFont('S'); $('#fM').onclick=()=>setFont('M'); $('#fL').onclick=()=>setFont('L');
+}
+
+/* ================== 分頁切換 ================== */
+function setupTabs(){
+  const t1 = $('#tabTranscript'), p1 = $('#panelTranscript');
+  const t2 = $('#tabQuiz'),       p2 = $('#panelQuiz');
+  const t3 = $('#tabVocab'),      p3 = $('#panelVocab');
+  t1.onclick = ()=>{ t1.classList.add('active');t2.classList.remove('active');t3.classList.remove('active'); p1.style.display='block';p2.style.display='none';p3.style.display='none'; };
+  t2.onclick = ()=>{ t2.classList.add('active');t1.classList.remove('active');t3.classList.remove('active'); p2.style.display='block';p1.style.display='none';p3.style.display='none'; };
+  t3.onclick = ()=>{ t3.classList.add('active');t1.classList.remove('active');t2.classList.remove('active'); p3.style.display='block';p1.style.display='none';p2.style.display='none'; };
+}
+
+/* ================== 測驗（保留 20 題基礎） ================== */
+async function loadQuiz(path){
+  const res = await fetch(path);
+  if(!res.ok) throw new Error('測驗 JSON 載入失敗');
+  const raw = await res.json();
+  let arr = Array.isArray(raw)? raw : (raw.items||raw.questions||[]);
+  // 樣板只做選擇題（若是簡短填空可用 a 為陣列 + answerIndex 指向）
+  return arr.slice(0,20).map((x,i)=>{
+    const q = x.q || x.question || x.title || `Q${i+1}`;
+    const opts = x.a || x.options || x.choices || [];
+    let ans = x.answerIndex ?? x.correct ?? x.ans ?? 0;
+    if(typeof ans!=='number'){
+      const idx = opts.findIndex(o=> (o.text||o)===ans);
+      ans = idx>=0? idx : 0;
+    }
+    return {q, opts:opts.map(o=> (o.text||o)), ans};
+  });
+}
+function renderQuiz(questions){
+  const box = $('#quizBox'); box.innerHTML='';
+  questions.forEach((q,i)=>{
+    const wrap = document.createElement('div');
+    wrap.className='q';
+    wrap.innerHTML = `<h4>${i+1}. ${q.q}</h4>`;
+    q.opts.forEach((opt,j)=>{
+      const line = document.createElement('label');
+      line.className='opt';
+      line.innerHTML = `<input type="radio" name="q${i}" value="${j}"/> <span>${opt}</span>`;
+      wrap.appendChild(line);
+    });
+    box.appendChild(wrap);
+  });
+  $('#quizProgress').textContent = `0 / ${questions.length}`;
+  box.addEventListener('change', ()=>{
+    const done = questions.filter((_,i)=> $('input[name="q'+i+'"]:checked', box)).length;
+    $('#quizProgress').textContent = `${done} / ${questions.length}`;
+  });
+  $('#btnCheck').onclick = ()=>{
+    let correct=0;
+    questions.forEach((q,i)=>{
+      const picked = $('input[name="q'+i+'"]:checked', box);
+      const val = picked? +picked.value : -1;
+      if(val===q.ans) correct++;
+    });
+    const ratio = Math.round(correct/questions.length*100);
+    const res = $('#quizResult');
+    res.style.display = 'block';
+    res.className = 'result ' + (ratio>=80?'pass':'fail');
+    res.textContent = `分數：${correct} / ${questions.length}（${ratio}%）` + (ratio>=80?'  👍 太棒了！':'  再接再厲！');
+    $('#btnRetry').style.display = 'inline-block';
+  };
+  $('#btnRetry').onclick = ()=>{
+    $$('input[type="radio"]', box).forEach(r=> r.checked=false);
+    $('#quizProgress').textContent = `0 / ${questions.length}`;
+    const res = $('#quizResult'); res.style.display='none';
+    $('#btnRetry').style.display = 'none';
+  };
+}
+
+/* ================== 單字（填空模式） ================== */
+/*
+  期待 vocab JSON 結構（沿用你現行可讀格式）：
+  {
+    "title": "Mid-Autumn Vocabulary",
+    "items": [
+      {"time":"00:08","word":"lantern","pos":"n.","zh":"燈籠","en":"a light ...","example":"Families carry lanterns at night.","grammar":"可數名詞；..."},
+      ...
+    ]
+  }
+*/
+function makeClozeSentence(example, word){
+  // 用第一個出現處改成空格（大小寫不敏感）
+  const re = new RegExp(word.replace(/[.*+?^${}()|[\]\\]/g,'\\$&'),'i');
+  if(!re.test(example)) return example.replace(/(.{2,})/, '＿＿'); // fallback
+  return example.replace(re,'＿＿');
+}
+function renderVocab(vobj){
+  const box = $('#vocabBox'); box.innerHTML='';
+  $('#vocabTitle').textContent = vobj.title || 'Vocabulary';
+  const items = vobj.items||[];
+
+  // 搜尋
+  $('#vocabSearch').oninput = ()=>{
+    const kw = $('#vocabSearch').value.trim().toLowerCase();
+    $$('.vcard', box).forEach(card=>{
+      const hit = card.dataset.hit.includes(kw);
+      card.style.display = (kw && !hit) ? 'none' : '';
+    });
+  };
+
+  items.forEach(it=>{
+    const card = document.createElement('div');
+    card.className='vcard';
+    card.dataset.hit = (it.word + ' ' + (it.zh||'') + ' ' + (it.en||'') + ' ' + (it.example||'')).toLowerCase();
+    const tSec = toSec(it.time||'0:0');
+    const cloze = makeClozeSentence(it.example||'', it.word||'');
+
+    card.innerHTML = `
+      <div class="vhead">
+        <strong class="word">${(it.word||'').toLowerCase()}</strong>
+        <span class="tag">${it.pos||''}</span>
+        <button class="btn jump" title="跳到 ${it.time||'00:00'}">▶ [${it.time||'00:00'}]</button>
+      </div>
+      <div class="zh">${it.zh||''}</div>
+      <div class="en muted">${it.en||''}</div>
+
+      <!-- 填空區（初始） -->
+      <div class="cloze"><b>例：</b> ${cloze}</div>
+      <div class="row">
+        <input class="input" type="text" placeholder="輸入正確單字…" style="min-width:160px"/>
+        <span class="msg muted"></span>
+      </div>
+
+      <!-- 詳細解釋（答對才顯示） -->
+      <div class="detail" style="display:none">
+        <div class="cloze"><b>例：</b> ${it.example||''}</div>
+        ${ it.grammar ? `<div class="grammar">文法：${it.grammar}</div>` : '' }
+      </div>
+    `;
+    // 事件：跳播
+    $('.jump', card).onclick = ()=>{
+      const v=$('#player'); v.currentTime = tSec + offset; v.play();
+    };
+    // 事件：驗證填空
+    const input = $('.input', card), msg=$('.msg', card), detail=$('.detail', card);
+    function check(){
+      const val = (input.value||'').trim().toLowerCase();
+      const ans = (it.word||'').trim().toLowerCase();
+      if(!val) return;
+      if(val===ans){
+        msg.textContent='正確！'; msg.className='msg ok';
+        detail.style.display = 'block';
+      }else{
+        msg.textContent='再試試～'; msg.className='msg bad';
+      }
+    }
+    input.addEventListener('keydown',e=>{ if(e.key==='Enter') check(); });
+    input.addEventListener('blur',check);
+
+    box.appendChild(card);
+  });
+}
+
+/* ================== 啟動 ================== */
+(async ()=>{
+  try{
+    setupTabs();
+    bindLeftToolbar();
+    bindRightToolbar();
+
+    const meta = await loadMeta();
+    // 影片
+    $('#player').src = meta.video;
+
+    // 字幕
+    const cuesRes = await fetch(meta.cues);
+    const cuesJson = await cuesRes.json();
+    renderTranscript(cuesJson);
+    $('#player').addEventListener('timeupdate', ()=> highlightByTime($('#player').currentTime));
+
+    // 測驗（若有）
+    if(meta.quiz){
+      const qs = await loadQuiz(meta.quiz);
+      renderQuiz(qs);
+    }else{
+      $('#tabQuiz').style.display='none';
+    }
+
+    // 單字（若存在 data/vocab-<slug>.json）
+    try{
+      const vres = await fetch(`data/vocab-${slug}.json`);
+      if(vres.ok){
+        const vjson = await vres.json();
+        renderVocab(vjson);
+      }else{
+        $('#vocabBox').innerHTML = `<div class="muted">此影片尚未提供單字。</div>`;
+      }
+    }catch{
+      $('#vocabBox').innerHTML = `<div class="muted">此影片尚未提供單字。</div>`;
+    }
+
+  }catch(err){
+    console.error(err);
+    $('#panelTranscript').innerHTML = `<div class="muted">載入失敗：${err.message}</div>`;
+  }
+})();
 </script>
 </body>
 </html>
