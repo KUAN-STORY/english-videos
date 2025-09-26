@@ -1,40 +1,41 @@
 {
+  "$schema": "https://example.com/learn-english-stories/index.schema.json",
   "items": [
     {
       "slug": "mid-autumn",
       "title_en": "Mid-Autumn Festival",
       "title_zh": "中秋節",
       "length": "short",
-      "free": true,
       "video": "videos/mid-autumn.mp4",
-      "thumb": "videos/mid-autumn.jpg",
+      "cover": "videos/mid-autumn.jpg",
       "cues": "data/cues-mid-autumn.json",
       "quiz": "data/quiz-mid-autumn.json",
-      "vocab": "data/vocab-mid-autumn.json"
+      "vocab": "data/vocab-mid-autumn.json",
+      "is_free": true
     },
     {
       "slug": "houyi",
       "title_en": "Hou Yi Shoots the Suns",
       "title_zh": "后羿射日",
       "length": "short",
-      "free": false,
       "video": "videos/houyi.mp4",
-      "thumb": "videos/houyi.jpg",
+      "cover": "videos/houyi.jpg",
       "cues": "data/cues-houyi.json",
       "quiz": "data/quiz-houyi.json",
-      "vocab": "data/vocab-houyi.json"
+      "vocab": "data/vocab-houyi.json",
+      "is_free": false
     },
     {
       "slug": "lantern",
       "title_en": "Lantern Festival",
       "title_zh": "元宵節",
       "length": "short",
-      "free": false,
       "video": "videos/lantern.mp4",
-      "thumb": "videos/lantern.jpg",
+      "cover": "videos/lantern.jpg",
       "cues": "data/cues-lantern.json",
       "quiz": "data/quiz-lantern.json",
-      "vocab": "data/vocab-lantern.json"
+      "vocab": "data/vocab-lantern.json",
+      "is_free": false
     }
   ]
 }
