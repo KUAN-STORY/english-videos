@@ -386,3 +386,125 @@ function renderQuiz(questions){
     "items": [
       {"time":"00:08","word":"lantern","pos":"n.","zh":"燈籠","en":"a light ...","example":"Families carry lanterns at night.","grammar":"可數名詞；..."},
       ...
+    ]
+  }
+*/
+function makeClozeSentence(example, word){
+  // 用第一個出現處改成空格（大小寫不敏感）
+  const re = new RegExp(word.replace(/[.*+?^${}()|[\]\\]/g,'\\$&'),'i');
+  if(!re.test(example)) return example.replace(/(.{2,})/, '＿＿'); // fallback
+  return example.replace(re,'＿＿');
+}
+function renderVocab(vobj){
+  const box = $('#vocabBox'); box.innerHTML='';
+  $('#vocabTitle').textContent = vobj.title || 'Vocabulary';
+  const items = vobj.items||[];
+
+  // 搜尋
+  $('#vocabSearch').oninput = ()=>{
+    const kw = $('#vocabSearch').value.trim().toLowerCase();
+    $$('.vcard', box).forEach(card=>{
+      const hit = card.dataset.hit.includes(kw);
+      card.style.display = (kw && !hit) ? 'none' : '';
+    });
+  };
+
+  items.forEach(it=>{
+    const card = document.createElement('div');
+    card.className='vcard';
+    card.dataset.hit = (it.word + ' ' + (it.zh||'') + ' ' + (it.en||'') + ' ' + (it.example||'')).toLowerCase();
+    const tSec = toSec(it.time||'0:0');
+    const cloze = makeClozeSentence(it.example||'', it.word||'');
+
+    card.innerHTML = `
+      <div class="vhead">
+        <strong class="word">${(it.word||'').toLowerCase()}</strong>
+        <span class="tag">${it.pos||''}</span>
+        <button class="btn jump" title="跳到 ${it.time||'00:00'}">▶ [${it.time||'00:00'}]</button>
+      </div>
+      <div class="zh">${it.zh||''}</div>
+      <div class="en muted">${it.en||''}</div>
+
+      <!-- 填空區（初始） -->
+      <div class="cloze"><b>例：</b> ${cloze}</div>
+      <div class="row">
+        <input class="input" type="text" placeholder="輸入正確單字…" style="min-width:160px"/>
+        <span class="msg muted"></span>
+      </div>
+
+      <!-- 詳細解釋（答對才顯示） -->
+      <div class="detail" style="display:none">
+        <div class="cloze"><b>例：</b> ${it.example||''}</div>
+        ${ it.grammar ? `<div class="grammar">文法：${it.grammar}</div>` : '' }
+      </div>
+    `;
+    // 事件：跳播
+    $('.jump', card).onclick = ()=>{
+      const v=$('#player'); v.currentTime = tSec + offset; v.play();
+    };
+    // 事件：驗證填空
+    const input = $('.input', card), msg=$('.msg', card), detail=$('.detail', card);
+    function check(){
+      const val = (input.value||'').trim().toLowerCase();
+      const ans = (it.word||'').trim().toLowerCase();
+      if(!val) return;
+      if(val===ans){
+        msg.textContent='正確！'; msg.className='msg ok';
+        detail.style.display = 'block';
+      }else{
+        msg.textContent='再試試～'; msg.className='msg bad';
+      }
+    }
+    input.addEventListener('keydown',e=>{ if(e.key==='Enter') check(); });
+    input.addEventListener('blur',check);
+
+    box.appendChild(card);
+  });
+}
+
+/* ================== 啟動 ================== */
+(async ()=>{
+  try{
+    setupTabs();
+    bindLeftToolbar();
+    bindRightToolbar();
+
+    const meta = await loadMeta();
+    // 影片
+    $('#player').src = meta.video;
+
+    // 字幕
+    const cuesRes = await fetch(meta.cues);
+    const cuesJson = await cuesRes.json();
+    renderTranscript(cuesJson);
+    $('#player').addEventListener('timeupdate', ()=> highlightByTime($('#player').currentTime));
+
+    // 測驗（若有）
+    if(meta.quiz){
+      const qs = await loadQuiz(meta.quiz);
+      renderQuiz(qs);
+    }else{
+      $('#tabQuiz').style.display='none';
+    }
+
+    // 單字（若存在 data/vocab-<slug>.json）
+    try{
+      const vres = await fetch(`data/vocab-${slug}.json`);
+      if(vres.ok){
+        const vjson = await vres.json();
+        renderVocab(vjson);
+      }else{
+        $('#vocabBox').innerHTML = `<div class="muted">此影片尚未提供單字。</div>`;
+      }
+    }catch{
+      $('#vocabBox').innerHTML = `<div class="muted">此影片尚未提供單字。</div>`;
+    }
+
+  }catch(err){
+    console.error(err);
+    $('#panelTranscript').innerHTML = `<div class="muted">載入失敗：${err.message}</div>`;
+  }
+})();
+</script>
+</body>
+</html>
