@@ -4,31 +4,37 @@
       "slug": "mid-autumn",
       "title_en": "Mid-Autumn Festival",
       "title_zh": "中秋節",
-      "video": "videos/mid-autumn.mp4",
-      "poster": "images/mid-autumn.jpg",
+      "length": "short",
       "free": true,
-      "length": "短篇",
-      "tags": ["中秋節", "月亮"]
+      "video": "videos/mid-autumn.mp4",
+      "thumb": "videos/mid-autumn.jpg",
+      "cues": "data/cues-mid-autumn.json",
+      "quiz": "data/quiz-mid-autumn.json",
+      "vocab": "data/vocab-mid-autumn.json"
     },
     {
       "slug": "houyi",
       "title_en": "Hou Yi Shoots the Suns",
       "title_zh": "后羿射日",
-      "video": "videos/houyi.mp4",
-      "poster": "images/houyi.jpg",
+      "length": "short",
       "free": false,
-      "length": "短篇",
-      "tags": ["神話", "太陽"]
+      "video": "videos/houyi.mp4",
+      "thumb": "videos/houyi.jpg",
+      "cues": "data/cues-houyi.json",
+      "quiz": "data/quiz-houyi.json",
+      "vocab": "data/vocab-houyi.json"
     },
     {
       "slug": "lantern",
       "title_en": "Lantern Festival",
       "title_zh": "元宵節",
-      "video": "videos/lantern.mp4",
-      "poster": "images/lantern.jpg",
+      "length": "short",
       "free": false,
-      "length": "短篇",
-      "tags": ["燈籠", "元宵"]
+      "video": "videos/lantern.mp4",
+      "thumb": "videos/lantern.jpg",
+      "cues": "data/cues-lantern.json",
+      "quiz": "data/quiz-lantern.json",
+      "vocab": "data/vocab-lantern.json"
     }
   ]
 }
