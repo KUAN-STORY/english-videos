@@ -4,283 +4,235 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
 <title>看故事學英文 · Stories</title>
-<meta name="description" content="Bilingual story videos with subtitles, quizzes and vocabulary."/>
 <style>
   :root{
-    --bg:#0b1324; --panel:#0f1a33; --muted:#a9b3cf; --text:#e7eaf3;
-    --brand:#3c7cff; --ok:#14b86e; --warn:#f5a524; --border:#203057;
-    --danger:#ef4444;
+    --bg:#0b1324; --panel:#0f1a33; --border:#203057;
+    --text:#e7eaf3; --muted:#a9b3cf; --brand:#3c7cff; --ok:#15c37e; --warn:#f59e0b;
   }
-  html,body{height:100%;margin:0;background:var(--bg);color:var(--text);
-    font-family:system-ui,-apple-system,Segoe UI,Roboto,Noto Sans TC,Noto Sans,sans-serif}
+  html,body{height:100%;margin:0;background:var(--bg);color:var(--text);font-family:system-ui,-apple-system,Segoe UI,Roboto,Noto Sans,sans-serif}
   a{color:inherit;text-decoration:none}
-
-  .wrap{max-width:1080px;margin:0 auto;padding:16px}
-  header{position:sticky;top:0;z-index:10;background:rgba(11,19,36,.9);backdrop-filter: blur(6px);
-    border-bottom:1px solid var(--border)}
-  .nav{display:flex;align-items:center;gap:12px;padding:12px 0}
-  .brand{font-weight:800;letter-spacing:.5px}
-  .brand .dot{color:var(--brand)}
-  .nav-spacer{flex:1}
-  .btn{border:1px solid var(--border);background:#15224a;color:#fff;border-radius:10px;
-    padding:8px 12px;cursor:pointer}
-  .btn:hover{filter:brightness(1.12)}
-  .btn-ghost{background:transparent}
-  .btn-brand{background:var(--brand);border-color:#2a62de}
-  .btn-danger{background:var(--danger);border-color:#d93434}
-  .hero{display:grid;grid-template-columns: 1.2fr .8fr;gap:18px;align-items:center;padding:18px 0}
-  .hero h1{margin:0 0 8px 0;font-size: clamp(22px,3.6vw,34px)}
-  .muted{color:var(--muted)}
-  .tool{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
-  .search{flex:1;min-width:220px;background:#0e1a35;border:1px solid var(--border);color:var(--text);
-    border-radius:12px;padding:10px 12px;outline:none}
-
+  .wrap{max-width:1100px;margin:0 auto;padding:28px 16px 80px}
+  header{display:flex;align-items:center;gap:12px;justify-content:space-between;margin-bottom:8px}
+  .title{font-size:28px;font-weight:800;letter-spacing:.02em}
+  .actions{display:flex;gap:8px}
+  .btn{padding:8px 14px;border:1px solid var(--border);background:#132046;color:#fff;border-radius:12px;cursor:pointer}
+  .btn:hover{filter:brightness(1.08)}
+  .note{margin:14px 0 22px 0;color:var(--muted)}
+  .bar{display:flex;gap:8px;margin:14px 0 22px 0}
+  .input{flex:1;min-width:220px;padding:10px 12px;border-radius:12px;border:1px solid var(--border);background:#0f1a33;color:#fff}
   .chips{display:flex;gap:8px;flex-wrap:wrap}
-  .chip{padding:6px 10px;border:1px solid var(--border);border-radius:999px;background:#121d3d;color:var(--muted);cursor:pointer}
-  .chip.active{color:#fff;background:#1a2c66;border-color:#2d4ea7}
+  .chip{padding:8px 12px;border:1px solid var(--border);background:#101b39;border-radius:999px;color:#c6d0ef;cursor:pointer}
+  .chip.active{background:#18306b;color:#fff;border-color:#2d4ea7}
 
-  .grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin:18px 0 40px}
-  @media (max-width:880px){ .hero{grid-template-columns:1fr} .grid{grid-template-columns:1fr 1fr}}
-  @media (max-width:560px){ .grid{grid-template-columns:1fr} }
+  .grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+  @media(max-width:1024px){ .grid{grid-template-columns:repeat(2,1fr)} }
+  @media(max-width:640px){ .grid{grid-template-columns:1fr} }
 
-  .card{display:flex;flex-direction:column;background:var(--panel);border:1px solid var(--border);border-radius:14px;overflow:hidden;position:relative}
-  .thumb{aspect-ratio:16/9;background:#000;display:flex;align-items:center;justify-content:center;position:relative}
-  .thumb img,.thumb video{width:100%;height:100%;object-fit:cover}
-  .lock{
-    position:absolute;top:10px;left:10px;background:rgba(12,18,34,.75);
-    border:1px solid var(--border);color:#fff;border-radius:999px;padding:4px 8px;font-size:12px
-  }
-  .free{background:rgba(20,184,110,.2);border-color:rgba(20,184,110,.5)}
-  .card-body{padding:12px}
-  .title{font-weight:700;margin:0 0 4px}
-  .sub{font-size:13px;color:var(--muted);margin:0 0 10px}
-  .row{display:flex;gap:8px;align-items:center}
-  .pill{font-size:12px;color:#fff;background:#1a2c66;border:1px solid #2d4ea7;border-radius:999px;padding:4px 8px}
-  .go{margin-left:auto}
-  .empty{color:var(--muted);text-align:center;padding:28px;border:1px dashed var(--border);border-radius:14px}
-
-  footer{border-top:1px solid var(--border);padding:18px 0;color:var(--muted)}
-
-  /* Modal */
-  .modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.45);display:none;align-items:center;justify-content:center}
-  .modal{width:min(92vw,420px);background:var(--panel);border:1px solid var(--border);border-radius:14px;padding:18px}
-  .modal h3{margin:0 0 10px}
-  .field{display:flex;flex-direction:column;gap:6px;margin:10px 0}
-  .input{background:#0e1a35;border:1px solid var(--border);color:#fff;border-radius:10px;padding:10px 12px}
-  .row-between{display:flex;gap:10px;justify-content:space-between;align-items:center}
+  .card{display:flex;flex-direction:column;gap:10px;background:var(--panel);border:1px solid var(--border);border-radius:16px;overflow:hidden}
+  .thumbBox{position:relative;height:210px;background:linear-gradient(160deg,#152548,#0b1324)}
+  .thumb{width:100%;height:100%;object-fit:cover;display:block}
+  .badge{position:absolute;top:10px;left:10px;padding:6px 10px;border-radius:10px;font-size:12px;font-weight:700}
+  .badge.free{background:rgba(21,195,126,.15);color:#82f5c3;border:1px solid rgba(130,245,195,.4)}
+  .badge.lock{background:rgba(245,158,11,.15);color:#ffd08a;border:1px solid rgba(245,158,11,.35)}
+  .titleBox{padding:12px 14px 2px 14px;font-size:18px;font-weight:700}
+  .meta{display:flex;align-items:center;justify-content:space-between;color:var(--muted);padding:0 14px 12px 14px}
+  .linkRow{display:flex;gap:8px;padding:0 14px 14px 14px}
+  .link{padding:7px 10px;border:1px solid var(--border);background:#12214a;color:#cfe3ff;border-radius:10px}
+  .foot{margin-top:28px;color:#7a86a6}
+  .small{font-size:12px;color:#8f9abc}
 </style>
 </head>
 <body>
+<div class="wrap">
+  <header>
+    <div class="title">用故事學英文：雙語字幕、測驗與單字</div>
+    <div class="actions">
+      <button class="btn" onclick="alert('登入功能稍後開放')">登入</button>
+      <a class="btn" href="https://github.com/kuan-story/english-videos" target="_blank" rel="noopener">GitHub</a>
+    </div>
+  </header>
 
-<header>
-  <div class="wrap nav">
-    <div class="brand">看故事學英文<span class="dot">•</span>Stories</div>
-    <div class="nav-spacer"></div>
-    <button id="btnLogin" class="btn btn-ghost">登入</button>
-    <button id="btnLogout" class="btn btn-danger" style="display:none">登出</button>
-    <a class="btn btn-brand" href="https://github.com/kuan-story/english-videos" target="_blank" rel="noopener">GitHub</a>
+  <div class="note">從下方卡片選故事開始。大多數內容需登入後觀看，〈中秋節〉為免費試看。</div>
+
+  <div class="bar">
+    <input id="kw" class="input" placeholder="輸入關鍵字搜尋（中/英標題/標籤）…" />
+    <div class="chips">
+      <button class="chip active" data-filter="all">全部</button>
+      <button class="chip" data-filter="short">短篇</button>
+      <button class="chip" data-filter="long">長篇</button>
+    </div>
   </div>
-</header>
 
-<main class="wrap">
-  <section class="hero">
-    <div>
-      <h1>用故事學英文：雙語字幕、測驗與單字</h1>
-      <p class="muted">從下方片單中選擇故事開始。大多數內容須登入後觀看，<b>〈中秋節〉為免費試看</b>。</p>
-      <div class="tool" style="margin-top:12px">
-        <input id="kw" class="search" placeholder="輸入關鍵字搜尋（中 / 英標題 / 標籤）…" />
-        <div class="chips" id="tagChips"><div class="chip active" data-tag="*">全部</div></div>
-      </div>
-    </div>
-    <div class="empty" id="statBox">
-      🌟 目前已收錄 <span id="count">0</span> 個故事。<br/>支援手機與桌機觀看。
-    </div>
-  </section>
+  <div id="grid" class="grid"></div>
 
-  <section>
-    <div class="grid" id="grid"></div>
-    <div id="empty" class="empty" style="display:none">沒有符合的結果。</div>
-  </section>
-</main>
-
-<footer>
-  <div class="wrap row">
-    <div>© 2025 KUAN-STORY</div>
-    <div class="nav-spacer"></div>
-    <div class="muted">Made for learning • GitHub Pages</div>
-  </div>
-</footer>
-
-<!-- Login Modal -->
-<div id="modalBg" class="modal-bg" role="dialog" aria-modal="true">
-  <div class="modal">
-    <div class="row-between">
-      <h3>登入帳號</h3>
-      <button id="btnClose" class="btn btn-ghost">✕</button>
-    </div>
-    <p class="muted" id="gateMsg" style="margin:4px 0 10px 0">登入後可觀看全部影片。</p>
-    <div class="field">
-      <label>Email</label>
-      <input id="email" type="email" class="input" placeholder="you@example.com"/>
-    </div>
-    <div class="field">
-      <label>密碼</label>
-      <input id="pwd" type="password" class="input" placeholder="至少 6 碼"/>
-    </div>
-    <div class="row" style="gap:8px;margin-top:8px">
-      <button id="doLogin" class="btn btn-brand" style="flex:1">登入（示範）</button>
-      <button id="doSignup" class="btn" style="flex:1">註冊（示範）</button>
-    </div>
-    <p class="muted" style="margin-top:10px;font-size:13px">
-      ※ 目前先用示範登入（localStorage）。未來可換成 Supabase Auth。
-    </p>
-  </div>
+  <div class="foot small">© 2025 KUAN-STORY • Made for learning on GitHub Pages</div>
 </div>
 
 <script>
-/* ============ 小工具 ============ */
-const $  = (s, r=document)=> r.querySelector(s);
+const $ = (s, r=document)=> r.querySelector(s);
 const $$ = (s, r=document)=> [...r.querySelectorAll(s)];
-const escapeHtml = (s='')=> s.replace(/[&<>"']/g, m=>({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[m]));
+let allItems = [];
+let filterKind = 'all';
+let kw = '';
 
-/* Login 狀態（示範：localStorage） */
-const auth = {
-  get logged(){ return localStorage.getItem('logged')==='1'; },
-  login(){ localStorage.setItem('logged','1'); uiAuth(); },
-  logout(){ localStorage.removeItem('logged'); uiAuth(); },
-};
-function uiAuth(){
-  $('#btnLogin').style.display = auth.logged ? 'none' : 'inline-block';
-  $('#btnLogout').style.display = auth.logged ? 'inline-block' : 'none';
+/* 生成卡片：包含影片擷取縮圖 */
+function render(items){
+  const grid = $('#grid');
+  grid.innerHTML = '';
+  if(!items?.length){
+    grid.innerHTML = '<div class="small" style="opacity:.75">找不到符合條件的故事。</div>';
+    return;
+  }
+  items.forEach(it=>{
+    const card = document.createElement('div');
+    card.className = 'card';
+
+    const thumbBox = document.createElement('div');
+    thumbBox.className = 'thumbBox';
+
+    // badge
+    const badge = document.createElement('div');
+    badge.className = 'badge ' + (it.free?'free':'lock');
+    badge.textContent = it.free ? '免費試看' : '需登入';
+    thumbBox.appendChild(badge);
+
+    // 預留 <img> 做為縮圖容器
+    const img = document.createElement('img');
+    img.className = 'thumb';
+    img.alt = it.title_en || it.title_zh || it.slug;
+
+    // 1) 先用 poster（若 JSON 提供），避免白圖
+    if(it.poster){ img.src = it.poster; }
+
+    thumbBox.appendChild(img);
+    card.appendChild(thumbBox);
+
+    // 標題
+    const title = document.createElement('div');
+    title.className = 'titleBox';
+    title.textContent = it.title_en || it.title_zh || it.slug;
+    card.appendChild(title);
+
+    // 類別 / 長短
+    const meta = document.createElement('div');
+    meta.className = 'meta';
+    meta.innerHTML = `<span>${it.title_zh || ''}</span><span>${it.length || ''}</span>`;
+    card.appendChild(meta);
+
+    // 連結列
+    const links = document.createElement('div');
+    links.className = 'linkRow';
+    const a1 = document.createElement('a');
+    a1.className = 'link';
+    a1.textContent = '前往 ▶';
+    a1.href = `player.html?slug=${encodeURIComponent(it.slug)}`;
+    const a2 = document.createElement('a');
+    a2.className = 'link';
+    a2.textContent = '測驗';
+    a2.href = `player.html?slug=${encodeURIComponent(it.slug)}#quiz`;
+    links.appendChild(a1);
+    links.appendChild(a2);
+    card.appendChild(links);
+
+    grid.appendChild(card);
+
+    // 2) 嘗試從影片擷取縮圖（1 秒）
+    //    與頁面同網域的 mp4 可直接擷取，不會有 CORS。
+    if(it.video){
+      makeThumb(it.video, 1).then(url=>{
+        if(url) img.src = url;
+      }).catch(()=>{/*ignore*/});
+    }
+  });
 }
 
-/* ============ 載入清單 ============ */
-let allItems = [];   // 原始
-let userTag = '*';   // 當前標籤篩選
-let kw = '';         // 搜尋字
+/* 從影片擷取指定秒數的縮圖（回傳 dataURL）*/
+async function makeThumb(src, sec=1){
+  return new Promise((resolve)=>{
+    const v = document.createElement('video');
+    v.crossOrigin = 'anonymous';       // 同網域可不寫，保險起見保留
+    v.preload = 'metadata';
+    v.src = src;
 
-async function loadList(){
+    // 有些瀏覽器需靜音才能 programmatic play
+    v.muted = true;
+
+    const onError = ()=> resolve('');
+    v.onerror = onError;
+
+    v.addEventListener('loadeddata', ()=>{
+      const go = ()=>{
+        try{
+          const w = v.videoWidth || 640, h = v.videoHeight || 360;
+          if(!w || !h) return resolve('');
+          const canvas = document.createElement('canvas');
+          canvas.width = w; canvas.height = h;
+          const ctx = canvas.getContext('2d');
+          ctx.drawImage(v, 0, 0, w, h);
+          const url = canvas.toDataURL('image/jpeg', 0.8);
+          resolve(url);
+        }catch(e){ resolve(''); }
+      };
+      // 嘗試定位到指定秒數
+      if(sec && !isNaN(sec)){
+        const seeked = ()=>{
+          v.removeEventListener('seeked', seeked);
+          go();
+        };
+        v.addEventListener('seeked', seeked);
+        try{ v.currentTime = sec; }catch{ go(); }
+      }else{
+        go();
+      }
+    }, {once:true});
+  });
+}
+
+/* 搜尋 + 篩選 */
+function applyFilter(){
+  const words = kw.trim().toLowerCase();
+  let list = allItems.filter(it=>{
+    if(filterKind==='short' && it.length!=='短篇') return false;
+    if(filterKind==='long'  && it.length!=='長篇') return false;
+    if(!words) return true;
+    const keys = [
+      it.title_en||'', it.title_zh||'',
+      (it.tags||[]).join(' ')
+    ].join(' ').toLowerCase();
+    return keys.includes(words);
+  });
+  render(list);
+}
+
+/* 初始化 */
+(async function(){
   try{
     const res = await fetch('data/index.json');
     const json = await res.json();
-    allItems = (json.items||[]).map(x=>({
-      slug: x.slug,
-      title_en: x.title_en || x.title || '',
-      title_zh: x.title_zh || '',
-      video: x.video,
-      cues: x.cues,
-      quiz: x.quiz,
-      cover: x.cover || '',          // 可加封面路徑
-      tags:  x.tags  || [],          // 可加標籤陣列
-      free:  !!x.free                // 免費影片
+    // 期望結構示例：
+    // { items: [{slug,title_en,title_zh,video,poster,free,tags:["中秋節"],length:"短篇"}] }
+    allItems = (json.items||[]).map(it=>({
+      ...it,
+      poster: it.poster || '',          // optional
+      free: !!it.free,                  // bool
+      length: it.length || ''           // "短篇"/"長篇"
     }));
-
-    // 按標籤生成 chips
-    const tagSet = new Set();
-    allItems.forEach(it => (it.tags||[]).forEach(t=> tagSet.add(t)));
-    const tagChips = $('#tagChips');
-    tagChips.innerHTML = '<div class="chip active" data-tag="*">全部</div>' +
-      [...tagSet].map(t=>`<div class="chip" data-tag="${escapeHtml(t)}">${escapeHtml(t)}</div>`).join('');
-
-    $('#count').textContent = allItems.length;
-    render();
+    applyFilter();
   }catch(e){
-    $('#grid').innerHTML = '<div class="empty">讀取 <code>data/index.json</code> 失敗。</div>';
-    console.error(e);
+    $('#grid').innerHTML = `<div class="small">讀取 <code>data/index.json</code> 失敗。</div>`;
   }
-}
 
-function filterItems(){
-  const needle = kw.toLowerCase();
-  return allItems.filter(it=>{
-    // 文字過濾
-    const text = (it.title_en+' '+it.title_zh+' '+(it.tags||[]).join(' ')).toLowerCase();
-    const passKw = !needle || text.includes(needle);
-    // 標籤過濾
-    const passTag = (userTag==='*') || (it.tags||[]).includes(userTag);
-    return passKw && passTag;
+  // 事件
+  $('#kw').addEventListener('input', (e)=>{ kw = e.target.value; applyFilter(); });
+  $$('.chip').forEach(c=>{
+    c.onclick = ()=>{
+      $$('.chip').forEach(x=>x.classList.remove('active'));
+      c.classList.add('active');
+      filterKind = c.dataset.filter;
+      applyFilter();
+    };
   });
-}
-
-function coverOf(it){
-  if (it.cover) return it.cover;
-  // 沒封面就用文字佔位
-  const label = encodeURIComponent((it.title_en||'Story').replace(/\s+/g,'+'));
-  return `https://dummyimage.com/640x360/0b1324/ffffff&text=${label}`;
-}
-
-function render(){
-  const list = filterItems();
-  const grid = $('#grid');
-  grid.innerHTML = '';
-
-  if(!list.length){ $('#empty').style.display='block'; return; }
-  $('#empty').style.display='none';
-
-  list.forEach(it=>{
-    const a = document.createElement('a');
-    a.className = 'card';
-    a.href = `player.html?slug=${encodeURIComponent(it.slug)}`;
-
-    const isFree = it.free || it.slug === 'mid-autumn'; // 〈中秋節〉永遠免費
-    const locked = !auth.logged && !isFree;
-
-    a.innerHTML = `
-      <div class="thumb">
-        <img src="${coverOf(it)}" alt="cover"/>
-        <div class="lock ${isFree?'free':''}">
-          ${ isFree ? '免費試看' : '需登入' }
-        </div>
-      </div>
-      <div class="card-body">
-        <p class="title">${escapeHtml(it.title_en)}</p>
-        <p class="sub">${escapeHtml(it.title_zh||'')}</p>
-        <div class="row">
-          ${(it.tags||[]).slice(0,3).map(t=>`<span class="pill">${escapeHtml(t)}</span>`).join('')}
-          ${it.quiz?'<span class="pill">測驗</span>':''}
-          <span class="nav-spacer"></span>
-          <span class="muted">前往 ▶</span>
-        </div>
-      </div>
-    `;
-
-    if(locked){
-      // 未登入 & 非免費：攔截，改為開登入提示
-      a.addEventListener('click', (ev)=>{
-        ev.preventDefault();
-        $('#gateMsg').textContent = `「${it.title_zh||it.title_en}」為會員內容，請先登入。`;
-        modalOpen();
-      });
-    }
-
-    grid.appendChild(a);
-  });
-}
-
-/* ============ 事件 ============ */
-$('#kw').addEventListener('input', e=>{ kw = e.target.value.trim(); render(); });
-$('#tagChips').addEventListener('click', e=>{
-  const chip = e.target.closest('.chip'); if(!chip) return;
-  $$('.chip','#tagChips').forEach(c=>c.classList.remove('active'));
-  chip.classList.add('active');
-  userTag = chip.dataset.tag;
-  render();
-});
-
-/* Modal（示範登入） */
-const modalBg = $('#modalBg');
-function modalOpen(){ modalBg.style.display='flex'; }
-function modalClose(){ modalBg.style.display='none'; }
-$('#btnLogin').onclick = ()=>{ $('#gateMsg').textContent='登入後可觀看全部影片。'; modalOpen(); };
-$('#btnClose').onclick = modalClose;
-modalBg.addEventListener('click', e=>{ if(e.target===modalBg) modalClose(); });
-$('#doLogin').onclick = ()=>{ auth.login(); modalClose(); render(); };
-$('#doSignup').onclick = ()=>{ auth.login(); modalClose(); render(); };
-$('#btnLogout').onclick = ()=>{ auth.logout(); render(); };
-
-/* 啟動 */
-uiAuth();
-loadList();
+})();
 </script>
 </body>
 </html>
