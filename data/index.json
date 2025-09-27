@@ -1,41 +1,34 @@
 {
-  "$schema": "https://example.com/learn-english-stories/index.schema.json",
-  "items": [
+  "items":[
     {
-      "slug": "mid-autumn",
-      "title_en": "Mid-Autumn Festival",
-      "title_zh": "中秋節",
-      "length": "short",
-      "video": "videos/mid-autumn.mp4",
-      "cover": "videos/mid-autumn.jpg",
-      "cues": "data/cues-mid-autumn.json",
-      "quiz": "data/quiz-mid-autumn.json",
-      "vocab": "data/vocab-mid-autumn.json",
-      "is_free": true
+      "slug":"mid-autumn",
+      "title_en":"Mid-Autumn Festival",
+      "title_zh":"中秋節",
+      "length":"SHORT",
+      "video":"videos/mid-autumn.mp4",
+      "cues":"data/cues-mid-autumn.json",
+      "quiz":"data/quiz-mid-autumn.json",
+      "cover":"videos/mid-autumn.jpg"
     },
     {
-      "slug": "houyi",
-      "title_en": "Hou Yi Shoots the Suns",
-      "title_zh": "后羿射日",
-      "length": "short",
-      "video": "videos/houyi.mp4",
-      "cover": "videos/houyi.jpg",
-      "cues": "data/cues-houyi.json",
-      "quiz": "data/quiz-houyi.json",
-      "vocab": "data/vocab-houyi.json",
-      "is_free": false
+      "slug":"houyi",
+      "title_en":"Hou Yi Shoots the Suns",
+      "title_zh":"后羿射日",
+      "length":"SHORT",
+      "video":"videos/houyi.mp4",
+      "cues":"data/cues-houyi.json",
+      "quiz":"data/quiz-houyi.json",
+      "cover":"videos/houyi.jpg"
     },
     {
-      "slug": "lantern",
-      "title_en": "Lantern Festival",
-      "title_zh": "元宵節",
-      "length": "short",
-      "video": "videos/lantern.mp4",
-      "cover": "videos/lantern.jpg",
-      "cues": "data/cues-lantern.json",
-      "quiz": "data/quiz-lantern.json",
-      "vocab": "data/vocab-lantern.json",
-      "is_free": false
+      "slug":"lantern",
+      "title_en":"Lantern Festival",
+      "title_zh":"元宵節",
+      "length":"SHORT",
+      "video":"videos/Lantern.mp4",
+      "cues":"data/cues-lantern.json",
+      "quiz":"data/quiz-lantern.json",
+      "cover":"videos/lantern.jpg"
     }
   ]
 }
