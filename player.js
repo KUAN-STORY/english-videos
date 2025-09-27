@@ -1,235 +1,379 @@
-// /english-videos/player.js  —  字幕 + 測驗 + 單字（填空）完整控制（同時支援兩種 quiz 格式）
+/* =========================================================
+ *  player.js  —  (Stories Player)
+ *  功能：字幕 + 測驗 + 單字 + TTS朗讀 + 點時間/例句跳播
+ *  資料結構：
+ *   - data/cues-<slug>.json
+ *   - data/quiz-<slug>.json
+ *   - data/vocab-<slug>.json
+ * ======================================================= */
 
-async function loadJSON(path) {
-  try {
-    const r = await fetch(path, { cache: "no-store" });
-    if (!r.ok) throw new Error(r.status + " " + r.statusText);
-    return await r.json();
-  } catch (err) {
-    console.error("讀取失敗:", path, err);
-    return null;
+/* -------------------- 基本工具 -------------------- */
+const $  = (sel, root=document) => root.querySelector(sel);
+const $$ = (sel, root=document) => Array.from(root.querySelectorAll(sel));
+const sleep = (ms) => new Promise(r => setTimeout(r, ms));
+
+function getSlug() {
+  const u = new URL(location.href);
+  return u.searchParams.get('slug') || 'mid-autumn';
+}
+function secToClock(sec) {
+  sec = Math.max(0, Math.floor(sec || 0));
+  const m = String(Math.floor(sec/60)).padStart(2,'0');
+  const s = String(sec%60).padStart(2,'0');
+  return `${m}:${s}`;
+}
+function parseClockToSec(t='') {
+  // "mm:ss" 或 純秒數
+  const m = String(t).trim().match(/^(\d{1,2}):(\d{2})$/);
+  if (!m) return Number(t) || 0;
+  return (+m[1])*60 + (+m[2]);
+}
+async function fetchJSON(url) {
+  const r = await fetch(url, {cache:'no-store'});
+  if (!r.ok) throw new Error(`${url} ${r.status}`);
+  return r.json();
+}
+
+/* -------------------- 永續儲存（每個 slug） -------------------- */
+const store = {
+  _key(ns){ return `stories::${getSlug()}::${ns}`; },
+  get(ns, def){ try{ return JSON.parse(localStorage.getItem(this._key(ns))) ?? def }catch{ return def } },
+  set(ns, val){ localStorage.setItem(this._key(ns), JSON.stringify(val)); }
+};
+
+/* -------------------- TTS 朗讀 -------------------- */
+const TTS = {
+  voices: [], inited:false,
+  async init(){
+    if (this.inited) return;
+    const grab = () => new Promise(rs=>{
+      let v = speechSynthesis.getVoices();
+      if (v && v.length) return rs(v);
+      speechSynthesis.onvoiceschanged = ()=> rs(speechSynthesis.getVoices());
+      setTimeout(()=>rs(speechSynthesis.getVoices()), 400);
+    });
+    try { this.voices = await grab(); } catch { this.voices = []; }
+    this.inited = true;
+  },
+  speak(text,{lang='en-US', rate=.95, pitch=1, hint=/Google|English/i}={}){
+    try{
+      speechSynthesis.cancel();
+      const u = new SpeechSynthesisUtterance(text);
+      const v = this.voices.find(v=>hint.test(v.name)&&v.lang.startsWith('en')) ||
+                this.voices.find(v=>v.lang.startsWith('en')) || null;
+      if (v) u.voice = v;
+      u.lang = v?.lang || lang;
+      u.rate = rate; u.pitch=pitch;
+      speechSynthesis.speak(u);
+    }catch(e){ console.warn('TTS failed:',e); }
+  },
+  stop(){ try{ speechSynthesis.cancel(); }catch{} }
+};
+
+/* -------------------- 元件 DOM  -------------------- */
+const video       = $('#video');
+const cueBody     = $('#cueBody')    || document.createElement('tbody');
+const cueSearch   = $('#cueSearch');
+const offsetLabel = $('#offsetLabel');
+const followBtn   = $('#btnFollow');
+
+const tabSub      = $('#tabSub');
+const tabQuiz     = $('#tabQuiz');
+const tabVocab    = $('#tabVocab');
+
+const quizPanel   = $('#quizPanel')  || ( ()=>{ const d=document.createElement('div'); d.id='quizPanel'; return d;} )();
+const vocabTable  = $('#vocabTable') || ( ()=>{ const d=document.createElement('tbody'); d.id='vocabTable'; return d;} )();
+
+/* -------------------- 全域狀態 -------------------- */
+let CUES = [];            // [{t:秒, en, zh}]
+let FOLLOW = store.get('follow', true);
+let OFFSET = store.get('offset', 0); // 秒
+let HILIGHT_INDEX = -1;
+
+/* =========================================================
+ *                         字幕
+ * ======================================================= */
+function setOffset(delta){
+  OFFSET = +(OFFSET + delta).toFixed(2);
+  store.set('offset', OFFSET);
+  if (offsetLabel) offsetLabel.textContent = `偏移 ${OFFSET.toFixed(1)}s`;
+}
+
+function setFollow(val){
+  FOLLOW = !!val;
+  store.set('follow', FOLLOW);
+  if (followBtn){
+    followBtn.classList.toggle('active', FOLLOW);
+    followBtn.textContent = FOLLOW ? '跟隨中' : '跟隨';
   }
 }
 
-// 解析 00:01 或 [00:01] 成秒數
-function parseTimeToSec(t) {
-  if (!t) return 0;
-  t = (t + "").replace(/[\[\]]/g, "");
-  const m = t.match(/(\d+):(\d+)/);
-  if (!m) return 0;
-  return parseInt(m[1]) * 60 + parseInt(m[2]);
-}
-
-document.addEventListener("DOMContentLoaded", async () => {
-  const params = new URLSearchParams(location.search);
-  const slug = params.get("slug");
-  if (!slug) return;
-
-  // 影片
-  const video = document.getElementById("video");
-  video.src = `videos/${slug}.mp4`;
-
-  // 三種資料
-  const cues  = await loadJSON(`data/cues-${slug}.json`);
-  const quiz  = await loadJSON(`data/quiz-${slug}.json`);
-  const vocab = await loadJSON(`data/vocab-${slug}.json`);
-
-  bindTabs();
-  renderCues(cues);
-  renderQuiz(quiz);
-  renderVocab(vocab);
-  setupCueSync(video, cues);
-});
-
-/* ---------- Tabs ---------- */
-function bindTabs() {
-  const buttons = [...document.querySelectorAll(".tab-btn")];
-  buttons.forEach(btn => {
-    btn.addEventListener("click", () => {
-      buttons.forEach(b => b.classList.remove("active"));
-      btn.classList.add("active");
-      const panes = [...document.querySelectorAll(".pane")];
-      panes.forEach(p => p.classList.remove("active"));
-      document.getElementById(btn.dataset.tab).classList.add("active");
-    });
+function renderCues(list){
+  if (!cueBody) return;
+  cueBody.innerHTML = '';
+  const frag = document.createDocumentFragment();
+  list.forEach((c, i)=>{
+    const tr = document.createElement('tr');
+    tr.dataset.idx = i;
+    tr.innerHTML = `
+      <td class="tcell"><button class="btn-time" data-seek="${c.t}">▶ ${secToClock(c.t)}</button></td>
+      <td class="eng">${c.en || ''}</td>
+      <td class="zh">${c.zh || ''}</td>
+    `;
+    frag.appendChild(tr);
   });
+  cueBody.appendChild(frag);
 }
 
-/* ---------- Subtitles ---------- */
-function renderCues(cues) {
-  const tbody = document.getElementById("cues-body");
-  if (!cues || !cues.length) {
-    tbody.innerHTML = `<tr><td colspan="3">查無字幕資料。</td></tr>`;
+function filterCuesByKeyword(){
+  const kw = (cueSearch?.value || '').trim().toLowerCase();
+  if (!kw) { renderCues(CUES); return; }
+  const pick = CUES.filter(c =>
+    (c.en||'').toLowerCase().includes(kw) || (c.zh||'').toLowerCase().includes(kw)
+  );
+  renderCues(pick);
+}
+
+/* 追蹤目前台詞 */
+function tickFollow(){
+  if (!FOLLOW || !video || !CUES.length) return;
+  const ct = video.currentTime + OFFSET; // 套偏移
+  let idx = CUES.findIndex((c, i)=> {
+    const next = CUES[i+1]?.t ?? 1e9;
+    return ct >= c.t && ct < next;
+  });
+  if (idx < 0) idx = CUES.length - 1;
+  if (idx === HILIGHT_INDEX) return;
+  HILIGHT_INDEX = idx;
+
+  // 清除舊 highlight
+  $$('#cueBody tr.highlight').forEach(tr=>tr.classList.remove('highlight'));
+
+  // 高亮 + 捲動
+  const row = $(`#cueBody tr[data-idx="${idx}"]`);
+  if (row){
+    row.classList.add('highlight');
+    if (FOLLOW) row.scrollIntoView({block:'center'});
+  }
+}
+
+/* =========================================================
+ *                         測驗
+ * ======================================================= */
+function renderQuiz(questions){
+  if (!quizPanel) return;
+  quizPanel.innerHTML = '';
+
+  if (!questions?.length){
+    quizPanel.innerHTML = `<div class="muted">查無測驗資料（ quiz-${getSlug()}.json ）。</div>`;
     return;
   }
-  tbody.innerHTML = cues.map(c => `
-    <tr data-sec="${parseTimeToSec(c.time)}">
-      <td class="time">[${c.time}]</td>
-      <td>${escapeHTML(c.en || "")}</td>
-      <td>${escapeHTML(c.zh || "")}</td>
-    </tr>
-  `).join("");
 
-  // 點行跳到該時間
-  tbody.querySelectorAll("tr").forEach(tr => {
-    tr.addEventListener("click", () => {
-      const sec = Number(tr.dataset.sec || 0);
-      const v = document.getElementById("video");
-      v.currentTime = sec;
-      v.play();
-    });
+  const form = document.createElement('form');
+  form.className = 'quiz-form';
+
+  questions.forEach((q, qi)=>{
+    const box = document.createElement('div');
+    box.className = 'quiz-item';
+    const name = `q_${qi}`;
+    const opts = q.a.map((opt, oi)=>`
+      <label class="opt">
+        <input type="radio" name="${name}" value="${oi}">
+        <span>${String.fromCharCode(65+oi)}. ${opt}</span>
+      </label>
+    `).join('');
+    box.innerHTML = `
+      <div class="q">${qi+1}. ${q.q}</div>
+      <div class="opts">${opts}</div>
+      <div class="explain" hidden></div>
+    `;
+    form.appendChild(box);
   });
+
+  const ctrl = document.createElement('div');
+  ctrl.className = 'quiz-ctrl';
+  ctrl.innerHTML = `<button class="btn-check" type="submit">交卷</button>
+                    <span class="quiz-score"></span>`;
+  form.appendChild(ctrl);
+
+  form.addEventListener('submit', e=>{
+    e.preventDefault();
+    let correct = 0;
+    const items = $$('.quiz-item', form);
+    items.forEach((box, qi)=>{
+      const sel = box.querySelector(`input[name="q_${qi}"]:checked`);
+      const ans = questions[qi].answerIndex;
+      const ex  = questions[qi].explain || '';
+      const expEl = $('.explain', box);
+
+      if (!sel){
+        box.classList.remove('right','wrong');
+        expEl.hidden = false;
+        expEl.textContent = `※ 未作答。答案：${String.fromCharCode(65+ans)}；${ex}`;
+        return;
+      }
+      if (+sel.value === ans){
+        correct++;
+        box.classList.add('right'); box.classList.remove('wrong');
+        expEl.hidden = false; expEl.textContent = `✔ 正確！${ex}`;
+      }else{
+        box.classList.add('wrong'); box.classList.remove('right');
+        expEl.hidden = false; expEl.textContent = `✘ 錯誤。答案：${String.fromCharCode(65+ans)}；${ex}`;
+      }
+    });
+
+    $('.quiz-score', form).textContent = `得分：${correct} / ${questions.length}`;
+    // 紀錄
+    store.set('quizScore', {ts:Date.now(), score:correct, total:questions.length});
+  });
+
+  quizPanel.appendChild(form);
 }
 
-function setupCueSync(video, cues) {
-  const tbody = document.getElementById("cues-body");
-  const rows = () => [...tbody.querySelectorAll("tr")];
-  const followChk = document.getElementById("followChk");
-  const offLabel = document.getElementById("offsetLabel");
-  let offset = 0;
+/* =========================================================
+ *                         單字
+ * ======================================================= */
+async function renderVocab(vocabItems = []){
+  await TTS.init();
 
-  document.getElementById("-05").addEventListener("click", () => {
-    offset = +(offset - 0.5).toFixed(1);
-    offLabel.textContent = offset.toFixed(1) + "s";
-  });
-  document.getElementById("+05").addEventListener("click", () => {
-    offset = +(offset + 0.5).toFixed(1);
-    offLabel.textContent = offset.toFixed(1) + "s";
-  });
-
-  video.addEventListener("timeupdate", () => {
-    if (!cues || !cues.length) return;
-
-    const now = video.currentTime + offset;
-    let idx = -1;
-    for (let i = 0; i < cues.length; i++) {
-      const sec = parseTimeToSec(cues[i].time);
-      if (sec <= now) idx = i; else break;
+  if (!vocabTable){
+    console.warn('vocabTable missing');
+    return;
+  }
+  // 建表頭（若你的 HTML 已有固定表頭，可移除下面這段）
+  if (vocabTable.tagName === 'TBODY'){
+    const thead = vocabTable.parentElement?.querySelector('thead');
+    if (!thead){
+      const t = document.createElement('thead');
+      t.innerHTML = `
+        <tr>
+          <th style="width:90px">時間</th>
+          <th>單字</th>
+          <th style="width:80px">詞性</th>
+          <th style="width:120px">中文</th>
+          <th>英文解釋 / 例句（點我跳播）</th>
+        </tr>`;
+      vocabTable.parentElement?.insertBefore(t, vocabTable);
     }
+  }
 
-    rows().forEach(r => r.classList.remove("active"));
-    if (idx >= 0) {
-      const tr = rows()[idx];
-      if (tr) {
-        tr.classList.add("active");
-        if (followChk.checked) tr.scrollIntoView({ behavior: "smooth", block: "center" });
+  vocabTable.innerHTML = '';
+  const frag = document.createDocumentFragment();
+
+  vocabItems.forEach((v,i)=>{
+    const sec = Number.isFinite(v.time) ? v.time : parseClockToSec(v.time);
+    const clock = Number.isFinite(sec) ? secToClock(sec) : '';
+    const safeExample = (v.example || '').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    const exHtml = safeExample.replace(/_{2,}/g, '<span class="blank">_______</span>');
+
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td>${clock ? `<button class="btn-time" data-seek="${sec}">▶ ${clock}</button>` : ''}</td>
+      <td><button class="btn-say" data-say="${v.word || ''}" title="朗讀">🔊</button>
+          <span class="word">${v.word || ''}</span></td>
+      <td>${v.pos || ''}</td>
+      <td>${v.zh || ''}</td>
+      <td><button class="btn-ex" ${Number.isFinite(sec)?`data-seek="${sec}"`:''} title="播放例句">▶</button>
+          <span class="example" ${Number.isFinite(sec)?`data-seek="${sec}"`:''}>${exHtml}</span></td>
+    `;
+    frag.appendChild(tr);
+  });
+
+  vocabTable.appendChild(frag);
+
+  vocabTable.addEventListener('click', e=>{
+    const sayBtn = e.target.closest('.btn-say');
+    if (sayBtn){
+      TTS.speak(sayBtn.dataset.say || '');
+      return;
+    }
+    const seekEl = e.target.closest('[data-seek]');
+    if (seekEl && video){
+      const s = Number(seekEl.dataset.seek);
+      if (Number.isFinite(s)){
+        video.currentTime = Math.max(0, s - .2);
+        video.play?.();
       }
     }
   });
 }
 
-/* ---------- Quiz（支援兩種格式） ---------- */
-function normalizeQuizItem(q) {
-  // 新式：{question, options, answer, explain}
-  if (q.question && q.options) {
-    return {
-      question: String(q.question),
-      options: Array.isArray(q.options) ? q.options.map(String) : [],
-      answer: q.answer != null ? String(q.answer) : "",
-      explain: q.explain ? String(q.explain) : ""
-    };
-  }
-  // 舊式：{q, a, answerIndex, explain}
-  if (q.q && q.a) {
-    const opts = Array.isArray(q.a) ? q.a.map(String) : [];
-    const idx = Number.isInteger(q.answerIndex) ? q.answerIndex : -1;
-    const ans = idx >= 0 && idx < opts.length ? opts[idx] : "";
-    return {
-      question: String(q.q),
-      options: opts,
-      answer: ans,
-      explain: q.explain ? String(q.explain) : ""
-    };
-  }
-  return null;
-}
+/* =========================================================
+ *                         載入流程
+ * ======================================================= */
+async function boot(){
+  const slug = getSlug();
 
-function renderQuiz(list) {
-  const container = document.getElementById("quiz-body");
-  if (!Array.isArray(list) || !list.length) {
-    container.innerHTML = `<p>查無測驗資料（quiz-xxx.json）。</p>`;
-    return;
-  }
+  // 初始化偏移/跟隨 標示
+  if (offsetLabel) offsetLabel.textContent = `偏移 ${OFFSET.toFixed(1)}s`;
+  setFollow(FOLLOW);
 
-  // 正規化
-  const items = list.map(normalizeQuizItem).filter(Boolean);
-  if (!items.length) {
-    container.innerHTML = `<p>測驗資料格式不符合（已支援 q/a/answerIndex 或 question/options/answer）。</p>`;
-    return;
-  }
-
-  let score = 0;
-
-  container.innerHTML = `
-    <div style="margin:6px 0 12px; color:#9ca3af">
-      共 ${items.length} 題，作答後立即判定，並可展開「解釋」。
-    </div>
-    ${items.map((q, i) => `
-      <div class="quiz-item" style="border:1px solid #22324a;border-radius:8px;padding:12px;margin:10px 0;background:#0f1525">
-        <p style="margin:0 0 8px"><b>${i + 1}.</b> ${escapeHTML(q.question)}</p>
-        <div>
-          ${q.options.map(opt => `
-            <label style="display:block;margin:6px 0;cursor:pointer">
-              <input type="radio" name="q${i}" value="${escapeHTML(opt)}"> ${escapeHTML(opt)}
-            </label>
-          `).join("")}
-        </div>
-        <div class="result" data-i="${i}" style="margin-top:8px; display:none"></div>
-        ${q.explain ? `<details style="margin-top:6px;color:#cbd5e1"><summary>解釋</summary><div style="margin-top:6px">${escapeHTML(q.explain)}</div></details>` : ""}
-      </div>
-    `).join("")}
-    <div id="scoreBar" style="margin-top:14px;padding:10px;border-top:1px solid #22324a;color:#d1fae5">
-      得分：<b id="scoreVal">0</b> / ${items.length}
-    </div>
-  `;
-
-  // 綁定即時判題
-  items.forEach((q, i) => {
-    const radios = [...container.querySelectorAll(`input[name="q${i}"]`)];
-    const box = container.querySelector(`.result[data-i="${i}"]`);
-    radios.forEach(r => {
-      r.addEventListener("change", () => {
-        const correct = r.value === q.answer;
-        // 若第一次答對就加分；重複切換只看當前是否正確
-        const previously = box.dataset.correct === "true";
-        if (!previously && correct) score++;
-        if (previously && !correct) score--;
-
-        box.dataset.correct = String(correct);
-        box.style.display = "block";
-        box.innerHTML = correct
-          ? `<span style="color:#34d399">✔ 正確！</span> 答案：<b>${escapeHTML(q.answer)}</b>`
-          : `<span style="color:#f87171">✘ 錯誤</span> 正確答案：<b>${escapeHTML(q.answer)}</b>`;
-
-        document.getElementById("scoreVal").textContent = String(score);
-      });
+  // 綁定 偏移/跟隨/搜尋
+  $$('[data-shift]').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      const delta = parseFloat(btn.dataset.shift);
+      if (!Number.isFinite(delta)) return;
+      setOffset(delta);
     });
   });
-}
+  followBtn?.addEventListener('click', ()=> setFollow(!FOLLOW));
+  cueSearch?.addEventListener('input', filterCuesByKeyword);
 
-/* ---------- Vocab (填空/文法式) ---------- */
-function renderVocab(list) {
-  const tbody = document.getElementById("vocab-body");
-  if (!list || !list.length) {
-    tbody.innerHTML = `<tr><td colspan="4">查無單字資料。</td></tr>`;
-    return;
+  // 點時間跳播
+  cueBody?.addEventListener('click', e=>{
+    const target = e.target.closest('[data-seek]');
+    if (!target || !video) return;
+    const s = Number(target.dataset.seek);
+    if (!Number.isFinite(s)) return;
+    video.currentTime = Math.max(0, s - .2);
+    video.play?.();
+  });
+
+  // 切分頁（若你的 HTML 沒有這些 id，也不影響運作）
+  tabSub?.addEventListener('click', ()=> document.body.setAttribute('data-tab', 'sub'));
+  tabQuiz?.addEventListener('click', ()=> document.body.setAttribute('data-tab', 'quiz'));
+  tabVocab?.addEventListener('click',()=> document.body.setAttribute('data-tab', 'vocab'));
+
+  // 讀資料
+  try{
+    // 1) 字幕
+    const cues = await fetchJSON(`data/cues-${slug}.json`);
+    // 正規化（允許 key: time/en/zh 或 t/en/zh）
+    CUES = cues.map(c=>{
+      const t = Number.isFinite(c.t) ? c.t :
+                Number.isFinite(c.time) ? c.time :
+                parseClockToSec(c.time || c.t || 0);
+      return { t, en:c.en || c.english || '', zh:c.zh || c.ch || c.cn || c.chinese || '' };
+    }).sort((a,b)=> a.t - b.t);
+
+    if (CUES.length) renderCues(CUES);
+    else cueBody.innerHTML = `<tr><td colspan="3" class="muted">查無字幕資料。</td></tr>`;
+  }catch(e){
+    console.warn('cues load fail:', e);
+    cueBody.innerHTML = `<tr><td colspan="3" class="muted">載入字幕失敗（data/cues-${getSlug()}.json）。</td></tr>`;
   }
-  tbody.innerHTML = list.map(v => {
-    const re = new RegExp("\\b" + escapeReg(v.word) + "\\b", "i");
-    const blanked = (v.example || "").replace(re, "____");
-    return `
-      <tr>
-        <td class="time">${escapeHTML(v.time || "")}</td>
-        <td>${escapeHTML(blanked)}</td>
-        <td>答案：<b>${escapeHTML(v.word)}</b> <span style="color:#93c5fd">(${escapeHTML(v.pos || "")})</span></td>
-        <td>${escapeHTML(v.zh || "")}</td>
-      </tr>
-    `;
-  }).join("");
+
+  try{
+    // 2) 測驗
+    const quiz = await fetchJSON(`data/quiz-${slug}.json`);
+    renderQuiz(quiz);
+  }catch(e){
+    renderQuiz([]);
+  }
+
+  try{
+    // 3) 單字
+    const vocab = await fetchJSON(`data/vocab-${slug}.json`);
+    renderVocab(vocab);
+  }catch(e){
+    renderVocab([]);
+  }
+
+  // 跟隨高亮：timeupdate
+  video?.addEventListener('timeupdate', tickFollow);
 }
 
-/* ---------- helpers ---------- */
-function escapeHTML(s) {
-  return (s ?? "").replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
-}
-function escapeReg(s){ return (s??"").replace(/[.*+?^${}()|[\]\\]/g,'\\$&'); }
+/* =========================================================
+ *                         啟動
+ * ======================================================= */
+document.addEventListener('DOMContentLoaded', boot);
