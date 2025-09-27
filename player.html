@@ -1,125 +1,100 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="zh-Hant">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>English Video Player</title>
-  <link rel="stylesheet" href="style.css" />
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Stories · Player</title>
   <style>
-    body {
-      margin: 0;
-      background: #0f172a;
-      color: #fff;
-      font-family: system-ui, -apple-system, Segoe UI, Roboto, Noto Sans TC, sans-serif;
-      display: flex;
-      height: 100vh;
-      overflow: hidden;
+    :root{
+      --bg:#0f172a; --panel:#0b1220; --text:#e5e7eb; --muted:#94a3b8; --accent:#38bdf8;
+      --card:#0b1220; --line:#1f2937;
+      --tabH:56px;
     }
-    .left-panel, .right-panel {
-      flex: 1;
-      overflow: hidden;
-      display: flex;
-      flex-direction: column;
+    *{box-sizing:border-box}
+    html,body{height:100%;margin:0;background:var(--bg);color:var(--text);font-family:system-ui,-apple-system,"Segoe UI",Roboto,"Noto Sans TC",sans-serif}
+    a{color:var(--accent);text-decoration:none}
+    .wrap{display:flex; height:100vh; gap:0}
+    .left, .right{height:100vh; overflow:hidden}
+    .left{width:50%; display:flex; flex-direction:column; border-right:1px solid var(--line)}
+    .right{width:50%; display:flex; flex-direction:column;}
+    /* video area */
+    .videoBox{padding:12px; background:var(--bg)}
+    video{width:100%; height:auto; background:#000; border-radius:10px; display:block}
+    .ctrlRow{
+      display:flex; align-items:center; gap:10px; padding:10px 12px 14px; border-top:1px solid var(--line);
+      background:var(--bg); position:relative;
     }
-    .left-panel {
-      padding: 8px;
-      box-sizing: border-box;
-    }
-    .video-container {
-      flex: 1;
-      display: flex;
-      flex-direction: column;
-      justify-content: flex-start;
-      align-items: center;
-    }
-    video {
-      width: 100%;
-      height: auto;
-      max-height: 80%;
-      background: black;
-    }
-    .controls {
-      margin-top: 6px;
-      text-align: center;
-    }
-    .controls button {
-      margin: 2px;
-      padding: 4px 8px;
-      background: #1e293b;
-      color: white;
-      border: none;
-      border-radius: 6px;
-      cursor: pointer;
-    }
-    .controls button.active {
-      background: #2563eb;
-    }
-    .right-panel {
-      background: #0f172a;
-      overflow-y: auto;
-    }
-    .tabs {
-      display: flex;
-      background: #1e293b;
-    }
-    .tabs button {
-      flex: 1;
-      padding: 10px;
-      background: #1e293b;
-      border: none;
-      color: #fff;
-      cursor: pointer;
-    }
-    .tabs button.active {
-      background: #2563eb;
-    }
-    .tab-content {
-      flex: 1;
-      overflow-y: auto;
-      padding: 10px;
-    }
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      color: white;
-    }
-    th, td {
-      border-bottom: 1px solid #334155;
-      padding: 6px;
-      text-align: left;
-    }
-    tr:hover {
-      background: #1e293b;
-    }
+    .chip{display:inline-flex; align-items:center; gap:6px; padding:6px 10px; border-radius:999px; background:#0b2030; color:#bfe9ff; border:1px solid #133040; cursor:pointer; user-select:none}
+    .chip.on{background:#10364e; border-color:#2a7aa1}
+    .chip small{opacity:.8}
+    /* tabs */
+    .tabs{display:flex; height:var(--tabH); border-bottom:1px solid var(--line); background:var(--panel)}
+    .tab{padding:0 16px; display:flex; align-items:center; cursor:pointer; gap:8px; color:var(--muted)}
+    .tab.active{color:#fff; border-bottom:2px solid var(--accent)}
+    /* table */
+    .pane{flex:1; overflow:auto; background:var(--card)}
+    table{width:100%; border-collapse:collapse}
+    th,td{padding:10px 12px; border-bottom:1px solid var(--line); vertical-align:top}
+    th{position:sticky; top:0; background:#0e1627; z-index:1; font-weight:600}
+    .timeBtn{color:var(--accent); cursor:pointer; font-variant-numeric:tabular-nums}
+    .muted{color:var(--muted)}
+    .warn{color:#fda4af}
+    .row{transition:background .15s}
+    .row.active{background:#122133}
+    /* vocab */
+    .vocab-en{white-space:pre-wrap}
+    .vocab-cn{color:#f3f4f6}
+    .playWord{cursor:pointer; margin-right:8px}
+    .egAnchor{cursor:pointer; color:#93c5fd; text-decoration:underline}
   </style>
 </head>
 <body>
-  <!-- 左側影片 -->
-  <div class="left-panel">
-    <div class="video-container">
-      <video id="video" controls></video>
-      <div class="controls">
-        <button id="followToggle" class="active">✔ 跟隨</button>
-        <span>偏移 <span id="offsetDisplay">0.0s</span></span>
-        <button id="offsetMinus">-0.5s</button>
-        <button id="offsetPlus">+0.5s</button>
+  <div class="wrap">
+    <!-- 左：影片 + 控制列 -->
+    <section class="left">
+      <div class="videoBox">
+        <video id="video" controls playsinline></video>
       </div>
-    </div>
+      <div class="ctrlRow">
+        <button id="followBtn" class="chip on">✓ 跟隨</button>
+        <span class="chip" id="offsetChip">偏移 <span id="offsetVal">0.0</span>s</span>
+        <button class="chip" data-delta="-0.5">-0.5s</button>
+        <button class="chip" data-delta="+0.5">+0.5s</button>
+      </div>
+    </section>
+
+    <!-- 右：字幕/測驗/單字 -->
+    <section class="right">
+      <div class="tabs">
+        <div class="tab active" data-pane="subs">字幕</div>
+        <div class="tab" data-pane="quiz">測驗</div>
+        <div class="tab" data-pane="vocab">單字</div>
+      </div>
+      <!-- 字幕 -->
+      <div class="pane" id="pane-subs">
+        <table id="subsTable">
+          <thead><tr><th style="width:84px">時間</th><th>英文</th><th style="width:35%">中文</th></tr></thead>
+          <tbody id="subsBody"><tr><td colspan="3" class="muted">載入中…</td></tr></tbody>
+        </table>
+      </div>
+      <!-- 測驗 -->
+      <div class="pane" id="pane-quiz" hidden>
+        <table id="quizTable">
+          <thead><tr><th style="width:40px">#</th><th>題目</th><th style="width:40%">選項 / 解析</th></tr></thead>
+          <tbody id="quizBody"><tr><td colspan="3" class="muted">載入中…</td></tr></tbody>
+        </table>
+      </div>
+      <!-- 單字 -->
+      <div class="pane" id="pane-vocab" hidden>
+        <table id="vocabTable">
+          <thead><tr><th style="width:84px">時間</th><th>單字</th><th style="width:70%">英文解釋 / 例句</th></tr></thead>
+          <tbody id="vocabBody"><tr><td colspan="3" class="muted">載入中…</td></tr></tbody>
+        </table>
+      </div>
+    </section>
   </div>
 
-  <!-- 右側字幕/測驗/單字 -->
-  <div class="right-panel">
-    <div class="tabs">
-      <button class="active" data-tab="subtitles">字幕</button>
-      <button data-tab="quiz">測驗</button>
-      <button data-tab="vocab">單字</button>
-    </div>
-    <div id="subtitles" class="tab-content"></div>
-    <div id="quiz" class="tab-content" style="display:none"></div>
-    <div id="vocab" class="tab-content" style="display:none"></div>
-  </div>
-
-  <!-- 掛載 JS，加上版本參數避免快取 -->
-  <script defer src="./player.js?v=20250927-01"></script>
+  <!-- 版本號：改一下可強制刷新快取 -->
+  <script src="./player.js?v=2025-09-05-02"></script>
 </body>
 </html>
