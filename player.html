@@ -1,214 +1,152 @@
 <!DOCTYPE html>
 <html lang="zh-Hant">
 <head>
-  <meta charset="UTF-8">
+  <meta charset="UTF-8" />
   <title>English Video Player</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="style.css">
   <style>
     body {
       margin: 0;
       background: #0f172a;
-      color: #f1f5f9;
+      color: #f8fafc;
       font-family: system-ui, sans-serif;
+    }
+    .container {
       display: flex;
       height: 100vh;
       overflow: hidden;
     }
-    #left {
-      width: 45%;
-      background: black;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-    #right {
-      width: 55%;
+    .left {
+      flex: 1;
       display: flex;
       flex-direction: column;
+      background: #000;
     }
-    nav {
-      display: flex;
-      background: #1e293b;
-    }
-    nav button {
+    .video-wrap {
+      position: relative;
       flex: 1;
-      padding: 0.6em;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+    #video {
+      width: 100%;
+      height: auto;
+      z-index: 1;
+      border-radius: 8px;
+      background: #000;
+    }
+    /* 工具列浮在影片左下角 */
+    .tools-dock {
+      position: absolute;
+      left: 12px;
+      bottom: 12px;
+      z-index: 20;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      padding: 8px 10px;
+      border-radius: 12px;
+      background: rgba(2, 6, 23, 0.72);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      backdrop-filter: blur(2px);
+    }
+    .tools-dock button {
+      padding: 6px 10px;
+      border-radius: 8px;
       border: none;
       background: #1e293b;
       color: #f1f5f9;
       cursor: pointer;
     }
-    nav button.active {
+    .tools-dock button:hover {
       background: #334155;
     }
-    section {
+    .right {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      background: #0f172a;
+    }
+    .tabs {
+      display: flex;
+      background: #1e293b;
+    }
+    .tabs button {
+      flex: 1;
+      padding: 10px;
+      background: transparent;
+      border: none;
+      color: #f1f5f9;
+      cursor: pointer;
+    }
+    .tabs button.active {
+      background: #334155;
+    }
+    .tab-content {
       flex: 1;
       overflow-y: auto;
-      padding: 0.5em;
-      display: none;
-    }
-    section.active {
-      display: block;
+      padding: 10px;
     }
     table {
       width: 100%;
       border-collapse: collapse;
     }
     th, td {
+      padding: 6px;
       border-bottom: 1px solid #334155;
-      padding: 0.3em;
+    }
+    th {
       text-align: left;
-    }
-    .controls {
-      padding: 0.5em;
       background: #1e293b;
-      display: flex;
-      flex-wrap: wrap;
-      gap: 0.5em;
-    }
-    .controls button {
-      padding: 0.4em 0.6em;
-      border: none;
-      background: #2563eb;
-      color: white;
-      border-radius: 4px;
-      cursor: pointer;
     }
   </style>
 </head>
 <body>
-  <!-- 左側影片 -->
-  <div id="left">
-    <video id="video" width="100%" controls>
-      <source src="" type="video/mp4">
-      Your browser does not support the video tag.
-    </video>
-  </div>
+  <div class="container">
+    <!-- 左邊影片區 -->
+    <div class="left">
+      <div class="video-wrap">
+        <video id="video" controls playsinline></video>
 
-  <!-- 右側字幕/測驗/單字 -->
-  <div id="right">
-    <nav>
-      <button data-tab="subs" class="active">字幕</button>
-      <button data-tab="quiz">測驗</button>
-      <button data-tab="words">單字</button>
-    </nav>
-
-    <section id="subs" class="active">
-      <div class="controls">
-        <button onclick="window.applyOffset(-0.5)">-0.5s</button>
-        <span id="offset-label">0.0s</span>
-        <button onclick="window.applyOffset(0.5)">+0.5s</button>
+        <!-- 浮動工具列 -->
+        <div class="tools-dock" id="tools">
+          <button id="btnPrevLine">上一句</button>
+          <button id="btnPlayPause">播放/暫停</button>
+          <button id="btnNextLine">下一句</button>
+          <button id="btnRepeatLine">重複本句</button>
+          <button id="btnAB">A-B 循環</button>
+          <button id="btnCancelAB">取消循環</button>
+        </div>
       </div>
-      <table>
-        <thead>
-          <tr><th>時間</th><th>英文</th><th>中文</th></tr>
-        </thead>
-        <tbody id="cues-body"></tbody>
-      </table>
-    </section>
+    </div>
 
-    <section id="quiz">
-      <p>（未來：載入測驗題目）</p>
-    </section>
-
-    <section id="words">
-      <p>（未來：載入單字清單）</p>
-    </section>
+    <!-- 右邊字幕/測驗/單字 -->
+    <div class="right">
+      <div class="tabs">
+        <button class="active" data-tab="subtitles">字幕</button>
+        <button data-tab="quiz">測驗</button>
+        <button data-tab="words">單字</button>
+      </div>
+      <div id="subtitles" class="tab-content">
+        <table>
+          <thead>
+            <tr><th>時間</th><th>英文</th><th>中文</th></tr>
+          </thead>
+          <tbody id="subtitleTable"></tbody>
+        </table>
+      </div>
+      <div id="quiz" class="tab-content" style="display:none;">
+        <div id="quizContainer"></div>
+      </div>
+      <div id="words" class="tab-content" style="display:none;">
+        <div id="wordsContainer"></div>
+      </div>
+    </div>
   </div>
 
-  <script type="module">
-    // --- 取 URL slug ---
-    const params = new URLSearchParams(location.search);
-    const slug = params.get('slug') || 'mid-autumn';
-
-    // DOM
-    const videoEl = document.getElementById('video');
-    const cuesTbody = document.getElementById('cues-body');
-    const offsetLabel = document.getElementById('offset-label');
-
-    // 錯誤 log
-    function logError(where, err) {
-      console.error(`[player] ${where} 失敗：`, err);
-    }
-
-    // 找影片檔案
-    async function resolveVideoFile(slug) {
-      try {
-        const res = await fetch('./data/index.json', {cache:'no-store'});
-        if (!res.ok) throw new Error(`index.json HTTP ${res.status}`);
-        const list = await res.json();
-        const item = list.find(x => x.slug === slug);
-        if (item && item.video) return `./videos/${item.video}`;
-        return `./videos/${slug}.mp4`;
-      } catch (e) {
-        logError('讀取 index.json', e);
-        return `./videos/${slug}.mp4`;
-      }
-    }
-
-    // 載入字幕
-    async function loadCues(slug) {
-      const url = `./data/cues-${slug}.json`;
-      try {
-        const res = await fetch(url, {cache:'no-store'});
-        if (!res.ok) throw new Error(`cues JSON HTTP ${res.status}`);
-        const cues = await res.json();
-        renderCues(cues);
-      } catch (e) {
-        logError(`載入字幕 ${url}`, e);
-        cuesTbody.innerHTML = `<tr><td colspan="3">（字幕檔不存在）</td></tr>`;
-      }
-    }
-
-    // 渲染字幕
-    function renderCues(cues) {
-      cuesTbody.innerHTML = cues.map(c => `
-        <tr data-start="${c.start}">
-          <td>[${c.time}]</td>
-          <td>${c.en || ''}</td>
-          <td>${c.zh || ''}</td>
-        </tr>
-      `).join('');
-    }
-
-    // 點字幕 → 跳時間
-    cuesTbody.addEventListener('click', (e) => {
-      const tr = e.target.closest('tr[data-start]');
-      if (!tr) return;
-      const start = parseFloat(tr.getAttribute('data-start') || '0');
-      if (!Number.isNaN(start)) {
-        videoEl.currentTime = start;
-        videoEl.play().catch(()=>{});
-      }
-    });
-
-    // 偏移控制
-    let offsetSec = parseFloat(localStorage.getItem(`offset:${slug}`) || '0');
-    function setOffset(delta) {
-      offsetSec = Math.round((offsetSec + delta) * 10) / 10;
-      offsetLabel.textContent = `${offsetSec.toFixed(1)}s`;
-      localStorage.setItem(`offset:${slug}`, String(offsetSec));
-    }
-    offsetLabel.textContent = `${offsetSec.toFixed(1)}s`;
-    window.applyOffset = (delta) => setOffset(delta);
-
-    // 載入影片與字幕
-    (async () => {
-      const source = await resolveVideoFile(slug);
-      videoEl.src = source;
-      console.log('[player] 影片來源：', source);
-      await loadCues(slug);
-    })();
-
-    // Tab 切換
-    document.querySelectorAll('nav button').forEach(btn => {
-      btn.addEventListener('click', () => {
-        document.querySelectorAll('nav button').forEach(b => b.classList.remove('active'));
-        document.querySelectorAll('section').forEach(sec => sec.classList.remove('active'));
-        btn.classList.add('active');
-        document.getElementById(btn.dataset.tab).classList.add('active');
-      });
-    });
-  </script>
+  <script src="player.js"></script>
 </body>
 </html>
