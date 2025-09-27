@@ -2,108 +2,111 @@
 <html lang="zh-Hant">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>用故事學英文：雙語字幕、測驗與單字</title>
   <style>
-    body{margin:0;background:#0c1424;color:#e6eefc;font-family:system-ui,-apple-system,Segoe UI,Roboto,PingFang TC,Heiti TC,Noto Sans TC,Arial;}
-    .wrap{max-width:1200px;margin:40px auto;padding:0 20px;}
-    h1{font-size:28px;margin:0 0 8px}
-    .bar{display:flex;gap:12px;justify-content:flex-end;margin:16px 0}
-    .btn{padding:8px 14px;border-radius:10px;background:#1e2a44;color:#e6eefc;border:1px solid #2d3b5d;cursor:pointer}
-    .grid{display:grid;gap:18px;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));margin-top:18px}
-    .card{background:#0f1a2f;border:1px solid #223055;border-radius:16px;overflow:hidden}
-    .thumb{aspect-ratio:16/9;background:#0a1120;display:block;width:100%;object-fit:cover}
-    .tag{position:absolute;top:10px;left:10px;background:#0b6; padding:4px 8px;border-radius:999px;font-size:12px}
-    .need{background:#a66}
-    .ct{padding:14px}
-    .title{font-weight:700;font-size:18px;margin:4px 0}
-    .meta{opacity:.75;font-size:13px}
-    .row{display:flex;gap:10px;margin-top:10px}
-    a.btn{text-decoration:none;display:inline-block}
+    :root{--bg:#0f172a;--panel:#121a2b;--muted:#94a3b8;--text:#e5e7eb;--accent:#60a5fa}
+    html,body{margin:0;background:var(--bg);color:var(--text);font-family:system-ui,-apple-system,'Segoe UI',Roboto,'Noto Sans TC',sans-serif}
+    .wrap{max-width:1200px;margin:48px auto;padding:0 20px}
+    h1{font-size:clamp(24px,3.2vw,40px);margin:0 0 8px}
+    p.lead{color:var(--muted);margin:0 0 24px}
+    .actions{display:flex;gap:10px;margin:16px 0 28px;justify-content:flex-end}
+    .btn{background:#1e293b;color:#cbd5e1;border:1px solid #334155;border-radius:12px;padding:8px 14px;cursor:pointer}
+    .btn:hover{border-color:#64748b}
+    .grid{display:grid;gap:18px;grid-template-columns:repeat(auto-fill,minmax(280px,1fr))}
+    .card{background:var(--panel);border:1px solid #1e293b;border-radius:16px;overflow:hidden;display:flex;flex-direction:column}
+    .thumb{aspect-ratio:16/9;background:#0b1220;display:block;object-fit:cover;width:100%}
+    .body{padding:14px 16px 16px;display:flex;flex-direction:column;gap:10px}
+    .title{font-weight:700}
+    .meta{font-size:13px;color:var(--muted)}
+    .row{display:flex;gap:10px;margin-top:8px}
+    .pill{font-size:12px;padding:2px 8px;border:1px solid #334155;border-radius:999px;color:#cbd5e1}
+    .primary{background:var(--accent);color:#0b1220;border:none}
+    .ghost{background:transparent;border:1px solid #334155;color:#e2e8f0}
+    .error{color:#fca5a5;margin-top:8px}
   </style>
 </head>
 <body>
   <div class="wrap">
     <h1>用故事學英文：雙語字幕、測驗與單字</h1>
-    <p>從下方卡片選擇故事開始。大多數內容需登入後觀看，〈中秋節〉為免費試看。</p>
+    <p class="lead">從下方卡片選擇故事開始。大多數內容需登入後觀看，〈中秋節〉為免費試看。</p>
 
-    <div class="bar">
-      <button id="btnGithub" class="btn" onclick="window.open('https://github.com/kuan-story/english-videos','_blank')">GitHub</button>
-      <button id="btnAuth" class="btn">登入</button>
+    <div class="actions">
+      <button id="btnGithub" class="btn">GitHub</button>
+      <button id="btnLogin" class="btn">登入</button>
     </div>
 
-    <div id="cards" class="grid"></div>
+    <div id="cards" class="grid" aria-live="polite"></div>
+    <div id="loadErr" class="error" hidden></div>
   </div>
 
-  <!-- 主腳本：使用 module -->
+  <!-- 這段腳本會直接去抓 ./data/index.json 並渲染卡片 -->
   <script type="module">
-    import { supa } from './js/supa.js';
+    const cardsEl = document.getElementById('cards');
+    const loadErr = document.getElementById('loadErr');
 
-    // 產出相對路徑
-    const url = (p) => new URL(p, location.origin + location.pathname.replace(/\/[^/]*$/, '/')).toString();
-    const INDEX_URL = url('data/index.json');
+    const fmt = (s)=>String(s ?? '').trim();
 
-    const btnAuth = document.getElementById('btnAuth');
-    async function refreshAuthBtn(){
-      const { data:{ user } } = await supa.auth.getUser();
-      btnAuth.textContent = user ? '登出' : '登入';
-    }
-    refreshAuthBtn();
+    function cardHTML(item){
+      const cover = fmt(item.cover || '');
+      const title = fmt(item.title_en || '');
+      const tag   = fmt(item.title_zh || '');
+      const slug  = fmt(item.slug || '');
+      const len   = (item.length || '').toUpperCase(); // SHORT / LONG
 
-    btnAuth.addEventListener('click', async () => {
-      const { data:{ user } } = await supa.auth.getUser();
-      if (user) {
-        await supa.auth.signOut();
-      } else {
-        // 使用魔術連結（Email），你也可改成 OAuth
-        const email = prompt('請輸入 Email 收信登入：');
-        if (email) {
-          const { error } = await supa.auth.signInWithOtp({ email });
-          if (error) alert(error.message);
-          else alert('已寄送魔術連結，請到信箱點擊登入。');
-        }
-      }
-      refreshAuthBtn();
-    });
+      const img = cover ? `<img class="thumb" src="${cover}" alt="${title}">`
+                        : `<div class="thumb"></div>`;
 
-    // 載入影片清單
-    async function loadIndex(){
-      const res = await fetch(`${INDEX_URL}?v=${Date.now()}`);
-      if (!res.ok) throw new Error('無法讀取 data/index.json');
-      const list = await res.json();
-      render(list.items || []);
-    }
-
-    function render(items){
-      const el = document.getElementById('cards');
-      el.innerHTML = items.map(item => cardHTML(item)).join('');
-    }
-
-    function cardHTML(it){
-      const cover = `./videos/${(it.video||'').split('/').pop().replace('.mp4','.jpg')}`;
-      const needLogin = it.slug !== 'mid-autumn';
       return `
-        <div class="card">
-          <div style="position:relative">
-            <img class="thumb" src="./videos/${it.slug}.jpg" onerror="this.src='${cover}'" alt="">
-            ${needLogin ? `<span class="tag need">需登入</span>` : `<span class="tag">免費試看</span>`}
+      <article class="card">
+        <a href="player.html?slug=${encodeURIComponent(slug)}" aria-label="${title}">
+          ${img}
+        </a>
+        <div class="body">
+          <div class="title">${title}</div>
+          <div class="meta">${tag}</div>
+          <div class="row">
+            <span class="pill">${len || 'SHORT'}</span>
           </div>
-          <div class="ct">
-            <div class="title">${it.title_en}</div>
-            <div class="meta">${it.title_zh} · ${ (it.length||'').toUpperCase?.() || 'SHORT' }</div>
-            <div class="row">
-              <a class="btn" href="./player.html?slug=${it.slug}">前往 ▶</a>
-              <a class="btn" href="./player.html?slug=${it.slug}#quiz">測驗</a>
-            </div>
+          <div class="row">
+            <a class="btn primary" href="player.html?slug=${encodeURIComponent(slug)}">前往 ▶</a>
+            <a class="btn ghost"   href="player.html?slug=${encodeURIComponent(slug)}#quiz">測驗</a>
           </div>
         </div>
-      `;
+      </article>`;
     }
 
-    loadIndex().catch(err=>{
-      console.error(err);
-      document.getElementById('cards').innerHTML = `<div class="card"><div class="ct">讀取清單失敗：${err.message}</div></div>`;
-    });
+    async function loadList(){
+      try{
+        // 重要：相對路徑，一定要是 ./data/index.json
+        const res = await fetch('./data/index.json', {cache:'no-store'});
+        if(!res.ok){
+          const text = await res.text();
+          throw new Error(`HTTP ${res.status} 讀取失敗：${text.slice(0,80)}…`);
+        }
+        const json = await res.json();
+        const items = Array.isArray(json.items) ? json.items : [];
+
+        if(items.length === 0){
+          cardsEl.innerHTML = '';
+          loadErr.hidden = false;
+          loadErr.textContent = '資料為空，請檢查 data/index.json 的 items 陣列。';
+          return;
+        }
+        cardsEl.innerHTML = items.map(cardHTML).join('');
+        loadErr.hidden = true;
+      }catch(err){
+        console.error('[index] 載入 index.json 失敗：', err);
+        loadErr.hidden = false;
+        loadErr.textContent = '載入 data/index.json 失敗，請打開 F12 > Console 查看詳細錯誤（最常見為路徑/大小寫有誤）。';
+      }
+    }
+
+    // 右上按鈕（之後可綁定 supabase 登入）
+    document.getElementById('btnGithub').onclick = () => window.open('https://github.com/kuan-story/english-videos','_blank');
+    document.getElementById('btnLogin').onclick  = () => alert('之後接上 Supabase 登入（目前示範版）');
+
+    loadList();
   </script>
 </body>
 </html>
