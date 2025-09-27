@@ -1,256 +1,56 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="zh-Hant">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>故事播放器</title>
+  <meta charset="UTF-8">
+  <title>English Video Player</title>
   <style>
-    /* ====== 只做最小範圍樣式，避免干擾你的主題 ====== */
-    :root { --bg:#0f172a; --panel:#0b1220; --text:#e5e7eb; --muted:#94a3b8; --accent:#60a5fa; }
-    body { margin:0; background:var(--bg); color:var(--text); font-family:system-ui,-apple-system,'Segoe UI',Roboto,'Noto Sans TC',sans-serif;}
-    a,button,select{ font:inherit }
-
-    #app{ display:grid; grid-template-columns:minmax(520px,1fr) minmax(460px, 42vw); gap:0; height:100dvh; }
-    /* 左: 影片區 */
-    #left{ display:flex; flex-direction:column; }
-    #video-wrap{ flex:1; display:flex; align-items:center; justify-content:center; background:#000; }
-    video{ width:100%; height:100%; object-fit:contain; background:#000; }
-
-    /* 工具列 */
-    #controls{
-      display:flex; flex-wrap:wrap; align-items:center; gap:.5rem;
-      padding:.75rem 1rem; background:var(--panel); border-top:1px solid rgba(255,255,255,.06);
-      position:relative; z-index:1;
-    }
-    #controls button, #controls select{
-      background:#1f2937; color:var(--text); border:1px solid rgba(255,255,255,.08);
-      padding:.45rem .7rem; border-radius:.6rem; cursor:pointer;
-    }
-    #controls button:hover{ background:#243244 }
-    .sp{ flex:1 }
-
-    /* 右: 字幕/測驗/單字 */
-    #right{ display:flex; flex-direction:column; border-left:1px solid rgba(255,255,255,.06); background:var(--panel); }
-    .tabs{ display:flex; gap:.5rem; padding:.6rem .8rem; background:#0e1628; border-bottom:1px solid rgba(255,255,255,.06) }
-    .tab{ padding:.45rem .8rem; background:#1f2937; border-radius:.6rem; cursor:pointer; user-select:none }
-    .tab.active{ background:#2b3a52; color:#fff; }
-    .tab-right { margin-left:auto; display:flex; gap:.5rem; align-items:center; }
-
-    /* 校準 */
-    .calib{ display:flex; align-items:center; gap:.4rem; }
-    .badge{ padding:.12rem .5rem; background:#182235; border:1px solid rgba(255,255,255,.08); border-radius:.45rem; color:#9fb8e9 }
-
-    /* 字幕表格 */
-    #sub-panel{ display:flex; flex-direction:column; height:100%; }
-    .table-wrap{ overflow:auto; flex:1; }
-    table{ width:100%; border-collapse:collapse; }
-    thead th{ position:sticky; top:0; background:#0e1628; border-bottom:1px solid rgba(255,255,255,.06); padding:.6rem .75rem; text-align:left;}
-    tbody td{ border-bottom:1px solid rgba(255,255,255,.06); padding:.55rem .75rem; vertical-align:top; color:var(--text) }
-    tbody tr.active{ background:#22314a }
-    .t-time{ width:6.5rem; color:var(--muted) }
+    body,html {margin:0;padding:0;height:100%;background:#0f172a;color:#fff;font-family:sans-serif;}
+    .player {display:flex;height:100vh;}
+    .left-panel {flex:0 0 60%;display:flex;flex-direction:column;align-items:center;justify-content:center;background:black;}
+    .left-panel video, .left-panel img {max-width:100%;max-height:100%;}
+    .right-panel {flex:0 0 40%;display:flex;flex-direction:column;}
+    .tabs {display:flex;background:#1e293b;}
+    .tabs button {flex:1;padding:10px;border:none;background:#1e293b;color:#fff;cursor:pointer;}
+    .tabs button.active {background:#334155;}
+    .tab-content {flex:1;overflow-y:auto;padding:10px;}
+    table {width:100%;border-collapse:collapse;}
+    td,th {padding:5px;border-bottom:1px solid #334155;text-align:left;}
+    .controls {padding:10px;background:#1e293b;display:flex;flex-wrap:wrap;gap:5px;}
+    .controls button,.controls select {padding:5px 10px;background:#334155;color:#fff;border:none;cursor:pointer;}
   </style>
 </head>
 <body>
-  <div id="app">
-    <!-- 左側：影片 + 工具列 -->
-    <section id="left">
-      <div id="video-wrap">
-        <video id="video" controls preload="metadata"></video>
-      </div>
-
-      <!-- ⚙️ 工具列：請保留這一段，這是你說的「左側工具列」 -->
-      <div id="controls">
-        <button id="btnPrev">上一句</button>
-        <button id="btnPlay">播放/暫停</button>
-        <button id="btnNext">下一句</button>
-        <button id="btnRepeat">重複本句</button>
-        <button id="btnAB">A-B 循環</button>
-        <button id="btnClearAB">取消循環</button>
-
-        <span class="sp"></span>
-
+  <div class="player">
+    <div class="left-panel">
+      <video id="video" controls></video>
+      <div class="controls">
+        <button id="prev">上一句</button>
+        <button id="playPause">播放/暫停</button>
+        <button id="next">下一句</button>
+        <button id="repeat">重複本句</button>
+        <button id="abLoop">A-B 循環</button>
+        <button id="cancelLoop">取消循環</button>
         <label>速度
           <select id="speed">
-            <option value="0.75">0.75×</option>
-            <option value="1.0" selected>1.0×</option>
-            <option value="1.25">1.25×</option>
+            <option value="0.5">0.5×</option>
+            <option value="1" selected>1.0×</option>
             <option value="1.5">1.5×</option>
+            <option value="2">2.0×</option>
           </select>
         </label>
       </div>
-    </section>
-
-    <!-- 右側：字幕/測驗/單字 -->
-    <section id="right">
+    </div>
+    <div class="right-panel">
       <div class="tabs">
-        <div class="tab active" data-tab="sub">字幕</div>
-        <div class="tab" data-tab="quiz">測驗</div>
-        <div class="tab" data-tab="vocab">單字</div>
-
-        <div class="tab-right">
-          <!-- 校準＋偏移 -->
-          <div class="calib">
-            <span class="badge">偏移 <span id="offsetView">0.0</span>s</span>
-            <button id="btnMinus05">-0.5s</button>
-            <button id="btnPlus05">+0.5s</button>
-          </div>
-        </div>
+        <button class="active" data-tab="subs">字幕</button>
+        <button data-tab="quiz">測驗</button>
+        <button data-tab="vocab">單字</button>
       </div>
-
-      <!-- 字幕面板 -->
-      <div id="sub-panel" data-panel="sub">
-        <div class="table-wrap">
-          <table>
-            <thead>
-              <tr>
-                <th class="t-time">時間</th>
-                <th>英文</th>
-                <th>中文</th>
-              </tr>
-            </thead>
-            <tbody id="cueBody"></tbody>
-          </table>
-        </div>
-      </div>
-
-      <!-- 其他分頁的容器（暫留，維持你目前結構） -->
-      <div id="quiz-panel" data-panel="quiz" style="display:none; padding:1rem;">（測驗面板預留）</div>
-      <div id="vocab-panel" data-panel="vocab" style="display:none; padding:1rem;">（單字面板預留）</div>
-    </section>
+      <div class="tab-content" id="subs"></div>
+      <div class="tab-content" id="quiz" style="display:none"></div>
+      <div class="tab-content" id="vocab" style="display:none"></div>
+    </div>
   </div>
-
-  <script>
-    // ====== 讀取 slug、媒體與字幕 ======
-    const url = new URL(location.href);
-    const slug = url.searchParams.get('slug') || 'mid-autumn';
-
-    const video = document.getElementById('video');
-    const cueBody = document.getElementById('cueBody');
-
-    // 影片來源：videos/${slug}.mp4  (Ex: mid-autumn.mp4 / houyi.mp4 / lantern.mp4)
-    video.src = `videos/${slug}.mp4`;
-
-    // 校準（字幕與影片時間偏移）
-    let offset = 0; // 秒
-    const offsetView = document.getElementById('offsetView');
-    function renderOffset(){ offsetView.textContent = offset.toFixed(1); }
-    renderOffset();
-
-    document.getElementById('btnMinus05').onclick = () => { offset -= 0.5; renderOffset(); };
-    document.getElementById('btnPlus05').onclick  = () => { offset += 0.5; renderOffset(); };
-
-    // 載入字幕 JSON：data/cues-${slug}.json
-    let cues = [];   // {start,end,en,zh}
-    let abA = null, abB = null; // A-B 循環
-    let repeatIndex = -1;
-
-    fetch(`data/cues-${slug}.json`)
-      .then(r => r.json())
-      .then(json => {
-        cues = json || [];
-        renderTable();
-      })
-      .catch(err => {
-        console.error('字幕讀取失敗', err);
-        cueBody.innerHTML = `<tr><td colspan="3" style="color:#fda4af;padding:1rem;">無法讀取字幕：data/cues-${slug}.json</td></tr>`;
-      });
-
-    function hhmmss(sec){
-      sec = Math.max(0, sec|0);
-      const h = Math.floor(sec/3600), m = Math.floor(sec%3600/60), s = sec%60;
-      if(h>0) return `[${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}]`;
-      return `[${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}]`;
-    }
-
-    function renderTable(){
-      cueBody.innerHTML = cues.map((c,i)=>`
-        <tr data-i="${i}">
-          <td class="t-time">${hhmmss(c.start)}</td>
-          <td>${c.en || ''}</td>
-          <td>${c.zh || ''}</td>
-        </tr>
-      `).join('');
-      cueBody.querySelectorAll('tr').forEach(tr=>{
-        tr.addEventListener('click', ()=>{
-          const i = +tr.dataset.i;
-          seekTo(cues[i].start + offset);
-        });
-      });
-    }
-
-    function seekTo(t){ video.currentTime = Math.max(0, t); video.play(); }
-
-    // 依目前播放時間，找到當前行
-    function currentIndex(){
-      const t = video.currentTime - offset;
-      for(let i=cues.length-1;i>=0;i--){
-        if(t>=cues[i].start) return i;
-      }
-      return 0;
-    }
-
-    // 高亮當前字幕
-    function highlight(){
-      const i = currentIndex();
-      cueBody.querySelectorAll('tr').forEach((tr,k)=>{
-        tr.classList.toggle('active', k===i);
-      });
-      // A-B 迴圈
-      if(abA!=null && abB!=null){
-        if(video.currentTime > abB) video.currentTime = abA;
-      }
-    }
-    video.addEventListener('timeupdate', highlight);
-
-    // ====== 控制列功能 ======
-    document.getElementById('btnPlay').onclick = ()=> video.paused ? video.play() : video.pause();
-
-    document.getElementById('btnPrev').onclick = ()=>{
-      const i = currentIndex();
-      const prev = Math.max(0, i-1);
-      seekTo(cues[prev]?.start + offset || 0);
-    };
-    document.getElementById('btnNext').onclick = ()=>{
-      const i = currentIndex();
-      const next = Math.min(cues.length-1, i+1);
-      seekTo(cues[next]?.start + offset || 0);
-    };
-    document.getElementById('btnRepeat').onclick = ()=>{
-      repeatIndex = currentIndex();
-      const s = cues[repeatIndex]?.start ?? 0;
-      const e = cues[repeatIndex]?.end ?? (s + 3);
-      abA = s + offset; abB = e + offset;
-      seekTo(abA);
-    };
-    document.getElementById('btnAB').onclick = ()=>{
-      if(abA==null){ // 第一次按 → 設 A
-        abA = video.currentTime;
-      }else if(abB==null){ // 第二次按 → 設 B 並啟用
-        abB = Math.max(abA + 0.2, video.currentTime);
-        seekTo(abA);
-      }else{ // 已存在 → 從頭開始
-        abA = video.currentTime; abB = null;
-      }
-    };
-    document.getElementById('btnClearAB').onclick = ()=>{
-      abA = abB = null; repeatIndex = -1;
-    };
-
-    document.getElementById('speed').onchange = (e)=>{
-      video.playbackRate = Number(e.target.value || 1.0);
-    };
-
-    // ====== 分頁切換（保留你原本結構） ======
-    document.querySelectorAll('.tab').forEach(tab=>{
-      tab.addEventListener('click', ()=>{
-        document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
-        tab.classList.add('active');
-        const name = tab.dataset.tab;
-        document.querySelectorAll('[data-panel]').forEach(p=>{
-          p.style.display = (p.dataset.panel===name) ? 'block':'none';
-        });
-      });
-    });
-  </script>
+  <script src="player.js"></script>
 </body>
 </html>
