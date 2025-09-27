@@ -1,34 +1,32 @@
-{
-  "items":[
-    {
-      "slug":"mid-autumn",
-      "title_en":"Mid-Autumn Festival",
-      "title_zh":"中秋節",
-      "length":"SHORT",
-      "video":"videos/mid-autumn.mp4",
-      "cues":"data/cues-mid-autumn.json",
-      "quiz":"data/quiz-mid-autumn.json",
-      "cover":"videos/mid-autumn.jpg"
-    },
-    {
-      "slug":"houyi",
-      "title_en":"Hou Yi Shoots the Suns",
-      "title_zh":"后羿射日",
-      "length":"SHORT",
-      "video":"videos/houyi.mp4",
-      "cues":"data/cues-houyi.json",
-      "quiz":"data/quiz-houyi.json",
-      "cover":"videos/houyi.jpg"
-    },
-    {
-      "slug":"lantern",
-      "title_en":"Lantern Festival",
-      "title_zh":"元宵節",
-      "length":"SHORT",
-      "video":"videos/Lantern.mp4",
-      "cues":"data/cues-lantern.json",
-      "quiz":"data/quiz-lantern.json",
-      "cover":"videos/lantern.jpg"
-    }
-  ]
-}
+[
+  {
+    "slug": "mid-autumn",
+    "title": "Mid-Autumn Festival",
+    "video": "mid-autumn.mp4",
+    "cover": "mid-autumn.jpg",
+    "length": "short",
+    "topic": "中秋節",
+    "isFree": true,
+    "requireLogin": false
+  },
+  {
+    "slug": "houyi",
+    "title": "Hou Yi Shoots the Suns",
+    "video": "houyi.mp4",
+    "cover": "houyi.jpg",
+    "length": "short",
+    "topic": "后羿射日",
+    "isFree": false,
+    "requireLogin": true
+  },
+  {
+    "slug": "lantern",
+    "title": "Lantern Festival",
+    "video": "Lantern Festival.mp4",
+    "cover": "lantern.jpg",
+    "length": "short",
+    "topic": "元宵節",
+    "isFree": false,
+    "requireLogin": true
+  }
+]
