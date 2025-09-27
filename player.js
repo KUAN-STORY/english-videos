@@ -1,4 +1,4 @@
-// /english-videos/player.js  —  字幕 + 測驗 + 單字（填空）完整控制
+// /english-videos/player.js  —  字幕 + 測驗 + 單字（填空）完整控制（同時支援兩種 quiz 格式）
 
 async function loadJSON(path) {
   try {
@@ -25,24 +25,19 @@ document.addEventListener("DOMContentLoaded", async () => {
   const slug = params.get("slug");
   if (!slug) return;
 
-  // 載入影片
+  // 影片
   const video = document.getElementById("video");
   video.src = `videos/${slug}.mp4`;
 
-  // 載入三種資料
-  const cues = await loadJSON(`data/cues-${slug}.json`);
-  const quiz = await loadJSON(`data/quiz-${slug}.json`);
+  // 三種資料
+  const cues  = await loadJSON(`data/cues-${slug}.json`);
+  const quiz  = await loadJSON(`data/quiz-${slug}.json`);
   const vocab = await loadJSON(`data/vocab-${slug}.json`);
 
-  // render tabs
   bindTabs();
-
-  // render three panes
   renderCues(cues);
   renderQuiz(quiz);
   renderVocab(vocab);
-
-  // 字幕同步：高亮 + 跟隨 + 偏移
   setupCueSync(video, cues);
 });
 
@@ -53,7 +48,6 @@ function bindTabs() {
     btn.addEventListener("click", () => {
       buttons.forEach(b => b.classList.remove("active"));
       btn.classList.add("active");
-
       const panes = [...document.querySelectorAll(".pane")];
       panes.forEach(p => p.classList.remove("active"));
       document.getElementById(btn.dataset.tab).classList.add("active");
@@ -95,17 +89,18 @@ function setupCueSync(video, cues) {
   let offset = 0;
 
   document.getElementById("-05").addEventListener("click", () => {
-    offset = +(offset - 0.5).toFixed(1); offLabel.textContent = offset.toFixed(1) + "s";
+    offset = +(offset - 0.5).toFixed(1);
+    offLabel.textContent = offset.toFixed(1) + "s";
   });
   document.getElementById("+05").addEventListener("click", () => {
-    offset = +(offset + 0.5).toFixed(1); offLabel.textContent = offset.toFixed(1) + "s";
+    offset = +(offset + 0.5).toFixed(1);
+    offLabel.textContent = offset.toFixed(1) + "s";
   });
 
   video.addEventListener("timeupdate", () => {
     if (!cues || !cues.length) return;
 
     const now = video.currentTime + offset;
-    // 找 <= now 的最後一筆
     let idx = -1;
     for (let i = 0; i < cues.length; i++) {
       const sec = parseTimeToSec(cues[i].time);
@@ -123,27 +118,96 @@ function setupCueSync(video, cues) {
   });
 }
 
-/* ---------- Quiz ---------- */
+/* ---------- Quiz（支援兩種格式） ---------- */
+function normalizeQuizItem(q) {
+  // 新式：{question, options, answer, explain}
+  if (q.question && q.options) {
+    return {
+      question: String(q.question),
+      options: Array.isArray(q.options) ? q.options.map(String) : [],
+      answer: q.answer != null ? String(q.answer) : "",
+      explain: q.explain ? String(q.explain) : ""
+    };
+  }
+  // 舊式：{q, a, answerIndex, explain}
+  if (q.q && q.a) {
+    const opts = Array.isArray(q.a) ? q.a.map(String) : [];
+    const idx = Number.isInteger(q.answerIndex) ? q.answerIndex : -1;
+    const ans = idx >= 0 && idx < opts.length ? opts[idx] : "";
+    return {
+      question: String(q.q),
+      options: opts,
+      answer: ans,
+      explain: q.explain ? String(q.explain) : ""
+    };
+  }
+  return null;
+}
+
 function renderQuiz(list) {
   const container = document.getElementById("quiz-body");
-  if (!list || !list.length) {
+  if (!Array.isArray(list) || !list.length) {
     container.innerHTML = `<p>查無測驗資料（quiz-xxx.json）。</p>`;
     return;
   }
-  container.innerHTML = list.map((q, i) => `
-    <div class="quiz-item" style="border:1px solid #22324a;border-radius:8px;padding:12px;margin:10px 0;background:#0f1525">
-      <p style="margin:0 0 6px">${i + 1}. ${escapeHTML(q.question)}</p>
-      ${q.options.map(opt => `
-        <label style="display:block;margin:4px 0">
-          <input type="radio" name="q${i}" value="${escapeHTML(opt)}"> ${escapeHTML(opt)}
-        </label>
-      `).join("")}
-      <p class="answer" style="margin:8px 0 0">正解：${escapeHTML(q.answer)}</p>
+
+  // 正規化
+  const items = list.map(normalizeQuizItem).filter(Boolean);
+  if (!items.length) {
+    container.innerHTML = `<p>測驗資料格式不符合（已支援 q/a/answerIndex 或 question/options/answer）。</p>`;
+    return;
+  }
+
+  let score = 0;
+
+  container.innerHTML = `
+    <div style="margin:6px 0 12px; color:#9ca3af">
+      共 ${items.length} 題，作答後立即判定，並可展開「解釋」。
     </div>
-  `).join("");
+    ${items.map((q, i) => `
+      <div class="quiz-item" style="border:1px solid #22324a;border-radius:8px;padding:12px;margin:10px 0;background:#0f1525">
+        <p style="margin:0 0 8px"><b>${i + 1}.</b> ${escapeHTML(q.question)}</p>
+        <div>
+          ${q.options.map(opt => `
+            <label style="display:block;margin:6px 0;cursor:pointer">
+              <input type="radio" name="q${i}" value="${escapeHTML(opt)}"> ${escapeHTML(opt)}
+            </label>
+          `).join("")}
+        </div>
+        <div class="result" data-i="${i}" style="margin-top:8px; display:none"></div>
+        ${q.explain ? `<details style="margin-top:6px;color:#cbd5e1"><summary>解釋</summary><div style="margin-top:6px">${escapeHTML(q.explain)}</div></details>` : ""}
+      </div>
+    `).join("")}
+    <div id="scoreBar" style="margin-top:14px;padding:10px;border-top:1px solid #22324a;color:#d1fae5">
+      得分：<b id="scoreVal">0</b> / ${items.length}
+    </div>
+  `;
+
+  // 綁定即時判題
+  items.forEach((q, i) => {
+    const radios = [...container.querySelectorAll(`input[name="q${i}"]`)];
+    const box = container.querySelector(`.result[data-i="${i}"]`);
+    radios.forEach(r => {
+      r.addEventListener("change", () => {
+        const correct = r.value === q.answer;
+        // 若第一次答對就加分；重複切換只看當前是否正確
+        const previously = box.dataset.correct === "true";
+        if (!previously && correct) score++;
+        if (previously && !correct) score--;
+
+        box.dataset.correct = String(correct);
+        box.style.display = "block";
+        box.innerHTML = correct
+          ? `<span style="color:#34d399">✔ 正確！</span> 答案：<b>${escapeHTML(q.answer)}</b>`
+          : `<span style="color:#f87171">✘ 錯誤</span> 正確答案：<b>${escapeHTML(q.answer)}</b>`;
+
+        document.getElementById("scoreVal").textContent = String(score);
+      });
+    });
+  });
 }
 
-/* ---------- Vocab (fill-in) ---------- */
+/* ---------- Vocab (填空/文法式) ---------- */
 function renderVocab(list) {
   const tbody = document.getElementById("vocab-body");
   if (!list || !list.length) {
