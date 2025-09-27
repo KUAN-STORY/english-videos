@@ -1,171 +1,270 @@
-// player.js
+/* =========================
+ * Player – 整合：影片 / 字幕 / 測驗 / 單字
+ * ========================= */
 
-// 取得網址參數 slug，例如：?slug=mid-autumn
-const urlParams = new URLSearchParams(window.location.search);
-const slug = urlParams.get("slug") || "default";
+const qs = (s, p = document) => p.querySelector(s);
+const qsa = (s, p = document) => [...p.querySelectorAll(s)];
+const byId = (id) => document.getElementById(id);
 
-// JSON 檔案的基底路徑
-const DATA_BASE = "./data";
+const video = byId('video');
+const subsBody  = byId('subsBody');
+const quizBody  = byId('quizBody');
+const vocabBody = byId('vocabBody');
+const offsetValEl = byId('offsetVal');
 
-// 對應的 JSON 檔案
-const cuesFile = `${DATA_BASE}/cues-${slug}.json`;
-const quizFile = `${DATA_BASE}/quiz-${slug}.json`;
-const vocabFile = `${DATA_BASE}/vocab-${slug}.json`;
+const params = new URLSearchParams(location.search);
+const slug = params.get('slug') || 'mid-autumn'; // 預設給一個，避免空值
 
-// 綁定 DOM 元素
-const video = document.getElementById("video");
-const subtitlesDiv = document.getElementById("subtitles");
-const quizDiv = document.getElementById("quiz");
-const vocabDiv = document.getElementById("vocab");
-const tabs = document.querySelectorAll(".tabs button");
+/* -------- 影片路徑：用 URL 保證絕對路徑 -------- */
+const videoURL = new URL(`./videos/${slug}.mp4`, location.href).href;
+video.src = videoURL;
+video.load();
 
-// --- Tab 切換 ---
-tabs.forEach((tab) => {
-  tab.addEventListener("click", () => {
-    tabs.forEach((t) => t.classList.remove("active"));
-    tab.classList.add("active");
+video.addEventListener('canplay', () => {
+  console.log('[video] canplay:', videoURL);
+});
+video.addEventListener('error', (e) => {
+  console.error('[video] load error:', videoURL, e, video?.error);
+});
 
-    document.querySelectorAll(".tab-content").forEach((c) => (c.style.display = "none"));
-    document.getElementById(tab.dataset.tab).style.display = "block";
+/* -------- 偏移與跟隨 -------- */
+let follow = true;
+let offset = 0.0;
+
+byId('followBtn').addEventListener('click', (e) => {
+  follow = !follow;
+  e.currentTarget.classList.toggle('on', follow);
+});
+
+qsa('.ctrlRow .chip[data-delta]').forEach(btn => {
+  btn.addEventListener('click', () => {
+    const d = parseFloat(btn.dataset.delta);
+    offset = Math.round((offset + d) * 10) / 10;
+    offsetValEl.textContent = offset.toFixed(1);
   });
 });
 
-// --- 載入字幕 ---
-async function loadSubtitles() {
+/* -------- Tab 切換 -------- */
+qsa('.tab').forEach(t => {
+  t.addEventListener('click', () => {
+    qsa('.tab').forEach(x => x.classList.remove('active'));
+    t.classList.add('active');
+    const pane = t.dataset.pane;
+    byId('pane-subs').hidden  = pane !== 'subs';
+    byId('pane-quiz').hidden  = pane !== 'quiz';
+    byId('pane-vocab').hidden = pane !== 'vocab';
+  });
+});
+
+/* -------- 載入 JSON -------- */
+const dataBase = new URL('./data/', location.href).href;
+
+async function fetchJSON(name) {
+  const url = new URL(name, dataBase).href;
   try {
-    const res = await fetch(cuesFile);
-    if (!res.ok) throw new Error("找不到字幕檔");
-    const cues = await res.json();
-
-    let html = `
-      <table>
-        <tr><th>時間</th><th>英文</th><th>中文</th></tr>
-    `;
-    cues.forEach((cue) => {
-      html += `
-        <tr data-start="${cue.start}">
-          <td>[${cue.start}]</td>
-          <td>${cue.en}</td>
-          <td>${cue.zh}</td>
-        </tr>`;
-    });
-    html += `</table>`;
-    subtitlesDiv.innerHTML = html;
-
-    // 點字幕 → 跳到影片時間
-    subtitlesDiv.querySelectorAll("tr[data-start]").forEach((row) => {
-      row.addEventListener("click", () => {
-        video.currentTime = parseTime(row.dataset.start);
-        video.play();
-      });
-    });
-  } catch (e) {
-    subtitlesDiv.innerHTML = `<p style="color:#f87171">查無字幕資料 (${cuesFile})</p>`;
+    const r = await fetch(url, {cache:'no-store'});
+    if (!r.ok) throw new Error(r.status + ' ' + r.statusText);
+    const j = await r.json();
+    console.log('[data] loaded:', name, j);
+    return j;
+  } catch (err) {
+    console.error('[data] load error:', name, err);
+    return {__error: err.message, __url: name};
   }
 }
 
-// --- 載入測驗 ---
+/* -------- 字幕：cues-<slug>.json --------
+ * 期待格式：
+ *   [{ "start": 1.23, "end": 5.67, "en": "text", "zh": "文字" }, ...]
+ * ---------------------------------------- */
+let cueRows = [];
+
+async function loadSubs() {
+  const name = `cues-${slug}.json`;
+  const j = await fetchJSON(name);
+  subsBody.innerHTML = '';
+  cueRows = [];
+
+  if (j.__error) {
+    subsBody.innerHTML = `<tr><td colspan="3" class="warn">查無字幕（./data/${name}）</td></tr>`;
+    return;
+  }
+  if (!Array.isArray(j) || j.length === 0) {
+    subsBody.innerHTML = `<tr><td colspan="3" class="muted">目前沒有字幕資料</td></tr>`;
+    return;
+  }
+
+  j.forEach((c, i) => {
+    const tr = document.createElement('tr');
+    tr.className = 'row';
+    tr.dataset.start = c.start ?? 0;
+    tr.dataset.end   = c.end ?? (c.start ?? 0) + 4;
+    tr.innerHTML = `
+      <td><span class="timeBtn" data-t="${c.start??0}">${secToClock(c.start??0)}</span></td>
+      <td>${escapeHTML(c.en ?? '')}</td>
+      <td>${escapeHTML(c.zh ?? '')}</td>`;
+    subsBody.appendChild(tr);
+    cueRows.push(tr);
+  });
+
+  // 點時間 → 跳播
+  qsa('.timeBtn', subsBody).forEach(a => {
+    a.addEventListener('click', () => {
+      const t = parseFloat(a.dataset.t || '0');
+      video.currentTime = Math.max(0, t + offset);
+      video.play();
+    });
+  });
+
+  // 影片播放 → 高亮當前句
+  video.addEventListener('timeupdate', highlightActiveRow);
+}
+
+function highlightActiveRow() {
+  if (!follow) return;
+  const t = video.currentTime - offset;
+  let active;
+  for (const tr of cueRows) {
+    const st = parseFloat(tr.dataset.start);
+    const ed = parseFloat(tr.dataset.end);
+    if (t >= st && t < ed) { active = tr; break; }
+  }
+  qsa('#subsBody .row.active').forEach(x => x.classList.remove('active'));
+  if (active) {
+    active.classList.add('active');
+    // 若不在視窗中，捲動
+    const box = byId('pane-subs');
+    const top = active.offsetTop - 120;
+    if (box.scrollTop > top || (active.offsetTop > box.scrollTop + box.clientHeight - 120)) {
+      box.scrollTo({top, behavior:'smooth'});
+    }
+  }
+}
+
+/* -------- 測驗：quiz-<slug>.json --------
+ * 期待格式：
+ *   [{q:"...", a:["...","...","...","..."], answerIndex:2, explain:"..."}, ...]
+ * ---------------------------------------- */
 async function loadQuiz() {
-  try {
-    const res = await fetch(quizFile);
-    if (!res.ok) throw new Error("找不到測驗檔");
-    const quiz = await res.json();
+  const name = `quiz-${slug}.json`;
+  const j = await fetchJSON(name);
+  quizBody.innerHTML = '';
 
-    let html = "";
-    quiz.forEach((q, i) => {
-      html += `<div class="quiz-item">
-        <p><b>Q${i + 1}. ${q.q}</b></p>
-        ${q.a
-          .map(
-            (opt, idx) => `
-          <label>
-            <input type="radio" name="q${i}" value="${idx}" />
-            ${opt}
-          </label><br>`
-          )
-          .join("")}
-        <div class="explain" style="display:none;color:#38bdf8"></div>
-      </div><hr/>`;
-    });
-    html += `<button id="submitQuiz">提交答案</button>`;
-    quizDiv.innerHTML = html;
-
-    // 提交答案
-    document.getElementById("submitQuiz").addEventListener("click", () => {
-      document.querySelectorAll(".quiz-item").forEach((item, i) => {
-        const checked = item.querySelector("input:checked");
-        const explainDiv = item.querySelector(".explain");
-        if (!checked) {
-          explainDiv.innerHTML = "未作答";
-        } else {
-          const val = parseInt(checked.value);
-          if (val === quiz[i].answerIndex) {
-            explainDiv.innerHTML = "✅ 正確！ " + quiz[i].explain;
-          } else {
-            explainDiv.innerHTML =
-              "❌ 錯誤，正解是「" +
-              quiz[i].a[quiz[i].answerIndex] +
-              "」：" +
-              quiz[i].explain;
-          }
-        }
-        explainDiv.style.display = "block";
-      });
-    });
-  } catch (e) {
-    quizDiv.innerHTML = `<p style="color:#f87171">查無測驗資料 (${quizFile})</p>`;
+  if (j.__error) {
+    quizBody.innerHTML = `<tr><td colspan="3" class="warn">查無測驗資料（./data/${name}）</td></tr>`;
+    return;
   }
+  if (!Array.isArray(j) || j.length === 0) {
+    quizBody.innerHTML = `<tr><td colspan="3" class="muted">目前沒有測驗資料</td></tr>`;
+    return;
+  }
+
+  j.forEach((q, idx) => {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td>${idx+1}</td>
+      <td>${escapeHTML(q.q ?? '')}</td>
+      <td>
+        <div>
+          ${q.a.map((opt, i) => `
+            <label style="display:block; margin:4px 0">
+              <input type="radio" name="q${idx}" value="${i}"> ${escapeHTML(opt)}
+            </label>
+          `).join('')}
+        </div>
+        <div class="muted" style="margin-top:6px">答對：第 ${Number(q.answerIndex)+1} 項</div>
+        ${q.explain ? `<div style="margin-top:6px">${escapeHTML(q.explain)}</div>`:''}
+      </td>`;
+    quizBody.appendChild(tr);
+  });
 }
 
-// --- 載入單字 ---
+/* -------- 單字：vocab-<slug>.json --------
+ * 期待格式：
+ *   [{time:1.23, word:"festival", pos:"n.", cn:"節日",
+ *     en:"a special day...", eg:[{t:1.23, s:"..."}] }, ...]
+ * ---------------------------------------- */
+let speech;
+try {
+  speech = window.speechSynthesis;
+} catch(_) {}
+
 async function loadVocab() {
-  try {
-    const res = await fetch(vocabFile);
-    if (!res.ok) throw new Error("找不到單字檔");
-    const vocab = await res.json();
+  const name = `vocab-${slug}.json`;
+  const j = await fetchJSON(name);
+  vocabBody.innerHTML = '';
 
-    let html = `
-      <table>
-        <tr><th>時間</th><th>單字</th><th>詞性</th><th>中文</th><th>填空/例句</th></tr>
-    `;
-    vocab.forEach((v) => {
-      html += `
-        <tr data-start="${v.time || "0:00"}">
-          <td>${v.time || ""}</td>
-          <td><b>${v.word}</b></td>
-          <td>${v.pos || ""}</td>
-          <td>${v.zh || ""}</td>
-          <td>${v.example || ""}</td>
-        </tr>`;
-    });
-    html += `</table>`;
-    vocabDiv.innerHTML = html;
+  if (j.__error) {
+    vocabBody.innerHTML = `<tr><td colspan="3" class="warn">查無單字資料（./data/${name}）</td></tr>`;
+    return;
+  }
+  if (!Array.isArray(j) || j.length === 0) {
+    vocabBody.innerHTML = `<tr><td colspan="3" class="muted">目前沒有單字資料</td></tr>`;
+    return;
+  }
 
-    // 點單字 → 播放該時間
-    vocabDiv.querySelectorAll("tr[data-start]").forEach((row) => {
-      row.addEventListener("click", () => {
-        const start = row.dataset.start;
-        if (start !== "0:00") {
-          video.currentTime = parseTime(start);
-          video.play();
+  j.forEach((v) => {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td><span class="timeBtn" data-t="${v.time??0}">${secToClock(v.time??0)}</span></td>
+      <td>
+        <span class="playWord" title="朗讀">🔊</span>
+        <strong>${escapeHTML(v.word ?? '')}</strong>
+        <span class="muted">${escapeHTML(v.pos ?? '')}</span>
+        ${v.cn ? `<div class="vocab-cn">${escapeHTML(v.cn)}</div>`:''}
+      </td>
+      <td>
+        ${v.en ? `<div class="vocab-en">${escapeHTML(v.en)}</div>`:''}
+        ${Array.isArray(v.eg) && v.eg.length ? `
+          <div style="margin-top:6px">
+            ${v.eg.map(e => `<span class="egAnchor" data-t="${e.t??0}">${escapeHTML(e.s ?? '')}</span>`).join('<br/>')}
+          </div>` : ''
         }
-      });
+      </td>`;
+    vocabBody.appendChild(tr);
+
+    // 朗讀
+    tr.querySelector('.playWord')?.addEventListener('click', () => speak(v.word));
+  });
+
+  // 點「時間 / 例句」→ 跳到該時間
+  qsa('.timeBtn', vocabBody).forEach(el => {
+    el.addEventListener('click', () => {
+      const t = parseFloat(el.dataset.t || '0');
+      video.currentTime = Math.max(0, t + offset);
+      video.play();
     });
-  } catch (e) {
-    vocabDiv.innerHTML = `<p style="color:#f87171">查無單字資料 (${vocabFile})</p>`;
-  }
+  });
+  qsa('.egAnchor', vocabBody).forEach(el => {
+    el.addEventListener('click', () => {
+      const t = parseFloat(el.dataset.t || '0');
+      video.currentTime = Math.max(0, t + offset);
+      video.play();
+    });
+  });
 }
 
-// --- 工具：時間字串轉秒數 ---
-function parseTime(t) {
-  const parts = t.replace("[", "").replace("]", "").split(":");
-  if (parts.length === 2) {
-    return parseInt(parts[0]) * 60 + parseFloat(parts[1]);
-  }
-  return 0;
+/* -------- helper -------- */
+function secToClock(s) {
+  s = Math.max(0, Number(s)||0);
+  const m = Math.floor(s/60);
+  const sec = Math.floor(s%60);
+  return `${String(m).padStart(2,'0')}:${String(sec).padStart(2,'0')}`;
+}
+function escapeHTML(str=''){ return String(str)
+  .replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;')
+  .replaceAll('"','&quot;').replaceAll("'",'&#39;'); }
+
+function speak(text=''){
+  if (!speech) return;
+  const u = new SpeechSynthesisUtterance(text);
+  u.lang = 'en-US';
+  u.rate = 1;
+  speech.cancel();
+  speech.speak(u);
 }
 
-// --- 初始載入 ---
-loadSubtitles();
-loadQuiz();
-loadVocab();
+/* -------- 啟動 -------- */
+(async function init(){
+  await Promise.all([loadSubs(), loadQuiz(), loadVocab()]);
+})();
