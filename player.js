@@ -1,24 +1,36 @@
-/* ---------- english-videos / player.js (hotfix v2) ---------- */
+/* ---------- english-videos / player.js (hotfix v3) ---------- */
 document.addEventListener('DOMContentLoaded', () => {
   const $  = s => document.querySelector(s);
   const $$ = s => Array.from(document.querySelectorAll(s));
   const urlOf = rel => new URL(rel, location.href).href;
 
+  // 讓 active 列會反白（不用改 HTML）
+  (function injectActiveStyle(){
+    const css = `
+      table tr.active td { background: rgba(86,167,255,.18) !important; }
+      table tr:hover td { background: rgba(255,255,255,.06); }
+    `;
+    const style = document.createElement('style');
+    style.textContent = css;
+    document.head.appendChild(style);
+  })();
+
+  /* ---------------- 基本變數 ---------------- */
   const slug = new URLSearchParams(location.search).get('slug') || 'mid-autumn';
   const video = $('#player') || $('video');
 
-  /* ---------- 儲存與預設 ---------- */
   const LS = { speed:'ev_speed', offset:'ev_offset', follow:'ev_follow' };
   let speed     = parseFloat(localStorage.getItem(LS.speed)  || '1');
   let offsetSec = parseFloat(localStorage.getItem(LS.offset) || '0');
   let follow    = localStorage.getItem(LS.follow) !== '0';
 
   if (video) {
+    // 若 HTML 沒塞 src，幫你自動接上
     if (!video.src) video.src = urlOf(`./videos/${slug}.mp4`);
     video.playbackRate = Math.min(2, Math.max(0.5, speed));
   }
 
-  /* ---------- 找字幕表格（不靠固定 id） ---------- */
+  /* ---------------- 找「字幕表格」的 tbody（不靠固定 id） ---------------- */
   const findCuesBody = () => {
     const tables = $$('table');
     for (const t of tables) {
@@ -27,13 +39,13 @@ document.addEventListener('DOMContentLoaded', () => {
         return t.tBodies[0] || t.querySelector('tbody');
       }
     }
-    // 備援
+    // 備援：常見命名
     return $('#cuesBody') || $('#cues tbody') || document.querySelector('[data-role="cues"] tbody');
   };
 
   let cuesBody = findCuesBody();
 
-  /* ---------- 工具 ---------- */
+  /* ---------------- 工具 ---------------- */
   const fmt = s => {
     s = Math.max(0, s|0);
     const m = (s/60|0).toString().padStart(2,'0');
@@ -55,11 +67,18 @@ document.addEventListener('DOMContentLoaded', () => {
     return r.json();
   };
 
-  /* ---------- 字幕資料 ---------- */
+  // 把按鈕文字變成關鍵字（移除空白與符號）
+  const keyOf = (el) => {
+    const s = (el?.textContent || el?.getAttribute?.('aria-label') || el?.title || '').trim();
+    return s.replace(/[^\u4e00-\u9fa5A-Za-z0-9\-\+\.]/g, ''); // 只留中英數 / - + .
+  };
+
+  /* ---------------- 字幕資料 ---------------- */
   let cues = [];          // [{start,end,en,zh}]
-  let active = -1;
-  let loopThis = false;
+  let active = -1;        // 目前句子 index
+  let loopThis = false;   // 點句即循環
   let abA = null, abB = null;
+  let autoPause = false;  // 逐句自動暫停
 
   const setActive = i => {
     if (!cuesBody) return;
@@ -81,7 +100,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   const updateByTime = t => {
     if (!cues.length || !cuesBody) return;
-    // 二分
+    // 二分搜尋
     let L=0,R=cues.length-1,ans=-1;
     while(L<=R){
       const m=(L+R)>>1, c=cues[m];
@@ -117,7 +136,6 @@ document.addEventListener('DOMContentLoaded', () => {
       list.sort((a,b)=>a.start-b.start);
       cues = list;
 
-      // 再偵測一次 tbody（避免切分頁時才渲染）
       cuesBody = findCuesBody();
       renderCues();
     } catch (e) {
@@ -128,7 +146,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
-  /* ---------- 測驗 / 單字（保留） ---------- */
+  /* ---------------- 測驗 / 單字（保留，資料預留） ---------------- */
   const quizBody  = $('#quizBody')  || $('#quiz-content');
   const vocabBody = $('#vocabBody') || $('#vocab-content');
 
@@ -185,7 +203,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
-  /* ---------- 事件委派：速度 / 偏移 / 跟隨 / 左下控制列 ---------- */
+  /* ---------------- 速度 / 偏移 / 跟隨 / 左下工具列（事件委派） ---------------- */
 
   // 速度：任何 range 都接手
   document.addEventListener('input', e=>{
@@ -205,74 +223,106 @@ document.addEventListener('DOMContentLoaded', () => {
   // 跟隨（checkbox 或按鈕）
   document.addEventListener('change', e=>{
     const t=e.target;
-    if (t.matches('input[type=checkbox]') && /跟隨/.test(t.closest('label')?.textContent||t.id||'')) {
-      follow = !!t.checked;
-      localStorage.setItem(LS.follow, follow?'1':'0');
-      const act=cuesBody?.querySelector('.active'); if (act && follow) act.scrollIntoView({block:'center',behavior:'smooth'});
+    if (t.matches('input[type=checkbox]')) {
+      const parentTxt = (t.closest('label')?.textContent||'').trim();
+      if (parentTxt.includes('跟隨')) {
+        follow = !!t.checked;
+        localStorage.setItem(LS.follow, follow?'1':'0');
+        const act=cuesBody?.querySelector('.active'); if (act && follow) act.scrollIntoView({block:'center',behavior:'smooth'});
+      }
     }
   });
 
-  // 偏移按鈕
+  // 偏移顯示
+  const showOffset = ()=>{
+    const ot = $('#offsetText') || $('#offset') || $('[data-role=offset]');
+    if (ot) ot.textContent = `${offsetSec.toFixed(1)}s`;
+  };
   const applyOffset = v=>{
     offsetSec=Math.max(-5,Math.min(5, v));
     localStorage.setItem(LS.offset,String(offsetSec));
-    const ot = $('#offsetText') || $('#offset') || $('[data-role=offset]');
-    if (ot) ot.textContent = `${offsetSec.toFixed(1)}s`;
+    showOffset();
     if (video) updateByTime(video.currentTime + offsetSec);
   };
   applyOffset(offsetSec);
 
+  // 左下工具列 + 偏移按鈕：用「中文關鍵字」比對
   document.addEventListener('click', e=>{
-    const btn = e.target.closest('button,a');
+    const target = e.target.closest('button, a, [role="button"], .btn');
+    if (!target) return;
+    const k = keyOf(target);
 
-    if (btn) {
-      const txt = (btn.textContent||'').trim();
+    // 偏移（同時支援 -0.5s、−0.5s、+0.5s）
+    if (/-0\.5s?$|−0\.5s?$/.test(k)) { applyOffset(offsetSec-0.5); return; }
+    if (/^\+0\.5s?$/.test(k))        { applyOffset(offsetSec+0.5); return; }
 
-      // 偏移
-      if (/^-?0\.5s?$/.test(txt) || txt.includes('-0.5s')) { applyOffset(offsetSec-0.5); return; }
-      if (/^\+?0\.5s?$/.test(txt) || txt.includes('+0.5s')) { applyOffset(offsetSec+0.5); return; }
-
-      // 左下控制列
-      if (/上一句/.test(txt)) { if (active===-1) jump(0,true); else jump(Math.max(0, active-1), true); return; }
-      if (/下一句/.test(txt)) { if (active===-1) jump(0,true); else jump(Math.min(cues.length-1, active+1), true); return; }
-      if (/重複本句/.test(txt)) { if (active!==-1) jump(active,true); return; }
-      if (/點句即循環/.test(txt)) { loopThis = !loopThis; if (loopThis && active!==-1) jump(active,true); return; }
-      if (/取消循環/.test(txt)) { loopThis=false; abA=abB=null; return; }
-      if (/A-?B/.test(txt)) { // A-B 循環
-        if (!video) return;
-        if (abA==null) { abA=video.currentTime; return; }
-        if (abB==null) { abB=video.currentTime; if (abB<abA) [abA,abB]=[abB,abA]; return; }
-        abA=abB=null; return;
-      }
+    // 播放/暫停
+    if (k.includes('播放') && video) { 
+      if (video.paused) video.play(); else video.pause(); 
+      return; 
     }
+
+    // 上一句 / 下一句
+    if (k.includes('上一句') || k.includes('上句')) { if (active===-1) jump(0,true); else jump(Math.max(0, active-1), true); return; }
+    if (k.includes('下一句') || k.includes('下句')) { if (active===-1) jump(0,true); else jump(Math.min(cues.length-1, active+1), true); return; }
+
+    // 重複本句
+    if (k.includes('重複本句')) { if (active!==-1) jump(active,true); return; }
+
+    // 點句即循環 / 取消循環
+    if (k.includes('點句即循環')) { loopThis = !loopThis; if (loopThis && active!==-1) jump(active,true); return; }
+    if (k.includes('取消循環'))   { loopThis=false; abA=abB=null; video.loop=false; return; }
+
+    // A-B 循環
+    if (k.includes('AB循環') || k.includes('A-B循環') || k.includes('AＢ循環')) {
+      if (!video) return;
+      if (abA==null) { abA=video.currentTime; return; }
+      if (abB==null) { abB=video.currentTime; if (abB<abA) [abA,abB]=[abB,abA]; return; }
+      abA=abB=null; return;
+    }
+
+    // 逐句自動暫停
+    if (k.includes('逐句自動暫停')) { autoPause = !autoPause; return; }
+
+    // 整段循環（整支影片 loop）
+    if (k.includes('整段循環')) { if (video) video.loop = !video.loop; return; }
   });
 
-  /* ---------- 影片時間驅動 ---------- */
+  /* ---------------- 影片時間驅動 ---------------- */
   if (video) {
     video.addEventListener('timeupdate', ()=>{
-      const t = video.currentTime + offsetSec;
-      updateByTime(t);
+      const now = video.currentTime + offsetSec;
+      updateByTime(now);
 
+      // 點句即循環
       if (loopThis && active!==-1) {
         const c=cues[active];
         if (video.currentTime >= c.end) video.currentTime = c.start;
       }
+
+      // A-B 循環
       if (abA!=null && abB!=null && video.currentTime >= abB) {
         video.currentTime = abA;
       }
+
+      // 逐句自動暫停
+      if (autoPause && active!==-1) {
+        const c=cues[active];
+        if (video.currentTime >= c.end) video.pause();
+      }
     });
 
-    // 顯示當前速度文字（若有）
+    // 顯示目前速度（若有位置）
     const txt = $('#speedText') || $('#speedVal');
     if (txt) txt.textContent = `${video.playbackRate.toFixed(2)}x`;
   }
 
-  /* ---------- 啟動載入 ---------- */
+  /* ---------------- 啟動載入 ---------------- */
   loadCues();
   loadQuiz();
   loadVocab();
 
-  // 如果切換分頁/延後渲染導致找不到 tbody，再嘗試幾次
+  // 若切分頁導致 tbody 晚出現，再試幾次
   let tries = 0;
   const retry = setInterval(()=>{
     if (!cuesBody || !cuesBody.children.length) {
