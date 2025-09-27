@@ -1,301 +1,134 @@
 <!doctype html>
 <html lang="zh-Hant">
 <head>
-<meta charset="utf-8"/>
-<meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>Learn English with Stories · Player</title>
-<style>
-  :root{--bg:#0b1324;--panel:#0f1a33;--text:#e7eaf3;--muted:#a9b3cf;--brand:#3c7cff;--border:#203057;--gap:12px}
-  html,body{height:100%;margin:0;background:var(--bg);color:var(--text);font-family:system-ui,-apple-system,Segoe UI,Roboto,Noto Sans,sans-serif}
-  .layout{display:grid;grid-template-columns: 1fr 1fr; gap:var(--gap); height:100vh}
-  @media(max-width:1024px){.layout{grid-template-columns:1fr; grid-template-rows:auto auto; height:auto}}
-
-  /* 左：影片上方舞台 + 底部工具列（固定可見） */
-  .videoColumn{display:grid; grid-template-rows:1fr auto; min-height:0; border-right:1px solid var(--border)}
-  .videoStage{min-height:0; display:flex; align-items:center; justify-content:center; background:#000; overflow:hidden}
-  video{max-width:100%; max-height:100%; object-fit:contain; background:#000}
-  .toolBar{position:relative; z-index:2; padding:10px 12px; background:#101b39; border-top:1px solid var(--border);
-    display:flex; flex-wrap:wrap; gap:8px; align-items:center}
-  .btn,.chip{border:1px solid var(--border); background:#15224a; color:#fff; border-radius:10px; padding:8px 10px; cursor:pointer; user-select:none}
-  .btn:hover,.chip:hover{filter:brightness(1.1)}
-  .chip.active{background:#1a2c66; border-color:#2d4ea7}
-
-  /* 右：分頁 */
-  .side{display:flex; flex-direction:column; min-height:0; background:var(--panel)}
-  .tabs{display:flex;border-bottom:1px solid var(--border)}
-  .tab{flex:1;padding:10px 12px;text-align:center;cursor:pointer;color:var(--muted);user-select:none}
-  .tab.active{color:var(--text);background:#132046;font-weight:700}
-  .toolbar{display:flex;gap:8px;align-items:center;padding:8px;border-bottom:1px solid var(--border)}
-  .panel{flex:1;overflow:auto}
-  .table{width:100%; border-collapse:collapse}
-  .table th,.table td{padding:10px;border-bottom:1px solid #162246;vertical-align:top}
-  .table tr.active{background:#1a2c66}
-  .time{color:var(--muted);font-variant-numeric:tabular-nums;white-space:nowrap;cursor:pointer}
-
-  /* 測驗 */
-  .q{border-bottom:1px solid #162246; padding:12px}
-  .q h4{margin:0 0 8px}
-  .opts{display:grid; gap:8px; margin:8px 0}
-  .opt{padding:8px 10px;border:1px solid var(--border);border-radius:10px; cursor:pointer}
-  .opt.sel{outline:2px solid #3c7cff}
-  .score{padding:10px 12px;border-top:1px solid var(--border)}
-
-  /* 單字 */
-  .vocab{padding:12px}
-  .vitem{padding:10px 0;border-bottom:1px solid #162246}
-  .playat{margin-left:8px;font-size:12px;border-radius:999px;padding:2px 8px;background:#15224a;border:1px solid var(--border)}
-  input.blank{padding:6px 8px;border-radius:8px;border:1px solid var(--border);background:#09112a;color:#fff}
-</style>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>故事播放器</title>
+  <style>
+    body{margin:0;background:#0c1424;color:#e6eefc;font-family:system-ui,-apple-system,Segoe UI,Roboto,PingFang TC,Heiti TC,Noto Sans TC,Arial;}
+    .wrap{display:grid;grid-template-columns:minmax(0,1fr) 480px;gap:0}
+    @media (max-width:1100px){.wrap{grid-template-columns:1fr}}
+    .video{background:#000;display:flex;align-items:center;justify-content:center}
+    video{width:100%;max-height:calc(100vh - 120px);background:#000}
+    .panel{background:#0f1a2f;border-left:1px solid #223055;height:100vh;overflow:auto}
+    .head{display:flex;gap:10px;padding:12px;border-bottom:1px solid #223055;position:sticky;top:0;background:#0f1a2f}
+    .btn{padding:6px 10px;border-radius:10px;background:#1e2a44;border:1px solid #2d3b5d;color:#e6eefc}
+    table{width:100%;border-collapse:collapse}
+    th,td{border-bottom:1px solid #1a2742;padding:8px;vertical-align:top}
+    th{position:sticky;top:48px;background:#0f1a2f}
+    .time{white-space:nowrap;opacity:.7}
+  </style>
 </head>
 <body>
-<div class="layout">
-  <!-- 左：影片 -->
-  <section class="videoColumn">
-    <div class="videoStage">
-      <video id="player" controls preload="metadata"></video>
-    </div>
-    <div class="toolBar">
-      <button class="btn" id="btnPrev">上一句</button>
-      <button class="btn" id="btnPlay">播放/暫停</button>
-      <button class="btn" id="btnNext">下一句</button>
-      <button class="btn" id="btnRepeatOne">重複本句</button>
-      <button class="btn" id="btnAB">A-B 循環</button>
-      <button class="btn" id="btnABClear">取消循環</button>
-      <label class="chip">變焦
-        <input id="zoom" type="range" min="1" max="2" step="0.05" value="1" style="vertical-align:middle; width:140px; margin-left:8px">
-      </label>
-      <label class="chip">速度
-        <input id="rate" type="range" min="0.5" max="2" step="0.05" value="1" style="vertical-align:middle; width:160px; margin-left:8px">
-        <span id="rateLabel" style="margin-left:6px">1.00×</span>
-      </label>
-    </div>
-  </section>
-
-  <!-- 右：字幕/測驗/單字 -->
-  <aside class="side">
-    <div class="tabs">
-      <div id="tabTranscript" class="tab active">字幕</div>
-      <div id="tabQuiz" class="tab">測驗</div>
-      <div id="tabVocab" class="tab">單字</div>
+  <div class="wrap">
+    <div class="video">
+      <video id="v" controls></video>
     </div>
 
-    <div class="toolbar">
-      <span style="color:#a9b3cf">字級</span>
-      <button id="fS" class="chip">S</button>
-      <button id="fM" class="chip active">M</button>
-      <button id="fL" class="chip">L</button>
-      <div style="flex:1"></div>
-      <button id="btnFollow" class="btn">跟隨</button>
-      <span class="chip">偏移 <span id="ofsShow">0.0s</span></span>
-      <button id="ofsMinus" class="btn ghost">-0.5s</button>
-      <button id="ofsPlus" class="btn ghost">+0.5s</button>
-    </div>
-
-    <div id="panelTranscript" class="panel">
-      <table class="table" id="cueTable">
-        <thead><tr><th style="width:90px">時間</th><th>英文</th><th>中文</th></tr></thead>
-        <tbody></tbody>
+    <div class="panel">
+      <div class="head">
+        <button class="btn" onclick="history.back()">返回</button>
+        <a class="btn" href="#quiz">到測驗</a>
+        <span id="offsetBox" class="btn">偏移 <span id="off">0.0</span>s</span>
+        <button class="btn" id="btnMinus">-0.5s</button>
+        <button class="btn" id="btnPlus">+0.5s</button>
+      </div>
+      <table>
+        <thead>
+          <tr><th style="width:90px">時間</th><th>英文</th><th>中文</th></tr>
+        </thead>
+        <tbody id="tbody"></tbody>
       </table>
+      <div id="quiz" style="padding:12px"></div>
     </div>
-    <div id="panelQuiz" class="panel" style="display:none"></div>
-    <div id="panelVocab" class="panel" style="display:none"></div>
-  </aside>
-</div>
+  </div>
 
-<script type="module">
-  import { supa, getUser, upsertProgress, addQuizAttempt } from './js/supa.js'
+  <script type="module">
+    import { supa } from './js/supa.js';
 
-  const qs = new URLSearchParams(location.search)
-  const slug = qs.get('slug') || 'mid-autumn'
-  const $ = (s,r=document)=>r.querySelector(s)
-  const $$ = (s,r=document)=>[...r.querySelectorAll(s)]
+    const url = (p) => new URL(p, location.origin + location.pathname.replace(/\/[^/]*$/, '/')).toString();
+    const qs   = new URLSearchParams(location.search);
+    const slug = qs.get('slug') || 'mid-autumn';
 
-  // === 讀 index.json 拿此片路徑 ===
-  async function loadMeta(){
-    const meta = await (await fetch('./data/index.json')).json()
-    return (meta.items||[]).find(x=>x.slug===slug) || meta.items?.[0]
-  }
+    const video   = document.getElementById('v');
+    const tbody   = document.getElementById('tbody');
+    const offEl   = document.getElementById('off');
 
-  // === 狀態 ===
-  let cueList=[], follow=false, A=null,B=null, abTimer=null, repeatOne=false
-  let offset = +localStorage.getItem('captionOffset:'+slug) || 0
+    // 偏移校準（localStorage）
+    const KEY = `offset:${slug}`;
+    let offset = +(localStorage.getItem(KEY) || 0);
+    offEl.textContent = offset.toFixed(1);
 
-  // === UI 綁定 ===
-  const v = $('#player')
-  $('#btnPlay').onclick=()=> v.paused?v.play():v.pause()
-  $('#zoom').oninput=e=>{v.style.transform=`scale(${+e.target.value})`; v.style.transformOrigin='center'}
-  $('#rate').oninput=e=>{v.playbackRate=+e.target.value; $('#rateLabel').textContent=v.playbackRate.toFixed(2)+'×'}
-  $('#btnPrev').onclick=()=>jumpPrev()
-  $('#btnNext').onclick=()=>jumpNext()
-  $('#btnRepeatOne').onclick=()=>setRepeatOne()
-  $('#btnAB').onclick=()=>setAB()
-  $('#btnABClear').onclick=()=>clearLoop()
-  $('#btnFollow').onclick=()=>{follow=!follow; $('#btnFollow').textContent=follow?'跟隨中':'跟隨'}
-  $('#ofsMinus').onclick=()=>setOffset(offset-0.5)
-  $('#ofsPlus').onclick=()=>setOffset(offset+0.5)
-  function setOffset(vv){ offset=+vv; localStorage.setItem('captionOffset:'+slug, offset); $('#ofsShow').textContent=offset.toFixed(1)+'s' }
+    document.getElementById('btnMinus').onclick = ()=>{ offset -= .5; offEl.textContent = offset.toFixed(1); localStorage.setItem(KEY, offset); };
+    document.getElementById('btnPlus').onclick  = ()=>{ offset += .5; offEl.textContent = offset.toFixed(1); localStorage.setItem(KEY, offset); };
 
-  // 字級
-  const setFont=s=>{
-    const map={S:'13px',M:'15px',L:'17px'}; $('#cueTable').style.fontSize=map[s]||'15px'
-    ['fS','fM','fL'].forEach(id=>$('#'+id).classList.remove('active')); $('#f'+s).classList.add('active')
-  }
-  $('#fS').onclick=()=>setFont('S'); $('#fM').onclick=()=>setFont('M'); $('#fL').onclick=()=>setFont('L'); setFont('M'); setOffset(offset)
+    // 設定影片來源（相對路徑）
+    video.src = url(`videos/${slug}.mp4`);
 
-  // 分頁
-  function showTab(id){
-    ['panelTranscript','panelQuiz','panelVocab'].forEach(p=>$('#'+p).style.display='none')
-    $('#'+id).style.display='block'
-    ;['tabTranscript','tabQuiz','tabVocab'].forEach(t=>$('#'+t).classList.remove('active'))
-    $('#'+(id==='panelTranscript'?'tabTranscript':id==='panelQuiz'?'tabQuiz':'tabVocab')).classList.add('active')
-  }
-  $('#tabTranscript').onclick=()=>showTab('panelTranscript')
-  $('#tabQuiz').onclick=()=>showTab('panelQuiz')
-  $('#tabVocab').onclick=()=>showTab('panelVocab')
-  if(location.hash==='#quiz') showTab('panelQuiz')
+    // 載入字幕與測驗
+    const cuesUrl = url(`data/cues-${slug}.json`);
+    const quizUrl = url(`data/quiz-${slug}.json`);
 
-  // === 字幕 ===
-  function toSec(t){const [m,s]=String(t||'0:0').split(':').map(n=>parseInt(n)||0); return m*60+s}
-  function renderTranscript(list){
-    const tb = $('#cueTable tbody'); tb.innerHTML=''
-    cueList = list.map(row=>{
-      const t = row.time || row.t || row.start || '0:0'
-      const en = row.text || row.en || ''
-      const zh = row.zh || row.cn || ''
-      const tr = document.createElement('tr')
-      tr.innerHTML = `<td class="time">[${t}]</td><td>${en}</td><td>${zh}</td>`
-      tr.querySelector('.time').onclick=()=>{
-        v.currentTime = toSec(t); v.play(); highlightByTime(v.currentTime)
-      }
-      tb.appendChild(tr)
-      return { tSec: toSec(t), en, zh, tr }
-    })
-  }
-  function highlightByTime(current){
-    const cur = current + offset
-    let idx = -1
-    for(let i=0;i<cueList.length;i++){ if(cueList[i].tSec <= cur) idx=i; else break }
-    $$('#cueTable tbody tr').forEach(r=>r.classList.remove('active'))
-    if(idx>=0){ const tr=cueList[idx].tr; tr.classList.add('active'); if(follow) tr.scrollIntoView({block:'center'}) }
-  }
-  function jumpPrev(){
-    const t = v.currentTime+offset
-    const prev = [...cueList].reverse().find(c=>c.tSec < t - 0.05)
-    if(prev){ v.currentTime = prev.tSec - offset; v.play() }
-  }
-  function jumpNext(){
-    const t = v.currentTime+offset
-    const next = cueList.find(c=>c.tSec > t + 0.05)
-    if(next){ v.currentTime = next.tSec - offset; v.play() }
-  }
-  function setRepeatOne(){
-    repeatOne = true
-    const t = v.currentTime+offset
-    let i = cueList.findIndex(c=> c.tSec <= t)
-    if(i<0) i=0
-    A = cueList[i].tSec - offset
-    B = (i+1<cueList.length ? cueList[i+1].tSec - offset : null)
-    clearInterval(abTimer)
-    abTimer = setInterval(()=>{ if(B!=null && v.currentTime>=B) v.currentTime = A },120)
-  }
-  function setAB(){
-    if(A==null){ A = v.currentTime; alert('已設定 A 點') }
-    else if(B==null){ B = v.currentTime; alert('已設定 B 點；開始循環'); startAB() }
-    else { A=v.currentTime; B=null; alert('已重設 A 點，請再按一次設定 B 點') }
-  }
-  function startAB(){ repeatOne=false; clearInterval(abTimer); abTimer=setInterval(()=>{ if(B!=null && v.currentTime>=B) v.currentTime=A },120) }
-  function clearLoop(){ repeatOne=false; A=null; B=null; clearInterval(abTimer) }
-
-  // === 測驗 ===
-  async function renderQuiz(list){
-    const box = $('#panelQuiz'); box.innerHTML=''
-    const sel = {} // index->選項 idx
-    list.slice(0,20).forEach((q,i)=>{
-      const wrap = document.createElement('div'); wrap.className='q'
-      wrap.innerHTML = `<h4>${i+1}. ${q.q}</h4>
-        <div class="opts">${(q.a||[]).map((o,j)=>`<div class="opt" data-i="${i}" data-j="${j}">${o}</div>`).join('')}</div>`
-      box.appendChild(wrap)
-    })
-    const btn = document.createElement('button'); btn.className='btn'; btn.textContent='交卷'
-    const score = document.createElement('div'); score.className='score muted'
-    box.append(btn, score)
-
-    box.addEventListener('click',e=>{
-      const o=e.target.closest('.opt'); if(!o) return
-      const i=+o.dataset.i, j=+o.dataset.j
-      sel[i]=j; o.parentElement.querySelectorAll('.opt').forEach(n=>n.classList.remove('sel')); o.classList.add('sel')
-    })
-
-    btn.onclick = async ()=>{
-      let s=0, total=list.length
-      list.forEach((q,i)=>{ if((sel[i]??-1)=== (q.right??0)) s++ })
-      score.innerHTML = `得分：<b>${s}</b> / ${total}`
-      // 寫入 DB
-      await addQuizAttempt({ slug, score:s, total, payload: sel })
-      alert('已送出測驗結果')
+    async function loadCues(){
+      const res = await fetch(`${cuesUrl}?v=${Date.now()}`);
+      if(!res.ok) throw new Error('載入字幕失敗');
+      const list = await res.json();
+      renderCues(list);
     }
-  }
 
-  // === 單字（填空模式） ===
-  function renderVocab(vlist){
-    const box = $('#panelVocab'); box.innerHTML=''
-    vlist.forEach(vb=>{
-      const row = document.createElement('div'); row.className='vitem'
-      const hint = (vb.en||'').replace(new RegExp(vb.word,'i'),'____')
-      row.innerHTML = `<div><b>${vb.word}</b> <small class="muted">${vb.pos||''}</small>
-        <button class="playat" data-t="${vb.time||'00:00'}">▶ [${vb.time||'00:00'}]</button></div>
-        <div style="margin:6px 0">${vb.zh||''}</div>
-        <div class="muted">${vb.en?hint:''}</div>
-        <div style="margin-top:6px">填空：<input class="blank" data-ans="${vb.word}"> <small class="muted">輸入正確會變綠</small></div>`
-      box.appendChild(row)
-    })
-    box.addEventListener('click',e=>{
-      const b=e.target.closest('.playat'); if(!b) return
-      const [m,s]=b.dataset.t.split(':').map(n=>parseInt(n)||0)
-      v.currentTime = m*60+s; v.play()
-    })
-    box.addEventListener('input',e=>{
-      const inp=e.target.closest('.blank'); if(!inp) return
-      const ok = inp.value.trim().toLowerCase() === String(inp.dataset.ans||'').toLowerCase()
-      inp.style.borderColor = ok? '#2fbf71':'#203057'
-      inp.style.background = ok? '#0f2a1d':'#09112a'
-    })
-  }
+    function renderCues(list){
+      tbody.innerHTML = list.map((r,i)=>`
+        <tr data-t="${toSec(r.time)}">
+          <td class="time">[${r.time}]</td>
+          <td>${escapeHTML(r.text_en || r.text || '')}</td>
+          <td>${escapeHTML(r.text_zh || '')}</td>
+        </tr>
+      `).join('');
+    }
 
-  // === 啟動 ===
-  (async ()=>{
-    const meta = await loadMeta()
-    if(!meta) return alert('找不到影片資料')
+    function toSec(t){
+      const [mm,ss] = t.split(':').map(Number);
+      return mm*60 + ss;
+    }
 
-    v.src = meta.video
-    // 字幕
-    const cuesJson = await (await fetch(meta.cues)).json()
-    renderTranscript(cuesJson)
-    // 測驗
-    try{
-      const qjson = await (await fetch(meta.quiz)).json()
-      renderQuiz(qjson)
-    }catch{}
-    // 單字（若存在）
-    try{
-      const slugMap = { 'mid-autumn':'vocab-mid-autumn.json', 'houyi':'vocab-houyi.json', 'lantern':'vocab-lantern.json' }
-      const vf = slugMap[slug]
-      if(vf){
-        const vjson = await (await fetch('./data/'+vf)).json()
-        renderVocab(vjson.items || vjson)
-      }
-    }catch{}
+    function escapeHTML(s){return s.replace(/[&<>"]/g,c=>({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;' }[c]))}
 
-    // 事件：時間驅動高亮
-    v.addEventListener('timeupdate', ()=>{
-      highlightByTime(v.currentTime)
-    })
+    // 跟隨播放自動捲動
+    video.addEventListener('timeupdate', ()=>{
+      const t = video.currentTime + offset;
+      let best, bestDiff = 1e9;
+      tbody.querySelectorAll('tr').forEach(tr=>{
+        const tt = +tr.dataset.t;
+        const d = Math.abs(tt - t);
+        if(d < bestDiff){ bestDiff=d; best=tr; }
+      });
+      if(best) best.scrollIntoView({block:'center',behavior:'smooth'});
+    });
 
-    // 每 5 秒上報進度（需登入才會寫）
-    setInterval(async ()=>{
-      await upsertProgress({ slug, seconds: Math.floor(v.currentTime) })
-    }, 5000)
-  })();
-</script>
+    // 簡易載入測驗
+    async function loadQuiz(){
+      const res = await fetch(`${quizUrl}?v=${Date.now()}`);
+      if(!res.ok) return;
+      const q = await res.json();
+      const box = document.getElementById('quiz');
+      box.innerHTML = `<h3>小測驗</h3>` + q.map((x,i)=>`
+        <div style="margin:8px 0">
+          <div>${i+1}. ${escapeHTML(x.q)}</div>
+          <div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:6px">
+            ${x.a.map(opt=>`<button class="btn opt" data-i="${i}" data-t="${escapeHTML(opt)}">${escapeHTML(opt)}</button>`).join('')}
+          </div>
+        </div>
+      `).join('');
+
+      box.querySelectorAll('.opt').forEach(btn=>{
+        btn.onclick = ()=>{ btn.style.background = '#2a6'; };
+      });
+    }
+
+    loadCues().catch(err=>{
+      tbody.innerHTML = `<tr><td colspan="3" style="padding:12px">載入失敗：${err.message}</td></tr>`;
+    });
+    loadQuiz();
+  </script>
 </body>
 </html>
