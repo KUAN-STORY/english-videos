@@ -6,95 +6,217 @@
   <title>Stories · Player</title>
   <style>
     :root{
-      --bg:#0f172a; --panel:#0b1220; --text:#e5e7eb; --muted:#94a3b8; --accent:#38bdf8;
-      --card:#0b1220; --line:#1f2937;
-      --tabH:56px;
+      --bg:#0f172a;        /* 整體背景 */
+      --panel:#0b1220;     /* 面板底色 */
+      --soft:#0d1628;      /* 面板次底色 */
+      --text:#e5e7eb;      /* 主要文字 */
+      --muted:#94a3b8;     /* 次文字 */
+      --accent:#38bdf8;    /* 強調色(按鈕/滑桿) */
+      --accent-2:#22d3ee;  /* 第二強調色 */
+      --btn:#111827;       /* 按鈕底 */
+      --btn-hl:#1f2937;    /* 按鈕 hover */
+      --tab:#111827;
+      --tab-active:#1f2937;
+      --radius:14px;
     }
+
     *{box-sizing:border-box}
-    html,body{height:100%;margin:0;background:var(--bg);color:var(--text);font-family:system-ui,-apple-system,"Segoe UI",Roboto,"Noto Sans TC",sans-serif}
-    a{color:var(--accent);text-decoration:none}
-    .wrap{display:flex; height:100vh; gap:0}
-    .left, .right{height:100vh; overflow:hidden}
-    .left{width:50%; display:flex; flex-direction:column; border-right:1px solid var(--line)}
-    .right{width:50%; display:flex; flex-direction:column;}
-    /* video area */
-    .videoBox{padding:12px; background:var(--bg)}
-    video{width:100%; height:auto; background:#000; border-radius:10px; display:block}
-    .ctrlRow{
-      display:flex; align-items:center; gap:10px; padding:10px 12px 14px; border-top:1px solid var(--line);
-      background:var(--bg); position:relative;
+    html,body{height:100%}
+    body{
+      margin:0;
+      background:var(--bg);
+      color:var(--text);
+      font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Noto Sans", "Helvetica Neue", Arial, "Apple Color Emoji","Segoe UI Emoji";
     }
-    .chip{display:inline-flex; align-items:center; gap:6px; padding:6px 10px; border-radius:999px; background:#0b2030; color:#bfe9ff; border:1px solid #133040; cursor:pointer; user-select:none}
-    .chip.on{background:#10364e; border-color:#2a7aa1}
-    .chip small{opacity:.8}
-    /* tabs */
-    .tabs{display:flex; height:var(--tabH); border-bottom:1px solid var(--line); background:var(--panel)}
-    .tab{padding:0 16px; display:flex; align-items:center; cursor:pointer; gap:8px; color:var(--muted)}
-    .tab.active{color:#fff; border-bottom:2px solid var(--accent)}
-    /* table */
-    .pane{flex:1; overflow:auto; background:var(--card)}
-    table{width:100%; border-collapse:collapse}
-    th,td{padding:10px 12px; border-bottom:1px solid var(--line); vertical-align:top}
-    th{position:sticky; top:0; background:#0e1627; z-index:1; font-weight:600}
-    .timeBtn{color:var(--accent); cursor:pointer; font-variant-numeric:tabular-nums}
-    .muted{color:var(--muted)}
-    .warn{color:#fda4af}
-    .row{transition:background .15s}
-    .row.active{background:#122133}
-    /* vocab */
-    .vocab-en{white-space:pre-wrap}
-    .vocab-cn{color:#f3f4f6}
-    .playWord{cursor:pointer; margin-right:8px}
-    .egAnchor{cursor:pointer; color:#93c5fd; text-decoration:underline}
+
+    /* 版面：左右 50:50 */
+    .page{
+      display:flex;
+      gap:14px;
+      height:100%;
+      padding:14px;
+    }
+    .left, .right{
+      background:var(--panel);
+      border-radius:var(--radius);
+      overflow:hidden;
+      display:flex;
+      flex-direction:column;
+    }
+    .left{ width:50% }
+    .right{ width:50% }
+
+    /* 影片容器：讓 video 不會壓到工具列 */
+    .video-wrap{
+      padding:16px;
+      padding-bottom:0;
+    }
+    .video-frame{
+      background:#000;
+      border-radius:12px;
+      overflow:hidden;
+      position:relative;
+      width:100%;
+      /* 用 16:9 高度計算，讓畫面穩定不亂跳 */
+      aspect-ratio:16/9;
+      display:flex;align-items:center;justify-content:center;
+    }
+    video{ width:100%; height:100%; object-fit:contain; background:#000; }
+
+    /* 左側工具列（兩排） */
+    .controls{
+      background:var(--soft);
+      padding:12px 16px 16px;
+      margin:14px;
+      margin-top:10px;
+      border-radius:12px;
+      display:flex;
+      flex-direction:column;
+      gap:10px;
+    }
+    .row{
+      display:flex;flex-wrap:wrap;gap:10px;
+      align-items:center;
+    }
+    .btn{
+      background:var(--btn); color:var(--text);
+      border:1px solid #0006;
+      padding:10px 14px;
+      border-radius:10px;
+      cursor:pointer;
+      display:inline-flex; align-items:center; gap:8px;
+      user-select:none;
+    }
+    .btn:hover{ background:var(--btn-hl) }
+    .btn.active{ outline:2px solid var(--accent); }
+    .badge{
+      display:inline-flex;align-items:center;gap:6px;
+      background:#0008;color:var(--text);
+      border:1px solid #0006;border-radius:10px;
+      padding:8px 12px;
+    }
+    .speed-group{ margin-left:auto; display:flex; align-items:center; gap:10px; }
+    .speed-range{ width:220px; accent-color:var(--accent) }
+    .speed-val{ min-width:48px; text-align:right; color:var(--accent-2); }
+
+    /* 右側：分頁 */
+    .tabs{
+      display:flex;gap:8px;
+      background:var(--soft);
+      padding:10px;
+    }
+    .tab{
+      background:var(--tab); color:var(--text);
+      border:1px solid #0006;
+      padding:10px 14px; border-radius:10px; cursor:pointer;
+    }
+    .tab.active{ background:var(--tab-active); outline:2px solid var(--accent) }
+
+    .tab-panels{ flex:1; overflow:auto; }
+    .panel{ display:none; height:100%; }
+    .panel.active{ display:block }
+
+    /* 「字幕」面板內的跟隨/微調工具列 */
+    .subtool{
+      display:flex; gap:8px; align-items:center;
+      padding:12px; background:var(--panel); position:sticky; top:0;
+      border-bottom:1px solid #0006;
+      z-index:5;
+    }
+    .subtool .label{ color:var(--muted) }
+    .subtool .chip{ background:#0007; border:1px solid #0006; padding:6px 10px; border-radius:10px }
+    .subtool .chip.primary{ color:var(--accent-2); border-color:#0aa3; }
+    .table{
+      width:100%; border-collapse:collapse;
+      margin:12px;
+    }
+    .table th, .table td{
+      border-bottom:1px solid #0006; padding:10px 8px;
+    }
+    .table th{ color:var(--muted); font-weight:600; text-align:left; position:sticky; top:52px; background:var(--panel); }
+    .muted{ color:var(--muted) }
+    .hint{ color:var(--muted); padding:18px; }
   </style>
 </head>
 <body>
-  <div class="wrap">
-    <!-- 左：影片 + 控制列 -->
+  <div class="page">
+    <!-- 左：影片 + 工具列 -->
     <section class="left">
-      <div class="videoBox">
-        <video id="video" controls playsinline></video>
+      <div class="video-wrap">
+        <div class="video-frame">
+          <video id="video" preload="metadata" controls crossorigin="anonymous"></video>
+        </div>
       </div>
-      <div class="ctrlRow">
-        <button id="followBtn" class="chip on">✓ 跟隨</button>
-        <span class="chip" id="offsetChip">偏移 <span id="offsetVal">0.0</span>s</span>
-        <button class="chip" data-delta="-0.5">-0.5s</button>
-        <button class="chip" data-delta="+0.5">+0.5s</button>
+
+      <!-- 工具列（兩排） -->
+      <div class="controls">
+        <div class="row">
+          <button class="btn" id="btn-prev">⏮ 上一句</button>
+          <button class="btn" id="btn-play">⏯ 播放</button>
+          <button class="btn" id="btn-next">⏭ 下一句</button>
+          <button class="btn" id="btn-repeat-line">🔁 重複本句</button>
+          <button class="btn" id="btn-auto-pause">🧠 逐句自動暫停</button>
+          <button class="btn" id="btn-loop-all">🔄 整段循環</button>
+
+          <div class="speed-group">
+            <span class="muted">速度</span>
+            <input id="speed" class="speed-range" type="range" min="0.5" max="1.75" step="0.05" value="1.00" />
+            <div class="speed-val" id="speedVal">1.00x</div>
+          </div>
+        </div>
+
+        <div class="row">
+          <div class="badge" id="ab-ind">🅐🅑 A-B 循環</div>
+          <button class="btn" id="btn-ab">🎯 點句即循環</button>
+          <button class="btn" id="btn-clear-loop">🧹 取消循環</button>
+          <button class="btn" id="btn-fit">🖼 填滿畫面</button>
+        </div>
       </div>
     </section>
 
-    <!-- 右：字幕/測驗/單字 -->
+    <!-- 右：分頁（字幕 / 測驗 / 單字） -->
     <section class="right">
       <div class="tabs">
-        <div class="tab active" data-pane="subs">字幕</div>
-        <div class="tab" data-pane="quiz">測驗</div>
-        <div class="tab" data-pane="vocab">單字</div>
+        <button class="tab active" data-tab="sub">字幕</button>
+        <button class="tab" data-tab="quiz">測驗</button>
+        <button class="tab" data-tab="vocab">單字</button>
       </div>
-      <!-- 字幕 -->
-      <div class="pane" id="pane-subs">
-        <table id="subsTable">
-          <thead><tr><th style="width:84px">時間</th><th>英文</th><th style="width:35%">中文</th></tr></thead>
-          <tbody id="subsBody"><tr><td colspan="3" class="muted">載入中…</td></tr></tbody>
-        </table>
-      </div>
-      <!-- 測驗 -->
-      <div class="pane" id="pane-quiz" hidden>
-        <table id="quizTable">
-          <thead><tr><th style="width:40px">#</th><th>題目</th><th style="width:40%">選項 / 解析</th></tr></thead>
-          <tbody id="quizBody"><tr><td colspan="3" class="muted">載入中…</td></tr></tbody>
-        </table>
-      </div>
-      <!-- 單字 -->
-      <div class="pane" id="pane-vocab" hidden>
-        <table id="vocabTable">
-          <thead><tr><th style="width:84px">時間</th><th>單字</th><th style="width:70%">英文解釋 / 例句</th></tr></thead>
-          <tbody id="vocabBody"><tr><td colspan="3" class="muted">載入中…</td></tr></tbody>
-        </table>
+
+      <div class="tab-panels">
+        <!-- 字幕 -->
+        <div class="panel active" id="panel-sub">
+          <!-- 字幕工具列：跟隨 / 偏移 -->
+          <div class="subtool">
+            <label class="chip"><input id="follow" type="checkbox" /> 跟隨</label>
+            <span class="chip label">偏移</span>
+            <span class="chip" id="offsetView">0.0s</span>
+            <button class="chip" id="offMinus">-0.5s</button>
+            <button class="chip" id="offPlus">+0.5s</button>
+            <span class="muted" style="margin-left:auto;">（資料待串接）</span>
+          </div>
+          <table class="table">
+            <thead>
+              <tr><th style="width:120px;">時間</th><th>英文</th><th>中文</th></tr>
+            </thead>
+            <tbody id="subBody">
+              <tr><td colspan="3" class="hint">尚未載入字幕，等第 2 步串接即可</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- 測驗 -->
+        <div class="panel" id="panel-quiz">
+          <div class="hint">測驗面板保留完成。第 3 步載入 <code>data/quiz-*.json</code> 後渲染。</div>
+        </div>
+
+        <!-- 單字 -->
+        <div class="panel" id="panel-vocab">
+          <div class="hint">單字面板保留完成。第 4 步載入 <code>data/vocab-*.json</code> 後渲染。</div>
+        </div>
       </div>
     </section>
   </div>
 
-  <!-- 版本號：改一下可強制刷新快取 -->
-  <script src="./player.js?v=2025-09-05-02"></script>
+  <script src="./player.js"></script>
 </body>
 </html>
