@@ -1,199 +1,125 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="zh-Hant">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Stories · Player</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>English Video Player</title>
+  <link rel="stylesheet" href="style.css" />
   <style>
-    :root{
-      --bg:#0f1a2a;
-      --panel:#111e33;
-      --alt:#162742;
-      --text:#d7e4ff;
-      --muted:#8ea3c6;
-      --line:#254066;
-      --accent:#3b82f6;
-      --accent-2:#1ea672;
-      --danger:#e66a6a;
-      --highlight:#1e2f4f;
+    body {
+      margin: 0;
+      background: #0f172a;
+      color: #fff;
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Noto Sans TC, sans-serif;
+      display: flex;
+      height: 100vh;
+      overflow: hidden;
     }
-    *{box-sizing:border-box}
-    html,body{height:100%}
-    body{
-      margin:0; background:var(--bg); color:var(--text);
-      font-family: ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,"Noto Sans TC",Arial;
+    .left-panel, .right-panel {
+      flex: 1;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
     }
-    a{color:inherit}
-    .wrap{
-      height:100vh; display:grid; grid-template-columns: 1fr 1fr;
+    .left-panel {
+      padding: 8px;
+      box-sizing: border-box;
     }
-    /* 影片（左） */
-    .left{
-      display:flex; flex-direction:column; min-width:0; border-right:1px solid var(--line);
-      background: radial-gradient(1200px 280px at 50% -60px, #16325a55, transparent 60%) , var(--bg);
+    .video-container {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-start;
+      align-items: center;
     }
-    .video-box{
-      flex:1; min-height:0; display:flex; align-items:center; justify-content:center; padding:12px;
+    video {
+      width: 100%;
+      height: auto;
+      max-height: 80%;
+      background: black;
     }
-    .video-inner{
-      width:100%; max-width:1200px; aspect-ratio:16/9; background:#000; border-radius:12px; overflow:hidden;
-      box-shadow: 0 10px 30px #0007;
+    .controls {
+      margin-top: 6px;
+      text-align: center;
     }
-    video{width:100%; height:100%; display:block; background:#000;}
-    /* 右側（字幕/測驗/單字） */
-    .right{display:flex; flex-direction:column; min-width:0;}
-    .toolbar{
-      display:flex; gap:8px; align-items:center; padding:12px 14px; border-bottom:1px solid var(--line);
-      background:linear-gradient(#15243b,#111e33);
-      position:sticky; top:0; z-index:5;
+    .controls button {
+      margin: 2px;
+      padding: 4px 8px;
+      background: #1e293b;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
     }
-    .tabs{display:inline-flex; border:1px solid var(--line); border-radius:10px; overflow:hidden}
-    .tabs button{
-      background:#0f1a2a; color:var(--muted); border:0; padding:8px 14px; cursor:pointer; font-weight:600;
+    .controls button.active {
+      background: #2563eb;
     }
-    .tabs button.active{background:var(--accent); color:#fff}
-    .sp{flex:1}
-    input[type="search"]{
-      background:#0e1b2c; color:#cfe1ff; border:1px solid var(--line); padding:8px 10px; border-radius:8px; min-width:220px;
-      outline:none;
+    .right-panel {
+      background: #0f172a;
+      overflow-y: auto;
     }
-    .pill{border:1px solid var(--line); background:#0f1a2a; color:#cfe1ff; padding:8px 10px; border-radius:999px; cursor:pointer;}
-    .pill.active{background:var(--accent); color:#fff; border-color:transparent}
-    .offset{
-      display:inline-flex; align-items:center; gap:6px; padding:6px 10px; border:1px dashed var(--line); border-radius:10px; color:var(--muted);
+    .tabs {
+      display: flex;
+      background: #1e293b;
     }
-    .btn{background:#183055; color:#dfeaff; border:1px solid #264b7c; padding:6px 10px; border-radius:8px; cursor:pointer;}
-    .btn:hover{filter:brightness(1.05)}
-    /* panels */
-    .panel{flex:1; min-height:0; overflow:auto; padding:10px 12px;}
-    table{width:100%; border-collapse:collapse;}
-    th,td{border-bottom:1px solid var(--line); padding:10px 10px; vertical-align:top}
-    th{background:var(--alt); position:sticky; top:0; z-index:2}
-    .tcell{white-space:nowrap; width:92px;}
-    .btn-time,.btn-ex{
-      background:#13233a; color:#e7f1ff; border:1px solid var(--line); padding:3px 6px; border-radius:6px; cursor:pointer;
+    .tabs button {
+      flex: 1;
+      padding: 10px;
+      background: #1e293b;
+      border: none;
+      color: #fff;
+      cursor: pointer;
     }
-    .btn-time:hover,.btn-ex:hover{background:#163458}
-    #cueBody tr.highlight{background:var(--highlight)}
-    .muted{color:var(--muted)}
-    /* quiz */
-    .quiz-form{max-width:980px; margin:0 auto; display:grid; gap:14px}
-    .quiz-item{padding:12px 14px; border:1px solid var(--line); background:#0f1a2a; border-radius:12px}
-    .quiz-item .q{font-weight:700; margin-bottom:8px}
-    .quiz-item .opt{display:block; margin:6px 0}
-    .quiz-item.right{outline:2px solid var(--accent-2)}
-    .quiz-item.wrong{outline:2px solid var(--danger)}
-    .quiz-item .explain{margin-top:8px; color:#cfe1ff}
-    .quiz-ctrl{display:flex; align-items:center; gap:12px}
-    .btn-check{background:var(--accent); color:#fff; border:0; padding:8px 14px; border-radius:8px; cursor:pointer}
-    .quiz-score{color:#ffd480}
-    /* vocab */
-    .blank{display:inline-block; border-bottom:2px solid #fff; width:120px; height:1.2em; vertical-align:baseline}
-    .btn-say{background:#13233a; color:#fff; border:1px solid var(--line); border-radius:6px; padding:2px 6px; cursor:pointer; margin-right:6px}
-    /* 響應 */
-    @media (max-width: 1120px){
-      .wrap{grid-template-columns: 1fr;}
-      .left{border-right:0; border-bottom:1px solid var(--line);}
+    .tabs button.active {
+      background: #2563eb;
+    }
+    .tab-content {
+      flex: 1;
+      overflow-y: auto;
+      padding: 10px;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      color: white;
+    }
+    th, td {
+      border-bottom: 1px solid #334155;
+      padding: 6px;
+      text-align: left;
+    }
+    tr:hover {
+      background: #1e293b;
     }
   </style>
 </head>
 <body>
-  <div class="wrap">
-    <!-- 左：影片區 -->
-    <section class="left">
-      <div class="video-box">
-        <div class="video-inner">
-          <!-- 影片路徑在 player.js 依 slug 讀取字幕/單字/測驗，不干涉影片來源；
-               如果你要在 HTML 指定來源，也可以加上 <source>，或用 JS 動態切換。 -->
-          <video id="video" controls preload="metadata" playsinline></video>
-        </div>
+  <!-- 左側影片 -->
+  <div class="left-panel">
+    <div class="video-container">
+      <video id="video" controls></video>
+      <div class="controls">
+        <button id="followToggle" class="active">✔ 跟隨</button>
+        <span>偏移 <span id="offsetDisplay">0.0s</span></span>
+        <button id="offsetMinus">-0.5s</button>
+        <button id="offsetPlus">+0.5s</button>
       </div>
-    </section>
-
-    <!-- 右：字幕/測驗/單字 -->
-    <section class="right">
-      <!-- 控制列 -->
-      <div class="toolbar">
-        <div class="tabs">
-          <button id="tabSub"   class="active">字幕</button>
-          <button id="tabQuiz">測驗</button>
-          <button id="tabVocab">單字</button>
-        </div>
-        <span class="sp"></span>
-
-        <input id="cueSearch" type="search" placeholder="搜尋字幕（英/中）…" />
-        <button id="btnFollow" class="pill">跟隨</button>
-
-        <div class="offset">
-          <span id="offsetLabel">偏移 0.0s</span>
-          <button class="btn" data-shift="-0.5">-0.5s</button>
-          <button class="btn" data-shift="+0.5">+0.5s</button>
-        </div>
-      </div>
-
-      <!-- Panels -->
-      <div class="panel" id="panelSub">
-        <table>
-          <thead>
-            <tr>
-              <th style="width:92px">時間</th>
-              <th>英文</th>
-              <th>中文</th>
-            </tr>
-          </thead>
-          <tbody id="cueBody">
-            <!-- player.js 會渲染字幕 -->
-          </tbody>
-        </table>
-      </div>
-
-      <div class="panel" id="panelQuiz" style="display:none;">
-        <div id="quizPanel" class="muted">載入中…</div>
-      </div>
-
-      <div class="panel" id="panelVocab" style="display:none;">
-        <table>
-          <thead>
-            <tr>
-              <th style="width:92px">時間</th>
-              <th>單字</th>
-              <th style="width:80px">詞性</th>
-              <th style="width:120px">中文</th>
-              <th>英文解釋 / 例句（點我跳播）</th>
-            </tr>
-          </thead>
-          <tbody id="vocabTable"></tbody>
-        </table>
-      </div>
-    </section>
+    </div>
   </div>
 
-  <!-- 你的 JS： player.js 會處理資料載入、分頁切換與所有互動 -->
-  <script src="./player.js"></script>
-  <script>
-    // 分頁切換（和 player.js 相容；player.js 也會綁，但這裡做視覺控制）
-    const panelSub   = document.getElementById('panelSub');
-    const panelQuiz  = document.getElementById('panelQuiz');
-    const panelVocab = document.getElementById('panelVocab');
-    const tabSub  = document.getElementById('tabSub');
-    const tabQuiz = document.getElementById('tabQuiz');
-    const tabVocab= document.getElementById('tabVocab');
+  <!-- 右側字幕/測驗/單字 -->
+  <div class="right-panel">
+    <div class="tabs">
+      <button class="active" data-tab="subtitles">字幕</button>
+      <button data-tab="quiz">測驗</button>
+      <button data-tab="vocab">單字</button>
+    </div>
+    <div id="subtitles" class="tab-content"></div>
+    <div id="quiz" class="tab-content" style="display:none"></div>
+    <div id="vocab" class="tab-content" style="display:none"></div>
+  </div>
 
-    function setTab(which){
-      tabSub.classList.toggle('active', which==='sub');
-      tabQuiz.classList.toggle('active', which==='quiz');
-      tabVocab.classList.toggle('active', which==='vocab');
-
-      panelSub.style.display   = (which==='sub')  ? '' : 'none';
-      panelQuiz.style.display  = (which==='quiz') ? '' : 'none';
-      panelVocab.style.display = (which==='vocab')? '' : 'none';
-      document.body.setAttribute('data-tab', which);
-    }
-    tabSub?.addEventListener('click', ()=> setTab('sub'));
-    tabQuiz?.addEventListener('click',()=> setTab('quiz'));
-    tabVocab?.addEventListener('click',()=> setTab('vocab'));
-    // 初始為字幕
-    setTab('sub');
-  </script>
+  <!-- 掛載 JS，加上版本參數避免快取 -->
+  <script defer src="./player.js?v=20250927-01"></script>
 </body>
 </html>
