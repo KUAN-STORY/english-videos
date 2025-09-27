@@ -1,274 +1,443 @@
-/* player.js v5.1 – safe init + subtitles follow/offset/speed + row seek */
+// player.js  (V6) — Supabase + fallback 完整整合版
+// --------------------------------------------------
+// 特色：
+// 1) 依 URL ?slug=mid-autumn 讀取對應影片與字幕
+// 2) 先試 Supabase (tables: videos, cues; storage: videos bucket)，失敗就 fallback 本地 /data + /videos
+// 3) 字幕：點列跳播、跟隨高亮、偏移 +/-0.5s、顯示偏移值
+// 4) 工具列：上一句/下一句/重複本句/逐句自停/A-B 循環/取消循環/速度
+// 5) 預留「測驗/單字」分頁掛載點（loadQuiz/loadVocab 之後可以補）
+//
+// 使用方式：在 player.html 用 <script type="module" src="./player.js"></script> 載入
+// --------------------------------------------------
 
-(() => {
-  // -------- helpers --------
-  const $  = s => document.querySelector(s);
-  const $$ = s => Array.from(document.querySelectorAll(s));
+/* eslint-disable no-console */
 
-  // ---- required DOM (請確認這些 id 已存在於 player.html) ----
-  const el = {
-    video:        $('#player-video'),
-    speed:        $('#speed-range'),
-    speedText:    $('#speed-text'),
-    followBtn:    $('#btn-follow'),
-    offsetMinus:  $('#btn-offset-minus'),
-    offsetReset:  $('#btn-offset-reset'),
-    offsetPlus:   $('#btn-offset-plus'),
-    offsetText:   $('#offset-text'),
-    prevBtn:      $('#btn-prev'),
-    nextBtn:      $('#btn-next'),
-    tbody:        $('#cues-tbody'),
-  };
+let supa = null;
+// 嘗試載入 Supabase client（如果沒放 supa.js，也不會報錯）
+try {
+  const mod = await import('./videos/js/supa.js');
+  supa = mod?.supa ?? null;
+} catch (e) {
+  // 沒有 supa.js 或 import 失敗就當作無 Supabase
+  supa = null;
+}
 
-  // 若有元素找不到，直接提示並停止，避免整頁空白
-  const missing = Object.entries(el).filter(([,node]) => !node).map(([k]) => k);
-  if (missing.length) {
-    console.error('[player.js] Missing DOM:', missing);
+// ----------------- DOM shortcuts -----------------
+const $ = (sel, root = document) => root.querySelector(sel);
+const $$ = (sel, root = document) => Array.from(root.querySelectorAll(sel));
+
+// ----------------- 元件參考 -----------------
+const video = $('#player') || $('video');
+const cuesTbody =
+  $('#cuesBody') || $('#cues-tbody') || $('#tbody-cues') || $('#cuesTable tbody');
+const followChk = $('#follow') || $('#followChk') || $('[data-x="follow"]');
+const offsetLabel = $('#offsetVal') || $('#offsetLabel') || $('[data-x="offset-val"]');
+const btnOffsetMinus = $('#btnOffsetMinus') || $('#btn-minus') || $('[data-x="offset-minus"]');
+const btnOffsetPlus = $('#btnOffsetPlus') || $('#btn-plus') || $('[data-x="offset-plus"]');
+
+// 左側工具列（若不存在就忽略）
+const btnPrev = $('#btnPrev') || $('[data-x="prev"]');
+const btnNext = $('#btnNext') || $('[data-x="next"]');
+const btnRepeat = $('#btnRepeat') || $('[data-x="repeat"]');
+const btnAB = $('#btnAB') || $('[data-x="ab"]');
+const btnClearLoop = $('#btnClearLoop') || $('[data-x="clear-loop"]');
+const btnAutoPause = $('#btnAutoPause') || $('[data-x="auto-pause"]');
+const speedSlider = $('#speed') || $('[data-x="speed"]');
+const speedVal = $('#speedVal') || $('[data-x="speed-val"]');
+
+// ----------------- 狀態 -----------------
+let slug = new URLSearchParams(location.search).get('slug') || 'mid-autumn';
+let cues = []; // { t:秒數, en, zh }
+let follow = true;
+let offset = 0; // 秒
+let activeIndex = -1;
+
+let autoPause = false; // 逐句自停
+let repeatOnce = false; // 重複本句（播完自動回到該句起點再播一次）
+let loopA = null; // A-B 循環 A 秒
+let loopB = null; // A-B 循環 B 秒
+
+// ----------------- 輔助 -----------------
+const hhmmssToSec = (s) => {
+  if (typeof s === 'number') return s;
+  const parts = s.trim().split(':').map(Number);
+  if (parts.length === 3) {
+    const [h, m, sec] = parts;
+    return h * 3600 + m * 60 + sec;
+  }
+  if (parts.length === 2) {
+    const [m, sec] = parts;
+    return m * 60 + sec;
+  }
+  return Number(s) || 0;
+};
+
+const fmtTime = (sec) => {
+  sec = Math.max(0, Math.round(sec));
+  const m = Math.floor(sec / 60);
+  const s = sec % 60;
+  return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+};
+
+// 影片路徑 Fallback：./videos/<slug>.mp4
+const localVideoUrl = (sg) => `./videos/${sg}.mp4`;
+// 字幕路徑 Fallback：./data/cues-<slug>.json
+const localCuesUrl = (sg) => `./data/cues-${sg}.json`;
+
+// ----------------- Supabase 端讀取 -----------------
+async function tryLoadVideoFromSupabase(sg) {
+  if (!supa) return null;
+  try {
+    // 1) 先試資料表 videos，找欄位 url or storage_path
+    const { data, error } = await supa
+      .from('videos')
+      .select('slug,url,storage_path')
+      .eq('slug', sg)
+      .maybeSingle();
+
+    if (!error && data) {
+      if (data.url) return data.url;
+
+      if (data.storage_path) {
+        // 有 storage 路徑，去 videos bucket 拿 publicURL
+        const { data: pub } = supa.storage.from('videos').getPublicUrl(data.storage_path);
+        if (pub?.publicUrl) return pub.publicUrl;
+      }
+
+      // 沒有欄位或都為空，繼續往下嘗試 storage 直接用 <slug>.mp4
+    }
+
+    // 2) 直接試 storage: 'videos/<slug>.mp4'
+    const guess = `${sg}.mp4`;
+    const { data: got } = supa.storage.from('videos').getPublicUrl(guess);
+    if (got?.publicUrl) return got.publicUrl;
+  } catch (e) {
+    console.warn('[Supabase video] 讀取錯誤：', e);
+  }
+  return null;
+}
+
+async function tryLoadCuesFromSupabase(sg) {
+  if (!supa) return null;
+  try {
+    // 取出欄位 time,en,zh 並依時間排序
+    const { data, error } = await supa
+      .from('cues')
+      .select('time,en,zh')
+      .eq('slug', sg)
+      .order('time', { ascending: true });
+
+    if (error) {
+      console.warn('[Supabase cues] 錯誤：', error);
+      return null;
+    }
+    if (!data || !data.length) return null;
+
+    // 轉換成 {t, en, zh}
+    return data.map((r) => ({
+      t: hhmmssToSec(r.time),
+      en: r.en ?? '',
+      zh: r.zh ?? '',
+    }));
+  } catch (e) {
+    console.warn('[Supabase cues] 讀取錯誤：', e);
+    return null;
+  }
+}
+
+// ----------------- Fallback 端讀取 -----------------
+async function loadLocalCues(sg) {
+  try {
+    const res = await fetch(localCuesUrl(sg), { cache: 'no-store' });
+    if (!res.ok) return null;
+    const json = await res.json();
+    return (json || []).map((r) => ({
+      t: hhmmssToSec(r.time),
+      en: r.en ?? '',
+      zh: r.zh ?? '',
+    }));
+  } catch (e) {
+    return null;
+  }
+}
+
+// ----------------- 主要載入流程 -----------------
+async function loadAll() {
+  // 影片
+  let vurl = await tryLoadVideoFromSupabase(slug);
+  if (!vurl) vurl = localVideoUrl(slug);
+  if (video) {
+    video.src = vurl;
+  }
+
+  // 字幕
+  let supaCues = await tryLoadCuesFromSupabase(slug);
+  if (!supaCues) supaCues = await loadLocalCues(slug);
+  cues = (supaCues || []).sort((a, b) => a.t - b.t);
+
+  paintCues();
+  bindEvents();
+}
+
+// ----------------- 字幕渲染 -----------------
+function paintCues() {
+  if (!cuesTbody) return;
+  cuesTbody.innerHTML = '';
+
+  if (!cues?.length) {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td style="opacity:.6;padding:16px">尚未載入字幕，等第 2 步串接即可</td>`;
+    cuesTbody.appendChild(tr);
     return;
   }
 
-  // -------- state --------
-  let cues = [];            // {time:'MM:SS', en:'', zh:''}
-  let follow = true;
-  let offsetMs = 0;
-  let currentIdx = -1;
-
-  // -------- speed --------
-  const setSpeed = (v) => {
-    v = Number(v) || 1;
-    el.video.playbackRate = v;
-    el.speed.value = v;
-    el.speedText.textContent = `${v.toFixed(2)}x`;
-  };
-  setSpeed(el.speed.value || 1);
-  el.speed.addEventListener('input', e => setSpeed(e.target.value));
-
-  // -------- follow --------
-  const setFollow = (on) => {
-    follow = !!on;
-    el.followBtn.classList.toggle('is-on', follow);
-    el.followBtn.setAttribute('aria-pressed', follow);
-  };
-  setFollow(true);
-  el.followBtn.addEventListener('click', () => setFollow(!follow));
-
-  // -------- offset --------
-  const displayOffset = () => (el.offsetText.textContent = (offsetMs/1000).toFixed(1) + 's');
-  displayOffset();
-  el.offsetMinus.addEventListener('click', () => { offsetMs -= 500; displayOffset(); });
-  el.offsetPlus.addEventListener('click',  () => { offsetMs += 500; displayOffset(); });
-  el.offsetReset.addEventListener('click', () => { offsetMs = 0; displayOffset(); });
-
-  // -------- time helpers --------
-  const timeToSec = (t) => {
-    const [m, s] = t.split(':').map(Number);
-    return m * 60 + s;
-  };
-  const findIdxByTime = (sec) => {
-    // 從後往前找；sec 已加上偏移
-    for (let i = cues.length - 1; i >= 0; i--) {
-      if (timeToSec(cues[i].time) <= sec) return i;
-    }
-    return 0;
-  };
-
-  // -------- render & behaviors --------
-  const renderCues = () => {
-    el.tbody.innerHTML = cues.map((c, i) => `
-      <tr data-idx="${i}">
-        <td class="tc">${c.time}</td>
-        <td>${c.en}</td>
-        <td>${c.zh || ''}</td>
-      </tr>
-    `).join('');
-  };
-
-  // 點字幕跳播
-  el.tbody.addEventListener('click', (ev) => {
-    const tr = ev.target.closest('tr');
-    if (!tr) return;
-    const i = +tr.dataset.idx;
-    el.video.currentTime = timeToSec(cues[i].time);
-    el.video.play();
-  });
-
-  const highlight = (i) => {
-    if (i === currentIdx) return;
-    currentIdx = i;
-    const rows = $$('#cues-tbody tr');
-    rows.forEach((tr, idx) => tr.classList.toggle('active', idx === i));
-    if (follow) {
-      const row = rows[i];
-      if (row) row.scrollIntoView({ block: 'center', behavior: 'smooth' });
-    }
-  };
-
-  // 播放時根據「時間 + 偏移」高亮當前列
-  el.video.addEventListener('timeupdate', () => {
-    if (!cues.length) return;
-    const sec = el.video.currentTime + offsetMs / 1000;
-    highlight(findIdxByTime(sec));
-  });
-
-  // 上/下一句
-  el.prevBtn.addEventListener('click', () => {
-    if (!cues.length) return;
-    const sec = el.video.currentTime + offsetMs / 1000;
-    const i = Math.max(0, findIdxByTime(sec) - 1);
-    el.video.currentTime = timeToSec(cues[i].time);
-  });
-  el.nextBtn.addEventListener('click', () => {
-    if (!cues.length) return;
-    const sec = el.video.currentTime + offsetMs / 1000;
-    const i = Math.min(cues.length - 1, findIdxByTime(sec) + 1);
-    el.video.currentTime = timeToSec(cues[i].time);
-  });
-
-  // -------- load cues --------
-  async function loadCues() {
-    const slug = new URL(location.href).searchParams.get('slug') || 'mid-autumn';
-    const url  = `./data/cues-${slug}.json`;
-    try {
-      const res = await fetch(url, { cache: 'no-store' });
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      cues = await res.json();
-      if (!Array.isArray(cues)) throw new Error('Invalid cues json');
-      renderCues();
-    } catch (err) {
-      console.error('[player.js] loadCues error:', err);
-      el.tbody.innerHTML = `<tr><td colspan="3" class="tc text-danger">查無字幕（${url}）</td></tr>`;
-    }
-  }
-
-  // 啟動
-  loadCues();
-})();
-// --- player core (video + subtitle wiring) -------------------------------
-(() => {
-  const $ = (s, el = document) => el.querySelector(s);
-  const $$ = (s, el = document) => [...el.querySelectorAll(s)];
-
-  // 1) 取得 slug
-  const params = new URLSearchParams(location.search);
-  const slug = params.get('slug') || 'mid-autumn';
-
-  // 2) DOM
-  const video = $('#video');
-  const tbody = $('#cue-body');        // <tbody id="cue-body"> ... </tbody>
-  const followChk = $('#follow');      // <input type="checkbox" id="follow">
-  const offsetText = $('#offsetText'); // <span id="offsetText">0.0s</span>
-  const minusBtn = $('#offsetMinus');  // <button id="offsetMinus">-0.5s</button>
-  const plusBtn = $('#offsetPlus');    // <button id="offsetPlus">+0.5s</button>
-  const speed = $('#speed');           // <input type="range" id="speed">
-  const speedVal = $('#speedVal');     // <span id="speedVal">1.00x</span>
-
-  // 3) 設定影片來源
-  // 以相對路徑，確保 GitHub Pages 下子路徑也能正確載入
-  video.src = `./videos/${slug}.mp4`;
-
-  // 4) 偏移（每個 slug 各自記錄）
-  const LS_KEY = `offset:${slug}`;
-  let cueOffset = parseFloat(localStorage.getItem(LS_KEY) || '0');
-  function renderOffset() {
-    offsetText.textContent = `${cueOffset.toFixed(1)}s`;
-  }
-  renderOffset();
-  minusBtn.removeAttribute('disabled');
-  plusBtn.removeAttribute('disabled');
-  minusBtn.addEventListener('click', () => {
-    cueOffset = +(cueOffset - 0.5).toFixed(1);
-    localStorage.setItem(LS_KEY, cueOffset);
-    renderOffset();
-  });
-  plusBtn.addEventListener('click', () => {
-    cueOffset = +(cueOffset + 0.5).toFixed(1);
-    localStorage.setItem(LS_KEY, cueOffset);
-    renderOffset();
-  });
-
-  // 5) 速度
-  function renderSpeed() {
-    speedVal.textContent = `${(+video.playbackRate).toFixed(2)}x`;
-  }
-  speed.addEventListener('input', () => {
-    // 你的 range 0.5~2.0；如果不是，可改成 parseFloat(speed.value)
-    video.playbackRate = parseFloat(speed.value);
-    renderSpeed();
-  });
-  // 初始
-  video.addEventListener('loadedmetadata', renderSpeed);
-
-  // 6) 讀取字幕 JSON
-  const cueUrl = `./data/cues-${slug}.json?ts=${Date.now()}`;
-  let cues = []; // {time:'00:01', en:'...', zh:'...'}
-  fetch(cueUrl)
-    .then(r => {
-      if (!r.ok) throw new Error(`load cues fail: ${r.status}`);
-      return r.json();
-    })
-    .then(list => {
-      cues = list;
-      paintCues(cues);
-    })
-    .catch(err => {
-      console.error(err);
-      tbody.innerHTML = `
-        <tr><td colspan="3" style="opacity:.7">查無字幕（${cueUrl}）</td></tr>`;
+  for (let i = 0; i < cues.length; i++) {
+    const c = cues[i];
+    const nextT = i < cues.length - 1 ? cues[i + 1].t : c.t + 5;
+    const tr = document.createElement('tr');
+    tr.className = 'cue-row';
+    tr.dataset.index = String(i);
+    tr.innerHTML = `
+      <td style="width:70px" class="mono">${fmtTime(c.t)}</td>
+      <td class="en">${escapeHtml(c.en)}</td>
+      <td class="zh" style="opacity:.85">${escapeHtml(c.zh)}</td>
+    `;
+    tr.addEventListener('click', () => {
+      if (!video) return;
+      video.currentTime = Math.max(0, c.t + offset);
+      video.play?.();
     });
+    cuesTbody.appendChild(tr);
 
-  // 7) 字幕渲染 + 點擊跳播
-  function toSec(mmss) {
-    const [m, s] = mmss.split(':').map(Number);
-    return m * 60 + s;
+    // 為了反白高亮，先加個 class 名稱；樣式在 CSS 裡加:
+    // .cue-row.active { background: rgba(255,255,255,.06); }
   }
-  function paintCues(arr) {
-    tbody.innerHTML = arr.map((c, i) => `
-      <tr data-i="${i}" data-t="${toSec(c.time)}">
-        <td class="time">${c.time}</td>
-        <td class="en">${c.en}</td>
-        <td class="zh">${c.zh ?? ''}</td>
-      </tr>
-    `).join('');
+}
 
-    // 點擊跳播
-    tbody.addEventListener('click', (e) => {
-      const tr = e.target.closest('tr');
-      if (!tr) return;
-      const t = parseFloat(tr.dataset.t || '0');
-      video.currentTime = Math.max(0, t + cueOffset);
-      video.play();
-      if (followChk.checked) tr.scrollIntoView({ block: 'center', behavior: 'smooth' });
-    });
-  }
+// ----------------- 高亮 + 跟隨 -----------------
+function updateActiveByTime() {
+  if (!video || !cues?.length) return;
 
-  // 8) 播放時高亮 & 跟隨
-  let lastHi = -1;
-  function highlightByTime(cur) {
-    if (!cues.length) return;
-    // 找到目前時間對應的 cue index
-    let idx = -1;
-    for (let i = cues.length - 1; i >= 0; i--) {
-      const t = toSec(cues[i].time) + cueOffset;
-      if (cur >= t) { idx = i; break; }
+  // 進度(以 offset 調整過)
+  const t = video.currentTime - offset;
+
+  // A-B 迴圈邏輯
+  if (loopA != null && loopB != null) {
+    if (video.currentTime > loopB) {
+      video.currentTime = loopA;
     }
-    if (idx === -1 || idx === lastHi) return;
-    lastHi = idx;
-    $$('#cue-body tr').forEach(tr => tr.classList.remove('active'));
-    const tr = $(`#cue-body tr[data-i="${idx}"]`);
-    tr?.classList.add('active');
-    if (followChk.checked) tr?.scrollIntoView({ block: 'center' });
   }
-  video.addEventListener('timeupdate', () => {
-    highlightByTime(video.currentTime);
+
+  // 找到目前位於哪一句
+  let idx = -1;
+  for (let i = 0; i < cues.length; i++) {
+    const start = cues[i].t;
+    const end = i < cues.length - 1 ? cues[i + 1].t : start + 9e9;
+    if (t >= start && t < end) {
+      idx = i;
+      break;
+    }
+  }
+  if (idx === -1) return;
+
+  if (idx !== activeIndex) {
+    // 逐句自停：上一句播完時觸發
+    if (autoPause && activeIndex !== -1) {
+      const prevEnd = activeIndex < cues.length - 1 ? cues[activeIndex + 1].t : cues[activeIndex].t + 5;
+      if (t >= prevEnd) {
+        video.pause?.();
+      }
+    }
+
+    // 重複本句：當上一句結束剛進下一句時，回跳一次
+    if (repeatOnce && activeIndex !== -1) {
+      const prevEnd = activeIndex < cues.length - 1 ? cues[activeIndex + 1].t : cues[activeIndex].t + 5;
+      if (t >= prevEnd) {
+        // 回到上一句起點
+        video.currentTime = cues[activeIndex].t + offset;
+        repeatOnce = false; // 只重複一次
+        return; // 等 next timeupdate 再處理高亮
+      }
+    }
+
+    activeIndex = idx;
+
+    // 高亮 UI
+    $$('.cue-row', cuesTbody).forEach((tr) => tr.classList.remove('active'));
+    const row = $(`.cue-row[data-index="${activeIndex}"]`, cuesTbody);
+    row?.classList.add('active');
+
+    // 跟隨滾動
+    if (follow && row) {
+      row.scrollIntoView({ block: 'center', behavior: 'smooth' });
+    }
+  }
+
+  // 右側偏移顯示
+  if (offsetLabel) {
+    offsetLabel.textContent = `${offset.toFixed(1)}s`;
+  }
+}
+
+// ----------------- 綁定事件 -----------------
+function bindEvents() {
+  if (!video) return;
+
+  // 播放速度
+  if (speedSlider) {
+    speedSlider.addEventListener('input', () => {
+      const rate = Number(speedSlider.value) || 1;
+      video.playbackRate = rate;
+      if (speedVal) speedVal.textContent = `${rate.toFixed(2)}x`;
+    });
+    // 初始
+    const r0 = Number(speedSlider.value) || 1;
+    video.playbackRate = r0;
+    if (speedVal) speedVal.textContent = `${r0.toFixed(2)}x`;
+  }
+
+  // timeupdate
+  video.addEventListener('timeupdate', updateActiveByTime);
+
+  // 偏移按鈕
+  btnOffsetMinus?.addEventListener('click', () => {
+    offset -= 0.5;
+    updateActiveByTime();
+    flashOffset();
+  });
+  btnOffsetPlus?.addEventListener('click', () => {
+    offset += 0.5;
+    updateActiveByTime();
+    flashOffset();
+  });
+  if (offsetLabel) offsetLabel.textContent = `${offset.toFixed(1)}s`;
+
+  // 跟隨
+  if (followChk) {
+    followChk.addEventListener('change', () => {
+      follow = !!followChk.checked;
+      // 立即跟到當前 active
+      if (follow && activeIndex >= 0) {
+        const row = $(`.cue-row[data-index="${activeIndex}"]`, cuesTbody);
+        row?.scrollIntoView({ block: 'center', behavior: 'smooth' });
+      }
+    });
+    // 初始預設為勾選
+    followChk.checked = true;
+    follow = true;
+  }
+
+  // 上一句 / 下一句
+  btnPrev?.addEventListener('click', gotoPrevCue);
+  btnNext?.addEventListener('click', gotoNextCue);
+
+  // 重複本句：播完當句後回到起點再播一次
+  btnRepeat?.addEventListener('click', () => {
+    if (activeIndex < 0 || !cues.length) return;
+    repeatOnce = true;
   });
 
-  // 9) 可選：當偏移改變時，立即重算高亮（使用者調整後直覺效果）
-  function reevalHighlightSoon() {
-    requestAnimationFrame(() => highlightByTime(video.currentTime));
+  // 逐句自停
+  btnAutoPause?.addEventListener('click', () => {
+    autoPause = !autoPause;
+    toggleBtnActive(btnAutoPause, autoPause);
+  });
+
+  // A-B 循環
+  btnAB?.addEventListener('click', () => {
+    if (!video) return;
+    const now = video.currentTime;
+    if (loopA == null) {
+      loopA = now;
+      loopB = null;
+      toggleBtnActive(btnAB, true);
+      toast('循環 A 點已設');
+    } else if (loopB == null) {
+      if (now <= loopA + 0.2) {
+        toast('B 需大於 A，已略過');
+        return;
+      }
+      loopB = now;
+      toast(`已建立 A-B 循環（${(loopB - loopA).toFixed(1)}s）`);
+    } else {
+      // 已有 A-B，再按一次則更新 B
+      loopB = now;
+      toast(`更新 B 點（長度 ${(loopB - loopA).toFixed(1)}s）`);
+    }
+  });
+
+  // 取消循環
+  btnClearLoop?.addEventListener('click', () => {
+    loopA = loopB = null;
+    toggleBtnActive(btnAB, false);
+    toast('已取消 A-B 循環');
+  });
+}
+
+// 上一句 / 下一句
+function gotoPrevCue() {
+  if (!video || !cues.length) return;
+  const t = video.currentTime - offset;
+  // 找到 t 之前的 cue
+  let idx = 0;
+  for (let i = 0; i < cues.length; i++) {
+    if (cues[i].t < t) idx = i;
   }
-  minusBtn.addEventListener('click', reevalHighlightSoon);
-  plusBtn.addEventListener('click', reevalHighlightSoon);
-})();
+  // 若剛好命中 activeIndex，也再往前一個（避免卡在同一句）
+  if (activeIndex >= 0 && cues[activeIndex].t >= t && idx > 0) idx--;
+  video.currentTime = Math.max(0, cues[idx].t + offset);
+  video.play?.();
+}
+
+function gotoNextCue() {
+  if (!video || !cues.length) return;
+  const t = video.currentTime - offset;
+  let idx = cues.length - 1;
+  for (let i = 0; i < cues.length; i++) {
+    if (cues[i].t > t) {
+      idx = i;
+      break;
+    }
+  }
+  video.currentTime = Math.max(0, cues[idx].t + offset);
+  video.play?.();
+}
+
+// ----------------- 小工具 -----------------
+function toggleBtnActive(btn, on) {
+  if (!btn) return;
+  btn.classList.toggle('active', !!on);
+}
+
+function flashOffset() {
+  if (!offsetLabel) return;
+  offsetLabel.textContent = `${offset.toFixed(1)}s`;
+  offsetLabel.classList.add('flash');
+  setTimeout(() => offsetLabel.classList.remove('flash'), 300);
+}
+
+function toast(msg) {
+  // 簡易提示（若你有自己的 UI，可改走你的）
+  console.info('[INFO]', msg);
+}
+
+function escapeHtml(s) {
+  return String(s ?? '')
+    .replaceAll('&', '&amp;')
+    .replaceAll('<', '&lt;')
+    .replaceAll('>', '&gt;');
+}
+
+// ----------------- 分頁預留（之後補） -----------------
+async function loadQuiz(/* sg */) {
+  // TODO: 之後接 Supabase / data/quiz-*.json
+}
+async function loadVocab(/* sg */) {
+  // TODO: 之後接 Supabase / data/vocab-*.json
+}
+
+// ----------------- 啟動 -----------------
+await loadAll();
 
 
 
