@@ -471,6 +471,301 @@
   // 若預設就在測驗頁，也兜一層保險
   if (getComputedStyle(pane).display !== 'none') mountQuiz();
 })();
+/* ========== CERT-V1.2 (A4 + QUESTIONS + LOGO) ========== */
+/* 這段可以直接貼在 player.js 檔尾。更新時，用這個版本標記整段取代即可。 */
+(() => {
+  // ===== 可自行更改的基本設定 =====
+  const LOGO_URL    = './assets/logo.png';   // ← 你的 LOGO 圖檔（例如 ./assets/logo.png）
+  const ORG_NAME    = 'PMKtools';            // ← 單位 / 品牌
+  const COURSE_NAME = 'English Videos';      // ← 課程 / 活動名稱
+  const SHOW_QR     = false;                 // ← 需要在證書右上角印 QR Code 嗎？true/false
+  const QR_URL      = location.href;         // ← QR 要指到的網址（預設是本頁）
+
+  // ===== 內部函式：工具 =====
+  const $ = (s, el=document) => el.querySelector(s);
+  const params = new URLSearchParams(location.search);
+  const slug   = params.get('slug') || 'mid-autumn';
+
+  const pane  = $('#pane-quiz');
+  const box   = $('#quizBox');
+  const stat  = $('#quizStatus');
+  const tabBtn= document.querySelector('.tab[data-tab="quiz"]');
+  if (!pane || !box || !stat) return;
+
+  const esc = s => String(s ?? '').replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;');
+  const nowStr = () => {
+    const d = new Date(); const p = n => String(n).padStart(2,'0');
+    return `${d.getFullYear()}-${p(d.getMonth()+1)}-${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}`;
+  };
+
+  // Supabase 優先；無就讀本地 data/quiz-*.json
+  const SUPA_URL    = window.SUPA_URL    || null;
+  const SUPA_BUCKET = window.SUPA_BUCKET || null;
+  const pubUrl = (path) => `${SUPA_URL}/storage/v1/object/public/${SUPA_BUCKET}/${path}`;
+  async function fetchQuizJson() {
+    if (SUPA_URL && SUPA_BUCKET) {
+      try { const r = await fetch(pubUrl(`data/quiz-${slug}.json`), { cache:'no-store' }); if (r.ok) return await r.json(); } catch {}
+    }
+    const r2 = await fetch(`./data/quiz-${slug}.json`, { cache:'no-store' });
+    if (r2.ok) return await r2.json();
+    return null;
+  }
+
+  // ===== 列印 A4（含題目 + LOGO + 可選 QR） =====
+  function printCertificateWithQuestions({ name='', scorePct=0, correct=0, total=0, data=[], userAns=[] }) {
+    const win = window.open('', '_blank');
+
+    const questionHTML = data.map((q, qi) => {
+      const ua = userAns[qi];
+      const opts = q.a.map((opt, ai) => {
+        const isUser = ua === ai;
+        const isOk   = q.answerIndex === ai;
+        return `
+          <li class="opt ${isOk ? 'ok' : ''} ${isUser ? 'chosen' : ''}">
+            ${isUser ? '☑' : '☐'} ${esc(opt)}
+            ${isOk ? '<span class="tag okTag">正解</span>' : ''}
+            ${isUser && !isOk ? '<span class="tag ngTag">我的選擇</span>' : (isUser ? '<span class="tag meTag">我的選擇</span>' : '')}
+          </li>`;
+      }).join('');
+      const verdict = (ua === q.answerIndex)
+        ? `<span class="vd ok">✅ 正確</span>`
+        : (ua >= 0 ? `<span class="vd ng">❌ 錯誤</span>` : `<span class="vd ng">— 未作答 —</span>`);
+      const explain = q.explain ? `<div class="explain">說明：${esc(q.explain)}</div>` : '';
+      return `
+        <div class="qcard">
+          <div class="qtitle">Q${qi+1}. ${esc(q.q)} ${verdict}</div>
+          <ul class="opts">${opts}</ul>
+          ${explain}
+        </div>`;
+    }).join('');
+
+    // 可選的 QR Code（使用 Google Chart API；若不想要，將 SHOW_QR 設為 false）
+    const qrImg = SHOW_QR
+      ? `<img class="qr" src="https://chart.googleapis.com/chart?cht=qr&chs=120x120&chl=${encodeURIComponent(QR_URL)}" alt="QR"/>`
+      : '';
+
+    const html = `
+<!doctype html><html lang="zh-Hant"><head>
+<meta charset="utf-8"/>
+<title>成就證書 - ${esc(slug)}</title>
+<style>
+  @page { size: A4 portrait; margin: 16mm; }
+  *{box-sizing:border-box}
+  body{ margin:0; background:#fff; color:#0f172a;
+        font:14px/1.7 "Noto Sans TC",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial;}
+  .wrap{ max-width: 180mm; margin: 0 auto; }
+
+  .header{
+    display:flex; align-items:center; justify-content:space-between;
+    border-bottom:2px solid #e2e8f0; padding-bottom:8mm; margin-bottom:10mm;
+  }
+  .brand{ display:flex; align-items:center; gap:10px }
+  .logo{ width:42mm; height:auto; object-fit:contain; }
+  .brandText{ display:flex; flex-direction:column }
+  .org{ font-weight:700; letter-spacing:.5px }
+  .course{ color:#64748b; font-size:12px }
+
+  .title{ text-align:center; margin:0; font-size:26px; color:#b45309; letter-spacing:2px; font-weight:800 }
+  .sub{ text-align:center; color:#64748b }
+
+  .name{ font-size:22px; font-weight:700; text-align:center; margin:8mm 0 2mm }
+  .score{ text-align:center; font-size:18px; margin:2mm 0 3mm }
+  .score b{ color:#2563eb; font-size:20px }
+  .meta{ text-align:center; color:#64748b; margin-bottom:8mm }
+
+  .legend{ font-size:12px; color:#475569; margin: -4mm 0 8mm }
+  .legend .tag{ display:inline-block; padding:1px 6px; border-radius:99px; font-size:12px; margin-left:4px }
+  .okTag{ background:#e6fffa; color:#0f766e; border:1px solid #99f6e4 }
+  .ngTag{ background:#fff1f2; color:#be123c; border:1px solid #fecdd3 }
+  .meTag{ background:#eff6ff; color:#1d4ed8; border:1px solid #bfdbfe }
+
+  .qcard{
+    page-break-inside: avoid;
+    border:1px solid #e2e8f0; border-radius:10px; padding:10px 12px; margin:0 0 8mm; background:#fff;
+  }
+  .qtitle{ font-weight:700; margin-bottom:6px }
+  .vd.ok{ color:#0f766e; margin-left:6px }
+  .vd.ng{ color:#be123c; margin-left:6px }
+  .opts{ padding-left:1.3em; margin:6px 0 0 }
+  .opt{ margin:2px 0 }
+  .opt.ok{ color:#065f46 }
+  .opt.chosen:not(.ok){ color:#991b1b }
+  .opt .tag{ margin-left:6px; padding:1px 6px; border-radius:999px; font-size:12px }
+  .opt .okTag{ background:#e6fffa; color:#0f766e; border:1px solid #99f6e4 }
+  .opt .ngTag{ background:#fff1f2; color:#be123c; border:1px solid #fecdd3 }
+  .opt .meTag{ background:#eff6ff; color:#1d4ed8; border:1px solid #bfdbfe }
+  .explain{ margin-top:4px; color:#334155; background:#f8fafc; padding:6px 8px; border-radius:6px; border:1px solid #e2e8f0 }
+
+  .foot{ display:flex; justify-content:space-between; color:#475569; margin-top:-2mm }
+  .line{ border-top:1px solid #cbd5e1; padding-top:2mm; width:44%; text-align:center }
+
+  .printBtn{ position:fixed; top:12px; right:12px }
+  .printBtn button{ background:#0ea5e9; border:none; color:#fff; padding:8px 12px; border-radius:8px; cursor:pointer }
+  .qr{ width:26mm; height:26mm; object-fit:contain }
+  @media print { .printBtn{ display:none } }
+</style>
+</head><body>
+  <div class="printBtn"><button onclick="window.print()">列印 / 另存 PDF</button></div>
+
+  <div class="wrap">
+    <div class="header">
+      <div class="brand">
+        <img class="logo" src="${esc(LOGO_URL)}" alt="logo" onerror="this.style.display='none'"/>
+        <div class="brandText">
+          <div class="org">${esc(ORG_NAME)}</div>
+          <div class="course">${esc(COURSE_NAME)}</div>
+        </div>
+      </div>
+      ${SHOW_QR ? qrImg : '<span></span>'}
+    </div>
+
+    <h1 class="title">英語影片學習 成就證書</h1>
+    <div class="sub">Achievement Certificate</div>
+
+    <div class="name">${esc(name || '（未填姓名）')}</div>
+    <div class="score">通過 <b>${esc(slug)}</b> 題組　成績 <b>${scorePct}%</b>（${correct}/${total}）</div>
+    <div class="meta">發證日期：${esc(nowStr())}</div>
+
+    <div class="legend">
+      題目詳解（☑ 我的選擇，<span class="okTag tag">正解</span>、<span class="ngTag tag">錯誤</span>、<span class="meTag tag">我的選擇</span> 標示）
+    </div>
+
+    ${questionHTML}
+
+    <div class="foot">
+      <div class="line">指導老師簽章</div>
+      <div class="line">單位 / 課程</div>
+    </div>
+  </div>
+</body></html>`;
+    win.document.write(html);
+    win.document.close();
+  }
+
+  // ===== 測驗頁面渲染（含交卷 + 列印） =====
+  async function mountQuiz() {
+    stat.textContent = '載入測驗中…';
+    const data = await fetchQuizJson();
+    if (!Array.isArray(data) || !data.length) {
+      stat.textContent = '⚠️ 查無測驗資料';
+      box.innerHTML = '';
+      return;
+    }
+    stat.textContent = '';
+    box.innerHTML = '';
+
+    const userAns = Array(data.length).fill(-1);
+
+    // 題目
+    data.forEach((q, qi) => {
+      const wrap = document.createElement('div');
+      wrap.style.padding = '12px 14px';
+      wrap.style.borderBottom = '1px solid #14243b';
+
+      const title = document.createElement('div');
+      title.innerHTML = `<b>Q${qi+1}.</b> ${esc(q.q)}`;
+      title.style.marginBottom = '6px';
+      wrap.appendChild(title);
+
+      q.a.forEach((opt, ai) => {
+        const label = document.createElement('label');
+        label.style.display = 'block';
+        label.style.margin = '4px 0';
+        label.style.cursor = 'pointer';
+        label.innerHTML = `<input type="radio" name="certq_${qi}"> <span style="margin-left:6px">${esc(opt)}</span>`;
+        label.querySelector('input').addEventListener('change', () => {
+          userAns[qi] = ai;
+          ansLine.style.display = 'block';
+          if (ai === q.answerIndex) {
+            ansLine.innerHTML = `✅ 正確！Ans: ${q.answerIndex+1}．${esc(q.a[q.answerIndex])} <span class="muted">（${esc(q.explain||'Good!')}）</span>`;
+            ansLine.style.color = '#5bd3c7';
+          } else {
+            ansLine.innerHTML = `❌ 再試試。正解：${q.answerIndex+1}．${esc(q.a[q.answerIndex])} <span class="muted">（${esc(q.explain||'')}）</span>`;
+            ansLine.style.color = '#ff6b6b';
+          }
+        });
+        wrap.appendChild(label);
+      });
+
+      const ansLine = document.createElement('div');
+      ansLine.className = 'muted';
+      ansLine.style.marginTop = '6px';
+      ansLine.style.display = 'none';
+      wrap.appendChild(ansLine);
+
+      box.appendChild(wrap);
+    });
+
+    // 交卷 + 姓名 + 證書列印
+    const submitRow = document.createElement('div');
+    submitRow.style.padding = '14px';
+    submitRow.style.display = 'flex';
+    submitRow.style.flexWrap = 'wrap';
+    submitRow.style.gap = '10px';
+    submitRow.style.alignItems = 'center';
+    submitRow.style.borderTop = '1px solid #14243b';
+
+    const nameBox = document.createElement('input');
+    nameBox.type = 'text';
+    nameBox.placeholder = '輸入姓名（記憶於此裝置）';
+    nameBox.value = localStorage.getItem('qzName') || '';
+    Object.assign(nameBox.style, {
+      padding:'8px 10px', border:'1px solid #334155', borderRadius:'8px',
+      background:'#0f223b', color:'#dbe7ff', flex:'1 1 260px'
+    });
+    submitRow.appendChild(nameBox);
+
+    const btnSubmit = document.createElement('button');
+    btnSubmit.className = 'btn green';
+    btnSubmit.textContent = '交卷';
+    btnSubmit.style.padding = '8px 12px';
+    btnSubmit.style.borderRadius = '10px';
+    btnSubmit.style.background = '#10b981';
+    btnSubmit.style.border = 'none';
+    btnSubmit.style.color = '#fff';
+    submitRow.appendChild(btnSubmit);
+
+    const resultBox = document.createElement('div');
+    resultBox.style.flex = '1 1 100%';
+    resultBox.style.marginTop = '6px';
+    submitRow.appendChild(resultBox);
+
+    btnSubmit.addEventListener('click', () => {
+      localStorage.setItem('qzName', nameBox.value.trim());
+
+      let correct = 0;
+      data.forEach((q,i)=>{ if (userAns[i] === q.answerIndex) correct++; });
+      const total = data.length;
+      const pct   = Math.round(correct/total*100);
+
+      resultBox.innerHTML = `
+        <div><b>成績</b>：${correct}/${total}（${pct}%）</div>
+        <div class="muted" style="margin-top:4px">
+          老師建議：${pct>=80?'很棒！可挑戰更快播放或加深詞彙':'建議先理解每題說明，回到影片複習重點句。'}
+        </div>`;
+
+      const btnCert = document.createElement('button');
+      btnCert.textContent = '列印 A4「成就證書（含題目）」/ 另存 PDF';
+      btnCert.className = 'btn';
+      btnCert.style.marginTop = '8px';
+      btnCert.addEventListener('click', () => {
+        printCertificateWithQuestions({
+          name: nameBox.value.trim(),
+          scorePct: pct, correct, total,
+          data, userAns
+        });
+      });
+      resultBox.appendChild(btnCert);
+    });
+
+    box.appendChild(submitRow);
+  }
+
+  if (tabBtn) tabBtn.addEventListener('click', mountQuiz);
+  if (getComputedStyle(pane).display !== 'none') mountQuiz();
+})();
+/* ========== /CERT-V1.2 END ========== */
+
 
 
 
