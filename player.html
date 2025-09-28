@@ -3,215 +3,126 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Stories · Player</title>
+  <title>English Videos Player</title>
   <style>
     :root{
-      --bg:#0f172a;        /* 整體背景 */
-      --panel:#0b1220;     /* 面板底色 */
-      --soft:#0d1628;      /* 面板次底色 */
-      --text:#e5e7eb;      /* 主要文字 */
-      --muted:#94a3b8;     /* 次文字 */
-      --accent:#38bdf8;    /* 強調色(按鈕/滑桿) */
-      --accent-2:#22d3ee;  /* 第二強調色 */
-      --btn:#111827;       /* 按鈕底 */
-      --btn-hl:#1f2937;    /* 按鈕 hover */
-      --tab:#111827;
-      --tab-active:#1f2937;
-      --radius:14px;
+      --bg:#0f1926; --panel:#0c1420; --text:#dbe7ff; --muted:#a9b7d0; --accent:#59a6ff;
+      --accent2:#5bd3c7; --danger:#ff6b6b; --row:#122036; --rowActive:#1b335a;
     }
-
     *{box-sizing:border-box}
-    html,body{height:100%}
-    body{
-      margin:0;
-      background:var(--bg);
-      color:var(--text);
-      font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Noto Sans", "Helvetica Neue", Arial, "Apple Color Emoji","Segoe UI Emoji";
-    }
-
-    /* 版面：左右 50:50 */
-    .page{
-      display:flex;
-      gap:14px;
-      height:100%;
-      padding:14px;
-    }
-    .left, .right{
-      background:var(--panel);
-      border-radius:var(--radius);
-      overflow:hidden;
-      display:flex;
-      flex-direction:column;
-    }
-    .left{ width:50% }
-    .right{ width:50% }
-
-    /* 影片容器：讓 video 不會壓到工具列 */
-    .video-wrap{
-      padding:16px;
-      padding-bottom:0;
-    }
-    .video-frame{
-      background:#000;
-      border-radius:12px;
-      overflow:hidden;
-      position:relative;
-      width:100%;
-      /* 用 16:9 高度計算，讓畫面穩定不亂跳 */
-      aspect-ratio:16/9;
-      display:flex;align-items:center;justify-content:center;
-    }
-    video{ width:100%; height:100%; object-fit:contain; background:#000; }
-
-    /* 左側工具列（兩排） */
-    .controls{
-      background:var(--soft);
-      padding:12px 16px 16px;
-      margin:14px;
-      margin-top:10px;
-      border-radius:12px;
-      display:flex;
-      flex-direction:column;
-      gap:10px;
-    }
-    .row{
-      display:flex;flex-wrap:wrap;gap:10px;
-      align-items:center;
-    }
+    html,body{height:100%;margin:0;background:var(--bg);color:var(--text);font-family:ui-sans-serif,system-ui,"Noto Sans TC",Segoe UI,Roboto,Helvetica,Arial}
+    .wrap{display:flex;gap:16px;height:100%;padding:16px}
+    .left{flex:1;min-width:0;background:var(--panel);border-radius:14px;padding:16px;display:flex;flex-direction:column}
+    .right{flex:1;min-width:0;background:var(--panel);border-radius:14px;display:flex;flex-direction:column}
+    /* video */
+    .videoWrap{flex:1;display:flex;align-items:center;justify-content:center;background:#0a111c;border-radius:10px;overflow:hidden}
+    video{max-width:100%;max-height:100%;border-radius:6px;background:#000}
+    .videoWrap.fill video{width:100%;height:100%;object-fit:cover}
+    /* controls */
+    .ctrl{margin-top:12px;background:#0b1726;border-radius:12px;padding:14px}
+    .row{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
     .btn{
-      background:var(--btn); color:var(--text);
-      border:1px solid #0006;
-      padding:10px 14px;
-      border-radius:10px;
-      cursor:pointer;
-      display:inline-flex; align-items:center; gap:8px;
-      user-select:none;
+      background:#0f223b;color:var(--text);border:1px solid #163052;border-radius:10px;padding:9px 14px;
+      cursor:pointer;display:inline-flex;align-items:center;gap:8px
     }
-    .btn:hover{ background:var(--btn-hl) }
-    .btn.active{ outline:2px solid var(--accent); }
-    .badge{
-      display:inline-flex;align-items:center;gap:6px;
-      background:#0008;color:var(--text);
-      border:1px solid #0006;border-radius:10px;
-      padding:8px 12px;
-    }
-    .speed-group{ margin-left:auto; display:flex; align-items:center; gap:10px; }
-    .speed-range{ width:220px; accent-color:var(--accent) }
-    .speed-val{ min-width:48px; text-align:right; color:var(--accent-2); }
-
-    /* 右側：分頁 */
-    .tabs{
-      display:flex;gap:8px;
-      background:var(--soft);
-      padding:10px;
-    }
-    .tab{
-      background:var(--tab); color:var(--text);
-      border:1px solid #0006;
-      padding:10px 14px; border-radius:10px; cursor:pointer;
-    }
-    .tab.active{ background:var(--tab-active); outline:2px solid var(--accent) }
-
-    .tab-panels{ flex:1; overflow:auto; }
-    .panel{ display:none; height:100%; }
-    .panel.active{ display:block }
-
-    /* 「字幕」面板內的跟隨/微調工具列 */
-    .subtool{
-      display:flex; gap:8px; align-items:center;
-      padding:12px; background:var(--panel); position:sticky; top:0;
-      border-bottom:1px solid #0006;
-      z-index:5;
-    }
-    .subtool .label{ color:var(--muted) }
-    .subtool .chip{ background:#0007; border:1px solid #0006; padding:6px 10px; border-radius:10px }
-    .subtool .chip.primary{ color:var(--accent-2); border-color:#0aa3; }
-    .table{
-      width:100%; border-collapse:collapse;
-      margin:12px;
-    }
-    .table th, .table td{
-      border-bottom:1px solid #0006; padding:10px 8px;
-    }
-    .table th{ color:var(--muted); font-weight:600; text-align:left; position:sticky; top:52px; background:var(--panel); }
-    .muted{ color:var(--muted) }
-    .hint{ color:var(--muted); padding:18px; }
+    .btn:hover{background:#113052}
+    .btn.blue{background:#12315a;border-color:#255b9a}
+    .btn.green{background:#10433c;border-color:#1f7a6d}
+    .btn.red{background:#4a1820;border-color:#963645}
+    .chip{background:#0f223b;border:1px solid #163052;border-radius:10px;padding:6px 10px;display:inline-flex;gap:8px;align-items:center}
+    input[type="range"]{accent-color:var(--accent);width:260px}
+    .speedVal{min-width:48px;text-align:right}
+    /* tabs */
+    .tabs{display:flex;gap:10px;padding:12px;border-bottom:1px solid #14243b}
+    .tab{cursor:pointer;background:#0f223b;border:1px solid #163052;padding:8px 14px;border-radius:10px}
+    .tab.active{background:#12315a;border-color:#2c64a8}
+    .subToolbar{display:flex;gap:10px;align-items:center;padding:12px;border-bottom:1px solid #14243b}
+    .content{flex:1;overflow:auto}
+    table{width:100%;border-collapse:collapse}
+    th,td{padding:10px 12px;border-bottom:1px solid #14243b;vertical-align:top}
+    tbody tr{background:var(--row);cursor:pointer}
+    tbody tr:nth-child(2n){background:#0f1f34}
+    tbody tr:hover{background:#0f2a4e}
+    tr.active{background:var(--rowActive)}
+    .muted{color:var(--muted)}
+    .status{padding:10px 14px;color:var(--muted)}
   </style>
 </head>
 <body>
-  <div class="page">
-    <!-- 左：影片 + 工具列 -->
+  <div class="wrap">
+    <!-- left -->
     <section class="left">
-      <div class="video-wrap">
-        <div class="video-frame">
-          <video id="video" preload="metadata" controls crossorigin="anonymous"></video>
-        </div>
+      <div id="videoWrap" class="videoWrap">
+        <video id="player" playsinline controls></video>
       </div>
 
-      <!-- 工具列（兩排） -->
-      <div class="controls">
-        <div class="row">
-          <button class="btn" id="btn-prev">⏮ 上一句</button>
-          <button class="btn" id="btn-play">⏯ 播放</button>
-          <button class="btn" id="btn-next">⏭ 下一句</button>
-          <button class="btn" id="btn-repeat-line">🔁 重複本句</button>
-          <button class="btn" id="btn-auto-pause">🧠 逐句自動暫停</button>
-          <button class="btn" id="btn-loop-all">🔄 整段循環</button>
-
-          <div class="speed-group">
-            <span class="muted">速度</span>
-            <input id="speed" class="speed-range" type="range" min="0.5" max="1.75" step="0.05" value="1.00" />
-            <div class="speed-val" id="speedVal">1.00x</div>
-          </div>
+      <!-- controls -->
+      <div class="ctrl">
+        <!-- row1 -->
+        <div class="row" style="margin-bottom:10px">
+          <button id="btnPrev" class="btn">⏮ 上一句</button>
+          <button id="btnPlay" class="btn">▶️ 播放</button>
+          <button id="btnNext" class="btn">⏭ 下一句</button>
+          <button id="btnReplay" class="btn blue">🔁 重複本句</button>
+          <button id="btnAutoPause" class="btn">🧠 逐句自動暫停</button>
+          <button id="btnLoopSentence" class="btn">🔂 整段循環</button>
         </div>
-
+        <!-- row2 -->
+        <div class="row" style="margin-bottom:10px">
+          <button id="btnAB" class="btn">🅰🅱 A-B 循環</button>
+          <button id="btnPointLoop" class="btn">🎯 點句即循環</button>
+          <button id="btnClearLoop" class="btn">🧹 取消循環</button>
+          <button id="btnFill" class="btn">🖼 填滿畫面</button>
+        </div>
+        <!-- row3 -->
         <div class="row">
-          <div class="badge" id="ab-ind">🅐🅑 A-B 循環</div>
-          <button class="btn" id="btn-ab">🎯 點句即循環</button>
-          <button class="btn" id="btn-clear-loop">🧹 取消循環</button>
-          <button class="btn" id="btn-fit">🖼 填滿畫面</button>
+          <span class="muted">速度</span>
+          <input type="range" id="speedRange" min="0.5" max="2" step="0.05" value="1" />
+          <span id="speedVal" class="speedVal">1.00x</span>
         </div>
       </div>
     </section>
 
-    <!-- 右：分頁（字幕 / 測驗 / 單字） -->
+    <!-- right -->
     <section class="right">
       <div class="tabs">
-        <button class="tab active" data-tab="sub">字幕</button>
-        <button class="tab" data-tab="quiz">測驗</button>
-        <button class="tab" data-tab="vocab">單字</button>
+        <div class="tab active" data-tab="sub">字幕</div>
+        <div class="tab" data-tab="quiz">測驗</div>
+        <div class="tab" data-tab="vocab">單字</div>
       </div>
 
-      <div class="tab-panels">
+      <!-- 字幕工具列 -->
+      <div id="subToolbar" class="subToolbar">
+        <label class="chip"><input id="chkFollow" type="checkbox" checked /> 跟隨</label>
+        <span class="chip">偏移 <span id="offsetVal">0.0s</span></span>
+        <button id="btnOffsetMinus" class="btn">-0.5s</button>
+        <button id="btnOffsetPlus" class="btn">+0.5s</button>
+        <span class="muted" style="margin-left:auto">( 資料待串接 )</span>
+      </div>
+
+      <!-- 內容 -->
+      <div class="content">
         <!-- 字幕 -->
-        <div class="panel active" id="panel-sub">
-          <!-- 字幕工具列：跟隨 / 偏移 -->
-          <div class="subtool">
-            <label class="chip"><input id="follow" type="checkbox" /> 跟隨</label>
-            <span class="chip label">偏移</span>
-            <span class="chip" id="offsetView">0.0s</span>
-            <button class="chip" id="offMinus">-0.5s</button>
-            <button class="chip" id="offPlus">+0.5s</button>
-            <span class="muted" style="margin-left:auto;">（資料待串接）</span>
-          </div>
-          <table class="table">
+        <div id="pane-sub">
+          <table>
             <thead>
-              <tr><th style="width:120px;">時間</th><th>英文</th><th>中文</th></tr>
+              <tr><th style="width:80px">時間</th><th>英文</th><th style="width:40%">中文</th></tr>
             </thead>
-            <tbody id="subBody">
-              <tr><td colspan="3" class="hint">尚未載入字幕，等第 2 步串接即可</td></tr>
-            </tbody>
+            <tbody id="cuesBody"></tbody>
           </table>
+          <div id="cuesStatus" class="status"></div>
         </div>
 
         <!-- 測驗 -->
-        <div class="panel" id="panel-quiz">
-          <div class="hint">測驗面板保留完成。第 3 步載入 <code>data/quiz-*.json</code> 後渲染。</div>
+        <div id="pane-quiz" style="display:none">
+          <div id="quizStatus" class="status">( 尚未載入 )</div>
+          <div id="quizBox"></div>
         </div>
 
         <!-- 單字 -->
-        <div class="panel" id="panel-vocab">
-          <div class="hint">單字面板保留完成。第 4 步載入 <code>data/vocab-*.json</code> 後渲染。</div>
+        <div id="pane-vocab" style="display:none">
+          <div id="vocabStatus" class="status">( 尚未載入 )</div>
+          <div id="vocabBox"></div>
         </div>
       </div>
     </section>
