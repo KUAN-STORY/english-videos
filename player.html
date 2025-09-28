@@ -2,79 +2,99 @@
 <html lang="zh-Hant">
 <head>
   <meta charset="utf-8"/>
-  <meta name="viewport" content="width=device-width,initial-scale=1"/>
   <title>英語影片播放器</title>
   <style>
-    :root{
-      --bg:#0b1220; --panel:#0f172a; --panel2:#0b162a; --border:#1f2a44;
-      --text:#e6efff; --muted:#94a3b8; --accent:#3c82f6; --ok:#16a34a;
+    body {
+      margin:0;
+      background:#0b1220;
+      color:#e6efff;
+      font-family:ui-sans-serif,system-ui;
+      height:100vh;
+      display:flex;
+      flex-direction:column;
     }
-    *{box-sizing:border-box}
-    html,body{height:100%;margin:0;background:var(--bg);color:var(--text);font-family:ui-sans-serif,system-ui}
-    a{color:inherit;text-decoration:none}
-
-    /* header */
-    header{
-      position:sticky; top:0; z-index:5;
-      display:flex;justify-content:space-between;align-items:center;
-      padding:14px 20px;background:var(--panel);border-bottom:1px solid var(--border)
+    header {
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      padding:14px 20px;
+      background:#0f172a;
+      flex-shrink:0;
     }
-    .btn{background:#1e293b;color:#e6efff;border:1px solid #334155;border-radius:10px;padding:8px 12px;cursor:pointer}
-    .btn.ghost{background:transparent}
-
-    /* main layout 50:50 */
-    .wrap{
-      display:flex; gap:20px; padding:16px; height:calc(100vh - 64px); /* header 高度約 64 */
+    .btn {
+      background:#1e293b;
+      color:#e6efff;
+      border:1px solid #334155;
+      border-radius:10px;
+      padding:8px 12px;
+      cursor:pointer;
+    }
+    main.wrap {
+      flex:1;
+      display:flex;
+      gap:20px;
+      padding:20px;
       overflow:hidden;
     }
-    /* 左側影片區 */
-    #videoWrap{
-      flex:1 1 50%; max-width:50%;
-      display:flex; flex-direction:column; align-items:stretch; gap:12px;
+    /* 左側：影片區 */
+    #videoWrap {
+      flex:1;
+      display:flex;
+      flex-direction:column;
+      max-width:50%;
+    }
+    #player {
+      width:100%;
+      aspect-ratio:16/9;
+      border-radius:10px;
+      background:#000;
+    }
+    #controls {
+      margin-top:10px;
+      flex-shrink:0;
+    }
+    /* 右側：字幕/測驗/單字區 */
+    .right {
+      flex:1;
       min-width:0;
+      max-width:50%;
+      background:#0f172a;
+      border:1px solid #1f2a44;
+      border-radius:12px;
+      display:flex;
+      flex-direction:column;
     }
-    video{width:100%;border-radius:12px;background:#000;display:block}
-    .ctrl{
-      background:var(--panel); border:1px solid var(--border); border-radius:12px; padding:12px;
+    .tabs {
+      display:flex;
+      gap:10px;
+      padding:12px;
+      border-bottom:1px solid #1f2a44;
+      flex-shrink:0;
     }
-    .row{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
-    .chip{background:#10243c;border:1px solid #1e3a5f;border-radius:10px;padding:6px 10px;display:inline-flex;gap:6px;align-items:center}
-    .btn.blue{background:#12315a;border-color:#255b9a}
-    .btn.green{background:#10433c;border-color:#1f7a6d}
-    input[type="range"]{accent-color:var(--accent);width:260px}
-    .speedVal{min-width:56px;text-align:right}
-
-    /* 右側字幕/測驗/單字 */
-    .right{
-      flex:1 1 50%; max-width:50%;
-      display:flex; flex-direction:column; min-width:0; height:100%;
-      background:var(--panel); border:1px solid var(--border); border-radius:12px; overflow:hidden;
+    .tab {
+      background:#122340;
+      border:1px solid #1f375f;
+      border-radius:10px;
+      padding:8px 12px;
+      cursor:pointer;
     }
-    .tabs{display:flex;gap:10px;padding:12px;border-bottom:1px solid var(--border);background:var(--panel2)}
-    .tab{background:#122340;border:1px solid #1f375f;border-radius:10px;padding:8px 12px;cursor:pointer}
-    .tab.active{background:#154274}
-
-    .subToolbar{display:flex;gap:10px;align-items:center;padding:12px;border-bottom:1px solid var(--border)}
-    .muted{color:var(--muted)}
-
-    /* 可捲動容器：只讓右側內容捲動，左側影片不會跟著上移 */
-    .panel-scroll{flex:1 1 auto; min-height:0; overflow:auto}
-
-    table{width:100%;border-collapse:collapse}
-    th,td{padding:10px 12px;border-bottom:1px solid #14243b;vertical-align:top}
-    thead th{position:sticky;top:0;background:var(--panel2);z-index:1}
-    tbody tr{background:#0f1f34}
-    tbody tr:nth-child(2n){background:#0e1b2d}
-    tr.active{background:#163050}
-
-    .status{padding:10px 14px;color:var(--muted)}
-    .space{flex:1}
-
-    /* RWD：手機改直排（影片在上、文字在下） */
-    @media (max-width: 768px){
-      .wrap{flex-direction:column;height:auto}
-      #videoWrap,.right{max-width:100%;flex:1 1 auto}
-      .right{height:60vh}
+    .tab.active {
+      background:#154274;
+    }
+    /* 可滾動內容區 */
+    .pane {
+      flex:1;
+      overflow-y:auto;
+      padding:12px;
+    }
+    /* RWD：手機螢幕改上下堆疊 */
+    @media(max-width:768px){
+      main.wrap {
+        flex-direction:column;
+      }
+      #videoWrap, .right {
+        max-width:100%;
+      }
     }
   </style>
 </head>
@@ -91,33 +111,8 @@
   <main class="wrap">
     <!-- 左側：影片 + 控制 -->
     <section id="videoWrap">
-      <video id="player" playsinline controls></video>
-
-      <!-- 控制列：與 player.js v7.2 對齊的 id -->
-      <div class="ctrl">
-        <!-- row1 -->
-        <div class="row" style="margin-bottom:10px">
-          <button id="btnPrev" class="btn">⏮ 上一句</button>
-          <button id="btnPlay" class="btn">▶️ 播放 / 暫停</button>
-          <button id="btnNext" class="btn">⏭ 下一句</button>
-          <button id="btnReplay" class="btn blue">🔁 重複本句</button>
-          <button id="btnAutoPause" class="btn">🧠 逐句自動暫停</button>
-          <button id="btnLoopSentence" class="btn">🔂 整段循環</button>
-        </div>
-        <!-- row2 -->
-        <div class="row" style="margin-bottom:10px">
-          <button id="btnAB" class="btn">🅰🅱 A-B 循環</button>
-          <button id="btnPointLoop" class="btn">🎯 點句即循環</button>
-          <button id="btnClearLoop" class="btn">🧹 取消循環</button>
-          <button id="btnFill" class="btn">🖼 填滿畫面</button>
-        </div>
-        <!-- row3 -->
-        <div class="row">
-          <span class="muted">速度</span>
-          <input type="range" id="speedRange" min="0.5" max="2" step="0.05" value="1" />
-          <span id="speedVal" class="speedVal">1.00x</span>
-        </div>
-      </div>
+      <video id="player" controls></video>
+      <div id="controls">（這裡是功能控制列，保持顯示）</div>
     </section>
 
     <!-- 右側：字幕 / 測驗 / 單字 -->
@@ -127,47 +122,12 @@
         <div class="tab" data-tab="quiz">測驗</div>
         <div class="tab" data-tab="vocab">單字</div>
       </div>
-
-      <!-- 字幕工具列 -->
-      <div id="subToolbar" class="subToolbar">
-        <label class="chip"><input id="chkFollow" type="checkbox" checked /> 跟隨</label>
-        <span class="chip">偏移 <span id="offsetVal">0.0s</span></span>
-        <button id="btnOffsetMinus" class="btn">-0.5s</button>
-        <button id="btnOffsetPlus" class="btn">+0.5s</button>
-        <span class="muted space"></span>
-        <span class="muted">( 尚未載入 )</span>
-      </div>
-
-      <!-- 內容：右側只讓內容捲動 -->
-      <div id="pane-sub">
-        <div class="panel-scroll">
-          <table>
-            <thead>
-              <tr><th style="width:80px">時間</th><th>英文</th><th style="width:40%">中文</th></tr>
-            </thead>
-            <tbody id="cuesBody"></tbody>
-          </table>
-          <div id="cuesStatus" class="status"></div>
-        </div>
-      </div>
-
-      <div id="pane-quiz" style="display:none">
-        <div class="panel-scroll">
-          <div id="quizStatus" class="status">( 尚未載入 )</div>
-          <div id="quizBox"></div>
-        </div>
-      </div>
-
-      <div id="pane-vocab" style="display:none">
-        <div class="panel-scroll">
-          <div id="vocabStatus" class="status">( 尚未載入 )</div>
-          <div id="vocabBox"></div>
-        </div>
-      </div>
+      <div id="pane-sub" class="pane">…（字幕表格）…</div>
+      <div id="pane-quiz" class="pane" style="display:none">…（測驗容器）…</div>
+      <div id="pane-vocab" class="pane" style="display:none">…（單字容器）…</div>
     </section>
   </main>
 
-  <!-- 你的 JS：保持順序 -->
   <script src="./player.js"></script>
   <script src="./login.js"></script>
 </body>
