@@ -1,22 +1,148 @@
-[
-  {"q":"When is the Mid-Autumn Festival usually celebrated?","a":["In Spring","In Summer","In Autumn","In Winter"],"answerIndex":2,"explain":"It is a harvest festival in autumn."},
-  {"q":"What is the shape of the moon on this festival night?","a":["Crescent","Half","Full","No moon"],"answerIndex":2,"explain":"Families admire the full moon."},
-  {"q":"What do families often do together on this festival?","a":["Watch fireworks only","Go shopping","Gather and share food","Swim in the sea"],"answerIndex":2,"explain":"Family reunion and sharing are central."},
-  {"q":"What special food is commonly eaten?","a":["Rice dumplings","Mooncakes","Noodles","Hot pot"],"answerIndex":1,"explain":"Mooncakes are the signature food."},
-  {"q":"Which legend is frequently told during the festival?","a":["Mulan","The Monkey King","Chang’e and Hou Yi","The White Snake"],"answerIndex":2,"explain":"Chang’e and Hou Yi are part of the lore."},
-  {"q":"What do lanterns symbolize for children and families?","a":["War","Illness","Light and good wishes","Silence"],"answerIndex":2,"explain":"Lanterns symbolize light, hope, and joy."},
-  {"q":"What do people do while moon-gazing?","a":["Read exams","Sleep early","Share stories and blessings","Plant trees"],"answerIndex":2,"explain":"Families chat and share blessings."},
-  {"q":"Mooncakes can have many fillings. Which is typical?","a":["Chocolate chips only","Lotus seed paste","French fries","Curry"],"answerIndex":1,"explain":"Lotus seed paste is classic; many variations exist."},
-  {"q":"What value does the festival strongly emphasize?","a":["Competition","Family reunion","Loneliness","Traveling alone"],"answerIndex":1,"explain":"It’s a reunion festival."},
-  {"q":"What fruit is often associated with autumn and the festival?","a":["Watermelon","Grapes and pomelos","Mango","Pineapple"],"answerIndex":1,"explain":"Seasonal fruits like pomelos are common."},
-  {"q":"What do people sometimes write on lanterns?","a":["Secrets","Homework","Wishes and riddles","Phone numbers"],"answerIndex":2,"explain":"Wishes and lantern riddles are popular."},
-  {"q":"Why do people admire the moon together?","a":["To count stars","To celebrate the harvest and togetherness","To practice sports","To keep warm"],"answerIndex":1,"explain":"It’s a harvest celebration and reunion time."},
-  {"q":"Which animal appears in some festival legends on the moon?","a":["Tiger","Jade Rabbit","Dragonfly","Horse"],"answerIndex":1,"explain":"The Jade Rabbit is part of the myth."},
-  {"q":"How do communities create a festive atmosphere at night?","a":["Close all lights","Hold lantern parades","Stay at school","Go fishing"],"answerIndex":1,"explain":"Lantern parades and displays are common."},
-  {"q":"What does sharing a round mooncake symbolize?","a":["Competition","Reunion and completeness","Good grades","Running fast"],"answerIndex":1,"explain":"Round shapes symbolize wholeness and reunion."},
-  {"q":"Which drink is often served with mooncakes?","a":["Tea","Coffee","Cola","Milkshakes"],"answerIndex":0,"explain":"Tea balances the sweetness of mooncakes."},
-  {"q":"What do people send to friends and relatives?","a":["Lanterns only","Mooncakes and greetings","Textbooks","Tickets"],"answerIndex":1,"explain":"Gifting mooncakes and blessings is common."},
-  {"q":"What weather do people hope for on the night?","a":["Rainy","Cloudy","Clear sky","Snowy"],"answerIndex":2,"explain":"A clear sky is best for moon-gazing."},
-  {"q":"What activity helps children learn during the festival?","a":["Moon riddle games","Silent sitting","Jump rope","Video games"],"answerIndex":0,"explain":"Lantern riddles are educational and fun."},
-  {"q":"What is the overall mood of the festival?","a":["Serious and busy","Warm and joyful","Cold and quiet","Dangerous"],"answerIndex":1,"explain":"It’s a warm, joyful time for families."}
-]
+{
+  "title": "Mid-Autumn Festival Quiz",
+  "slug": "mid-autumn",
+  "items": [
+    {
+      "type": "mcq",
+      "q": "What fruit is commonly associated with the Mid-Autumn Festival?",
+      "options": [
+        "Apple",
+        "Mooncake",
+        "Pineapple",
+        "Watermelon"
+      ],
+      "a": 1
+    },
+    {
+      "type": "mcq",
+      "q": "Who is the goddess that is said to live on the moon?",
+      "options": [
+        "Mulan",
+        "Chang'e",
+        "Nuwa",
+        "Hou Yi"
+      ],
+      "a": 1
+    },
+    {
+      "type": "mcq",
+      "q": "What season is the Mid-Autumn Festival celebrated in?",
+      "options": [
+        "Spring",
+        "Summer",
+        "Autumn",
+        "Winter"
+      ],
+      "a": 2
+    },
+    {
+      "type": "mcq",
+      "q": "What animal is often seen with Chang’e in the legend?",
+      "options": [
+        "Dog",
+        "Rabbit",
+        "Tiger",
+        "Dragon"
+      ],
+      "a": 1
+    },
+    {
+      "type": "mcq",
+      "q": "What shape are traditional mooncakes usually made in?",
+      "options": [
+        "Square",
+        "Triangle",
+        "Round",
+        "Star"
+      ],
+      "a": 2
+    },
+    {
+      "type": "tf",
+      "q": "The Mid-Autumn Festival is celebrated on the 15th day of the 8th lunar month.",
+      "a": true
+    },
+    {
+      "type": "tf",
+      "q": "People eat dumplings during the Mid-Autumn Festival.",
+      "a": false
+    },
+    {
+      "type": "tf",
+      "q": "Lanterns are often used during the Mid-Autumn Festival celebrations.",
+      "a": true
+    },
+    {
+      "type": "tf",
+      "q": "Hou Yi shot down ten suns, leaving only one.",
+      "a": true
+    },
+    {
+      "type": "tf",
+      "q": "The Mid-Autumn Festival is a Western holiday.",
+      "a": false
+    },
+    {
+      "type": "fill",
+      "q": "Chang’e is said to live on the ______.",
+      "a": "moon"
+    },
+    {
+      "type": "fill",
+      "q": "People eat ______ to celebrate the Mid-Autumn Festival.",
+      "a": "mooncakes"
+    },
+    {
+      "type": "fill",
+      "q": "Hou Yi was a famous ______ in the legend.",
+      "a": "archer"
+    },
+    {
+      "type": "fill",
+      "q": "Families like to watch the bright full ______ together.",
+      "a": "moon"
+    },
+    {
+      "type": "match",
+      "q": "Match the items with the correct description:",
+      "pairs": {
+        "Chang’e": "Moon goddess",
+        "Hou Yi": "Hero who shot the suns",
+        "Rabbit": "Companion of Chang’e"
+      }
+    },
+    {
+      "type": "match",
+      "q": "Match the food with the festival:",
+      "pairs": {
+        "Mooncake": "Mid-Autumn Festival",
+        "Zongzi": "Dragon Boat Festival",
+        "Tangyuan": "Lantern Festival"
+      }
+    },
+    {
+      "type": "match",
+      "q": "Match the object with its meaning:",
+      "pairs": {
+        "Full moon": "Reunion",
+        "Lantern": "Light and hope",
+        "Mooncake": "Family sharing"
+      }
+    },
+    {
+      "type": "reading",
+      "q": "According to the legend, why did Hou Yi shoot down the suns?",
+      "a": "Because ten suns appeared in the sky and burned the earth."
+    },
+    {
+      "type": "reading",
+      "q": "Why do families gather to celebrate the Mid-Autumn Festival?",
+      "a": "To enjoy the full moon and celebrate family reunion."
+    },
+    {
+      "type": "reading",
+      "q": "What do lanterns symbolize during the festival?",
+      "a": "They symbolize light, hope, and good fortune."
+    }
+  ]
+}
