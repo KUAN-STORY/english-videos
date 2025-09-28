@@ -1,21 +1,19 @@
-{
-  "title": "Hou Yi Vocabulary",
-  "items": [
-    { "time": "00:02", "word": "sun", "pos": "n.", "zh": "太陽", "en": "the star that gives Earth light and heat", "example": "There were ten suns in the sky.", "grammar": "可數/不可數皆可；一般指唯一的太陽前加 the（the sun）" },
-    { "time": "00:06", "word": "scorch", "pos": "v.", "zh": "灼燒；炙熱", "en": "to burn the surface with great heat", "example": "The suns scorched the earth.", "grammar": "及物/不及物皆可：scorch something / something scorches" },
-    { "time": "00:10", "word": "archer", "pos": "n.", "zh": "弓箭手", "en": "a person who shoots with a bow and arrow", "example": "Hou Yi was a great archer.", "grammar": "可數名詞；複數 archers" },
-    { "time": "00:12", "word": "bow", "pos": "n.", "zh": "弓", "en": "a weapon for shooting arrows", "example": "He drew his bow.", "grammar": "名詞；常見片語 draw a bow（拉弓）" },
-    { "time": "00:15", "word": "arrow", "pos": "n.", "zh": "箭", "en": "a thin pointed stick shot from a bow", "example": "The arrow flew across the sky.", "grammar": "可數名詞；複數 arrows" },
-    { "time": "00:20", "word": "goddess", "pos": "n.", "zh": "女神", "en": "a female god", "example": "Xihe was the goddess of the suns.", "grammar": "可數名詞；對應 god（男神）" },
-    { "time": "00:24", "word": "valley", "pos": "n.", "zh": "山谷", "en": "a low area between hills or mountains", "example": "They lived in a valley of light.", "grammar": "可數名詞；複數 valleys" },
-    { "time": "00:28", "word": "fusang tree", "pos": "n.", "zh": "扶桑樹（傳說）", "en": "a mythical tree where the suns rested", "example": "They climbed the fusang tree.", "grammar": "專有名詞片語；通常前加 the" },
-    { "time": "00:33", "word": "suffer", "pos": "v.", "zh": "受苦；遭受", "en": "to experience pain or hardship", "example": "People suffered from the heat.", "grammar": "常接介系詞 from：suffer from N" },
-    { "time": "00:38", "word": "hero", "pos": "n.", "zh": "英雄", "en": "a brave person admired for good deeds", "example": "Hou Yi became a hero.", "grammar": "可數名詞；複數 heroes" },
-    { "time": "00:44", "word": "aim", "pos": "v.", "zh": "瞄準", "en": "to point a weapon at a target", "example": "He aimed at the suns.", "grammar": "搭配 at：aim at + 目標" },
-    { "time": "00:50", "word": "shoot down", "pos": "v.", "zh": "射下；擊落", "en": "to hit and make something fall", "example": "He shot down nine suns.", "grammar": "可分級動詞：shoot something down" },
-    { "time": "00:56", "word": "emperor", "pos": "n.", "zh": "皇帝", "en": "a male ruler of an empire", "example": "The emperor heard about Hou Yi.", "grammar": "可數名詞；對應 empress（皇后）" },
-    { "time": "01:02", "word": "elixir", "pos": "n.", "zh": "仙丹；長生藥", "en": "a magical drink that brings immortality", "example": "He received an elixir as a reward.", "grammar": "可數名詞；常與 of life 並用（elixir of life）" },
-    { "time": "01:08", "word": "immortality", "pos": "n.", "zh": "不死；永生", "en": "the state of living forever", "example": "Some legends speak of immortality.", "grammar": "不可數名詞；形容詞 immortal" }
-  ]
-}
+[
+  {"time":"00:02","word":"legend","pos":"n.","zh":"傳說","en":"a traditional story"},
+  {"time":"00:05","word":"sun","pos":"n.","zh":"太陽","en":"the star at the center of our solar system"},
+  {"time":"00:06","word":"heat","pos":"n.","zh":"酷熱","en":"high temperature"},
+  {"time":"00:10","word":"archer","pos":"n.","zh":"弓箭手","en":"a person who uses a bow and arrows"},
+  {"time":"00:12","word":"bow","pos":"n.","zh":"弓","en":"a weapon for shooting arrows"},
+  {"time":"00:16","word":"mountain","pos":"n.","zh":"山","en":"a very high hill"},
+  {"time":"00:20","word":"Queen Mother of the West","pos":"n.","zh":"西王母","en":"a goddess in Chinese mythology"},
+  {"time":"00:24","word":"pill","pos":"n.","zh":"藥丸","en":"a small round piece of medicine"},
+  {"time":"00:28","word":"immortal","pos":"adj.","zh":"不死的","en":"living forever"},
+  {"time":"00:31","word":"wife","pos":"n.","zh":"妻子","en":"a married woman"},
+  {"time":"00:34","word":"steal","pos":"v.","zh":"偷竊","en":"to take something without permission"},
+  {"time":"00:36","word":"Peng Meng","pos":"n.","zh":"逢蒙","en":"a man who wanted the pill"},
+  {"time":"00:40","word":"moon","pos":"n.","zh":"月亮","en":"the natural satellite of the Earth"},
+  {"time":"00:44","word":"admire","pos":"v.","zh":"仰慕；欣賞","en":"to respect or look at with pleasure"},
+  {"time":"00:48","word":"story","pos":"n.","zh":"故事","en":"an account of events"}
+]
+
 
