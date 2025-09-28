@@ -1,20 +1,18 @@
-{
-  "title": "Lantern Festival Vocabulary",
-  "items": [
-    { "time": "00:01", "word": "Lantern Festival", "pos": "n.", "zh": "元宵節", "en": "a traditional festival with lantern shows", "example": "People celebrate the Lantern Festival.", "grammar": "專有名詞片語；前面通常加 the（the Lantern Festival）" },
-    { "time": "00:05", "word": "lunar", "pos": "adj.", "zh": "陰曆的；月亮的", "en": "related to the moon", "example": "It falls on the lunar fifteenth day.", "grammar": "形容詞；常見搭配 lunar calendar" },
-    { "time": "00:08", "word": "lantern", "pos": "n.", "zh": "燈籠", "en": "a light in a paper or silk cover", "example": "They hang colorful lanterns.", "grammar": "可數名詞；複數 lanterns" },
-    { "time": "00:12", "word": "parade", "pos": "n.", "zh": "遊行", "en": "a public procession with celebration", "example": "We joined the lantern parade.", "grammar": "可數名詞；動詞用 parade" },
-    { "time": "00:15", "word": "fireworks", "pos": "n.", "zh": "煙火", "en": "bright explosive lights in the sky", "example": "Fireworks lit the night sky.", "grammar": "複數形，常用作複數名詞（are）" },
-    { "time": "00:19", "word": "dragon dance", "pos": "n.", "zh": "舞龍", "en": "a traditional dance with a long dragon", "example": "The dragon dance is exciting.", "grammar": "複合名詞；通常前加 the" },
-    { "time": "00:22", "word": "riddle", "pos": "n.", "zh": "謎語；燈謎", "en": "a puzzling question to solve", "example": "People guess lantern riddles.", "grammar": "可數名詞；動詞 riddle（少用）" },
-    { "time": "00:26", "word": "tangyuan", "pos": "n.", "zh": "湯圓", "en": "sweet rice balls eaten at the festival", "example": "Families eat tangyuan together.", "grammar": "外來語；可視為可數或不可數，依語境" },
-    { "time": "00:30", "word": "reunion", "pos": "n.", "zh": "團圓；團聚", "en": "coming together again", "example": "It’s a night of reunion.", "grammar": "可數名詞；搭配 family reunion" },
-    { "time": "00:33", "word": "float", "pos": "v.", "zh": "漂浮；放飛", "en": "to stay on or move over water/air", "example": "Sky lanterns float into the sky.", "grammar": "不及物/及物皆可；float on/in/into" },
-    { "time": "00:37", "word": "release", "pos": "v.", "zh": "放；釋放", "en": "to let something go free", "example": "People release sky lanterns.", "grammar": "及物動詞：release + 受詞" },
-    { "time": "00:41", "word": "custom", "pos": "n.", "zh": "習俗；風俗", "en": "a traditional way of doing something", "example": "Guessing riddles is a custom.", "grammar": "可數名詞；與 habit 區別為社會/文化層面" },
-    { "time": "00:45", "word": "tradition", "pos": "n.", "zh": "傳統", "en": "a custom from the past", "example": "Lantern shows are a tradition.", "grammar": "可數名詞；形容詞 traditional" },
-    { "time": "00:49", "word": "celebrate", "pos": "v.", "zh": "慶祝", "en": "to mark an event with activities", "example": "People celebrate with lantern parades.", "grammar": "及物/不及物皆可；名詞 celebration" },
-    { "time": "00:53", "word": "joy", "pos": "n.", "zh": "喜悅", "en": "a feeling of great happiness", "example": "The festival brings joy to everyone.", "grammar": "不可數名詞；近義 happiness（語氣較一般）" }
-  ]
-}
+[
+  {"time":"00:02","word":"Lantern Festival","pos":"n.","zh":"元宵節","en":"a festival with lantern shows"},
+  {"time":"00:05","word":"lunar","pos":"adj.","zh":"陰曆的；月亮的","en":"related to the moon"},
+  {"time":"00:08","word":"lantern","pos":"n.","zh":"燈籠","en":"a light in a paper or silk cover"},
+  {"time":"00:12","word":"parade","pos":"n.","zh":"遊行","en":"a public procession with celebration"},
+  {"time":"00:15","word":"fireworks","pos":"n.","zh":"煙火","en":"bright explosive lights in the sky"},
+  {"time":"00:19","word":"dragon dance","pos":"n.","zh":"舞龍","en":"a traditional dance with a long dragon"},
+  {"time":"00:22","word":"riddle","pos":"n.","zh":"謎語；燈謎","en":"a puzzling question to solve"},
+  {"time":"00:26","word":"tangyuan","pos":"n.","zh":"湯圓","en":"sweet rice balls eaten at the festival"},
+  {"time":"00:30","word":"reunion","pos":"n.","zh":"團圓；團聚","en":"coming together again"},
+  {"time":"00:33","word":"float","pos":"v.","zh":"漂浮；放飛","en":"to stay on or move over water/air"},
+  {"time":"00:37","word":"release","pos":"v.","zh":"放；釋放","en":"to let something go free"},
+  {"time":"00:41","word":"custom","pos":"n.","zh":"習俗；風俗","en":"a traditional way of doing something"},
+  {"time":"00:45","word":"tradition","pos":"n.","zh":"傳統","en":"a custom from the past"},
+  {"time":"00:49","word":"celebrate","pos":"v.","zh":"慶祝","en":"to mark an event with activities"},
+  {"time":"00:53","word":"joy","pos":"n.","zh":"喜悅","en":"a feeling of great happiness"}
+]
+
