@@ -3,10 +3,20 @@
 <head>
   <meta charset="utf-8"/>
   <title>英語影片播放器</title>
-  <link rel="stylesheet" href="./style.css"/>
+  <style>
+    body{margin:0;background:#0b1220;color:#e6efff;font-family:ui-sans-serif,system-ui}
+    header{display:flex;justify-content:space-between;align-items:center;padding:14px 20px;background:#0f172a}
+    .btn{background:#1e293b;color:#e6efff;border:1px solid #334155;border-radius:10px;padding:8px 12px;cursor:pointer}
+    .wrap{display:flex;gap:20px;padding:20px}
+    #videoWrap{width:48%}
+    .right{flex:1;min-width:0;background:#0f172a;border:1px solid #1f2a44;border-radius:12px}
+    .tabs{display:flex;gap:10px;padding:12px;border-bottom:1px solid #1f2a44}
+    .tab{background:#122340;border:1px solid #1f375f;border-radius:10px;padding:8px 12px;cursor:pointer}
+    .tab.active{background:#154274}
+  </style>
 </head>
 <body>
-  <header style="display:flex;justify-content:space-between;align-items:center;padding:14px 20px;background:#0f172a;color:#fff">
+  <header>
     <h1 style="margin:0;font-size:20px">英語影片播放器</h1>
     <div id="authArea" style="display:flex;gap:10px;align-items:center">
       <button id="btnLogin" class="btn">登入</button>
@@ -15,26 +25,25 @@
     </div>
   </header>
 
-  <main style="display:flex;gap:20px;padding:20px">
-    <!-- 左側影片 + 工具列 -->
-    <div id="videoWrap">
-      <video id="player" width="480" controls></video>
-      <div id="controls">
-        <!-- 原本的上一句 / 下一句 / 循環 ... 全部保留 -->
-      </div>
-    </div>
+  <main class="wrap">
+    <!-- 左側：影片 + 控制 -->
+    <section id="videoWrap">
+      <video id="player" controls style="width:100%;border-radius:10px;background:#000"></video>
+      <!-- 你的控制列（上一句/下一句/重播…）照舊，這裡略 -->
+      <div id="controls" style="margin-top:10px">…</div>
+    </section>
 
-    <!-- 右側分頁：字幕 / 測驗 / 單字 -->
-    <div style="flex:1">
+    <!-- 右側：字幕 / 測驗 / 單字 -->
+    <section class="right">
       <div class="tabs">
-        <button class="tab active" data-tab="sub">字幕</button>
-        <button class="tab" data-tab="quiz">測驗</button>
-        <button class="tab" data-tab="vocab">單字</button>
+        <div class="tab active" data-tab="sub">字幕</div>
+        <div class="tab" data-tab="quiz">測驗</div>
+        <div class="tab" data-tab="vocab">單字</div>
       </div>
-      <div id="pane-sub"></div>
-      <div id="pane-quiz" style="display:none"></div>
-      <div id="pane-vocab" style="display:none"></div>
-    </div>
+      <div id="pane-sub">…（字幕表格）…</div>
+      <div id="pane-quiz" style="display:none">…（測驗容器）…</div>
+      <div id="pane-vocab" style="display:none">…（單字容器）…</div>
+    </section>
   </main>
 
   <script src="./player.js"></script>
