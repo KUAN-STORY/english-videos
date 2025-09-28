@@ -3,10 +3,18 @@
 <head>
   <meta charset="utf-8"/>
   <title>用故事學英文</title>
-  <link rel="stylesheet" href="./style.css"/>
+  <style>
+    body{margin:0;background:#0b1220;color:#e6efff;font-family:ui-sans-serif,system-ui}
+    header{display:flex;justify-content:space-between;align-items:center;padding:14px 20px;background:#0f172a}
+    .btn{background:#1e293b;color:#e6efff;border:1px solid #334155;border-radius:10px;padding:8px 12px;cursor:pointer}
+    .cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:18px;padding:20px}
+    .card{background:#0f172a;border:1px solid #1f2a44;border-radius:14px;overflow:hidden}
+    .card .body{padding:12px}
+    .locked{opacity:.85}
+  </style>
 </head>
 <body>
-  <header style="display:flex;justify-content:space-between;align-items:center;padding:14px 20px;background:#0f172a;color:#fff">
+  <header>
     <h1 style="margin:0;font-size:20px">用故事學英文：雙語字幕、測驗與單字</h1>
     <div id="authArea" style="display:flex;gap:10px;align-items:center">
       <button id="btnLogin" class="btn">登入</button>
@@ -15,11 +23,43 @@
     </div>
   </header>
 
-  <main style="padding:20px">
-    <p>從下方卡片選擇故事開始。大多數內容需登入後觀看，《中秋節》為免費試看。</p>
+  <main>
     <div class="cards">
-      <!-- 這裡放三個故事卡片（中秋節 / 后羿射日 / 元宵節） -->
-      <!-- 已有內容不用改 -->
+      <!-- 免費試看：mid-autumn（不需登入） -->
+      <article class="card">
+        <img src="./thumbs/mid-autumn.jpg" alt="" style="width:100%;aspect-ratio:16/9;object-fit:cover">
+        <div class="body">
+          <h3>中秋節</h3>
+          <div style="display:flex;gap:12px">
+            <a class="btn" href="./player.html?slug=mid-autumn">前往 ►</a>
+            <a class="btn" href="./player.html?slug=mid-autumn&tab=quiz">測驗</a>
+          </div>
+        </div>
+      </article>
+
+      <!-- 需要登入：houyi（加 data-requires-auth） -->
+      <article class="card">
+        <img src="./thumbs/houyi.jpg" alt="" style="width:100%;aspect-ratio:16/9;object-fit:cover">
+        <div class="body">
+          <h3>后羿射日</h3>
+          <div style="display:flex;gap:12px">
+            <a class="btn" href="./player.html?slug=houyi" data-requires-auth>前往 ►</a>
+            <a class="btn" href="./player.html?slug=houyi&tab=quiz" data-requires-auth>測驗</a>
+          </div>
+        </div>
+      </article>
+
+      <!-- 需要登入：lantern -->
+      <article class="card">
+        <img src="./thumbs/lantern.jpg" alt="" style="width:100%;aspect-ratio:16/9;object-fit:cover">
+        <div class="body">
+          <h3>元宵節</h3>
+          <div style="display:flex;gap:12px">
+            <a class="btn" href="./player.html?slug=lantern" data-requires-auth>前往 ►</a>
+            <a class="btn" href="./player.html?slug=lantern&tab=quiz" data-requires-auth>測驗</a>
+          </div>
+        </div>
+      </article>
     </div>
   </main>
 
