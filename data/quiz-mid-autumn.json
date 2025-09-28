@@ -8,113 +8,105 @@
   {
     "type": "mcq",
     "q": "Who is the goddess that is said to live on the moon?",
-    "options": ["Mulan", "Chang’e", "Nuwa", "Hou Yi"],
+    "options": ["Mulan", "Chang'e", "Nuwa", "Hou Yi"],
     "a": 1
   },
   {
     "type": "mcq",
-    "q": "What do families traditionally do together during the Mid-Autumn Festival?",
-    "options": [
-      "Watch TV",
-      "Eat mooncakes and admire the moon",
-      "Go swimming",
-      "Fly kites"
-    ],
-    "a": 1
-  },
-  {
-    "type": "mcq",
-    "q": "Which of these is a symbol of reunion in Chinese culture?",
-    "options": ["Sun", "Moon", "Star", "Cloud"],
+    "q": "What do people traditionally do with mooncakes during the festival?",
+    "options": ["Use them as lanterns", "Eat and share them with family", "Throw them into rivers", "Plant them in the ground"],
     "a": 1
   },
   {
     "type": "tf",
-    "q": "The Mid-Autumn Festival is celebrated on the 15th day of the 8th lunar month.",
+    "q": "The Mid-Autumn Festival is always on the fifteenth day of the eighth month in the lunar calendar.",
     "a": true
   },
   {
     "type": "tf",
-    "q": "People eat dumplings as the main food for the Mid-Autumn Festival.",
+    "q": "People eat dumplings to celebrate the Mid-Autumn Festival.",
     "a": false
   },
   {
     "type": "fill",
-    "q": "The Mid-Autumn Festival is also known as the ______ Festival.",
+    "q": "The Mid-Autumn Festival is also called the ______ Festival.",
     "a": "Moon"
   },
   {
     "type": "fill",
-    "q": "Families enjoy eating ______ together while looking at the moon.",
-    "a": "mooncakes"
+    "q": "Families often gather together to admire the full ______.",
+    "a": "moon"
   },
   {
     "type": "mcq",
-    "q": "Which animal is often seen with Chang’e in the legend?",
-    "options": ["Dog", "Rabbit", "Horse", "Dragon"],
+    "q": "Which of the following is a common activity during the Mid-Autumn Festival?",
+    "options": ["Dragon boat racing", "Lantern lighting", "Snowball fights", "Firecracker contests"],
     "a": 1
   },
   {
     "type": "mcq",
-    "q": "Hou Yi is famous for shooting down how many suns?",
-    "options": ["1", "5", "9", "10"],
-    "a": 2
-  },
-  {
-    "type": "mcq",
-    "q": "What shape are mooncakes usually made in?",
-    "options": ["Square", "Round", "Triangle", "Star"],
-    "a": 1
-  },
-  {
-    "type": "mcq",
-    "q": "Which of these activities is often done during the festival?",
-    "options": ["Lantern displays", "Dragon boat racing", "Firecracker shows", "Temple fairs"],
+    "q": "Which character is Hou Yi best known for?",
+    "options": ["Shooting down nine suns", "Building the Great Wall", "Inventing tea", "Teaching Confucius"],
     "a": 0
   },
   {
     "type": "tf",
-    "q": "The moon is considered a symbol of separation in Chinese culture.",
+    "q": "Chang’e is said to have flown to the sun after eating the elixir.",
     "a": false
   },
   {
     "type": "tf",
-    "q": "The Mid-Autumn Festival is one of the most important traditional Chinese festivals.",
+    "q": "Lanterns are often used as decoration during the Mid-Autumn Festival.",
     "a": true
   },
   {
     "type": "fill",
-    "q": "Hou Yi’s wife was named ______.",
-    "a": "Chang’e"
+    "q": "Hou Yi received a special ______ that could make someone immortal.",
+    "a": "pill"
   },
   {
     "type": "fill",
-    "q": "People light ______ to celebrate during the festival.",
-    "a": "lanterns"
+    "q": "Peng Meng wanted to steal the ______ of immortality.",
+    "a": "pill"
   },
   {
     "type": "mcq",
-    "q": "The legend says Chang’e flew to the moon after drinking what?",
-    "options": ["Wine", "Immortality potion", "Tea", "Water"],
+    "q": "Why did Chang’e eat the pill?",
+    "options": ["Because she was hungry", "To keep it safe from Peng Meng", "To make Hou Yi happy", "To celebrate the festival"],
     "a": 1
   },
   {
     "type": "mcq",
-    "q": "What does the round shape of mooncakes symbolize?",
-    "options": ["Happiness", "Reunion", "Luck", "Longevity"],
+    "q": "What shape is the mooncake usually?",
+    "options": ["Square", "Round", "Triangle", "Heart-shaped"],
     "a": 1
   },
   {
-    "type": "mcq",
-    "q": "What is often written on or inside mooncakes?",
-    "options": ["Poems", "Family names", "Blessings", "Stories"],
-    "a": 2
+    "type": "tf",
+    "q": "The Mid-Autumn Festival is mainly a festival about studying for exams.",
+    "a": false
+  },
+  {
+    "type": "tf",
+    "q": "Families gather together at night to admire the bright moon.",
+    "a": true
+  },
+  {
+    "type": "fill",
+    "q": "The Mid-Autumn Festival is a time to give thanks for the year’s good ______.",
+    "a": "harvest"
   },
   {
     "type": "mcq",
     "q": "Which season does the Mid-Autumn Festival take place in?",
     "options": ["Spring", "Summer", "Autumn", "Winter"],
     "a": 2
+  },
+  {
+    "type": "mcq",
+    "q": "Which of the following is a symbol of reunion during the festival?",
+    "options": ["Lanterns", "Mooncakes", "Dragons", "Fireworks"],
+    "a": 1
   }
 ]
 
