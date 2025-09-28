@@ -1,6 +1,6 @@
-/* player.js — v7.2 + Quiz Cert + Flat/Items JSON兼容
-   - 保留原字幕 / 單字流程
-   - 測驗：支援扁平陣列或 {title, slug, items:[...]} 兩種 JSON；交卷含「列印成就證書」。
+/* player.js — v7.2 + Quiz Cert (A4 with per-question log) + Flat/Items JSON兼容
+   - 保留原字幕 / 單字流程（讀 ./data/cues-<slug>.json、./data/vocab-<slug>.json）
+   - 測驗支援扁平陣列或 {title, slug, items:[...]}；交卷可列印直印 A4 證書，附逐題作答紀錄。
 */
 
 (() => {
@@ -22,7 +22,7 @@
   // -------- URL Query --------
   const params = new URLSearchParams(location.search);
   const slug   = params.get('slug') || 'mid-autumn';
-  const setTab = params.get('tab'); // 可用 ?tab=quiz 直接進測驗頁
+  const setTab = params.get('tab'); // 可用 ?tab=quiz 直接進測驗
 
   // -------- 狀態 / 工具 --------
   let cues = [];
@@ -108,7 +108,6 @@
     const list = await resolveVocab(slug);
     if (!list || !list.length){ vocabStatus.textContent='⚠️ 查無單字資料'; vocabBox.innerHTML=''; return; }
     vocabStatus.textContent='';
-    // 支援陣列物件：{time, word, pos, zh, en}
     vocabBox.innerHTML = `
       <table><thead><tr>
         <th class="muted">時間</th><th>單字</th><th class="muted">詞性</th><th>中文</th><th class="muted">英文解釋</th>
@@ -160,24 +159,22 @@
   })();
 
   /* ================================
-     QUIZ MODULE（兼容 + 列印證書）
+     QUIZ MODULE（兼容 + A4 證書 + 題目清單）
      ================================ */
   async function fetchQuizJson() {
-    // 讀 data/quiz-<slug>.json
     try{
       const r = await fetch(`./data/quiz-${slug}.json`, { cache:'no-store' });
       if (r.ok) return await r.json();
     }catch{}
     return null;
   }
-
-  // 兼容：扁平陣列或 { items:[...] }
   function normalizeQuizData(raw){
     if (!raw) return [];
     if (Array.isArray(raw)) return raw;
     if (raw && Array.isArray(raw.items)) return raw.items;
     return [];
   }
+  function textOfTF(val){ return val ? 'True' : 'False'; }
 
   // 取得題目正確判定方法（兼容 a / answer；字串/布林/數字）
   function isCorrect(q, ans){
@@ -185,9 +182,7 @@
     const expect = (q.a!==undefined)? q.a : q.answer;
 
     if (type==='mcq'){
-      // 數字索引
       if (typeof expect === 'number') return ans === expect;
-      // 若是字串，允許比對選項文字
       if (typeof expect === 'string'){
         const opt = (q.options||[])[ans];
         return String(opt||'').trim().toLowerCase() === String(expect).trim().toLowerCase();
@@ -202,44 +197,81 @@
     return false;
   }
 
-  // ===== 列印「成就證書」 =====
-  function printCertificate({ name='', slug='', scorePct=0, correct=0, total=0 }) {
+  // ===== 列印「成就證書」(直印 A4，附逐題) =====
+  function printCertificate({ name='', slug='', scorePct=0, correct=0, total=0, rows=[] }) {
     const esc2 = s => String(s??'').replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;');
     const nowStr = () => {
       const d=new Date(), p=n=>String(n).padStart(2,'0');
       return `${d.getFullYear()}-${p(d.getMonth()+1)}-${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}`;
     };
     const w = window.open('', '_blank');
+    const tableRows = rows.map((r,i)=>`
+      <tr class="${r.ok?'ok':'ng'}">
+        <td>${i+1}</td>
+        <td>${esc2(r.q)}</td>
+        <td>${esc2(r.your)}</td>
+        <td>${esc2(r.correct)}</td>
+        <td>${r.ok?'✔':'✘'}</td>
+        <td class="muted">${esc2(r.explain||'')}</td>
+      </tr>
+    `).join('');
+
     w.document.write(`
 <!doctype html><html lang="zh-Hant"><head><meta charset="utf-8"/>
 <title>成就證書 - ${esc2(slug)}</title>
 <style>
-:root{--ink:#0f172a;--muted:#64748b;--gold:#b45309;--accent:#2563eb;--frame:#eab308;--bg:#fffdf5}
-*{box-sizing:border-box} body{margin:24px;background:var(--bg);color:var(--ink);font:16px/1.7 "Noto Sans TC",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial}
-.wrap{border:12px solid var(--frame);border-radius:20px;padding:28px;position:relative}
-.inner{border:3px dashed #f59e0b;border-radius:14px;padding:28px}
-.title{font-size:36px;text-align:center;letter-spacing:2px;margin:0 0 8px;font-weight:800;color:var(--gold)}
-.sub{text-align:center;color:var(--muted);margin-bottom:26px}
-.name{text-align:center;font-size:28px;margin:14px 0;font-weight:700}
-.score{text-align:center;font-size:22px;margin:6px 0 14px}
-.score b{font-size:28px;color:var(--accent)}
-.meta{text-align:center;color:var(--muted);margin-bottom:22px}
-.badge{position:absolute;top:-16px;right:-16px;background:#f59e0b;color:#fff;border-radius:999px;padding:10px 14px;font-weight:700;box-shadow:0 3px 10px rgba(0,0,0,.15)}
+@page { size: A4 portrait; margin: 18mm; }
+:root{--ink:#0f172a;--muted:#64748b;--gold:#b45309;--accent:#2563eb;--frame:#eab308;--bg:#fffdf5;--ok:#16a34a;--ng:#e11d48}
+*{box-sizing:border-box} body{margin:0;background:var(--bg);color:var(--ink);font:14px/1.7 "Noto Sans TC",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial}
+.wrap{border:10px solid var(--frame);border-radius:16px;padding:16px}
+h1{font-size:28px;margin:0 0 4px;text-align:center;color:var(--gold)}
+.sub{text-align:center;color:var(--muted);margin-bottom:14px}
+.kv{display:flex;gap:10px;flex-wrap:wrap;align-items:center;justify-content:center;margin-bottom:10px}
+.kv .name{font-size:20px;font-weight:700}
+.kv .score{font-size:18px}
+.kv .score b{color:var(--accent)}
+.meta{color:var(--muted);text-align:center;margin-bottom:10px}
+.note{text-align:center;margin-bottom:14px}
 .print{position:fixed;right:18px;top:18px}
-.btn{background:#0ea5e9;color:#fff;border:none;padding:10px 14px;border-radius:10px;cursor:pointer}
-@media print{ .print{display:none} body{margin:0} }
+.btn{background:#0ea5e9;color:#fff;border:none;padding:8px 12px;border-radius:10px;cursor:pointer}
+@media print{ .print{display:none} }
+
+table{width:100%;border-collapse:collapse;margin-top:6px}
+thead th{background:#fef3c7;border:1px solid #eab308;padding:6px;text-align:left}
+tbody td{border:1px solid #e2e8f0;padding:6px;vertical-align:top}
+tbody tr.ok td:nth-last-child(2){color:var(--ok);font-weight:700}
+tbody tr.ng td:nth-last-child(2){color:var(--ng);font-weight:700}
+.muted{color:var(--muted)}
+.footer{margin-top:10px;font-size:12px;color:#475569}
 </style></head><body>
 <div class="print"><button class="btn" onclick="window.print()">列印 / 另存 PDF</button></div>
 <div class="wrap">
-  <div class="badge">CERTIFIED</div>
-  <div class="inner">
-    <h1 class="title">英語影片學習 成就證書</h1>
-    <div class="sub">Achievement Certificate</div>
-    <div class="name">${esc2(name || '（未填姓名）')}</div>
-    <div class="score">通過 <b>${esc2(slug)}</b> 題組　成績 <b>${scorePct}%</b>（${correct}/${total}）</div>
-    <div class="meta">發證日期：${esc2(nowStr())}</div>
-    <div style="text-align:center;color:#334155">特此證明上述學員已完成影片學習與測驗，並達到該題組之學習目標。</div>
+  <h1>英語影片學習 成就證書</h1>
+  <div class="sub">Achievement Certificate</div>
+  <div class="kv">
+    <div class="name">學員：${esc2(name || '（未填姓名）')}</div>
+    <div class="score">題組：<b>${esc2(slug)}</b>　成績：<b>${scorePct}%</b>（${correct}/${total}）</div>
   </div>
+  <div class="meta">發證日期：${esc2(nowStr())}</div>
+  <div class="note">下列為本次作答紀錄：</div>
+
+  <table>
+    <thead>
+      <tr>
+        <th style="width:36px">#</th>
+        <th>題目</th>
+        <th>你的答案</th>
+        <th>正解</th>
+        <th style="width:42px">對錯</th>
+        <th>說明</th>
+      </tr>
+    </thead>
+    <tbody>
+      ${tableRows}
+    </tbody>
+  </table>
+
+  <div class="footer">本證書僅作為學習參考。建議持續複習重點句與單字，加深語感與聽力能力。</div>
 </div>
 </body></html>`);
     w.document.close();
@@ -312,7 +344,6 @@
               ansLine.innerHTML=`✅ 正確！<span class="muted">（${esc(q.explain||'Good!')}）</span>`;
               ansLine.style.color='#5bd3c7';
             }else{
-              // 顯示正解
               let showAns = '';
               if (typeof q.a === 'number') showAns = (q.options||[])[q.a] || '';
               else if (typeof q.answer === 'number') showAns = (q.options||[])[q.answer] || '';
@@ -409,17 +440,42 @@
     result.style.flex='1 1 100%';
     result.style.marginTop='6px';
 
-    // === 交卷（含列印成就證書） ===
+    // === 交卷（含列印成就證書，帶逐題） ===
     btnSubmit.addEventListener('click', ()=>{
       localStorage.setItem('qzName', nameIpt.value.trim());
 
       let correct=0;
-      data.forEach((q,i)=>{
+      const rows = data.map((q,i)=>{
         const type=String(q.type||'').toLowerCase();
-        if (type==='mcq' || type==='tf' || type==='fill'){
-          if (isCorrect(q, answers[i])) correct++;
+        const expect = (q.a!==undefined)? q.a : q.answer;
+        let yourText = '';
+        let correctText = '';
+
+        if (type==='mcq'){
+          const yourIdx = answers[i];
+          yourText = (q.options||[])[yourIdx] ?? '';
+          if (typeof expect === 'number') correctText = (q.options||[])[expect] ?? '';
+          else correctText = String(expect??'');
+        }else if (type==='tf'){
+          yourText = textOfTF(Boolean(answers[i]));
+          correctText = textOfTF(Boolean(expect));
+        }else if (type==='fill'){
+          yourText   = String(answers[i]??'');
+          correctText= String(expect??'');
         }
+
+        const ok = isCorrect(q, answers[i]);
+        if (ok) correct++;
+
+        return {
+          q: q.q || q.question || '',
+          your: yourText,
+          correct: correctText,
+          ok,
+          explain: q.explain || ''
+        };
       });
+
       const tot = data.length || 1;
       const pct = Math.round(correct/tot*100);
 
@@ -440,7 +496,8 @@
           slug,
           scorePct: pct,
           correct,
-          total: tot
+          total: tot,
+          rows
         });
       });
       result.appendChild(btnCert);
@@ -453,6 +510,7 @@
   }
 
 })();
+
 
 
 
