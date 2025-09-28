@@ -244,6 +244,234 @@
 
   if(qzTabBtn) qzTabBtn.addEventListener('click', loadOnce);
 })();
+/* ============================================
+   QUIZ CERT ADD-ON (Drop-in, no merge needed)
+   － 直接貼在 player.js 最尾端即可
+   － 會接手 #pane-quiz / #quizBox / #quizStatus 的渲染
+   － 功能：作答顯示正誤、交卷、姓名、列印「證書」(Certificate)
+   ============================================ */
+(() => {
+  const $ = (s, el=document) => el.querySelector(s);
+  const params = new URLSearchParams(location.search);
+  const slug   = params.get('slug') || 'mid-autumn';
+
+  // 若頁面沒有測驗容器，直接跳出（不影響其它）
+  const pane  = $('#pane-quiz');
+  const box   = $('#quizBox');
+  const stat  = $('#quizStatus');
+  if (!pane || !box || !stat) return;
+
+  // 安全字串 + 時間
+  const esc = s => String(s ?? '')
+      .replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;');
+  const nowStr = () => {
+    const d = new Date();
+    const p = n => String(n).padStart(2,'0');
+    return `${d.getFullYear()}-${p(d.getMonth()+1)}-${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}`;
+  };
+
+  // 讀 JSON（Supabase 公桶優先，讀不到退本地；若你沒設 SUPA_URL / SUPA_BUCKET 就直接本地）
+  const SUPA_URL    = window.SUPA_URL    || null;
+  const SUPA_BUCKET = window.SUPA_BUCKET || null;
+  const pubUrl = (path) => `${SUPA_URL}/storage/v1/object/public/${SUPA_BUCKET}/${path}`;
+  async function fetchQuizJson() {
+    // 1) Supabase storage
+    if (SUPA_URL && SUPA_BUCKET) {
+      try {
+        const r = await fetch(pubUrl(`data/quiz-${slug}.json`), { cache:'no-store' });
+        if (r.ok) return await r.json();
+      } catch {}
+    }
+    // 2) local
+    const r2 = await fetch(`./data/quiz-${slug}.json`, { cache:'no-store' });
+    if (r2.ok) return await r2.json();
+    return null;
+  }
+
+  // 列印「證書」視窗
+  function printCertificate({ name='', scorePct=0, correct=0, total=0 }) {
+    const win = window.open('', '_blank');
+    const html = `
+<!doctype html><html lang="zh-Hant"><head>
+<meta charset="utf-8"/>
+<title>成就證書 - ${esc(slug)}</title>
+<style>
+  :root{
+    --ink:#0f172a; --muted:#64748b; --gold:#b45309; --accent:#2563eb; --frame:#eab308;
+    --bg:#fffdf5;
+  }
+  *{box-sizing:border-box}
+  body{margin:24px;background:var(--bg);color:var(--ink);font:16px/1.7 "Noto Sans TC",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial}
+  .wrap{border:12px solid var(--frame); border-radius:20px; padding:28px; position:relative}
+  .inner{border:3px dashed #f59e0b; border-radius:14px; padding:28px}
+  .title{font-size:36px; text-align:center; letter-spacing:2px; margin:0 0 8px; font-weight:800; color:var(--gold)}
+  .sub{ text-align:center; color:var(--muted); margin-bottom:26px }
+  .name{ text-align:center; font-size:28px; margin:14px 0; font-weight:700 }
+  .score{ text-align:center; font-size:22px; margin:6px 0 14px }
+  .score b{ font-size:28px; color:var(--accent) }
+  .meta{ text-align:center; color:var(--muted); margin-bottom:22px }
+  .sign{ display:flex; justify-content:space-between; align-items:flex-end; margin-top:28px }
+  .sign .line{ border-top:1px solid #94a3b8; padding-top:4px; width:42%; text-align:center; color:#475569 }
+  .badge{ position:absolute; top:-16px; right:-16px; background:#f59e0b; color:white; border-radius:999px; padding:10px 14px; font-weight:700; box-shadow:0 3px 10px rgba(0,0,0,.15)}
+  .print{ position:fixed; right:18px; top:18px }
+  .btn{ background:#0ea5e9; color:#fff; border:none; padding:10px 14px; border-radius:10px; cursor:pointer}
+  @media print{ .print{display:none} body{margin:0} }
+</style>
+</head><body>
+  <div class="print"><button class="btn" onclick="window.print()">列印 / 另存 PDF</button></div>
+  <div class="wrap">
+    <div class="badge">CERTIFIED</div>
+    <div class="inner">
+      <h1 class="title">英語影片學習 成就證書</h1>
+      <div class="sub">Achievement Certificate</div>
+
+      <div class="name">${esc(name || '（未填姓名）')}</div>
+      <div class="score">通過 <b>${esc(slug)}</b> 題組　成績 <b>${scorePct}%</b>（${correct}/${total}）</div>
+      <div class="meta">發證日期：${esc(nowStr())}</div>
+
+      <div style="text-align:center;color:#334155">
+        特此證明上述學員已完成影片學習與測驗，並達到該題組之學習目標。
+      </div>
+
+      <div class="sign">
+        <div class="line">指導老師簽章</div>
+        <div class="line">單位 / 課程</div>
+      </div>
+    </div>
+  </div>
+</body></html>`;
+    win.document.write(html);
+    win.document.close();
+  }
+
+  // 渲染整個測驗 UI（會覆蓋原本內容）
+  async function mountQuiz() {
+    stat.textContent = '載入測驗中…';
+    const data = await fetchQuizJson();
+    if (!Array.isArray(data) || !data.length) {
+      stat.textContent = '⚠️ 查無測驗資料';
+      box.innerHTML = '';
+      return;
+    }
+    stat.textContent = '';
+
+    // 清空原本內容（避免與舊版重疊）
+    box.innerHTML = '';
+
+    const userAns = Array(data.length).fill(-1);
+
+    // 題目
+    data.forEach((q, qi) => {
+      const wrap = document.createElement('div');
+      wrap.style.padding = '12px 14px';
+      wrap.style.borderBottom = '1px solid #14243b';
+
+      const title = document.createElement('div');
+      title.innerHTML = `<b>Q${qi+1}.</b> ${esc(q.q)}`;
+      title.style.marginBottom = '6px';
+      wrap.appendChild(title);
+
+      q.a.forEach((opt, ai) => {
+        const label = document.createElement('label');
+        label.style.display = 'block';
+        label.style.margin = '4px 0';
+        label.style.cursor = 'pointer';
+        label.innerHTML = `<input type="radio" name="certq_${qi}"> <span style="margin-left:6px">${esc(opt)}</span>`;
+        label.querySelector('input').addEventListener('change', () => {
+          userAns[qi] = ai;
+          ansLine.style.display = 'block';
+          if (ai === q.answerIndex) {
+            ansLine.innerHTML = `✅ 正確！Ans: ${q.answerIndex+1}．${esc(q.a[q.answerIndex])} <span class="muted">（${esc(q.explain||'Good!')}）</span>`;
+            ansLine.style.color = '#5bd3c7';
+          } else {
+            ansLine.innerHTML = `❌ 再試試。正解：${q.answerIndex+1}．${esc(q.a[q.answerIndex])} <span class="muted">（${esc(q.explain||'')}）</span>`;
+            ansLine.style.color = '#ff6b6b';
+          }
+        });
+        wrap.appendChild(label);
+      });
+
+      const ansLine = document.createElement('div');
+      ansLine.className = 'muted';
+      ansLine.style.marginTop = '6px';
+      ansLine.style.display = 'none';
+      wrap.appendChild(ansLine);
+
+      box.appendChild(wrap);
+    });
+
+    // 交卷 + 姓名 + 證書列印
+    const submitRow = document.createElement('div');
+    submitRow.style.padding = '14px';
+    submitRow.style.display = 'flex';
+    submitRow.style.flexWrap = 'wrap';
+    submitRow.style.gap = '10px';
+    submitRow.style.alignItems = 'center';
+    submitRow.style.borderTop = '1px solid #14243b';
+
+    const nameBox = document.createElement('input');
+    nameBox.type = 'text';
+    nameBox.placeholder = '輸入姓名（記憶於此裝置）';
+    nameBox.value = localStorage.getItem('qzName') || '';
+    Object.assign(nameBox.style, {
+      padding:'8px 10px', border:'1px solid #334155', borderRadius:'8px',
+      background:'#0f223b', color:'#dbe7ff', flex:'1 1 260px'
+    });
+    submitRow.appendChild(nameBox);
+
+    const btnSubmit = document.createElement('button');
+    btnSubmit.className = 'btn green';
+    btnSubmit.textContent = '交卷';
+    btnSubmit.style.padding = '8px 12px';
+    btnSubmit.style.borderRadius = '10px';
+    btnSubmit.style.background = '#10b981';
+    btnSubmit.style.border = 'none';
+    btnSubmit.style.color = '#fff';
+    submitRow.appendChild(btnSubmit);
+
+    const resultBox = document.createElement('div');
+    resultBox.style.flex = '1 1 100%';
+    resultBox.style.marginTop = '6px';
+    submitRow.appendChild(resultBox);
+
+    btnSubmit.addEventListener('click', () => {
+      localStorage.setItem('qzName', nameBox.value.trim());
+
+      let correct = 0;
+      data.forEach((q,i)=>{ if (userAns[i] === q.answerIndex) correct++; });
+      const total = data.length;
+      const pct   = Math.round(correct/total*100);
+
+      resultBox.innerHTML = `
+        <div><b>成績</b>：${correct}/${total}（${pct}%）</div>
+        <div class="muted" style="margin-top:4px">
+          老師建議：${pct>=80?'很棒！可挑戰更快播放或加深詞彙':'建議先理解每題說明，回到影片複習重點句。'}
+        </div>`;
+
+      const btnCert = document.createElement('button');
+      btnCert.textContent = '列印「成就證書」/ 另存 PDF';
+      btnCert.className = 'btn';
+      btnCert.style.marginTop = '8px';
+      btnCert.addEventListener('click', () => {
+        printCertificate({
+          name: nameBox.value.trim(),
+          scorePct: pct, correct, total
+        });
+      });
+      resultBox.appendChild(btnCert);
+    });
+
+    box.appendChild(submitRow);
+  }
+
+  // 只有點「測驗」分頁才掛載（避免初始就重排）
+  const tabBtn = document.querySelector('.tab[data-tab="quiz"]');
+  if (tabBtn) tabBtn.addEventListener('click', mountQuiz);
+
+  // 若預設就在測驗頁，也兜一層保險
+  if (getComputedStyle(pane).display !== 'none') mountQuiz();
+})();
+
 
 
 
