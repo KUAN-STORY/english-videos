@@ -2,17 +2,32 @@
 <html lang="zh-Hant">
 <head>
   <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
   <title>英語影片播放器</title>
   <style>
-    body{margin:0;background:#0b1220;color:#e6efff;font-family:ui-sans-serif,system-ui}
-    header{display:flex;justify-content:space-between;align-items:center;padding:14px 20px;background:#0f172a}
+    :root{
+      --ink:#e6efff;--bg:#0b1220;--panel:#0f172a;--border:#1f2a44;--muted:#9fb0c9;--accent:#3c7cff;
+    }
+    *{box-sizing:border-box}
+    body{margin:0;background:var(--bg);color:var(--ink);font-family:ui-sans-serif,system-ui}
+    header{display:flex;justify-content:space-between;align-items:center;padding:14px 20px;background:#0f172a;border-bottom:1px solid var(--border)}
     .btn{background:#1e293b;color:#e6efff;border:1px solid #334155;border-radius:10px;padding:8px 12px;cursor:pointer}
     .wrap{display:flex;gap:20px;padding:20px}
     #videoWrap{width:48%}
-    .right{flex:1;min-width:0;background:#0f172a;border:1px solid #1f2a44;border-radius:12px}
-    .tabs{display:flex;gap:10px;padding:12px;border-bottom:1px solid #1f2a44}
+    .right{flex:1;min-width:0;background:#0f172a;border:1px solid var(--border);border-radius:12px;display:flex;flex-direction:column}
+    .tabs{display:flex;gap:10px;padding:12px;border-bottom:1px solid var(--border)}
     .tab{background:#122340;border:1px solid #1f375f;border-radius:10px;padding:8px 12px;cursor:pointer}
     .tab.active{background:#154274}
+    .content{flex:1;overflow:auto}
+    table{width:100%;border-collapse:collapse}
+    th,td{padding:10px 12px;border-bottom:1px solid #14243b;vertical-align:top}
+    tbody tr{background:#0f1f34}
+    tbody tr:nth-child(2n){background:#10243d}
+    tr.active{background:#1b335a}
+    .muted{color:var(--muted)}
+    .subToolbar{display:flex;gap:10px;align-items:center;padding:12px;border-bottom:1px solid var(--border)}
+    .chip{background:#0f223b;border:1px solid #163052;border-radius:10px;padding:6px 10px;display:inline-flex;gap:8px;align-items:center}
+    .status{padding:10px 14px;color:var(--muted)}
   </style>
 </head>
 <body>
@@ -29,8 +44,29 @@
     <!-- 左側：影片 + 控制 -->
     <section id="videoWrap">
       <video id="player" controls style="width:100%;border-radius:10px;background:#000"></video>
-      <!-- 你的控制列（上一句/下一句/重播…）照舊，這裡略 -->
-      <div id="controls" style="margin-top:10px">…</div>
+
+      <!-- 你的控制列（與 v7.2 對齊的 id） -->
+      <div class="ctrl" style="margin-top:12px;background:#0b1726;border-radius:12px;padding:14px">
+        <div class="row" style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:10px">
+          <button id="btnPrev" class="btn">⏮ 上一句</button>
+          <button id="btnPlay" class="btn">▶️ 播放</button>
+          <button id="btnNext" class="btn">⏭ 下一句</button>
+          <button id="btnReplay" class="btn">🔁 重複本句</button>
+          <button id="btnAutoPause" class="btn">🧠 逐句自動暫停</button>
+          <button id="btnLoopSentence" class="btn">🔂 整段循環</button>
+        </div>
+        <div class="row" style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:10px">
+          <button id="btnAB" class="btn">🅰🅱 A-B 循環</button>
+          <button id="btnPointLoop" class="btn">🎯 點句即循環</button>
+          <button id="btnClearLoop" class="btn">🧹 取消循環</button>
+          <button id="btnFill" class="btn">🖼 填滿畫面</button>
+        </div>
+        <div class="row" style="display:flex;gap:10px;align-items:center">
+          <span class="muted">速度</span>
+          <input type="range" id="speedRange" min="0.5" max="2" step="0.05" value="1" />
+          <span id="speedVal" class="muted">1.00x</span>
+        </div>
+      </div>
     </section>
 
     <!-- 右側：字幕 / 測驗 / 單字 -->
@@ -40,14 +76,68 @@
         <div class="tab" data-tab="quiz">測驗</div>
         <div class="tab" data-tab="vocab">單字</div>
       </div>
-      <div id="pane-sub">…（字幕表格）…</div>
-      <div id="pane-quiz" style="display:none">…（測驗容器）…</div>
-      <div id="pane-vocab" style="display:none">…（單字容器）…</div>
+
+      <!-- 字幕工具列 -->
+      <div id="subToolbar" class="subToolbar">
+        <label class="chip"><input id="chkFollow" type="checkbox" checked /> 跟隨</label>
+        <span class="chip">偏移 <span id="offsetVal">0.0s</span></span>
+        <button id="btnOffsetMinus" class="btn">-0.5s</button>
+        <button id="btnOffsetPlus" class="btn">+0.5s</button>
+        <span class="muted" style="margin-left:auto">( 資料待串接 )</span>
+      </div>
+
+      <div class="content">
+        <!-- 字幕 -->
+        <div id="pane-sub">
+          <table>
+            <thead>
+              <tr><th style="width:80px">時間</th><th>英文</th><th style="width:40%">中文</th></tr>
+            </thead>
+            <tbody id="cuesBody"></tbody>
+          </table>
+          <div id="cuesStatus" class="status"></div>
+        </div>
+
+        <!-- 測驗 -->
+        <div id="pane-quiz" style="display:none">
+          <div id="quizStatus" class="status">( 尚未載入 )</div>
+          <div id="quizBox"></div>
+        </div>
+
+        <!-- 單字 -->
+        <div id="pane-vocab" style="display:none">
+          <div id="vocabStatus" class="status">( 尚未載入 )</div>
+          <div id="vocabBox"></div>
+        </div>
+      </div>
     </section>
   </main>
 
+  <!-- 先載 player.js（v7.2）再載假登入 -->
   <script src="./player.js"></script>
   <script src="./login.js"></script>
+
+  <!-- 依 URL ?tab=quiz 自動切分頁 -->
+  <script>
+    (function(){
+      const params = new URLSearchParams(location.search);
+      const tab = params.get('tab');
+      if(!tab) return;
+
+      const tabs = document.querySelectorAll('.tab');
+      const paneSub   = document.getElementById('pane-sub');
+      const paneQuiz  = document.getElementById('pane-quiz');
+      const paneVocab = document.getElementById('pane-vocab');
+
+      function show(name){
+        tabs.forEach(x=>x.classList.toggle('active', x.dataset.tab===name));
+        paneSub.style.display   = (name==='sub')  ? '' : 'none';
+        paneQuiz.style.display  = (name==='quiz') ? '' : 'none';
+        paneVocab.style.display = (name==='vocab')? '' : 'none';
+      }
+      if (['sub','quiz','vocab'].includes(tab)) show(tab);
+    })();
+  </script>
 </body>
 </html>
 
