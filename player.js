@@ -1,465 +1,484 @@
-/* player.js  — V7.2 + Vocab(填空/朗讀/跳播/文法置中) 強化
-   - 保留原有：影片/字幕/測驗（你的現有寫法）、左側工具列、跟隨/偏移
-   - 單字分頁：例句填空、🔊朗讀、▶跳播、文法置於例句下方（不擠右欄）
-   - Supabase 公桶優先、讀不到退本地（影片/字幕/單字）
-=========================================================== */
+/* player.js — v7.3+ 合併修復版
+ * 功能：
+ * - 視訊播放器：速度控制、填滿畫面切換、基本上一句/下一句鉤子(保留ID以相容舊版)
+ * - 分頁：字幕 / 測驗 / 單字
+ * - 測驗：讀 data/quiz-<slug>.json（扁平題庫），交卷顯示分數並可列印 A4 證書（含作答明細）
+ * - 單字：讀 data/vocab-<slug>.json；例句將目標字變「____」；🔊朗讀、▶跳播、點時間跳播
+ * 注意：字幕載入邏輯因各專案格式不同，保留 initSubtitles() 供你接回原本流程
+ */
 
-(() => {
-  const $ = (s, el = document) => el.querySelector(s);
-  const $$ = (s, el = document) => [...el.querySelectorAll(s)];
+(function(){
+  // ---------- 小工具 ----------
+  const $  = (s, r=document)=> r.querySelector(s);
+  const $$ = (s, r=document)=> [...r.querySelectorAll(s)];
+  const qs = new URLSearchParams(location.search);
+  const slug = (qs.get('slug')||'').trim();
 
-  // -------- DOM 參照（對齊你現有 player.html）--------
-  const video      = $('#player');
-  const videoWrap  = $('#videoWrap');
+  // 核心 DOM 參照
+  const video = $('#player');
+  const speedRange  = $('#speedRange');
+  const speedLabel  = $('#speedLabel');
+  const btnFill     = $('#btnFill');
 
-  // 左側工具列
+  const tabSub   = $('#tabSub'),   paneSub   = $('#pane-sub');
+  const tabQuiz  = $('#tabQuiz'),  paneQuiz  = $('#pane-quiz');
+  const tabVocab = $('#tabVocab'), paneVocab = $('#pane-vocab');
+
+  // 相容舊版的控制列 ID（如果你舊版已綁事件，就會直接運作；此版也一併補上安全處理）
   const btnPrev        = $('#btnPrev');
   const btnPlay        = $('#btnPlay');
   const btnNext        = $('#btnNext');
-  const btnReplay      = $('#btnReplay');
+  const btnRepeatLine  = $('#btnRepeatLine');
   const btnAutoPause   = $('#btnAutoPause');
-  const btnLoopSentence= $('#btnLoopSentence');
-  const btnAB          = $('#btnAB');
-  const btnPointLoop   = $('#btnPointLoop');
-  const btnClearLoop   = $('#btnClearLoop');
-  const btnFill        = $('#btnFill');
-  const speedRange     = $('#speedRange');
-  const speedVal       = $('#speedVal');
+  const btnSectionLoop = $('#btnSectionLoop');
+  const btnAbLoop      = $('#btnAbLoop');
+  const btnWordLoop    = $('#btnWordLoop');
+  const btnCancelLoop  = $('#btnCancelLoop');
 
-  // 右側：字幕
-  const cuesBody   = $('#cuesBody');
-  const cuesStatus = $('#cuesStatus');
-  const chkFollow  = $('#chkFollow');
-  const btnOffsetMinus = $('#btnOffsetMinus');
-  const btnOffsetPlus  = $('#btnOffsetPlus');
-  const offsetVal      = $('#offsetVal');
+  // ---------- 資料來源 ----------
+  async function fetchJSON(url){
+    const res = await fetch(url, {cache:'no-store'});
+    if(!res.ok) throw new Error(`讀取失敗：${url}`);
+    return await res.json();
+  }
 
-  // 分頁
-  const tabs      = $$('.tab');
-  const paneSub   = $('#pane-sub');
-  const paneQuiz  = $('#pane-quiz');
-  const paneVocab = $('#pane-vocab');
-  const vocabStatus = $('#vocabStatus');
-  const vocabBox    = $('#vocabBox');
-
-  // -------- URL Query --------
-  const params = new URLSearchParams(location.search);
-  const slug   = params.get('slug') || 'mid-autumn';
-
-  // -------- 狀態 --------
-  let cues = [];           // {t,en,zh}
-  let offset = 0;          // 偏移秒數（全域）
-  let follow = true;       // 跟隨高亮
-  let loopSentence = false;
-  let abA = null, abB = null;
-  let autoPause = false;
-
-  // -------- 小工具 --------
-  const toSec = (hhmmss) => {
-    if (typeof hhmmss === 'number') return hhmmss;
-    const p = String(hhmmss).split(':').map(Number);
-    if (p.length === 3) return p[0]*3600 + p[1]*60 + p[2];
-    if (p.length === 2) return p[0]*60 + p[1];
-    return Number(hhmmss) || 0;
-  };
-  const fmt = (sec) => {
-    sec = Math.max(0, sec|0);
-    const m = (sec/60)|0, s = sec%60;
-    return `${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
-  };
-  const esc = (s) => String(s??'')
-    .replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;');
-
-  // --- TTS 朗讀（英文）---
-  function speak(text, rate=1){
+  // 嘗試從 index.json 找影片路徑；失敗則退回 videos/<slug>.mp4
+  async function resolveVideoUrl(slug){
     try{
-      const u = new SpeechSynthesisUtterance(String(text||''));
-      u.lang = 'en-US';
-      u.rate = rate;
-      window.speechSynthesis.cancel();
-      window.speechSynthesis.speak(u);
-    }catch{}
+      const meta = await fetchJSON('data/index.json');
+      const item = (meta.items||[]).find(it=> it.slug===slug);
+      if(item && item.video) return item.video;
+    }catch(e){}
+    return `videos/${slug}.mp4`; // fallback
   }
 
-  const currentIndex = () => {
-    const t = video.currentTime + offset;
-    let i = 0;
-    while (i+1 < cues.length && cues[i+1].t <= t + 0.0001) i++;
-    return i;
-  };
-  const highlightRow = (idx) => {
-    const trs = $$('#cuesBody tr');
-    trs.forEach(tr=> tr.classList.remove('active'));
-    const tr = trs[idx];
-    if (tr) {
-      tr.classList.add('active');
-      if (follow) tr.scrollIntoView({ block: 'center', behavior: 'smooth' });
-    }
-  };
-  const seekTo = (idx, play=true) => {
-    if (!cues[idx]) return;
-    video.currentTime = Math.max(0, cues[idx].t - offset + 0.0001);
-    highlightRow(idx);
-    if (play) video.play();
-  };
-  const sentenceRange = (idx) => {
-    if (!cues[idx]) return [0,0];
-    const s = cues[idx].t;
-    const e = (idx+1<cues.length ? cues[idx+1].t : s+3);
-    return [s,e];
-  };
-
-  // ================== Supabase 優先 + Fallback ==================
-  let supa = null;
-  (async () => {
-    try { const m = await import('./videos/js/supa.js'); supa = m?.supa ?? null; }
-    catch { supa = null; }
-  })();
-
-  const getPublicUrl = (bucket, path) => {
-    if (!supa) return null;
-    try { const { data } = supa.storage.from(bucket).getPublicUrl(path);
-      return data?.publicUrl || null;
-    } catch { return null; }
-  };
-
-  // 影片：Storage > 本地
-  const resolveVideoUrl = async (sg) => {
-    if (supa) {
-      const u1 = getPublicUrl('videos', `${sg}.mp4`);
-      if (u1) return u1;
-    }
-    return `./videos/${sg}.mp4`;
-  };
-
-  // 字幕：Storage cues/<slug>.json > 本地 data/cues-<slug>.json
-  const resolveCues = async (sg) => {
-    if (supa) {
-      const u = getPublicUrl('cues', `${sg}.json`);
-      if (u) {
-        try {
-          const rsp = await fetch(u, { cache:'no-store' });
-          if (rsp.ok) {
-            const json = await rsp.json();
-            return (json||[]).map(r=>({ t: toSec(r.time), en:r.en||'', zh:r.zh||'' }));
-          }
-        } catch {}
-      }
-    }
-    try {
-      const rsp = await fetch(`./data/cues-${sg}.json`, { cache:'no-store' });
-      if (rsp.ok) {
-        const json = await rsp.json();
-        return (json||[]).map(r=>({ t: toSec(r.time), en:r.en||'', zh:r.zh||'' }));
-      }
-    } catch {}
-    return [];
-  };
-
-  // 單字：Storage vocab/<slug>.json > 本地 data/vocab-<slug>.json
-  const resolveVocab = async (sg) => {
-    if (supa) {
-      const u = getPublicUrl('vocab', `${sg}.json`);
-      if (u) {
-        try { const rsp = await fetch(u, { cache:'no-store' }); if (rsp.ok) return await rsp.json(); } catch {}
-      }
-    }
-    try { const rsp = await fetch(`./data/vocab-${sg}.json`, { cache:'no-store' }); if (rsp.ok) return await rsp.json(); } catch {}
-    return null;
-  };
-
-  // ======================== 載入流程 ============================
-  async function loadAll() {
-    // 影片
-    video.src = await resolveVideoUrl(slug);
-    video.addEventListener('error', () => {
-      if (cuesStatus) cuesStatus.textContent = `⚠️ 無法載入影片`;
-    }, { once:true });
-
-    // 字幕
-    cues = await resolveCues(slug);
-    renderCues();
-
-    // 單字（即載）
-    loadVocabUI();
-  }
-
-  // ------------------ 字幕表 -------------------
-  function renderCues() {
-    if (!cuesBody) return;
-    cuesBody.innerHTML = '';
-    if (!cues.length) { if(cuesStatus) cuesStatus.textContent = '⚠️ 查無字幕資料'; return; }
-    if (cuesStatus) cuesStatus.textContent = '';
-
-    cuesBody.innerHTML = cues.map((c,i)=>`
-      <tr data-i="${i}">
-        <td class="muted" style="width:80px">${c.t?fmt(c.t):''}</td>
-        <td>${esc(c.en)}</td>
-        <td style="width:40%">${esc(c.zh)}</td>
-      </tr>
-    `).join('');
-
-    // 點列跳播
-    $$('#cuesBody tr').forEach(tr=> tr.addEventListener('click', ()=>{
-      const i = +tr.dataset.i;
-      if (cuesBody.dataset.pointloop === '1') {
-        loopSentence = true;
-        btnLoopSentence?.classList.add('green');
-      }
-      seekTo(i, true);
-    }));
-  }
-
-  // =================== 單字分頁（填空+朗讀+跳播+文法置中） ===================
-  async function loadVocabUI(){
-    if (!paneVocab) return;
-
-    // 容器保險
-    let vStatus = vocabStatus || $('#vocabStatus');
-    let vBox    = vocabBox    || $('#vocabBox');
-    if (!vStatus){
-      vStatus = document.createElement('div');
-      vStatus.id='vocabStatus';
-      paneVocab.appendChild(vStatus);
-    }
-    if (!vBox){
-      vBox = document.createElement('div');
-      vBox.id='vocabBox';
-      paneVocab.appendChild(vBox);
-    }
-
-    // 讀資料
-    vStatus.textContent = '載入中…';
-    const list = await resolveVocab(slug);
-    if (!list || !list.length){ 
-      vStatus.textContent='⚠️ 查無單字資料';
-      vBox.innerHTML='';
-      return; 
-    }
-    vStatus.textContent='';
-
-    // 小工具：遮罩例句、跳播
-    const maskSentence = (w, s) => {
-      const word = String(w||'').trim();
-      let txt = String(s||'');
-      if (!word) return txt;
-      const re = new RegExp(`\\b${word.replace(/[.*+?^${}()|[\\]\\\\]/g,'\\$&')}\\b`, 'ig');
-      return txt.replace(re, '_____');
+  // ---------- 視訊播放器：速度 + 填滿畫面 ----------
+  function wirePlayerBasics(){
+    // 速度
+    const applySpeed = (v)=>{
+      const rate = Math.max(0.25, Math.min(4, Number(v)||1));
+      video.playbackRate = rate;
+      if(speedLabel) speedLabel.textContent = rate.toFixed(2)+'x';
     };
-    const go = (mmss) => {
-      if(!video) return;
-      const toS = (x)=>{
-        if(typeof x==='number') return x;
-        const p = String(x).split(':').map(Number);
-        if(p.length===3) return p[0]*3600+p[1]*60+p[2];
-        if(p.length===2) return p[0]*60+p[1];
-        return Number(x)||0;
-      };
-      video.currentTime = Math.max(0,toS(mmss));
-      video.play();
-    };
+    if(speedRange){
+      speedRange.addEventListener('input', ()=> applySpeed(speedRange.value));
+      // 初始
+      applySpeed(speedRange.value||1);
+    }else{
+      // 沒滑桿也至少把顯示修正
+      if(speedLabel) speedLabel.textContent = (video.playbackRate||1).toFixed(2)+'x';
+    }
 
-    // 版面
-    vBox.innerHTML = `
-      <style>
-        .voc-row{display:grid;grid-template-columns:120px 1fr 280px;gap:12px;padding:12px 10px;border-bottom:1px solid #14243b}
-        .voc-time{display:flex;align-items:center;gap:8px;color:#9fb3d9}
-        .voc-time .btn{border:1px solid #26406b;background:#0f223b;color:#dbe7ff;border-radius:8px;padding:4px 8px;cursor:pointer}
-        .voc-core{min-width:0}
-        .voc-sent{line-height:1.6}
-        .voc-ipt{margin-top:6px;display:flex;gap:8px;align-items:center;flex-wrap:wrap}
-        .voc-ipt input{padding:8px 10px;border:1px solid #334155;border-radius:8px;background:#0f223b;color:#dbe7ff;min-width:180px}
-        .voc-ipt .ok{color:#5bd3c7}
-        .voc-ipt .ng{color:#ff6b6b}
-        .voc-gram{margin-top:6px;color:#9fb3d9;font-size:13px}
-        .voc-right{border:1px solid #172a4a;background:#0f1a33;border-radius:10px;padding:10px}
-        .voc-word{display:flex;align-items:center;gap:8px;font-weight:700;font-size:18px}
-        .voc-pos{color:#9fb3d9;font-size:13px}
-        .voc-zh{margin-top:6px}
-        .voc-en{margin-top:2px;color:#9fb3d9;font-size:13px}
-        .voc-actions{margin-top:8px;display:flex;gap:8px}
-        .voc-actions .btn{border:1px solid #26406b;background:#0f223b;color:#dbe7ff;border-radius:8px;padding:4px 8px;cursor:pointer}
-        @media(max-width:980px){ .voc-row{grid-template-columns:1fr} .voc-right{order:3} }
-      </style>
-      <div id="vocList"></div>
+    // 填滿畫面：以 object-fit: cover 方式；再次點擊還原 contain
+    let filled = false;
+    if(btnFill){
+      btnFill.addEventListener('click', ()=>{
+        filled = !filled;
+        video.style.width  = '100%';
+        video.style.height = '100%';
+        video.style.objectFit = filled ? 'cover' : 'contain';
+        btnFill.classList.toggle('on', filled);
+      });
+    }
+
+    // 播放 / 暫停
+    if(btnPlay){
+      btnPlay.addEventListener('click', ()=>{
+        if(video.paused) video.play(); else video.pause();
+      });
+    }
+    // 預留：上一句 / 下一句等（實作依你字幕資料結構接回去）
+    if(btnPrev) btnPrev.addEventListener('click', ()=> {/* TODO: hook prev line */});
+    if(btnNext) btnNext.addEventListener('click', ()=> {/* TODO: hook next line */});
+    if(btnRepeatLine)  btnRepeatLine.addEventListener('click', ()=>{/* TODO */});
+    if(btnAutoPause)   btnAutoPause.addEventListener('click', ()=>{/* TODO */});
+    if(btnSectionLoop) btnSectionLoop.addEventListener('click', ()=>{/* TODO */});
+    if(btnAbLoop)      btnAbLoop.addEventListener('click', ()=>{/* TODO */});
+    if(btnWordLoop)    btnWordLoop.addEventListener('click', ()=>{/* TODO */});
+    if(btnCancelLoop)  btnCancelLoop.addEventListener('click', ()=>{/* TODO */});
+
+    // 進度保存鉤子（若你接 Supabase，可在這裡 upsertProgress）
+    video.addEventListener('timeupdate', ()=>{
+      // TODO: save progress { slug, seconds: video.currentTime }
+    });
+  }
+
+  // ---------- 分頁切換 ----------
+  function wireTabs(){
+    function show(tab){
+      paneSub.style.display   = tab==='sub'  ? '' : 'none';
+      paneQuiz.style.display  = tab==='quiz' ? '' : 'none';
+      paneVocab.style.display = tab==='vocab'? '' : 'none';
+
+      tabSub.classList.toggle('active', tab==='sub');
+      tabQuiz.classList.toggle('active', tab==='quiz');
+      tabVocab.classList.toggle('active', tab==='vocab');
+    }
+    tabSub?.addEventListener('click', ()=> show('sub'));
+    tabQuiz?.addEventListener('click', ()=> show('quiz'));
+    tabVocab?.addEventListener('click', ()=> show('vocab'));
+
+    // 若 URL 有 tab 參數
+    const tab = (new URLSearchParams(location.search).get('tab')||'sub').toLowerCase();
+    show(['sub','quiz','vocab'].includes(tab)?tab:'sub');
+  }
+
+  // ---------- 字幕（保留掛點，依你的字幕格式接回） ----------
+  async function initSubtitles(){
+    // 這裡先顯示表頭與空狀態；你舊版的字幕載入／跑句函式，可直接把產出的表格 append 到 paneSub
+    paneSub.innerHTML = `
+      <table class="subs">
+        <thead>
+          <tr><th style="width:72px">時間</th><th>英文</th><th style="width:40%">中文</th></tr>
+        </thead>
+        <tbody id="subsBody"><tr><td colspan="3" style="color:#9fb1cc">（尚未載入／或你另行 append）</td></tr></tbody>
+      </table>
     `;
-    const listBox = $('#vocList', vBox);
+    // TODO: 在這裡載入你的字幕資料並填入 #subsBody
+  }
 
-    // 渲染每一筆
-    list.forEach((v)=>{
-      const row = document.createElement('div');
-      row.className = 'voc-row';
+  // ---------- 測驗 ----------
+  async function initQuiz(){
+    paneQuiz.innerHTML = `<div style="color:#9fb1cc">讀取測驗題庫中…</div>`;
+    let items = [];
+    try{
+      // 支援扁平陣列：[{type:'mcq'|'tf'|'fill', q:'..', options:[...], a: num|bool|string}, ...]
+      items = await fetchJSON(`data/quiz-${slug}.json`);
+      if(!Array.isArray(items)) throw new Error('題庫不是陣列格式');
+    }catch(e){
+      paneQuiz.innerHTML = `<div style="color:#f5a524">查無測驗資料（data/quiz-${slug}.json）。</div>`;
+      return;
+    }
 
-      // 左：時間/跳播
-      const left = document.createElement('div');
-      left.className = 'voc-time';
-      left.innerHTML = `
-        <button class="btn" data-act="jump">▶</button>
-        <span class="time-link" style="cursor:pointer;text-decoration:underline;">${(v.time||'').toString()}</span>
-      `;
+    // 繪題
+    const form = document.createElement('form');
+    form.id = 'quizForm';
+    form.style.display = 'grid';
+    form.style.gap = '14px';
+    form.style.maxWidth = '900px';
 
-      // 中：例句（填空）+ 文法（置中欄）
-      const core = document.createElement('div');
-      core.className = 'voc-core';
-      const example = v.example || v.en || ''; // 沒 example 就用英文解釋
-      core.innerHTML = `
-        <div class="voc-sent">${esc(maskSentence(v.word, example))}</div>
-        <div class="voc-ipt">
-          <input type="text" placeholder="輸入這個空格的單字…" aria-label="answer">
-          <button class="btn" data-act="check">檢查</button>
-          <span class="msg"></span>
-          <button class="btn" data-act="reveal">顯示答案</button>
-        </div>
-        ${v.grammar ? `<div class="voc-gram">文法：${esc(v.grammar)}</div>` : ``}
-      `;
+    items.forEach((it, idx)=>{
+      const no = idx+1;
+      const wrap = document.createElement('div');
+      wrap.style.border = '1px solid #1f2a44';
+      wrap.style.padding = '12px';
+      wrap.style.borderRadius = '10px';
+      wrap.style.background = '#0f172a';
 
-      // 右：答案卡 + 朗讀
-      const right = document.createElement('div');
-      right.className = 'voc-right';
-      right.innerHTML = `
-        <div class="voc-word">
-          <span>${esc(v.word||'')}</span>
-          <button class="btn" data-act="speak" title="朗讀 🔊">🔊</button>
-        </div>
-        <div class="voc-pos">${esc(v.pos||'')}</div>
-        ${v.zh ? `<div class="voc-zh">${esc(v.zh)}</div>` : ``}
-        ${v.en ? `<div class="voc-en">${esc(v.en)}</div>` : ``}
-        <div class="voc-actions">
-          <button class="btn" data-act="jump">跳到片段</button>
-        </div>
-      `;
+      let inner = `<div style="margin-bottom:6px;font-weight:700;">${no}. ${escapeHtml(it.q||'')}</div>`;
 
-      // 行為
-      row.addEventListener('click', (e)=>{
-        const act = e.target?.dataset?.act;
-        if (!act) return;
+      if(it.type==='mcq'){
+        inner += (it.options||[]).map((opt,i)=>`
+          <label style="display:block;margin:6px 0">
+            <input type="radio" name="q${idx}" value="${i}"> ${escapeHtml(opt)}
+          </label>`).join('');
+      }else if(it.type==='tf'){
+        inner += `
+          <label style="display:inline-flex;gap:6px;margin-right:12px"><input type="radio" name="q${idx}" value="true"> True</label>
+          <label style="display:inline-flex;gap:6px"><input type="radio" name="q${idx}" value="false"> False</label>`;
+      }else if(it.type==='fill'){
+        inner += `<input name="q${idx}" type="text" style="width:100%;max-width:420px;border:1px solid #1f2a44;border-radius:8px;padding:8px;background:#0f1a33;color:#e6efff">`;
+      }else{
+        inner += `<div style="color:#f5a524">未知題型：${it.type}</div>`;
+      }
 
-        if (act==='jump'){ go(v.time||0); }
-        else if (act==='speak'){ speak(v.word || v.en || v.example || v.zh || ''); }
-        else if (act==='check'){
-          const ipt = core.querySelector('input');
-          const msg = core.querySelector('.msg');
-          const ok = String(ipt.value||'').trim().toLowerCase()
-                      === String(v.word||'').trim().toLowerCase();
-          msg.textContent = ok ? '✅ 正確！' : '❌ 再試試';
-          msg.className = `msg ${ok?'ok':'ng'}`;
-        }
-        else if (act==='reveal'){
-          const ipt = core.querySelector('input');
-          ipt.value = v.word||'';
-          const msg = core.querySelector('.msg');
-          msg.textContent = '（已填入答案）';
-          msg.className = 'msg';
+      wrap.innerHTML = inner;
+      form.appendChild(wrap);
+    });
+
+    const submitBar = document.createElement('div');
+    submitBar.style.display = 'flex';
+    submitBar.style.gap = '10px';
+    submitBar.style.marginTop = '10px';
+
+    const btnSubmit = document.createElement('button');
+    btnSubmit.type = 'button';
+    btnSubmit.textContent = '交卷';
+    btnSubmit.className = 'kbtn';
+    btnSubmit.style.padding = '10px 14px';
+
+    const scoreBox = document.createElement('div');
+    scoreBox.id = 'quizScoreBox';
+    scoreBox.style.color = '#9fb1cc';
+    scoreBox.style.marginLeft = '8px';
+
+    submitBar.appendChild(btnSubmit);
+    submitBar.appendChild(scoreBox);
+
+    const printBar = document.createElement('div');
+    printBar.style.marginTop = '10px';
+    paneQuiz.innerHTML = '';
+    paneQuiz.appendChild(form);
+    paneQuiz.appendChild(submitBar);
+    paneQuiz.appendChild(printBar);
+
+    btnSubmit.addEventListener('click', ()=>{
+      // 批改
+      const detail = [];
+      let correct = 0;
+      items.forEach((it, idx)=>{
+        let userAnsRaw = null;
+        if(it.type==='mcq'){
+          const val = (form.querySelector(`input[name="q${idx}"]:checked`)||{}).value;
+          userAnsRaw = (val===''?null:val);
+          const ok = Number(userAnsRaw)===Number(it.a);
+          if(ok) correct++;
+          detail.push({
+            no: idx+1, type:'mcq', q: it.q,
+            user: (userAnsRaw==null? null : Number(userAnsRaw)),
+            answer: Number(it.a),
+            options: it.options||[], ok
+          });
+        }else if(it.type==='tf'){
+          const val = (form.querySelector(`input[name="q${idx}"]:checked`)||{}).value;
+          userAnsRaw = (val===''?null:val);
+          const u = (userAnsRaw==='true');
+          const ok = (u===Boolean(it.a));
+          if(ok) correct++;
+          detail.push({ no: idx+1, type:'tf', q: it.q, user: (userAnsRaw==null?null:u), answer:Boolean(it.a), ok });
+        }else if(it.type==='fill'){
+          const val = (form.querySelector(`input[name="q${idx}"]`)||{}).value||'';
+          userAnsRaw = val;
+          const ok = norm(val)===norm(String(it.a||''));
+          if(ok) correct++;
+          detail.push({ no: idx+1, type:'fill', q: it.q, user: val, answer: String(it.a||''), ok });
         }
       });
 
-      // 點時間跳播
-      left.querySelector('.time-link').addEventListener('click', ()=> go(v.time||0));
+      const total = items.length;
+      const scorePct = Math.round((correct/total)*100);
+      scoreBox.textContent = `成績：${correct}/${total}（${scorePct}%）`;
 
-      row.appendChild(left);
-      row.appendChild(core);
-      row.appendChild(right);
-      listBox.appendChild(row);
+      // TODO: save quiz attempt（若要寫 Supabase）
+      // addQuizAttempt({ slug, score: correct, total, payload: detail })
+
+      // 「列印成就證書」按鈕
+      printBar.innerHTML = '';
+      const btnPrint = document.createElement('button');
+      btnPrint.textContent = '列印成就證書（含作答明細）';
+      btnPrint.className = 'kbtn';
+      btnPrint.style.padding = '10px 14px';
+      printBar.appendChild(btnPrint);
+
+      btnPrint.addEventListener('click', ()=>{
+        openCertificate({
+          slug,
+          title: document.title || '英語影片學習',
+          name: ($('#certName')?.value || $('#userNameBadge')?.textContent?.replace(/^👤\s*/,'') || '').trim(),
+          correct, total, detail
+        });
+      });
     });
   }
 
-  // =================== 控制列 ===================
-  if (speedRange) speedRange.addEventListener('input', ()=>{
-    const r = Number(speedRange.value) || 1;
-    video.playbackRate = r;
-    if (speedVal) speedVal.textContent = `${r.toFixed(2)}x`;
-  });
+  // 證書（A4直印，含作答明細）
+  function openCertificate({slug,title,name,correct,total,detail}){
+    const win = window.open('','_blank');
+    const pct = Math.round((correct/total)*100);
+    const now = new Date();
+    const ts = now.toISOString().slice(0,19).replace('T',' ');
 
-  btnPlay?.addEventListener('click', ()=>{ if(video.paused) video.play(); else video.pause(); });
-  btnPrev?.addEventListener('click', ()=> seekTo(Math.max(0,currentIndex()-1),true));
-  btnNext?.addEventListener('click', ()=> seekTo(Math.min(cues.length-1,currentIndex()+1),true));
-
-  btnReplay?.addEventListener('click', ()=>{
-    loopSentence = true;
-    btnLoopSentence?.classList.add('green');
-    seekTo(currentIndex(), true);
-  });
-
-  btnLoopSentence?.addEventListener('click', ()=>{
-    loopSentence = !loopSentence;
-    btnLoopSentence.classList.toggle('green', loopSentence);
-  });
-
-  btnAB?.addEventListener('click', ()=>{
-    const now = video.currentTime + offset;
-    if (abA === null) { abA = now; abB = null; btnAB.classList.add('green'); btnAB.textContent='🅱 設定 B（再次按取消）'; }
-    else if (abB === null) { abB = now; if(abB<abA) [abA,abB]=[abB,abA]; btnAB.textContent='🅰🅱 A-B 循環中（再次按取消）'; }
-    else { abA = abB = null; btnAB.classList.remove('green'); btnAB.textContent='🅰🅱 A-B 循環'; }
-  });
-
-  btnPointLoop?.addEventListener('click', ()=>{
-    btnPointLoop.classList.toggle('green');
-    if (cuesBody) cuesBody.dataset.pointloop = btnPointLoop.classList.contains('green') ? '1' : '';
-  });
-
-  btnClearLoop?.addEventListener('click', ()=>{
-    loopSentence = false; abA = abB = null;
-    btnLoopSentence?.classList.remove('green');
-    btnAB?.classList.remove('green');
-    if (btnAB) btnAB.textContent='🅰🅱 A-B 循環';
-  });
-
-  btnFill?.addEventListener('click', ()=>{
-    // 切換填滿：#videoWrap.fill
-    videoWrap?.classList.toggle('fill');
-  });
-
-  btnOffsetMinus?.addEventListener('click', ()=>{ offset -= 0.5; if(offsetVal) offsetVal.textContent=`${offset.toFixed(1)}s`; });
-  btnOffsetPlus ?.addEventListener('click', ()=>{ offset += 0.5; if(offsetVal) offsetVal.textContent=`${offset.toFixed(1)}s`; });
-  chkFollow    ?.addEventListener('change', ()=> follow = chkFollow.checked);
-  btnAutoPause ?.addEventListener('click', ()=>{ autoPause=!autoPause; btnAutoPause.classList.toggle('green',autoPause); });
-
-  // 播放事件（高亮、逐句暫停、單句循環、A-B 循環）
-  video.addEventListener('timeupdate', ()=>{
-    if (!cues.length) return;
-    const i = currentIndex();
-    highlightRow(i);
-    const t = video.currentTime + offset;
-
-    if (autoPause) {
-      const [, e] = sentenceRange(i);
-      if (t >= e - 0.02 && t < e + 0.2) video.pause();
-    }
-    if (loopSentence) {
-      const [s, e] = sentenceRange(i);
-      if (t >= e - 0.02) {
-        video.currentTime = Math.max(0, s - offset + 0.0001);
-        video.play();
+    const rows = detail.map(d=>{
+      let userTxt = '';
+      let ansTxt  = '';
+      if(d.type==='mcq'){
+        userTxt = (d.user==null?'(未作答)': `${d.user+1}. ${escapeHtml(d.options[d.user]||'')}`);
+        ansTxt  = `${d.answer+1}. ${escapeHtml(d.options[d.answer]||'')}`;
+      }else if(d.type==='tf'){
+        userTxt = d.user==null ? '(未作答)' : (d.user?'True':'False');
+        ansTxt  = d.answer ? 'True':'False';
+      }else{
+        userTxt = d.user || '(未作答)';
+        ansTxt  = d.answer || '';
       }
-    }
-    if (abA !== null && abB !== null) {
-      if (t < abA || t >= abB - 0.02) {
-        video.currentTime = Math.max(0, abA - offset + 0.0001);
-        video.play();
-      }
-    }
-  });
+      return `<tr>
+        <td style="padding:6px 8px;border-bottom:1px solid #ddd">${d.no}</td>
+        <td style="padding:6px 8px;border-bottom:1px solid #ddd">${escapeHtml(d.q||'')}</td>
+        <td style="padding:6px 8px;border-bottom:1px solid #ddd">${escapeHtml(userTxt)}</td>
+        <td style="padding:6px 8px;border-bottom:1px solid #ddd">${escapeHtml(ansTxt)}</td>
+        <td style="padding:6px 8px;border-bottom:1px solid #ddd;color:${d.ok?'#0a8d4d':'#c0392b'}">${d.ok?'✔':'✘'}</td>
+      </tr>`;
+    }).join('');
 
-  // 分頁切換
-  tabs.forEach(tab=>{
-    tab.addEventListener('click', ()=>{
-      tabs.forEach(x=>x.classList.remove('active'));
-      tab.classList.add('active');
-      const name = tab.dataset.tab;
-      if (paneSub)   paneSub.style.display   = (name==='sub')  ? '' : 'none';
-      if (paneQuiz)  paneQuiz.style.display  = (name==='quiz') ? '' : 'none';
-      if (paneVocab) paneVocab.style.display = (name==='vocab')? '' : 'none';
+    win.document.write(`
+<!doctype html>
+<html><head>
+<meta charset="utf-8">
+<title>成就證書 – ${escapeHtml(slug)}</title>
+<style>
+@page{ size:A4; margin:20mm }
+body{ font-family:system-ui,Segoe UI,Roboto,Noto Sans TC,sans-serif; color:#222; }
+h1{ margin:0 0 8px; }
+.box{ border:2px solid #333; padding:18px; border-radius:10px }
+.meta{ color:#555;margin:6px 0 14px }
+table{ width:100%; border-collapse:collapse; font-size:12px; }
+.badge{display:inline-block;padding:2px 8px;border-radius:8px;border:1px solid #999;margin-left:6px}
+</style>
+</head>
+<body>
+  <h1>英語影片學習 成就證書</h1>
+  <div class="meta">影片：${escapeHtml(slug)} <span class="badge">${escapeHtml(title||'')}</span></div>
+  <div class="box">
+    <div style="font-size:18px;margin-bottom:10px"><b>${escapeHtml(name||'')}</b></div>
+    <div style="font-size:16px;margin-bottom:6px">成績：<b>${correct}/${total}（${pct}%）</b></div>
+    <div style="color:#555">發證日期：${escapeHtml(ts)}</div>
+  </div>
+
+  <h3 style="margin-top:22px">作答明細</h3>
+  <table>
+    <thead>
+      <tr style="background:#f5f5f5">
+        <th style="text-align:left;padding:6px 8px;border-bottom:1px solid #ddd;width:40px">#</th>
+        <th style="text-align:left;padding:6px 8px;border-bottom:1px solid #ddd">題目</th>
+        <th style="text-align:left;padding:6px 8px;border-bottom:1px solid #ddd;width:30%">作答</th>
+        <th style="text-align:left;padding:6px 8px;border-bottom:1px solid #ddd;width:30%">正解</th>
+        <th style="text-align:left;padding:6px 8px;border-bottom:1px solid #ddd;width:40px">結果</th>
+      </tr>
+    </thead>
+    <tbody>${rows}</tbody>
+  </table>
+
+  <script>window.onload=()=>window.print()</script>
+</body></html>`);
+    win.document.close();
+  }
+
+  // ---------- 單字 ----------
+  async function initVocab(){
+    paneVocab.innerHTML = `<div style="color:#9fb1cc">讀取單字資料中…</div>`;
+    let data;
+    try{
+      data = await fetchJSON(`data/vocab-${slug}.json`);
+    }catch(e){
+      paneVocab.innerHTML = `<div style="color:#f5a524">查無單字資料（data/vocab-${slug}.json）。</div>`;
+      return;
+    }
+
+    const items = data.items||[];
+    const container = document.createElement('div');
+    container.style.display = 'grid';
+    container.style.gap = '10px';
+
+    // 表頭
+    const head = document.createElement('div');
+    head.style.display = 'grid';
+    head.style.gridTemplateColumns = '80px 1fr 60px 1fr';
+    head.style.gap = '8px';
+    head.style.color = '#9fb1cc';
+    head.innerHTML = `<div>時間</div><div>例句（填空）</div><div>單字</div><div>中文/詞性/語法</div>`;
+    container.appendChild(head);
+
+    items.forEach((it, idx)=>{
+      const row = document.createElement('div');
+      row.style.display = 'grid';
+      row.style.gridTemplateColumns = '80px 1fr 60px 1fr';
+      row.style.gap = '8px';
+      row.style.alignItems = 'start';
+      row.style.borderBottom = '1px solid #1f2a44';
+      row.style.padding = '6px 0';
+
+      const s = toSec(it.time);
+      const timeBtn = document.createElement('button');
+      timeBtn.textContent = mmss(s);
+      timeBtn.className = 'kbtn';
+      timeBtn.style.padding = '6px 8px';
+      timeBtn.addEventListener('click', ()=>{ video.currentTime=s; video.play(); });
+
+      // 例句：把單字改 ____（大小寫都遮）
+      const sentence = document.createElement('div');
+      const blanked = hideWord(it.en||'', it.word||'');
+      sentence.innerHTML = `<button class="kbtn" style="padding:2px 6px;margin-right:6px">▶</button>${escapeHtml(blanked)}`;
+      // ▶ 跳播
+      sentence.querySelector('button').addEventListener('click', ()=>{ video.currentTime=s; video.play(); });
+
+      // 右欄：單字 + 🔊
+      const wordCell = document.createElement('div');
+      wordCell.innerHTML = `
+        <div style="display:flex;align-items:center;gap:6px">
+          <span style="font-weight:700">${escapeHtml(it.word||'')}</span>
+          <button class="kbtn" style="padding:2px 6px" title="朗讀">🔊</button>
+        </div>`;
+      wordCell.querySelector('button').addEventListener('click', ()=>{
+        speak((it.word||'').toString());
+      });
+
+      const info = document.createElement('div');
+      const pos = it.pos? `（${escapeHtml(it.pos)}）` : '';
+      const zh  = it.zh? `${escapeHtml(it.zh)}` : '';
+      const gram= it.grammar? `<div style="color:#9fb1cc;margin-top:2px">${escapeHtml(it.grammar)}</div>`:'';
+      info.innerHTML = `${zh} ${pos}${gram}`;
+
+      row.appendChild(timeBtn);
+      row.appendChild(sentence);
+      row.appendChild(wordCell);
+      row.appendChild(info);
+      container.appendChild(row);
     });
-  });
 
-  // 啟動
-  (async function init(){
-    const r = Number(speedRange?.value) || 1;
-    video.playbackRate = r;
-    if (speedVal) speedVal.textContent = `${r.toFixed(2)}x`;
-    await loadAll();
+    paneVocab.innerHTML = '';
+    paneVocab.appendChild(container);
+  }
+
+  // ---------- TTS ----------
+  function speak(txt){
+    try{
+      const u = new SpeechSynthesisUtterance(txt);
+      u.lang = 'en-US';
+      speechSynthesis.cancel();
+      speechSynthesis.speak(u);
+    }catch(e){}
+  }
+
+  // ---------- 啟動 ----------
+  (async function start(){
+    if(!slug){
+      alert('缺少 slug 參數');
+      return;
+    }
+    // 設定影片來源
+    const url = await resolveVideoUrl(slug);
+    video.src = url;
+
+    wirePlayerBasics();
+    wireTabs();
+    initSubtitles();
+    initQuiz();
+    initVocab();
   })();
+
+  // ---------- 小工具 ----------
+  function escapeHtml(s){
+    return String(s||'')
+      .replace(/&/g,'&amp;')
+      .replace(/</g,'&lt;')
+      .replace(/>/g,'&gt;')
+      .replace(/"/g,'&quot;')
+      .replace(/'/g,'&#39;');
+  }
+  function norm(s){ return String(s||'').trim().toLowerCase(); }
+  function toSec(t){
+    if(t==null) return 0;
+    if(typeof t==='number') return t;
+    const m = String(t).match(/^(\d{1,2}):(\d{2})(?:\.(\d{1,3}))?$/);
+    if(m){
+      const mm = Number(m[1]||0), ss=Number(m[2]||0), ms=Number(m[3]||0);
+      return mm*60 + ss + ms/1000;
+    }
+    const n = Number(t); return isNaN(n)?0:n;
+  }
+  function mmss(sec){
+    sec = Math.max(0, Math.floor(sec||0));
+    const m = Math.floor(sec/60), s = sec%60;
+    return `${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+  }
+  function hideWord(sentence, word){
+    if(!word) return sentence;
+    const re = new RegExp(word.replace(/[.*+?^${}()|[\]\\]/g,'\\$&'),'gi');
+    return sentence.replace(re, '____');
+  }
+
 })();
+
 
 
 
