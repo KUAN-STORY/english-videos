@@ -6,89 +6,102 @@
   <title>英語影片播放器</title>
   <style>
     :root{
-      --bg:#0b1220; --panel:#0f172a; --border:#1f2a44;
-      --text:#e6efff; --muted:#9fb0c9; --accent:#3b82f6; --ok:#10b981;
+      --bg:#0b1220; --panel:#0f172a; --panel2:#0b162a; --border:#1f2a44;
+      --text:#e6efff; --muted:#94a3b8; --accent:#3c82f6; --ok:#16a34a;
     }
     *{box-sizing:border-box}
-    html,body{height:100%;margin:0;background:var(--bg);color:var(--text);font-family:ui-sans-serif,system-ui,"Noto Sans TC",Segoe UI,Roboto,Helvetica,Arial}
+    html,body{height:100%;margin:0;background:var(--bg);color:var(--text);font-family:ui-sans-serif,system-ui}
+    a{color:inherit;text-decoration:none}
 
     /* header */
-    header{display:flex;justify-content:space-between;align-items:center;padding:14px 18px;background:#0f172a;border-bottom:1px solid #101a2e}
-    header h1{margin:0;font-size:18px}
-    .btn{background:#132238;color:var(--text);border:1px solid #2b3e63;border-radius:10px;padding:8px 12px;cursor:pointer}
-    .btn:hover{background:#183055}
+    header{
+      position:sticky; top:0; z-index:5;
+      display:flex;justify-content:space-between;align-items:center;
+      padding:14px 20px;background:var(--panel);border-bottom:1px solid var(--border)
+    }
+    .btn{background:#1e293b;color:#e6efff;border:1px solid #334155;border-radius:10px;padding:8px 12px;cursor:pointer}
+    .btn.ghost{background:transparent}
+
+    /* main layout 50:50 */
+    .wrap{
+      display:flex; gap:20px; padding:16px; height:calc(100vh - 64px); /* header 高度約 64 */
+      overflow:hidden;
+    }
+    /* 左側影片區 */
+    #videoWrap{
+      flex:1 1 50%; max-width:50%;
+      display:flex; flex-direction:column; align-items:stretch; gap:12px;
+      min-width:0;
+    }
+    video{width:100%;border-radius:12px;background:#000;display:block}
+    .ctrl{
+      background:var(--panel); border:1px solid var(--border); border-radius:12px; padding:12px;
+    }
+    .row{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+    .chip{background:#10243c;border:1px solid #1e3a5f;border-radius:10px;padding:6px 10px;display:inline-flex;gap:6px;align-items:center}
+    .btn.blue{background:#12315a;border-color:#255b9a}
+    .btn.green{background:#10433c;border-color:#1f7a6d}
+    input[type="range"]{accent-color:var(--accent);width:260px}
+    .speedVal{min-width:56px;text-align:right}
+
+    /* 右側字幕/測驗/單字 */
+    .right{
+      flex:1 1 50%; max-width:50%;
+      display:flex; flex-direction:column; min-width:0; height:100%;
+      background:var(--panel); border:1px solid var(--border); border-radius:12px; overflow:hidden;
+    }
+    .tabs{display:flex;gap:10px;padding:12px;border-bottom:1px solid var(--border);background:var(--panel2)}
+    .tab{background:#122340;border:1px solid #1f375f;border-radius:10px;padding:8px 12px;cursor:pointer}
+    .tab.active{background:#154274}
+
+    .subToolbar{display:flex;gap:10px;align-items:center;padding:12px;border-bottom:1px solid var(--border)}
     .muted{color:var(--muted)}
 
-    /* 版面：左(固定寬) + 右(自適應) */
-    .wrap{display:grid;grid-template-columns:560px 1fr;gap:16px;padding:16px}
-    @media(max-width:1100px){ .wrap{grid-template-columns:1fr} }
+    /* 可捲動容器：只讓右側內容捲動，左側影片不會跟著上移 */
+    .panel-scroll{flex:1 1 auto; min-height:0; overflow:auto}
 
-    /* 左側：影片 */
-    #videoPanel{background:var(--panel);border:1px solid var(--border);border-radius:12px;padding:12px}
-    #videoWrap{position:relative}
-    video{
-      width:100%;
-      display:block;
-      background:#000;
-      border-radius:10px;
-      /* 關鍵：避免上下空帶 */
-      aspect-ratio:16/9;
-      height:auto;
-      object-fit:contain;
-      max-height:calc(100vh - 260px); /* 依視窗高度自動限制，避免過高 */
-    }
-    /* 點「填滿畫面」時切換覆蓋裁切 */
-    #videoWrap.fill video{ object-fit:cover }
-
-    /* 控制列（保留你的 id） */
-    .ctrl{margin-top:12px;background:#0e1a30;border:1px solid #1e3258;border-radius:12px;padding:12px}
-    .row{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
-    .chip{background:#112240;border:1px solid #1e3763;border-radius:10px;padding:6px 10px;display:inline-flex;gap:8px;align-items:center}
-    input[type="range"]{accent-color:var(--accent);width:260px}
-    .speedVal{min-width:52px;text-align:right}
-
-    /* 右側：分頁 */
-    .right{min-width:0;background:var(--panel);border:1px solid var(--border);border-radius:12px;display:flex;flex-direction:column}
-    .tabs{display:flex;gap:10px;padding:12px;border-bottom:1px solid var(--border)}
-    .tab{cursor:pointer;background:#112240;border:1px solid #1e3763;padding:8px 12px;border-radius:10px}
-    .tab.active{background:#173a70;border-color:#2c63aa}
-    .subToolbar{display:flex;gap:10px;align-items:center;padding:12px;border-bottom:1px solid var(--border)}
-    .content{flex:1;overflow:auto}
     table{width:100%;border-collapse:collapse}
-    th,td{padding:10px 12px;border-bottom:1px solid #152544;vertical-align:top}
-    tbody tr{background:#0e1c33}
-    tbody tr:nth-child(2n){background:#0d1930}
-    tr.active{background:#15345f}
+    th,td{padding:10px 12px;border-bottom:1px solid #14243b;vertical-align:top}
+    thead th{position:sticky;top:0;background:var(--panel2);z-index:1}
+    tbody tr{background:#0f1f34}
+    tbody tr:nth-child(2n){background:#0e1b2d}
+    tr.active{background:#163050}
+
     .status{padding:10px 14px;color:var(--muted)}
+    .space{flex:1}
+
+    /* RWD：手機改直排（影片在上、文字在下） */
+    @media (max-width: 768px){
+      .wrap{flex-direction:column;height:auto}
+      #videoWrap,.right{max-width:100%;flex:1 1 auto}
+      .right{height:60vh}
+    }
   </style>
 </head>
 <body>
-  <!-- header + 假登入列（對應 login.js） -->
   <header>
-    <h1>英語影片播放器</h1>
+    <h1 style="margin:0;font-size:20px">英語影片播放器</h1>
     <div id="authArea" style="display:flex;gap:10px;align-items:center">
-      <span id="userNameBadge" class="muted"></span>
-      <button id="btnLogin"  class="btn">登入</button>
+      <button id="btnLogin" class="btn">登入</button>
       <button id="btnLogout" class="btn" style="display:none">登出</button>
+      <span id="userNameBadge" style="color:#cbd5e1"></span>
     </div>
   </header>
 
   <main class="wrap">
-    <!-- 左側：影片 + 控制列 -->
-    <section id="videoPanel">
-      <div id="videoWrap">
-        <video id="player" playsinline controls></video>
-      </div>
+    <!-- 左側：影片 + 控制 -->
+    <section id="videoWrap">
+      <video id="player" playsinline controls></video>
 
-      <!-- 控制列（id 與你 v7.2 對齊） -->
+      <!-- 控制列：與 player.js v7.2 對齊的 id -->
       <div class="ctrl">
         <!-- row1 -->
         <div class="row" style="margin-bottom:10px">
           <button id="btnPrev" class="btn">⏮ 上一句</button>
           <button id="btnPlay" class="btn">▶️ 播放 / 暫停</button>
           <button id="btnNext" class="btn">⏭ 下一句</button>
-          <button id="btnReplay" class="btn">🔁 重複本句</button>
-          <button id="btnAutoPause" class="btn">🧠 逐句自停</button>
+          <button id="btnReplay" class="btn blue">🔁 重複本句</button>
+          <button id="btnAutoPause" class="btn">🧠 逐句自動暫停</button>
           <button id="btnLoopSentence" class="btn">🔂 整段循環</button>
         </div>
         <!-- row2 -->
@@ -115,36 +128,38 @@
         <div class="tab" data-tab="vocab">單字</div>
       </div>
 
-      <!-- 字幕工具列（v7.2 對齊） -->
+      <!-- 字幕工具列 -->
       <div id="subToolbar" class="subToolbar">
         <label class="chip"><input id="chkFollow" type="checkbox" checked /> 跟隨</label>
         <span class="chip">偏移 <span id="offsetVal">0.0s</span></span>
         <button id="btnOffsetMinus" class="btn">-0.5s</button>
-        <button id="btnOffsetPlus"  class="btn">+0.5s</button>
-        <span class="muted" style="margin-left:auto">( 尚未載入 )</span>
+        <button id="btnOffsetPlus" class="btn">+0.5s</button>
+        <span class="muted space"></span>
+        <span class="muted">( 尚未載入 )</span>
       </div>
 
-      <!-- 內容 -->
-      <div class="content">
-        <!-- 字幕 -->
-        <div id="pane-sub">
+      <!-- 內容：右側只讓內容捲動 -->
+      <div id="pane-sub">
+        <div class="panel-scroll">
           <table>
             <thead>
-              <tr><th style="width:88px">時間</th><th>英文</th><th style="width:42%">中文</th></tr>
+              <tr><th style="width:80px">時間</th><th>英文</th><th style="width:40%">中文</th></tr>
             </thead>
             <tbody id="cuesBody"></tbody>
           </table>
           <div id="cuesStatus" class="status"></div>
         </div>
+      </div>
 
-        <!-- 測驗 -->
-        <div id="pane-quiz" style="display:none">
+      <div id="pane-quiz" style="display:none">
+        <div class="panel-scroll">
           <div id="quizStatus" class="status">( 尚未載入 )</div>
           <div id="quizBox"></div>
         </div>
+      </div>
 
-        <!-- 單字 -->
-        <div id="pane-vocab" style="display:none">
+      <div id="pane-vocab" style="display:none">
+        <div class="panel-scroll">
           <div id="vocabStatus" class="status">( 尚未載入 )</div>
           <div id="vocabBox"></div>
         </div>
@@ -152,9 +167,8 @@
     </section>
   </main>
 
-  <!-- 你的播放器程式（v7.2） -->
+  <!-- 你的 JS：保持順序 -->
   <script src="./player.js"></script>
-  <!-- 假登入（index 用同一支） -->
   <script src="./login.js"></script>
 </body>
 </html>
