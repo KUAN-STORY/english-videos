@@ -467,6 +467,155 @@
   })();
 
 })();
+/* =========================
+   QUIZ MODULE (Safe Add-on)
+   - 只掛「測驗」分頁，不改動現有播放器/字幕
+   - 依據 #pane-quiz / #quizBox / #quizStatus DOM
+   - 依據 .tab[data-tab="quiz"] 做首次載入
+   ========================= */
+(() => {
+  // ---- 輕量工具，不覆蓋你原本的工具 ----
+  const qz$ = (sel, root=document) => root.querySelector(sel);
+  const qzParams = new URLSearchParams(location.search);
+  const qzSlug = qzParams.get('slug') || 'mid-autumn';
+
+  // 若你主檔已經有 SUPA_URL/SUPA_BUCKET，就優先走 Supabase，再退本地；沒有就直接讀本地
+  const QZ_SUPA_URL    = window.SUPA_URL    || null;
+  const QZ_SUPA_BUCKET = window.SUPA_BUCKET || null;
+  const qzSupaPublic = (path) => `${QZ_SUPA_URL}/storage/v1/object/public/${QZ_SUPA_BUCKET}/${path}`;
+
+  async function qzFetchWithFallback(publicPath, localPath, expectJson=true){
+    if (QZ_SUPA_URL && QZ_SUPA_BUCKET){
+      try{
+        const r = await fetch(qzSupaPublic(publicPath), {cache:'no-store'});
+        if (r.ok) return expectJson ? r.json() : r.blob();
+      }catch(e){}
+    }
+    const r2 = await fetch(localPath, {cache:'no-store'});
+    if (!r2.ok) throw new Error('quiz fetch failed: '+localPath);
+    return expectJson ? r2.json() : r2.blob();
+  }
+
+  // ---- DOM ----
+  const qzTabBtn   = qz$('.tab[data-tab="quiz"]'); // 只監聽這顆
+  const qzPane     = qz$('#pane-quiz');
+  const qzBox      = qz$('#quizBox');
+  const qzStatus   = qz$('#quizStatus');
+
+  if (!qzPane || !qzBox || !qzStatus) {
+    // 頁面沒有測驗容器就直接跳出，不影響其它功能
+    return;
+  }
+
+  let qzLoaded = false;
+  let qzData = [];
+  let qzUserAns = [];
+
+  function qzRender() {
+    qzBox.innerHTML = '';
+    qzUserAns = Array(qzData.length).fill(-1);
+
+    qzData.forEach((q, qi) => {
+      const wrap = document.createElement('div');
+      wrap.style.padding = '14px';
+      wrap.style.borderBottom = '1px solid #14243b';
+
+      const title = document.createElement('div');
+      title.innerHTML = `<b>Q${qi+1}.</b> ${q.q}`;
+      title.style.marginBottom = '8px';
+      wrap.appendChild(title);
+
+      q.a.forEach((opt, ai) => {
+        const id = `qz_${qi}_${ai}`;
+        const label = document.createElement('label');
+        label.style.display = 'block';
+        label.style.cursor  = 'pointer';
+        label.style.margin  = '6px 0';
+        label.innerHTML = `
+          <input type="radio" name="qz_${qi}" id="${id}"/>
+          <span style="margin-left:6px">${opt}</span>
+        `;
+        label.addEventListener('change', () => {
+          qzUserAns[qi] = ai;
+          ansLine.style.display = 'block';
+          if (ai === q.answerIndex) {
+            ansLine.innerHTML = `✅ 正確！Ans: ${q.answerIndex+1}．${q.a[q.answerIndex]} <span class="muted">（${q.explain||'Good!'}）</span>`;
+            ansLine.style.color = '#5bd3c7';
+          } else {
+            ansLine.innerHTML = `❌ 再試試。正解：${q.answerIndex+1}．${q.a[q.answerIndex]} <span class="muted">（${q.explain||''}）</span>`;
+            ansLine.style.color = '#ff6b6b';
+          }
+        });
+        wrap.appendChild(label);
+      });
+
+      const ansLine = document.createElement('div');
+      ansLine.className = 'muted';
+      ansLine.style.marginTop = '6px';
+      ansLine.style.display  = 'none';
+      wrap.appendChild(ansLine);
+
+      qzBox.appendChild(wrap);
+    });
+
+    const submitRow = document.createElement('div');
+    submitRow.style.padding = '14px';
+    submitRow.style.textAlign = 'right';
+
+    const btnSubmit = document.createElement('button');
+    btnSubmit.className = 'btn green';
+    btnSubmit.textContent = '交卷';
+    btnSubmit.addEventListener('click', () => {
+      let correct = 0;
+      qzData.forEach((q,i)=>{ if (qzUserAns[i] === q.answerIndex) correct++; });
+      const total = qzData.length;
+      const pct   = Math.round(correct/total*100);
+
+      const sum = document.createElement('div');
+      sum.style.marginTop = '10px';
+      sum.innerHTML = `
+        <div><b>成績</b>：${correct}/${total}（${pct}%）</div>
+        <div class="muted" style="margin-top:4px">分享學習成果：<br>
+          <code>我在 ${qzSlug} 測驗拿到 ${correct}/${total}（${pct}%）！</code>
+        </div>
+        <div style="margin-top:6px" class="muted">老師建議：${pct>=80?'很棒！可挑戰更快播放或加深詞彙':'先確保理解每題說明，再回影片複習重點句。'}</div>
+      `;
+      submitRow.appendChild(sum);
+    });
+
+    submitRow.appendChild(btnSubmit);
+    qzBox.appendChild(submitRow);
+  }
+
+  async function qzLoadOnce() {
+    if (qzLoaded) return;
+    qzStatus.textContent = '載入測驗中…';
+    try {
+      const data = await qzFetchWithFallback(
+        `data/quiz-${qzSlug}.json`,
+        `./data/quiz-${qzSlug}.json`,
+        true
+      );
+      qzData = Array.isArray(data) ? data : [];
+      qzLoaded = true;
+      qzRender();
+      qzStatus.textContent = '';
+    } catch (err) {
+      qzStatus.textContent = '讀取測驗失敗';
+      console.error(err);
+    }
+  }
+
+  // 只有按到「測驗」頁籤時才載入（不修改你現有的頁籤邏輯）
+  if (qzTabBtn) {
+    qzTabBtn.addEventListener('click', qzLoadOnce);
+  }
+  // 如果你預設就顯示「測驗」Pane（unlikely），也能保險載一次
+  if (qzPane && getComputedStyle(qzPane).display !== 'none') {
+    qzLoadOnce();
+  }
+})();
+
 
 
 
