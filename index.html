@@ -1,112 +1,28 @@
 <!doctype html>
 <html lang="zh-Hant">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>用故事學英文：雙語字幕、測驗與單字</title>
-  <style>
-    :root{--bg:#0f172a;--panel:#121a2b;--muted:#94a3b8;--text:#e5e7eb;--accent:#60a5fa}
-    html,body{margin:0;background:var(--bg);color:var(--text);font-family:system-ui,-apple-system,'Segoe UI',Roboto,'Noto Sans TC',sans-serif}
-    .wrap{max-width:1200px;margin:48px auto;padding:0 20px}
-    h1{font-size:clamp(24px,3.2vw,40px);margin:0 0 8px}
-    p.lead{color:var(--muted);margin:0 0 24px}
-    .actions{display:flex;gap:10px;margin:16px 0 28px;justify-content:flex-end}
-    .btn{background:#1e293b;color:#cbd5e1;border:1px solid #334155;border-radius:12px;padding:8px 14px;cursor:pointer}
-    .btn:hover{border-color:#64748b}
-    .grid{display:grid;gap:18px;grid-template-columns:repeat(auto-fill,minmax(280px,1fr))}
-    .card{background:var(--panel);border:1px solid #1e293b;border-radius:16px;overflow:hidden;display:flex;flex-direction:column}
-    .thumb{aspect-ratio:16/9;background:#0b1220;display:block;object-fit:cover;width:100%}
-    .body{padding:14px 16px 16px;display:flex;flex-direction:column;gap:10px}
-    .title{font-weight:700}
-    .meta{font-size:13px;color:var(--muted)}
-    .row{display:flex;gap:10px;margin-top:8px}
-    .pill{font-size:12px;padding:2px 8px;border:1px solid #334155;border-radius:999px;color:#cbd5e1}
-    .primary{background:var(--accent);color:#0b1220;border:none}
-    .ghost{background:transparent;border:1px solid #334155;color:#e2e8f0}
-    .error{color:#fca5a5;margin-top:8px}
-  </style>
+  <meta charset="utf-8"/>
+  <title>用故事學英文</title>
+  <link rel="stylesheet" href="./style.css"/>
 </head>
 <body>
-  <div class="wrap">
-    <h1>用故事學英文：雙語字幕、測驗與單字</h1>
-    <p class="lead">從下方卡片選擇故事開始。大多數內容需登入後觀看，〈中秋節〉為免費試看。</p>
-
-    <div class="actions">
-      <button id="btnGithub" class="btn">GitHub</button>
+  <header style="display:flex;justify-content:space-between;align-items:center;padding:14px 20px;background:#0f172a;color:#fff">
+    <h1 style="margin:0;font-size:20px">用故事學英文：雙語字幕、測驗與單字</h1>
+    <div id="authArea" style="display:flex;gap:10px;align-items:center">
       <button id="btnLogin" class="btn">登入</button>
+      <button id="btnLogout" class="btn" style="display:none">登出</button>
+      <span id="userNameBadge" style="color:#cbd5e1"></span>
     </div>
+  </header>
 
-    <div id="cards" class="grid" aria-live="polite"></div>
-    <div id="loadErr" class="error" hidden></div>
-  </div>
+  <main style="padding:20px">
+    <p>從下方卡片選擇故事開始。大多數內容需登入後觀看，《中秋節》為免費試看。</p>
+    <div class="cards">
+      <!-- 這裡放三個故事卡片（中秋節 / 后羿射日 / 元宵節） -->
+      <!-- 已有內容不用改 -->
+    </div>
+  </main>
 
-  <!-- 這段腳本會直接去抓 ./data/index.json 並渲染卡片 -->
-  <script type="module">
-    const cardsEl = document.getElementById('cards');
-    const loadErr = document.getElementById('loadErr');
-
-    const fmt = (s)=>String(s ?? '').trim();
-
-    function cardHTML(item){
-      const cover = fmt(item.cover || '');
-      const title = fmt(item.title_en || '');
-      const tag   = fmt(item.title_zh || '');
-      const slug  = fmt(item.slug || '');
-      const len   = (item.length || '').toUpperCase(); // SHORT / LONG
-
-      const img = cover ? `<img class="thumb" src="${cover}" alt="${title}">`
-                        : `<div class="thumb"></div>`;
-
-      return `
-      <article class="card">
-        <a href="player.html?slug=${encodeURIComponent(slug)}" aria-label="${title}">
-          ${img}
-        </a>
-        <div class="body">
-          <div class="title">${title}</div>
-          <div class="meta">${tag}</div>
-          <div class="row">
-            <span class="pill">${len || 'SHORT'}</span>
-          </div>
-          <div class="row">
-            <a class="btn primary" href="player.html?slug=${encodeURIComponent(slug)}">前往 ▶</a>
-            <a class="btn ghost"   href="player.html?slug=${encodeURIComponent(slug)}#quiz">測驗</a>
-          </div>
-        </div>
-      </article>`;
-    }
-
-    async function loadList(){
-      try{
-        // 重要：相對路徑，一定要是 ./data/index.json
-        const res = await fetch('./data/index.json', {cache:'no-store'});
-        if(!res.ok){
-          const text = await res.text();
-          throw new Error(`HTTP ${res.status} 讀取失敗：${text.slice(0,80)}…`);
-        }
-        const json = await res.json();
-        const items = Array.isArray(json.items) ? json.items : [];
-
-        if(items.length === 0){
-          cardsEl.innerHTML = '';
-          loadErr.hidden = false;
-          loadErr.textContent = '資料為空，請檢查 data/index.json 的 items 陣列。';
-          return;
-        }
-        cardsEl.innerHTML = items.map(cardHTML).join('');
-        loadErr.hidden = true;
-      }catch(err){
-        console.error('[index] 載入 index.json 失敗：', err);
-        loadErr.hidden = false;
-        loadErr.textContent = '載入 data/index.json 失敗，請打開 F12 > Console 查看詳細錯誤（最常見為路徑/大小寫有誤）。';
-      }
-    }
-
-    // 右上按鈕（之後可綁定 supabase 登入）
-    document.getElementById('btnGithub').onclick = () => window.open('https://github.com/kuan-story/english-videos','_blank');
-    document.getElementById('btnLogin').onclick  = () => alert('之後接上 Supabase 登入（目前示範版）');
-
-    loadList();
-  </script>
+  <script src="./login.js"></script>
 </body>
 </html>
