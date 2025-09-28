@@ -39,7 +39,7 @@
 
   /* card */
   .card{display:block;border:1px solid var(--border);border-radius:14px;background:var(--panel);overflow:hidden;position:relative}
-  .card-cover-wrap{position:relative;overflow:hidden;background:#0b1324;height:200px}
+  .card-cover-wrap{position:relative;overflow:hidden;background:#0b1324;height:200px;cursor:pointer}
   .card-cover{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block}
   .badge{position:absolute;left:10px;top:10px;padding:4px 8px;border-radius:999px;font-size:12px}
   .badge.free{background:rgba(20,184,110,.25);border:1px solid var(--ok)}
@@ -101,25 +101,32 @@
 <!-- 假登入模組（之後可換成 Supabase Auth） -->
 <script src="login.js"></script>
 <script>
+/* ----------------------------------------------------
+   index.html 入口 JS  — 2025-09 V7.2+fix
+   - FREE_SLUGS 白名單（mid-autumn 免費）
+   - 封面整塊可點
+   - 未登入時：免費片直接進、非免費片跳對話框
+---------------------------------------------------- */
 (() => {
-  const $ = (s,r=document)=> r.querySelector(s);
+  const $  = (s,r=document)=> r.querySelector(s);
   const $$ = (s,r=document)=> [...r.querySelectorAll(s)];
 
+  const FREE_SLUGS = ['mid-autumn']; // 未登入也可看
   const grid = $('#grid');
-  const dlg = $('#dlgLogin');
+  const dlg  = $('#dlgLogin');
   const stat = $('#stat');
-  const q = $('#q');
+  const q    = $('#q');
 
   // auth UI refs
   const authName = $('#authName');
   const btnLogin = $('#btnLogin');
-  const btnLogout = $('#btnLogout');
+  const btnLogout= $('#btnLogout');
 
   let ALL = [];
   let filter = 'all';
   let keyword = '';
 
-  // 讀清單
+  // ---------- 讀清單 ----------
   async function loadIndex(){
     const res = await fetch('data/index.json', {cache:'no-store'});
     if(!res.ok) throw new Error('讀取 data/index.json 失敗');
@@ -129,7 +136,7 @@
     render();
   }
 
-  // 篩選
+  // ---------- 篩選 ----------
   function passFilter(x){
     if(filter !== 'all' && (x.length||'').toLowerCase() !== filter) return false;
     if(!keyword) return true;
@@ -139,21 +146,25 @@
         || (x.slug||'').toLowerCase().includes(k);
   }
 
-  // 渲染卡片
+  // ---------- 渲染卡片 ----------
   function render(){
     grid.innerHTML = '';
     const list = ALL.filter(passFilter);
 
     list.forEach(item=>{
+      const isFree = item.is_free || FREE_SLUGS.includes(item.slug);
+
       const el = document.createElement('article');
       el.className = 'card';
 
-      const coverImg = item.cover ? `<img class="card-cover" src="${item.cover}" loading="lazy" onerror="this.style.display='none'">` : '';
+      const coverImg = item.cover
+        ? `<img class="card-cover" src="${item.cover}" loading="lazy" onerror="this.style.display='none'">`
+        : '';
 
       el.innerHTML = `
-        <div class="card-cover-wrap">
+        <div class="card-cover-wrap" data-act="go" data-slug="${item.slug}" title="前往">
           ${coverImg}
-          <span class="badge ${item.is_free ? 'free':'lock'}">${item.is_free?'免費試看':'需登入'}</span>
+          <span class="badge ${isFree ? 'free':'lock'}">${isFree?'免費試看':'需登入'}</span>
         </div>
         <div class="body">
           <div class="title">${item.title_en||''}</div>
@@ -165,20 +176,22 @@
         </div>
       `;
 
-      el.addEventListener('click',e=>{
-        const act = e.target?.dataset?.act;
+      // 事件委派：封面、前往、測驗
+      el.addEventListener('click', (e)=>{
+        const act  = e.target?.dataset?.act;
         if(!act) return;
         const slug = e.target.dataset.slug;
         const user = window.fakeAuth?.getUser?.();
+        const free = item.is_free || FREE_SLUGS.includes(slug);
 
         if(act==='go'){
-          if(item.is_free || user){
+          if(free || user){
             location.href = `player.html?slug=${encodeURIComponent(slug)}`;
           }else{
             dlg.showModal();
           }
         }else if(act==='quiz'){
-          // 測驗頁籤可直接開（你要鎖也可加判斷）
+          // 測驗可直接開；若想鎖也可仿上面 free 判斷
           location.href = `player.html?slug=${encodeURIComponent(slug)}&tab=quiz`;
         }
         e.preventDefault();
@@ -189,13 +202,13 @@
     });
   }
 
-  // 搜尋
+  // ---------- 搜尋 ----------
   q.addEventListener('input', ()=>{
     keyword = q.value.trim();
     render();
   });
 
-  // 篩選 chips
+  // ---------- 篩選 chips ----------
   $$('.chip').forEach(btn=>{
     btn.addEventListener('click', ()=>{
       $$('.chip').forEach(x=>x.classList.remove('active'));
@@ -205,7 +218,7 @@
     });
   });
 
-  // 對話框控制
+  // ---------- 對話框 ----------
   $('#btnDlgClose').onclick = ()=> dlg.close();
   $('#btnGoLogin').onclick = ()=>{
     dlg.close();
@@ -213,33 +226,31 @@
     else alert('這裡之後接 Supabase/OAuth 登入流程。');
   };
 
-  // ======== 登入列 UI ========
+  // ---------- 登入列 UI ----------
   function refreshAuth(){
     const u = window.fakeAuth?.getUser?.();
     if(u){
       authName.textContent = `👤 ${u.name || u.email || '已登入'}`;
       btnLogout.style.display = 'inline-block';
-      btnLogin.style.display = 'none';
+      btnLogin.style.display  = 'none';
     }else{
       authName.textContent = '';
       btnLogout.style.display = 'none';
-      btnLogin.style.display = 'inline-block';
+      btnLogin.style.display  = 'inline-block';
     }
   }
-  btnLogin.onclick = ()=> window.fakeAuth?.open ? window.fakeAuth.open() : alert('這裡之後接 Supabase/OAuth 登入流程。');
+  btnLogin.onclick  = ()=> window.fakeAuth?.open ? window.fakeAuth.open() : alert('這裡之後接 Supabase/OAuth 登入流程。');
   btnLogout.onclick = ()=> { window.fakeAuth?.logout?.(); };
 
-  // 假登入模組會在狀態變更時丟事件
+  // 假登入模組狀態變更事件
   window.addEventListener('fakeauth:change', refreshAuth);
 
-  // 啟動
+  // ---------- 啟動 ----------
   loadIndex().catch(err=>{
     grid.innerHTML = `<div class="muted" style="grid-column:1/-1;padding:16px;border:1px solid var(--border);border-radius:12px;background:#0f1a33">讀取失敗：${err.message}</div>`;
   });
-  // 初始刷新
   refreshAuth();
 })();
 </script>
 </body>
 </html>
-
