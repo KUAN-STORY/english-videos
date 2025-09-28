@@ -1,149 +1,22 @@
-{
-  "title": "Hou Yi Shoots the Suns Quiz",
-  "items": [
-    {
-      "type": "vocab",
-      "q": "What does 'archer' mean?",
-      "a": ["A person who uses a bow and arrow", "A person who studies stars", "A person who makes clothes", "A person who builds houses"],
-      "answerIndex": 0,
-      "explain": "Hou Yi is a legendary archer who shot down the suns."
-    },
-    {
-      "type": "vocab",
-      "q": "The word 'scorching' is closest in meaning to…",
-      "a": ["Cold", "Burning hot", "Shiny", "Dark"],
-      "answerIndex": 1,
-      "explain": "The ten suns made the land scorching hot."
-    },
-    {
-      "type": "vocab",
-      "q": "What is the meaning of 'hero'?",
-      "a": ["A person admired for courage", "A person who sings", "A person who farms", "A person who tells stories"],
-      "answerIndex": 0,
-      "explain": "Hou Yi is praised as a hero."
-    },
-    {
-      "type": "vocab",
-      "q": "Which word means 'to aim carefully'?",
-      "a": ["Release", "Target", "Focus", "Draw"],
-      "answerIndex": 2,
-      "explain": "Hou Yi focused his bow before shooting."
-    },
-    {
-      "type": "vocab",
-      "q": "The word 'sacrifice' means…",
-      "a": ["Giving up something valuable", "To play happily", "To win a prize", "To start a journey"],
-      "answerIndex": 0,
-      "explain": "Hou Yi sacrificed his own peace to save the people."
-    },
-
-    {
-      "type": "reading",
-      "q": "Why did Hou Yi shoot down the suns?",
-      "a": ["They gave too little light", "They were burning the earth", "They were hiding in the sky", "They wanted to fight Hou Yi"],
-      "answerIndex": 1,
-      "explain": "The ten suns made rivers dry and crops die."
-    },
-    {
-      "type": "reading",
-      "q": "How many suns were there originally?",
-      "a": ["One", "Five", "Ten", "Twelve"],
-      "answerIndex": 2,
-      "explain": "According to the legend, there were ten suns."
-    },
-    {
-      "type": "reading",
-      "q": "Who asked Hou Yi for help?",
-      "a": ["The Emperor of Heaven", "The suffering people", "The Queen Mother", "His students"],
-      "answerIndex": 1,
-      "explain": "The people were suffering and needed Hou Yi's help."
-    },
-    {
-      "type": "reading",
-      "q": "What did Hou Yi use to shoot the suns?",
-      "a": ["A sword", "A bow and arrows", "A spear", "A stone"],
-      "answerIndex": 1,
-      "explain": "Hou Yi was known for his great archery skills."
-    },
-    {
-      "type": "reading",
-      "q": "What happened after Hou Yi shot down the suns?",
-      "a": ["The world became dark", "Only one sun was left to give light", "The crops all died", "The people left their homes"],
-      "answerIndex": 1,
-      "explain": "Hou Yi left one sun so life could continue."
-    },
-
-    {
-      "type": "truefalse",
-      "q": "The ten suns appeared in the sky all at once.",
-      "answerIndex": 1,
-      "explain": "True — that’s why the earth became unbearably hot."
-    },
-    {
-      "type": "truefalse",
-      "q": "Hou Yi was afraid of shooting the suns.",
-      "answerIndex": 0,
-      "explain": "False — Hou Yi was brave and determined."
-    },
-    {
-      "type": "truefalse",
-      "q": "Hou Yi saved the people by leaving one sun.",
-      "answerIndex": 1,
-      "explain": "True — one sun was enough for balance."
-    },
-    {
-      "type": "truefalse",
-      "q": "Hou Yi is remembered as a selfish man.",
-      "answerIndex": 0,
-      "explain": "False — he is remembered as a hero."
-    },
-
-    {
-      "type": "matching",
-      "q": "Match the character with their role.",
-      "pairs": [
-        { "left": "Hou Yi", "right": "Hero archer" },
-        { "left": "The suns", "right": "Made the earth too hot" },
-        { "left": "The people", "right": "Suffered and needed help" }
-      ],
-      "explain": "This shows the key roles in the story."
-    },
-    {
-      "type": "matching",
-      "q": "Match the words with their meanings.",
-      "pairs": [
-        { "left": "Bow", "right": "A weapon to shoot arrows" },
-        { "left": "Arrow", "right": "The projectile Hou Yi used" },
-        { "left": "Target", "right": "The suns in the sky" }
-      ]
-    },
-    {
-      "type": "matching",
-      "q": "Match the events in order.",
-      "pairs": [
-        { "left": "Ten suns appear", "right": "First" },
-        { "left": "Hou Yi shoots", "right": "Then" },
-        { "left": "One sun remains", "right": "Finally" }
-      ]
-    },
-
-    {
-      "type": "fillblank",
-      "q": "Hou Yi used his bow and _____ to shoot down the suns.",
-      "answer": "arrows",
-      "explain": "Hou Yi was a master of archery."
-    },
-    {
-      "type": "fillblank",
-      "q": "Hou Yi left only _____ sun in the sky.",
-      "answer": "one",
-      "explain": "He kept one sun to provide light."
-    },
-    {
-      "type": "fillblank",
-      "q": "The people praised Hou Yi as a great _____.",
-      "answer": "hero",
-      "explain": "He is remembered as a hero in Chinese mythology."
-    }
-  ]
-}
+[
+  {"type":"mcq","q":"How many suns were in the sky according to the legend?","options":["One","Three","Ten","Twelve"],"a":2},
+  {"type":"mcq","q":"Why were people unhappy when many suns appeared?","options":["It was very cold","It was very hot and dry","It was too dark","There were heavy rains"],"a":1},
+  {"type":"mcq","q":"Who helped the people by shooting down the suns?","options":["Chang’e","Hou Yi","Nuwa","The Jade Emperor"],"a":1},
+  {"type":"tf","q":"Hou Yi used a sword to shoot down the suns.","a":false},
+  {"type":"tf","q":"After Hou Yi shot down nine suns, one sun remained.","a":true},
+  {"type":"fill","q":"Hou Yi used a strong ______ to shoot the suns.","a":"bow"},
+  {"type":"fill","q":"Hou Yi’s wife was named ______.","a":"chang’e"},
+  {"type":"mcq","q":"Who gave Hou Yi a special pill?","options":["The Queen Mother of the West","The Jade Emperor","A dragon","A monk"],"a":0},
+  {"type":"mcq","q":"What could the pill do?","options":["Make someone immortal","Make someone invisible","Make someone very strong","Make someone fly"],"a":0},
+  {"type":"tf","q":"Hou Yi wanted to eat the pill immediately.","a":false},
+  {"type":"mcq","q":"Why did Hou Yi give the pill to Chang’e?","options":["To keep it safe","To sell it","To throw it away","To hide it under a tree"],"a":0},
+  {"type":"mcq","q":"Who tried to steal the pill from Chang’e?","options":["Hou Yi","Peng Meng","The Queen Mother","A soldier"],"a":1},
+  {"type":"fill","q":"Peng Meng wanted the ______ of immortality.","a":"pill"},
+  {"type":"tf","q":"Chang’e took the pill and flew up to the moon.","a":true},
+  {"type":"mcq","q":"Where did Chang’e finally live?","options":["The sun","The moon","The sea","The palace"],"a":1},
+  {"type":"mcq","q":"What did people do to remember Chang’e and Hou Yi?","options":["Dance with dragons","Eat tangyuan","Light lanterns and look at the moon","Swim in rivers"],"a":2},
+  {"type":"fill","q":"People admire the bright full ______ during the festival.","a":"moon"},
+  {"type":"tf","q":"The story of Hou Yi is often told during the Mid-Autumn Festival.","a":true},
+  {"type":"mcq","q":"Which of the following best describes Hou Yi?","options":["A kind archer","A greedy king","A sea god","A mountain guard"],"a":0},
+  {"type":"mcq","q":"What is the main theme of the story?","options":["Courage and love","War and peace","Business and trade","Travel and adventure"],"a":0}
+]
