@@ -52,7 +52,17 @@
       .wrap{flex-direction:column}
       .left,.right{max-width:100%}
       #player{aspect-ratio:16/9}
-    }
+    
+    /* 讓「填滿畫面」生效：player.js 會切換 videoWrap 的 .fill */
+.videoWrap{ flex: 0 0 auto; }                /* 預設跟著內容高度 */
+.videoWrap.fill{ flex: 1 1 auto; display:flex; }   /* 開啟填滿：撐滿左側可用高度 */
+.videoWrap.fill #player{
+  width:100%;
+  height:100%;
+  aspect-ratio:auto;        /* 取消固定 16:9，改用容器高度 */
+  object-fit:contain;       /* 等比置中顯示，不裁切 */
+}
+
   </style>
 </head>
 <body>
