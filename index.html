@@ -1,69 +1,66 @@
 <!doctype html>
 <html lang="zh-Hant">
 <head>
-<meta charset="utf-8"/>
-<meta name="viewport" content="width=device-width,initial-scale=1"/>
-<title>用故事學英文 · Stories</title>
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E📘%3C/text%3E%3C/svg%3E">
-<style>
-  :root{
-    --bg:#0b1324;--panel:#0f1a33;--border:#203057;
-    --text:#e7eaf3;--muted:#a9b3cf;--brand:#3c7cff;--ok:#14b86e;--warn:#f5a524;
-  }
-  *{box-sizing:border-box}
-  html,body{height:100%;margin:0;background:var(--bg);color:var(--text);font-family:system-ui,-apple-system,Segoe UI,Roboto,Noto Sans,sans-serif}
-  a{color:inherit;text-decoration:none}
-  .wrap{max-width:1100px;margin:0 auto;padding:28px 16px 80px}
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>用故事學英文 · Stories</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E📘%3C/text%3E%3C/svg%3E">
+  <style>
+    :root{
+      --bg:#0b1324;--panel:#0f1a33;--border:#203057;
+      --text:#e7eaf3;--muted:#a9b3cf;--brand:#3c7cff;--ok:#14b86e;--warn:#f5a524;
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%;margin:0;background:var(--bg);color:var(--text);font-family:system-ui,-apple-system,Segoe UI,Roboto,Noto Sans,sans-serif}
+    a{color:inherit;text-decoration:none}
+    .wrap{max-width:1100px;margin:0 auto;padding:28px 16px 80px}
 
-  header{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:18px}
-  .brand{font-size:22px;font-weight:800;letter-spacing:.02em}
-  .actions{display:flex;gap:10px;align-items:center}
-  .btn{padding:8px 12px;border:1px solid var(--border);background:#132046;border-radius:10px;color:#fff;cursor:pointer}
-  .btn.ghost{background:transparent}
-  .chip{padding:6px 10px;border:1px solid var(--border);border-radius:999px;background:#121d3d;color:#c8d0ea;cursor:pointer}
-  .chip.active{background:#1a2c66;color:#fff;border-color:#2d4ea7}
-  .user{color:#c8d0ea}
+    header{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:18px}
+    .brand{font-size:22px;font-weight:800;letter-spacing:.02em}
+    .actions{display:flex;gap:10px;align-items:center}
+    .btn{padding:8px 12px;border:1px solid var(--border);background:#132046;border-radius:10px;color:#fff;cursor:pointer}
+    .btn.ghost{background:transparent}
+    .chip{padding:6px 10px;border:1px solid var(--border);border-radius:999px;background:#121d3d;color:#c8d0ea;cursor:pointer}
+    .chip.active{background:#1a2c66;color:#fff;border-color:#2d4ea7}
+    .user{color:#c8d0ea}
 
-  h1{font-size:30px;line-height:1.25;margin:10px 0 6px}
-  .muted{color:var(--muted)}
-  .row{display:flex;gap:10px;align-items:center}
-  .space{flex:1}
+    h1{font-size:30px;line-height:1.25;margin:10px 0 6px}
+    .muted{color:var(--muted)}
+    .row{display:flex;gap:10px;align-items:center}
+    .space{flex:1}
 
-  .toolbar{display:flex;gap:10px;align-items:center;margin:18px 0}
-  .search{flex:1;min-width:240px;border:1px solid var(--border);background:#0f1a33;color:#fff;border-radius:12px;padding:10px 12px}
+    .toolbar{display:flex;gap:10px;align-items:center;margin:18px 0}
+    .search{flex:1;min-width:240px;border:1px solid var(--border);background:#0f1a33;color:#fff;border-radius:12px;padding:10px 12px}
 
-  /* grid */
-  .grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
-  @media(max-width:980px){ .grid{grid-template-columns:repeat(2,1fr)} }
-  @media(max-width:640px){ .grid{grid-template-columns:1fr} }
+    .grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+    @media(max-width:980px){ .grid{grid-template-columns:repeat(2,1fr)} }
+    @media(max-width:640px){ .grid{grid-template-columns:1fr} }
 
-  /* card */
-  .card{display:block;border:1px solid var(--border);border-radius:14px;background:var(--panel);overflow:hidden;position:relative}
-  .card-cover-wrap{position:relative;overflow:hidden;background:#0b1324;height:200px;cursor:pointer}
-  .card-cover{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block}
-  .badge{position:absolute;left:10px;top:10px;padding:4px 8px;border-radius:999px;font-size:12px}
-  .badge.free{background:rgba(20,184,110,.25);border:1px solid var(--ok)}
-  .badge.lock{background:rgba(245,165,36,.22);border:1px solid var(--warn)}
-  .card-cover-wrap::after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,transparent 60%,rgba(0,0,0,.55))}
-  .body{padding:14px}
-  .title{font-size:18px;font-weight:700;margin:2px 0 4px}
-  .meta{display:flex;gap:8px;align-items:center;color:var(--muted);font-size:14px}
-  .foot{display:flex;gap:8px;align-items:center;margin-top:12px}
-  .btn.sm{padding:6px 10px;border-radius:999px}
+    .card{display:block;border:1px solid var(--border);border-radius:14px;background:var(--panel);overflow:hidden;position:relative}
+    .card-cover-wrap{position:relative;overflow:hidden;background:#0b1324;height:200px}
+    .card-cover{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block}
+    .badge{position:absolute;left:10px;top:10px;padding:4px 8px;border-radius:999px;font-size:12px}
+    .badge.free{background:rgba(20,184,110,.25);border:1px solid var(--ok)}
+    .badge.lock{background:rgba(245,165,36,.22);border:1px solid var(--warn)}
+    .card-cover-wrap::after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,transparent 60%,rgba(0,0,0,.55))}
+    .body{padding:14px}
+    .title{font-size:18px;font-weight:700;margin:2px 0 4px}
+    .meta{display:flex;gap:8px;align-items:center;color:var(--muted);font-size:14px}
+    .foot{display:flex;gap:8px;align-items:center;margin-top:12px}
+    .btn.sm{padding:6px 10px;border-radius:999px}
 
-  /* dialog */
-  dialog{border:none;border-radius:14px;background:#0f1a33;color:#fff;max-width:460px}
-  dialog::backdrop{background:rgba(0,0,0,.45)}
-  .dlg-head{font-size:18px;font-weight:800;margin:0 0 6px}
-  .dlg-body{color:#cdd5ef;margin-bottom:10px}
-</style>
+    dialog{border:none;border-radius:14px;background:#0f1a33;color:#fff;max-width:460px}
+    dialog::backdrop{background:rgba(0,0,0,.45)}
+    .dlg-head{font-size:18px;font-weight:800;margin:0 0 6px}
+    .dlg-body{color:#cdd5ef;margin-bottom:10px}
+  </style>
 </head>
 <body>
 <div class="wrap">
   <header>
     <div class="brand">看故事學英文·Stories</div>
     <div class="actions">
-      <span id="authName" class="user" aria-live="polite"></span>
+      <span id="userNameBadge" class="user" aria-live="polite"></span>
       <button class="btn ghost" id="btnLogout" style="display:none">登出</button>
       <button class="btn" id="btnLogin">登入</button>
     </div>
@@ -98,36 +95,29 @@
   </div>
 </dialog>
 
-<!-- 假登入模組（之後可換成 Supabase Auth） -->
-<script src="login.js"></script>
+<!-- Supabase 登入模組（ESM） -->
+<script type="module" src="login.js"></script>
 
+<!-- 首頁邏輯：讀 data/index.json、渲染卡片、處理白名單 -->
 <script>
-/* ----------------------------------------------------
-   index.html 入口 JS  — 2025-09 V7.2+free-fix
-   - FREE_SLUGS 白名單 + 相容 data.index.json 的 free 欄位
-   - 封面/前往/測驗 點擊行為
----------------------------------------------------- */
 (() => {
-  const $  = (s,r=document)=> r.querySelector(s);
+  const $ = (s,r=document)=> r.querySelector(s);
   const $$ = (s,r=document)=> [...r.querySelectorAll(s)];
 
-  // 未登入也可看白名單（保險，與 data/index.json 的 free 並用）
-  const FREE_SLUGS = ['mid-autumn'];
-
   const grid = $('#grid');
-  const dlg  = $('#dlgLogin');
+  const dlg = $('#dlgLogin');
   const stat = $('#stat');
-  const q    = $('#q');
+  const q = $('#q');
 
-  const authName = $('#authName');
+  // auth UI refs（由 login.js 來控制狀態，這裡只負責文字/按鈕切換）
+  const authName = $('#userNameBadge');
   const btnLogin = $('#btnLogin');
-  const btnLogout= $('#btnLogout');
+  const btnLogout = $('#btnLogout');
 
   let ALL = [];
   let filter = 'all';
   let keyword = '';
 
-  // ---------- 讀清單 ----------
   async function loadIndex(){
     const res = await fetch('data/index.json', {cache:'no-store'});
     if(!res.ok) throw new Error('讀取 data/index.json 失敗');
@@ -137,75 +127,58 @@
     render();
   }
 
-  // ---------- 篩選 ----------
   function passFilter(x){
     if(filter !== 'all' && (x.length||'').toLowerCase() !== filter) return false;
     if(!keyword) return true;
     const k = keyword.toLowerCase();
-
-    // 同時支援 title/subtitle 舊新欄位
-    const t1 = (x.title||'').toLowerCase();
-    const t2 = (x.subtitle||'').toLowerCase();
-    const te = (x.title_en||'').toLowerCase();
-    const tz = (x.title_zh||'').toLowerCase();
-    const sg = (x.slug||'').toLowerCase();
-
-    return t1.includes(k) || t2.includes(k) || te.includes(k) || tz.includes(k) || sg.includes(k);
+    return (x.title||'').toLowerCase().includes(k)
+        || (x.subtitle||'').toLowerCase().includes(k)
+        || (x.slug||'').toLowerCase().includes(k);
   }
 
-  // 判定是否免費（任一條件為真即視為免費）
-  const isFreeItem = (item) =>
-    item.free === true || item.is_free === true || FREE_SLUGS.includes(item.slug);
-
-  // ---------- 渲染卡片 ----------
   function render(){
     grid.innerHTML = '';
     const list = ALL.filter(passFilter);
 
     list.forEach(item=>{
-      const free = isFreeItem(item);
-
-      // 顯示用標題（相容舊新）
-      const titleEn = item.title || item.title_en || '';
-      const titleZh = item.subtitle || item.title_zh || '';
-
       const el = document.createElement('article');
       el.className = 'card';
 
-      const coverImg = item.cover
-        ? `<img class="card-cover" src="${item.cover}" loading="lazy" onerror="this.style.display='none'">`
-        : '';
+      const coverImg = item.cover ? `<img class="card-cover" src="${item.cover}" loading="lazy" onerror="this.style.display='none'">` : '';
+      const isFree = !!item.free;
 
       el.innerHTML = `
-        <div class="card-cover-wrap" data-act="go" data-slug="${item.slug}" title="前往">
+        <div class="card-cover-wrap" data-act="go" data-slug="${item.slug}">
           ${coverImg}
-          <span class="badge ${free ? 'free':'lock'}">${free ? '免費試看' : '需登入'}</span>
+          <span class="badge ${isFree ? 'free':'lock'}">${isFree?'免費試看':'需登入'}</span>
         </div>
         <div class="body">
-          <div class="title">${titleEn}</div>
-          <div class="meta">${titleZh} · ${(item.length||'').toUpperCase()}</div>
+          <div class="title">${item.title||''}</div>
+          <div class="meta">${item.subtitle||''}</div>
           <div class="foot">
-            <a class="btn sm" data-act="go" data-slug="${item.slug}">前往 ▶</a>
+            <a class="btn sm" data-act="go" data-slug="${item.slug}" ${isFree?'':'data-requires-auth'}>前往 ▶</a>
             <a class="btn sm ghost" data-act="quiz" data-slug="${item.slug}">測驗</a>
           </div>
         </div>
       `;
 
-      el.addEventListener('click', (e)=>{
-        const act  = e.target?.dataset?.act;
+      el.addEventListener('click',e=>{
+        const act = e.target?.dataset?.act;
         if(!act) return;
         const slug = e.target.dataset.slug;
-        const user = window.fakeAuth?.getUser?.();
-        const freeNow = FREE_SLUGS.includes(slug) || item.free === true || item.is_free === true;
 
         if(act==='go'){
-          if(freeNow || user){
-            location.href = `player.html?slug=${encodeURIComponent(slug)}`;
-          }else{
-            dlg.showModal();
-          }
+          // 是否可直接看（免費或已登入）
+          const free = (item.free===true);
+          const authedPromise = window.Auth?.isAuthed?.() || Promise.resolve(false);
+          authedPromise.then(authed=>{
+            if(free || authed){
+              location.href = `player.html?slug=${encodeURIComponent(slug)}`;
+            }else{
+              dlg.showModal();
+            }
+          });
         }else if(act==='quiz'){
-          // 如要鎖測驗，改成與 go 一樣的判斷
           location.href = `player.html?slug=${encodeURIComponent(slug)}&tab=quiz`;
         }
         e.preventDefault();
@@ -216,13 +189,11 @@
     });
   }
 
-  // ---------- 搜尋 ----------
   q.addEventListener('input', ()=>{
     keyword = q.value.trim();
     render();
   });
 
-  // ---------- 篩選 chips ----------
   $$('.chip').forEach(btn=>{
     btn.addEventListener('click', ()=>{
       $$('.chip').forEach(x=>x.classList.remove('active'));
@@ -232,38 +203,20 @@
     });
   });
 
-  // ---------- 對話框 ----------
   $('#btnDlgClose').onclick = ()=> dlg.close();
   $('#btnGoLogin').onclick = ()=>{
     dlg.close();
-    if (window.fakeAuth?.open) window.fakeAuth.open();
-    else alert('這裡之後接 Supabase/OAuth 登入流程。');
+    // 交給 login.js
+    const b = document.getElementById('btnLogin');
+    if (b) b.click();
   };
 
-  // ---------- 登入列 UI ----------
-  function refreshAuth(){
-    const u = window.fakeAuth?.getUser?.();
-    if(u){
-      authName.textContent = `👤 ${u.name || u.email || '已登入'}`;
-      btnLogout.style.display = 'inline-block';
-      btnLogin.style.display  = 'none';
-    }else{
-      authName.textContent = '';
-      btnLogout.style.display = 'none';
-      btnLogin.style.display  = 'inline-block';
-    }
-  }
-  btnLogin.onclick  = ()=> window.fakeAuth?.open ? window.fakeAuth.open() : alert('這裡之後接 Supabase/OAuth 登入流程。');
-  btnLogout.onclick = ()=> { window.fakeAuth?.logout?.(); };
-
-  window.addEventListener('fakeauth:change', refreshAuth);
-
-  // ---------- 啟動 ----------
+  // 初次渲染
   loadIndex().catch(err=>{
     grid.innerHTML = `<div class="muted" style="grid-column:1/-1;padding:16px;border:1px solid var(--border);border-radius:12px;background:#0f1a33">讀取失敗：${err.message}</div>`;
   });
-  refreshAuth();
 })();
 </script>
 </body>
 </html>
+
