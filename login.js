@@ -1,58 +1,115 @@
-// login.js  — Fake Auth v1.0 (可直接覆蓋)
-// 功能：
-// - 以 prompt 輸入姓名/Email，存在 localStorage (userName/userEmail)
-// - 右上角顯示「👤 名字」，提供登出
-// - 為了與你的測驗證書相容，同步寫入 qzName（供成績單/證書預設姓名）
-
+<script>
+// login.js  (V1.1)  — 假登入 + 守門 + 共用 UI
 (() => {
-  const $ = (s, el=document) => el.querySelector(s);
+  const STORAGE_KEY = 'authUser';
+  const PUBLIC_SLUGS = ['mid-autumn']; // 未登入可看的 slug 白名單
 
-  const btnLogin  = $('#btnLogin');
-  const btnLogout = $('#btnLogout');
-  const badge     = $('#userNameBadge');
+  // ===== Auth 狀態 =====
+  const getUser = () => {
+    try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || 'null'); }
+    catch { return null; }
+  };
+  const isAuthed = () => !!getUser();
 
-  function getUser() {
-    return {
-      name:  localStorage.getItem('userName')  || '',
-      email: localStorage.getItem('userEmail') || '',
-    };
-  }
-  function setUser({name, email}) {
-    if (name)  localStorage.setItem('userName', name);
-    if (email) localStorage.setItem('userEmail', email);
-    // 與你的測驗模組相容（證書預設姓名）
-    if (name)  localStorage.setItem('qzName', name);
-    renderUI();
-  }
-  function clearUser() {
-    ['userName','userEmail'].forEach(k => localStorage.removeItem(k));
-    renderUI();
-  }
-
-  function renderUI() {
+  // ===== UI接線（右上角）=====
+  function updateAuthUI() {
     const u = getUser();
-    if (u.name) {
-      if (badge)     badge.textContent = `👤 ${u.name}${u.email ? ' · ' + u.email : ''}`;
-      if (btnLogin)  btnLogin.style.display  = 'none';
-      if (btnLogout) btnLogout.style.display = '';
+    const btnLogin  = document.getElementById('btnLogin');
+    const btnLogout = document.getElementById('btnLogout');
+    const badge     = document.getElementById('userNameBadge');
+    if (!btnLogin || !btnLogout || !badge) return;
+
+    if (u) {
+      btnLogin.style.display  = 'none';
+      btnLogout.style.display = '';
+      badge.textContent = `👤 ${u.name || u.email}`;
     } else {
-      if (badge)     badge.textContent = '';
-      if (btnLogin)  btnLogin.style.display  = '';
-      if (btnLogout) btnLogout.style.display = 'none';
+      btnLogin.style.display  = '';
+      btnLogout.style.display = 'none';
+      badge.textContent = '';
     }
   }
 
-  function loginFlow() {
-    const cur = getUser();
-    const name  = prompt('請輸入姓名（測驗證書會顯示此名字）', cur.name || '');
-    if (!name) return;
-    const email = prompt('可選：Email（未來轉正式會員可沿用）', cur.email || '') || '';
-    setUser({name: name.trim(), email: email.trim()});
+  function promptLogin(onDone) {
+    const name  = (prompt('請輸入顯示名稱（可留空）') || '').trim();
+    const email = (prompt('請輸入 Email（示範版，可亂填）') || '').trim();
+    if (!email) { alert('需要 Email 才能登入（示範版）'); return; }
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({ name, email, id: 'demo-'+Date.now() }));
+    updateAuthUI();
+    if (onDone) onDone();
   }
 
-  if (btnLogin)  btnLogin.addEventListener('click', loginFlow);
-  if (btnLogout) btnLogout.addEventListener('click', clearUser);
+  function logout() {
+    localStorage.removeItem(STORAGE_KEY);
+    updateAuthUI();
+  }
 
-  // 初始渲染
-  renderUI();
+  function wireHeader() {
+    const btnLogin  = document.getElementById('btnLogin');
+    const btnLogout = document.getElementById('btnLogout');
+    if (btnLogin)  btnLogin.addEventListener('click', () => promptLogin(() => {
+      // 登入成功後讓首頁鎖定的卡片即時解鎖
+      unlockIndexCardsIfAny();
+    }));
+    if (btnLogout) btnLogout.addEventListener('click', () => {
+      logout();
+      lockIndexCardsIfAny();
+    });
+    updateAuthUI();
+  }
+
+  // ===== Player 守門：未登入禁止看非白名單影片 =====
+  function guardPlayerIfAny() {
+    const player = document.getElementById('player');
+    if (!player) return; // 不在 player 頁
+    const slug = new URLSearchParams(location.search).get('slug') || '';
+    if (!isAuthed() && !PUBLIC_SLUGS.includes(slug)) {
+      if (confirm('這部影片需要登入後才能觀看。要立刻登入嗎？')) {
+        promptLogin(() => location.reload());
+      } else {
+        alert('之後接上 Supabase 真登入；目前示範版將返回首頁');
+        location.href = './index.html';
+      }
+    }
+  }
+
+  // ===== Index 卡片鎖定/解鎖（需加 data-requires-auth）=====
+  function lockIndexCardsIfAny() {
+    if (isAuthed()) return; // 已登入就不鎖
+    document.querySelectorAll('[data-requires-auth]').forEach(btn => {
+      btn.dataset.originalText = btn.dataset.originalText || btn.textContent;
+      btn.textContent = '🔒 前往';
+      btn.classList.add('locked');
+      btn.addEventListener('click', lockClick, { once:false });
+    });
+  }
+  function unlockIndexCardsIfAny() {
+    document.querySelectorAll('[data-requires-auth]').forEach(btn => {
+      if (btn.dataset.originalText) btn.textContent = btn.dataset.originalText;
+      btn.classList.remove('locked');
+      btn.removeEventListener('click', lockClick);
+    });
+  }
+  function lockClick(e) {
+    if (isAuthed()) return;
+    e.preventDefault();
+    if (confirm('此內容需登入後才能觀看。要立刻登入嗎？')) {
+      promptLogin(() => location.reload());
+    }
+  }
+
+  // ===== 啟動 =====
+  document.addEventListener('DOMContentLoaded', () => {
+    wireHeader();
+    guardPlayerIfAny();
+    // 在首頁才有 data-requires-auth 的卡片
+    if (document.querySelector('[data-requires-auth]')) {
+      isAuthed() ? unlockIndexCardsIfAny() : lockIndexCardsIfAny();
+    }
+  });
+
+  // 讓其它腳本可查詢
+  window.Auth = { getUser, isAuthed };
 })();
+</script>
+
