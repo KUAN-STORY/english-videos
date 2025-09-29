@@ -30,7 +30,7 @@
     // 1) 依你實際的 supa.js 位置調整這條路徑：
     //    如果你把 supa.js 放在根目錄：  import { supa, getUser, signOut } from '../supa.js';
     //    如果在 english-videos/videos/js/supa.js：就用下行這個相對路徑
-    import { supa, getUser, signOut } from './videos/js/supa.js';
+    import { supa, getUser, signOut } from './supa.js';
 
     const $ = s => document.querySelector(s);
     const log = (...a) => { $('#log').textContent += a.join(' ') + '\n'; };
@@ -93,3 +93,4 @@
   </script>
 </body>
 </html>
+
