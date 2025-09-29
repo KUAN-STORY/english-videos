@@ -2,7 +2,8 @@
 // -------------------------------------------------------
 // ⛳ 如果你的 supa.js 在別的位置，改這行即可：
 //   import { supa, getUser, signInWithEmail, signOut } from './js/supa.js';
-import { supa, getUser, signInWithEmail, signOut } from './videos/js/supa.js';
+import { supa, getUser, signInWithEmail, signOut } from './english-videos/videos
+/js/supa.js';
 
 const PUBLIC_SLUGS = ['mid-autumn'];  // 未登入可看的 slug 白名單（可增減）
 
