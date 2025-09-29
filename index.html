@@ -37,7 +37,7 @@
     @media(max-width:640px){ .grid{grid-template-columns:1fr} }
 
     .card{display:block;border:1px solid var(--border);border-radius:14px;background:var(--panel);overflow:hidden;position:relative}
-    .card-cover-wrap{position:relative;overflow:hidden;background:#0b1324;height:200px}
+    .card-cover-wrap{position:relative;overflow:hidden;background:#0b1324;height:200px;cursor:pointer}
     .card-cover{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block}
     .badge{position:absolute;left:10px;top:10px;padding:4px 8px;border-radius:999px;font-size:12px}
     .badge.free{background:rgba(20,184,110,.25);border:1px solid var(--ok)}
@@ -98,21 +98,18 @@
 <!-- Supabase 登入模組（ESM） -->
 <script type="module" src="login.js"></script>
 
-<!-- 首頁邏輯：讀 data/index.json、渲染卡片、處理白名單 -->
+<!-- 首頁邏輯 -->
 <script>
 (() => {
   const $ = (s,r=document)=> r.querySelector(s);
   const $$ = (s,r=document)=> [...r.querySelectorAll(s)];
-
   const grid = $('#grid');
   const dlg = $('#dlgLogin');
   const stat = $('#stat');
   const q = $('#q');
 
-  // auth UI refs（由 login.js 來控制狀態，這裡只負責文字/按鈕切換）
-  const authName = $('#userNameBadge');
-  const btnLogin = $('#btnLogin');
-  const btnLogout = $('#btnLogout');
+  // 供白名單（與 login.js 的 FREE_SLUGS 一致）
+  const FREE_SLUGS = new Set(['mid-autumn']);
 
   let ALL = [];
   let filter = 'all';
@@ -143,9 +140,8 @@
     list.forEach(item=>{
       const el = document.createElement('article');
       el.className = 'card';
-
       const coverImg = item.cover ? `<img class="card-cover" src="${item.cover}" loading="lazy" onerror="this.style.display='none'">` : '';
-      const isFree = !!item.free;
+      const isFree = !!item.free || FREE_SLUGS.has(item.slug);
 
       el.innerHTML = `
         <div class="card-cover-wrap" data-act="go" data-slug="${item.slug}">
@@ -156,62 +152,39 @@
           <div class="title">${item.title||''}</div>
           <div class="meta">${item.subtitle||''}</div>
           <div class="foot">
-            <a class="btn sm" data-act="go" data-slug="${item.slug}" ${isFree?'':'data-requires-auth'}>前往 ▶</a>
+            <a class="btn sm" data-act="go"   data-slug="${item.slug}">前往 ▶</a>
             <a class="btn sm ghost" data-act="quiz" data-slug="${item.slug}">測驗</a>
           </div>
         </div>
       `;
 
-      el.addEventListener('click',e=>{
+      // 所有可點擊處，統一先經過 Auth.require(slug)
+      el.addEventListener('click', async (e)=>{
         const act = e.target?.dataset?.act;
         if(!act) return;
-        const slug = e.target.dataset.slug;
+        e.preventDefault(); e.stopPropagation();
 
-        if(act==='go'){
-          // 是否可直接看（免費或已登入）
-          const free = (item.free===true);
-          const authedPromise = window.Auth?.isAuthed?.() || Promise.resolve(false);
-          authedPromise.then(authed=>{
-            if(free || authed){
-              location.href = `player.html?slug=${encodeURIComponent(slug)}`;
-            }else{
-              dlg.showModal();
-            }
-          });
-        }else if(act==='quiz'){
-          location.href = `player.html?slug=${encodeURIComponent(slug)}&tab=quiz`;
-        }
-        e.preventDefault();
-        e.stopPropagation();
+        const slug = e.target.dataset.slug;
+        const allow = await (window.Auth?.require?.(slug) ?? Promise.resolve(true));
+        if (!allow) { dlg.showModal(); return; }
+
+        if (act === 'go')   location.href = `player.html?slug=${encodeURIComponent(slug)}`;
+        if (act === 'quiz') location.href = `player.html?slug=${encodeURIComponent(slug)}&tab=quiz`;
       });
 
       grid.appendChild(el);
     });
   }
 
-  q.addEventListener('input', ()=>{
-    keyword = q.value.trim();
-    render();
-  });
+  q.addEventListener('input', ()=>{ keyword = q.value.trim(); render(); });
 
   $$('.chip').forEach(btn=>{
-    btn.addEventListener('click', ()=>{
-      $$('.chip').forEach(x=>x.classList.remove('active'));
-      btn.classList.add('active');
-      filter = btn.dataset.filter;
-      render();
-    });
+    btn.addEventListener('click', ()=>{ $$('.chip').forEach(x=>x.classList.remove('active')); btn.classList.add('active'); filter = btn.dataset.filter; render(); });
   });
 
   $('#btnDlgClose').onclick = ()=> dlg.close();
-  $('#btnGoLogin').onclick = ()=>{
-    dlg.close();
-    // 交給 login.js
-    const b = document.getElementById('btnLogin');
-    if (b) b.click();
-  };
+  $('#btnGoLogin').onclick = ()=>{ dlg.close(); const b = document.getElementById('btnLogin'); if (b) b.click(); };
 
-  // 初次渲染
   loadIndex().catch(err=>{
     grid.innerHTML = `<div class="muted" style="grid-column:1/-1;padding:16px;border:1px solid var(--border);border-radius:12px;background:#0f1a33">讀取失敗：${err.message}</div>`;
   });
@@ -219,4 +192,3 @@
 </script>
 </body>
 </html>
-
