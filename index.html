@@ -67,7 +67,7 @@
   </header>
 
   <h1>用故事學英文：雙語字幕、測驗與單字</h1>
-  <div class="muted">從下方卡片選擇故事開始。大多數內容需登入後觀看，〈中秋節〉為免費試看（只提供「測驗」入口）。</div>
+  <div class="muted">從下方卡片選擇故事開始。大多數內容需登入後觀看，〈中秋節〉為免費試看。</div>
 
   <div class="toolbar">
     <input id="q" class="search" placeholder="輸入關鍵字搜尋（中／英標題／標籤）…"/>
@@ -95,18 +95,22 @@
   </div>
 </dialog>
 
-<!-- 載入登入模組（會對外發出 auth-changed 事件） -->
+<!-- 1) 載入登入程式（Email+Password 版） -->
 <script type="module" src="./login.js"></script>
 
+<!-- 2) 首頁邏輯：載入清單、處理守門 -->
 <script>
 (() => {
-  const $  = (s,r=document)=> r.querySelector(s);
+  const $ = (s,r=document)=> r.querySelector(s);
   const $$ = (s,r=document)=> [...r.querySelectorAll(s)];
 
   const grid = $('#grid');
   const dlg  = $('#dlgLogin');
   const stat = $('#stat');
   const q    = $('#q');
+
+  // 白名單：未登入也可看
+  const FREE_SLUGS = new Set(['mid-autumn']);
 
   let ALL = [];
   let filter = 'all';
@@ -138,44 +142,37 @@
       const el = document.createElement('article');
       el.className = 'card';
       const coverImg = item.cover ? `<img class="card-cover" src="${item.cover}" loading="lazy" onerror="this.style.display='none'">` : '';
-      const isFree = !!item.free;
-
-      // ✅ 免費片（中秋節）不顯示「前往」
-      const footBtns = isFree
-        ? `<a class="btn sm ghost" data-act="quiz" data-slug="${item.slug}">測驗</a>`
-        : `<a class="btn sm" data-act="go" data-slug="${item.slug}" data-requires-auth>前往 ▶</a>
-           <a class="btn sm ghost" data-act="quiz" data-slug="${item.slug}">測驗</a>`;
+      const isFree = item.free === true || FREE_SLUGS.has(item.slug);
 
       el.innerHTML = `
-        <div class="card-cover-wrap" data-act="${isFree ? 'quiz' : 'go'}" data-slug="${item.slug}">
+        <div class="card-cover-wrap" data-act="go" data-slug="${item.slug}">
           ${coverImg}
           <span class="badge ${isFree ? 'free':'lock'}">${isFree?'免費試看':'需登入'}</span>
         </div>
         <div class="body">
           <div class="title">${item.title||''}</div>
           <div class="meta">${item.subtitle||''}</div>
-          <div class="foot">${footBtns}</div>
+          <div class="foot">
+            <a class="btn sm" data-act="go" data-slug="${item.slug}">前往 ▶</a>
+            <a class="btn sm ghost" data-act="quiz" data-slug="${item.slug}">測驗</a>
+          </div>
         </div>
       `;
 
-      el.addEventListener('click', e=>{
+      el.addEventListener('click', async (e)=>{
         const act = e.target?.dataset?.act;
         if(!act) return;
         const slug = e.target.dataset.slug;
-
-        if (act === 'quiz') {
-          // 測驗不需要登入（對於免費片），付費片你也可以在 player.html 再做守門
+        if(act==='go'){
+          const isFree = item.free === true || FREE_SLUGS.has(slug);
+          const authed = await (window.Auth?.isAuthed?.() || Promise.resolve(false));
+          if (isFree || authed) {
+            location.href = `player.html?slug=${encodeURIComponent(slug)}`;
+          } else {
+            dlg.showModal();
+          }
+        }else if(act==='quiz'){
           location.href = `player.html?slug=${encodeURIComponent(slug)}&tab=quiz`;
-        } else if (act === 'go') {
-          // 需要登入的情況
-          const p = window.Auth?.isAuthed?.() || Promise.resolve(false);
-          p.then(authed=>{
-            if(authed){
-              location.href = `player.html?slug=${encodeURIComponent(slug)}`;
-            }else{
-              dlg.showModal();
-            }
-          });
         }
         e.preventDefault();
         e.stopPropagation();
@@ -198,9 +195,6 @@
   $('#btnDlgClose').onclick = ()=> dlg.close();
   $('#btnGoLogin').onclick  = ()=>{ dlg.close(); const b = $('#btnLogin'); if (b) b.click(); };
 
-  // ✅ 監聽 login.js 發出的登入變化事件，重新渲染按鈕狀態
-  window.addEventListener('auth-changed', () => render());
-
   loadIndex().catch(err=>{
     grid.innerHTML = `<div class="muted" style="grid-column:1/-1;padding:16px;border:1px solid var(--border);border-radius:12px;background:#0f1a33">讀取失敗：${err.message}</div>`;
   });
@@ -208,5 +202,6 @@
 </script>
 </body>
 </html>
+
 
 
