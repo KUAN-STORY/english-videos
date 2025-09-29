@@ -1,48 +1,39 @@
-// login.js — Supabase Auth 版（Email Magic Link + Google）
-import { supa, getUser, signInWithEmail, signOut } from './videos/js/supa.js';
+// login.js — Supabase Auth（Email Magic Link + Google）
+// 以 ES Module 載入：<script type="module" src="./login.js"></script>
 
 console.log('[login.js] module loaded');
 
-const FREE_SLUGS = new Set(['mid-autumn']); // 免登入白名單
+import { supa, getUser, signInWithEmail, signOut } from './videos/js/supa.js';
 
-// DOM helpers
+// 未登入也可看的 slug（需與 data/index.json 對應）
+const FREE_SLUGS = new Set(['mid-autumn']);
+
+// DOM helper
 const $  = (s, r = document) => r.querySelector(s);
 const $$ = (s, r = document) => [...r.querySelectorAll(s)];
 
 async function isAuthed() {
-  try {
-    const u = await getUser();
-    return !!u;
-  } catch (e) {
-    console.error('[login.js] getUser error:', e);
-    return false;
-  }
+  const u = await getUser();
+  return !!u;
 }
 
 // 右上角登入列 UI
 async function refreshAuthUI() {
-  try {
-    const u = await getUser();
-    const btnLogin  = $('#btnLogin');
-    const btnLogout = $('#btnLogout');
-    const badge     = $('#userNameBadge');
-    if (!btnLogin || !btnLogout || !badge) {
-      console.warn('[login.js] header buttons missing');
-      return;
-    }
+  const u = await getUser();
+  const btnLogin  = $('#btnLogin');
+  const btnLogout = $('#btnLogout');
+  const badge     = $('#userNameBadge');
+  if (!btnLogin || !btnLogout || !badge) return;
 
-    if (u) {
-      btnLogin.style.display  = 'none';
-      btnLogout.style.display = '';
-      const name = u.user_metadata?.name || u.email || '已登入';
-      badge.textContent = `👤 ${name}`;
-    } else {
-      btnLogin.style.display  = '';
-      btnLogout.style.display = 'none';
-      badge.textContent = '';
-    }
-  } catch (e) {
-    console.error('[login.js] refreshAuthUI error:', e);
+  if (u) {
+    btnLogin.style.display  = 'none';
+    btnLogout.style.display = '';
+    const name = u.user_metadata?.name || u.email || '已登入';
+    badge.textContent = `👤 ${name}`;
+  } else {
+    btnLogin.style.display  = '';
+    btnLogout.style.display = 'none';
+    badge.textContent = '';
   }
 }
 
@@ -56,17 +47,12 @@ function wireHeaderAuth() {
       const useGoogle = confirm('要用 Google 登入嗎？\n按「確定」使用 Google；按「取消」改用 Email。');
 
       if (useGoogle) {
-        try {
-          const redirectTo = location.origin + location.pathname; // 必須在 Supabase Redirect URLs 白名單
-          console.log('[login.js] Google OAuth redirectTo =', redirectTo);
-          await supa.auth.signInWithOAuth({
-            provider: 'google',
-            options: { redirectTo }
-          });
-        } catch (e) {
-          console.error('[login.js] Google OAuth error:', e);
-          alert('Google 登入失敗：' + (e?.message || e));
-        }
+        const redirectTo = location.origin + location.pathname; // index.html / player.html
+        console.log('[login.js] Google OAuth redirectTo =', redirectTo);
+        await supa.auth.signInWithOAuth({
+          provider: 'google',
+          options: { redirectTo }
+        });
       } else {
         const email = prompt('請輸入 Email（會寄 Magic Link 到你的信箱）：');
         if (!email) return;
@@ -74,36 +60,27 @@ function wireHeaderAuth() {
           await signInWithEmail(email);
           alert('已寄出登入連結，請到信箱點擊完成登入。');
         } catch (e) {
-          console.error('[login.js] signInWithEmail error:', e);
           alert('寄出登入連結失敗：' + (e?.message || e));
         }
       }
     });
-  } else {
-    console.warn('[login.js] #btnLogin not found');
   }
 
   if (btnLogout) {
     btnLogout.addEventListener('click', async () => {
-      console.log('[login.js] #btnLogout clicked');
-      try {
-        await signOut();
-        await refreshAuthUI();
-        lockIndexCardsIfAny();
-      } catch (e) {
-        console.error('[login.js] signOut error:', e);
-      }
+      await signOut();
+      await refreshAuthUI();
+      lockIndexCardsIfAny();
     });
   }
 }
 
-// Player 守門（未登入擋非白名單）
+// Player 守門（非白名單且未登入則攔截）
 async function guardPlayerIfAny() {
   const player = $('#player');
   if (!player) return;
   const slug = new URLSearchParams(location.search).get('slug') || '';
   const authed = await isAuthed();
-  console.log('[login.js] guardPlayerIfAny slug=', slug, 'authed=', authed);
 
   if (!authed && !FREE_SLUGS.has(slug)) {
     const goLogin = confirm('這部影片需要登入後才能觀看。要立刻登入嗎？');
@@ -127,7 +104,7 @@ function lockIndexCardsIfAny() {
       btn.classList.add('locked');
       btn.addEventListener('click', lockClick, { once:false });
     });
-  }).catch(e => console.error('[login.js] lockIndexCardsIfAny getUser err:', e));
+  });
 }
 
 function unlockIndexCardsIfAny() {
@@ -158,23 +135,14 @@ document.addEventListener('DOMContentLoaded', async () => {
 });
 
 // 登入狀態改變（包含 OAuth/Magic Link 回來）
-supa.auth.onAuthStateChange(async (evt) => {
-  console.log('[login.js] onAuthStateChange:', evt);
+supa.auth.onAuthStateChange(async () => {
+  console.log('[login.js] onAuthStateChange');
   await refreshAuthUI();
   (await isAuthed()) ? unlockIndexCardsIfAny() : lockIndexCardsIfAny();
 });
 
-// 對話框上的「去登入」也在這邊再補一個保險的 click 綁定（避免首頁腳本沒綁到）
-document.addEventListener('click', (ev) => {
-  const t = ev.target;
-  if (t && t.id === 'btnGoLogin') {
-    console.log('[login.js] #btnGoLogin clicked (fallback)');
-    const btn = $('#btnLogin');
-    if (btn) btn.click();
-  }
-});
-
-// 讓其它腳本可用
+// 讓其它腳本可查詢
 window.Auth = { getUser, isAuthed };
+
 
 
