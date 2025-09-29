@@ -69,3 +69,4 @@ export async function addQuizAttempt({ slug, score, total, payload }) {
     .from('quiz_attempts')
     .insert({ user_id: user.id, slug, score, total, payload })
 }
+
