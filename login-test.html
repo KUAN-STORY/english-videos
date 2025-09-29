@@ -1,0 +1,95 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Supabase 登入測試</title>
+  <style>
+    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Noto Sans, sans-serif; padding:24px; }
+    h1 { margin: 0 0 16px; }
+    .row { display:flex; gap:10px; margin:12px 0; }
+    button { padding:8px 12px; border:1px solid #ccc; border-radius:8px; cursor:pointer; }
+    #log { white-space: pre-wrap; background:#f7f7f9; border:1px solid #eee; padding:12px; border-radius:8px; }
+  </style>
+</head>
+<body>
+  <h1>Supabase 登入測試</h1>
+
+  <div>狀態：<span id="status">（尚未檢查）</span></div>
+
+  <div class="row">
+    <button id="btnGoogle">用 Google 登入</button>
+    <button id="btnEmail">用 Email（Magic Link）登入</button>
+    <button id="btnLogout" style="display:none">登出</button>
+  </div>
+
+  <div id="log"></div>
+
+  <!-- 關鍵：一定要用 ES Module 載入 -->
+  <script type="module">
+    // 1) 依你實際的 supa.js 位置調整這條路徑：
+    //    如果你把 supa.js 放在根目錄：  import { supa, getUser, signOut } from '../supa.js';
+    //    如果在 english-videos/videos/js/supa.js：就用下行這個相對路徑
+    import { supa, getUser, signOut } from './videos/js/supa.js';
+
+    const $ = s => document.querySelector(s);
+    const log = (...a) => { $('#log').textContent += a.join(' ') + '\n'; };
+
+    async function render() {
+      const u = await getUser();
+      $('#status').textContent = u ? `已登入：${u.email || u.user_metadata?.name || u.id}` : '未登入';
+      $('#btnLogout').style.display = u ? '' : 'none';
+    }
+
+    // Google 登入
+    $('#btnGoogle').addEventListener('click', async () => {
+      try {
+        // 回來的網址必須列在 Supabase 的 Redirect URLs
+        const redirectTo = location.origin + '/english-videos/index.html';
+        await supa.auth.signInWithOAuth({
+          provider: 'google',
+          options: { redirectTo }
+        });
+        // 這裡會跳轉，回來後 onAuthStateChange 會更新 UI
+      } catch (e) {
+        alert('Google 登入失敗：' + (e?.message || e));
+        log('Google error:', e);
+      }
+    });
+
+    // Email (Magic Link) 登入
+    $('#btnEmail').addEventListener('click', async () => {
+      const email = prompt('請輸入 Email，會寄 Magic Link 過去：');
+      if (!email) return;
+      try {
+        // 你也可以指定 emailRedirectTo，不填則用 Supabase Site URL
+        const { error } = await supa.auth.signInWithOtp({
+          email,
+          options: {
+            // 建議填，回到你的網站頁面之一
+            emailRedirectTo: location.origin + '/english-videos/index.html'
+          }
+        });
+        if (error) throw error;
+        alert('已寄出登入連結，請到信箱點擊「Log In」。');
+      } catch (e) {
+        alert('寄送失敗：' + (e?.message || e));
+        log('OTP error:', e);
+      }
+    });
+
+    // 登出
+    $('#btnLogout').addEventListener('click', async () => {
+      await signOut();
+      await render();
+    });
+
+    supa.auth.onAuthStateChange(async (_evt, _session) => {
+      await render();
+    });
+
+    // 初次渲染
+    render().catch(err => log('init error:', err));
+  </script>
+</body>
+</html>
