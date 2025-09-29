@@ -6,10 +6,7 @@
   <title>用故事學英文 · Stories</title>
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E📘%3C/text%3E%3C/svg%3E">
   <style>
-    :root{
-      --bg:#0b1324;--panel:#0f1a33;--border:#203057;
-      --text:#e7eaf3;--muted:#a9b3cf;--brand:#3c7cff;--ok:#14b86e;--warn:#f5a524;
-    }
+    :root{--bg:#0b1324;--panel:#0f1a33;--border:#203057;--text:#e7eaf3;--muted:#a9b3cf;--brand:#3c7cff;--ok:#14b86e;--warn:#f5a524}
     *{box-sizing:border-box}
     html,body{height:100%;margin:0;background:var(--bg);color:var(--text);font-family:system-ui,-apple-system,Segoe UI,Roboto,Noto Sans,sans-serif}
     a{color:inherit;text-decoration:none}
@@ -83,6 +80,7 @@
   <div id="grid" class="grid" aria-live="polite"></div>
 </div>
 
+<!-- 未登入提示 -->
 <dialog id="dlgLogin">
   <div class="body" style="padding:16px">
     <p class="dlg-head">請先登入</p>
@@ -94,12 +92,13 @@
   </div>
 </dialog>
 
-<!-- 重要：用 ESM 載入 login.js -->
-<script type="module" src="./login.js"></script>
+<!-- 重要：用 ESM 載入 login.js（帶版本避免快取） -->
+<script type="module" src="./login.js?v=5"></script>
 
+<!-- 首頁邏輯：讀 data/index.json、渲染卡片 -->
 <script>
 (() => {
-  const $ = (s,r=document)=> r.querySelector(s);
+  const $  = (s,r=document)=> r.querySelector(s);
   const $$ = (s,r=document)=> [...r.querySelectorAll(s)];
 
   const grid = $('#grid');
@@ -136,6 +135,7 @@
     list.forEach(item=>{
       const el = document.createElement('article');
       el.className = 'card';
+
       const coverImg = item.cover ? `<img class="card-cover" src="${item.cover}" loading="lazy" onerror="this.style.display='none'">` : '';
       const isFree = !!item.free;
 
@@ -155,9 +155,10 @@
       `;
 
       el.addEventListener('click', e=>{
-        const act = e.target?.dataset?.act;
+        const act  = e.target?.dataset?.act;
         if(!act) return;
         const slug = e.target.dataset.slug;
+
         if(act==='go'){
           const free = !!item.free;
           const p = window.Auth?.isAuthed?.() || Promise.resolve(false);
@@ -180,6 +181,7 @@
   }
 
   q.addEventListener('input', ()=>{ keyword = q.value.trim(); render(); });
+
   $$('.chip').forEach(btn=>{
     btn.addEventListener('click', ()=>{
       $$('.chip').forEach(x=>x.classList.remove('active'));
@@ -189,8 +191,8 @@
     });
   });
 
-  $('#btnDlgClose').onclick = ()=> dlg.close();
-  $('#btnGoLogin').onclick  = ()=>{
+  document.getElementById('btnDlgClose').onclick = ()=> dlg.close();
+  document.getElementById('btnGoLogin').onclick  = ()=>{
     dlg.close();
     const b = document.getElementById('btnLogin');
     if (b) b.click();
@@ -203,4 +205,3 @@
 </script>
 </body>
 </html>
-
