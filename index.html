@@ -83,7 +83,6 @@
   <div id="grid" class="grid" aria-live="polite"></div>
 </div>
 
-<!-- 未登入提示 -->
 <dialog id="dlgLogin">
   <div class="body" style="padding:16px">
     <p class="dlg-head">請先登入</p>
@@ -95,21 +94,18 @@
   </div>
 </dialog>
 
-<!-- Supabase 登入模組（ESM） -->
-<script type="module" src="login.js"></script>
+<!-- 重要：用 ESM 載入 login.js -->
+<script type="module" src="./login.js"></script>
 
-<!-- 首頁邏輯 -->
 <script>
 (() => {
   const $ = (s,r=document)=> r.querySelector(s);
   const $$ = (s,r=document)=> [...r.querySelectorAll(s)];
-  const grid = $('#grid');
-  const dlg = $('#dlgLogin');
-  const stat = $('#stat');
-  const q = $('#q');
 
-  // 供白名單（與 login.js 的 FREE_SLUGS 一致）
-  const FREE_SLUGS = new Set(['mid-autumn']);
+  const grid = $('#grid');
+  const dlg  = $('#dlgLogin');
+  const stat = $('#stat');
+  const q    = $('#q');
 
   let ALL = [];
   let filter = 'all';
@@ -141,7 +137,7 @@
       const el = document.createElement('article');
       el.className = 'card';
       const coverImg = item.cover ? `<img class="card-cover" src="${item.cover}" loading="lazy" onerror="this.style.display='none'">` : '';
-      const isFree = !!item.free || FREE_SLUGS.has(item.slug);
+      const isFree = !!item.free;
 
       el.innerHTML = `
         <div class="card-cover-wrap" data-act="go" data-slug="${item.slug}">
@@ -152,24 +148,31 @@
           <div class="title">${item.title||''}</div>
           <div class="meta">${item.subtitle||''}</div>
           <div class="foot">
-            <a class="btn sm" data-act="go"   data-slug="${item.slug}">前往 ▶</a>
+            <a class="btn sm" data-act="go" data-slug="${item.slug}" ${isFree?'':'data-requires-auth'}>前往 ▶</a>
             <a class="btn sm ghost" data-act="quiz" data-slug="${item.slug}">測驗</a>
           </div>
         </div>
       `;
 
-      // 所有可點擊處，統一先經過 Auth.require(slug)
-      el.addEventListener('click', async (e)=>{
+      el.addEventListener('click', e=>{
         const act = e.target?.dataset?.act;
         if(!act) return;
-        e.preventDefault(); e.stopPropagation();
-
         const slug = e.target.dataset.slug;
-        const allow = await (window.Auth?.require?.(slug) ?? Promise.resolve(true));
-        if (!allow) { dlg.showModal(); return; }
-
-        if (act === 'go')   location.href = `player.html?slug=${encodeURIComponent(slug)}`;
-        if (act === 'quiz') location.href = `player.html?slug=${encodeURIComponent(slug)}&tab=quiz`;
+        if(act==='go'){
+          const free = !!item.free;
+          const p = window.Auth?.isAuthed?.() || Promise.resolve(false);
+          p.then(authed=>{
+            if(free || authed){
+              location.href = `player.html?slug=${encodeURIComponent(slug)}`;
+            }else{
+              dlg.showModal();
+            }
+          });
+        }else if(act==='quiz'){
+          location.href = `player.html?slug=${encodeURIComponent(slug)}&tab=quiz`;
+        }
+        e.preventDefault();
+        e.stopPropagation();
       });
 
       grid.appendChild(el);
@@ -177,13 +180,21 @@
   }
 
   q.addEventListener('input', ()=>{ keyword = q.value.trim(); render(); });
-
   $$('.chip').forEach(btn=>{
-    btn.addEventListener('click', ()=>{ $$('.chip').forEach(x=>x.classList.remove('active')); btn.classList.add('active'); filter = btn.dataset.filter; render(); });
+    btn.addEventListener('click', ()=>{
+      $$('.chip').forEach(x=>x.classList.remove('active'));
+      btn.classList.add('active');
+      filter = btn.dataset.filter;
+      render();
+    });
   });
 
   $('#btnDlgClose').onclick = ()=> dlg.close();
-  $('#btnGoLogin').onclick = ()=>{ dlg.close(); const b = document.getElementById('btnLogin'); if (b) b.click(); };
+  $('#btnGoLogin').onclick  = ()=>{
+    dlg.close();
+    const b = document.getElementById('btnLogin');
+    if (b) b.click();
+  };
 
   loadIndex().catch(err=>{
     grid.innerHTML = `<div class="muted" style="grid-column:1/-1;padding:16px;border:1px solid var(--border);border-radius:12px;background:#0f1a33">讀取失敗：${err.message}</div>`;
@@ -192,3 +203,4 @@
 </script>
 </body>
 </html>
+
