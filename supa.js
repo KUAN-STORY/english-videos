@@ -1,36 +1,18 @@
-// /english-videos/supa.js
-// Supabase 初始化與一些小工具（Email + 密碼）
+// supa.js — Supabase 客戶端（穩定的 Auth 設定）
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
-
-// ⛳ 換成你的 Project URL / anon key（你現在這組可沿用）
-const SUPABASE_URL  = 'https://qtgwedankftrqjmzuset.supabase.co'
-const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InF0Z3dlZGFua2Z0cnFqbXp1c2V0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTg4NDYxMDMsImV4cCI6MjA3NDQyMjEwM30.jyETpt09pgm66aCZheMgsjtbKlVmYo-lt-hrrt6BF8g'
+const SUPABASE_URL  = 'https://qtgwedankftrqjmzuset.supabase.co'';   // ← 改成你的
+const SUPABASE_ANON = 'SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InF0Z3dlZGFua2Z0cnFqbXp1c2V0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTg4NDYxMDMsImV4cCI6MjA3NDQyMjEwM30.jyETpt09pgm66aCZheMgsjtbKlVmYo-lt-hrrt6BF8g';                           // ← 改成你的
 
 export const supa = createClient(SUPABASE_URL, SUPABASE_ANON, {
   auth: {
-    persistSession: true,
-    autoRefreshToken: true,
-    detectSessionInUrl: true,
+    persistSession: true,        // 登入後保留會話
+    autoRefreshToken: true,      // 自動刷新 token
+    detectSessionInUrl: false,   // 我們沒用 OAuth 回跳，不要攔截網址
+    storageKey: 'sb-auth-english-videos' // 自訂 key，避免與其它站互撞
   }
-})
+});
 
-// ---- 小工具：查使用者 / 登入 / 註冊 / 登出 ----
-export async function getUser() {
-  const { data: { user } } = await supa.auth.getUser()
-  return user || null
-}
 
-export async function signInWithPassword({ email, password }) {
-  return supa.auth.signInWithPassword({ email, password })
-}
-
-export async function signUpWithPassword({ email, password }) {
-  return supa.auth.signUp({ email, password })
-}
-
-export async function signOut() {
-  return supa.auth.signOut()
-}
 
 
