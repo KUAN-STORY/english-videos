@@ -1,10 +1,13 @@
 // login.js — Supabase Auth 版（Email Magic Link + Google）
+// ✅ 注意：這是 ES Module，index.html 與 player.html 需用：
+// <script type="module" src="login.js"></script>
+
 import { supa, getUser, signInWithEmail, signOut } from './videos/js/supa.js';
 
-// 首頁白名單影片（未登入也可看）——與 data/index.json 內的 free 一致即可
+// 白名單：未登入也可看的 slug（要與 data/index.json 內對應）
 const FREE_SLUGS = new Set(['mid-autumn']);
 
-// 工具
+// ---------- DOM 小工具 ----------
 const $  = (s, r = document) => r.querySelector(s);
 const $$ = (s, r = document) => [...r.querySelectorAll(s)];
 
@@ -12,7 +15,7 @@ async function isAuthed() {
   return !!(await getUser());
 }
 
-// 右上角登入列 UI
+// ---------- 右上角登入列 UI ----------
 async function refreshAuthUI() {
   const u = await getUser();
   const btnLogin  = $('#btnLogin');
@@ -38,13 +41,17 @@ function wireHeaderAuth() {
 
   if (btnLogin) {
     btnLogin.addEventListener('click', async () => {
+      // 使用者選擇 Google 或 Email
       const useGoogle = confirm('要用 Google 登入嗎？\n按「確定」使用 Google；按「取消」改用 Email。');
+
       if (useGoogle) {
-        const redirectTo = location.origin + location.pathname; // 回到目前頁面
+        // 回來的網址必須在 Supabase Auth > URL Configuration > Redirect URLs 允許
+        const redirectTo = location.origin + location.pathname; // 例：/english-videos/index.html 或 /player.html
         await supa.auth.signInWithOAuth({
           provider: 'google',
           options: { redirectTo }
         });
+        // 會跳轉，回來後由 onAuthStateChange 更新 UI
       } else {
         const email = prompt('請輸入 Email（會寄 Magic Link 到你的信箱）：');
         if (!email) return;
@@ -67,7 +74,7 @@ function wireHeaderAuth() {
   }
 }
 
-// Player 守門（若在 player.html，且非白名單且未登入 → 引導登入）
+// ---------- Player 守門（未登入擋非白名單） ----------
 async function guardPlayerIfAny() {
   const player = $('#player');
   if (!player) return; // 不在 player 頁
@@ -86,7 +93,7 @@ async function guardPlayerIfAny() {
   }
 }
 
-// 首頁卡片鎖定/解鎖（需在卡片按鈕上加 data-requires-auth）
+// ---------- 首頁卡片鎖定/解鎖（需在卡片按鈕上加 data-requires-auth） ----------
 function lockIndexCardsIfAny() {
   getUser().then(u => {
     if (u) return; // 已登入就不鎖
@@ -110,31 +117,29 @@ function unlockIndexCardsIfAny() {
 async function lockClick(e) {
   if (await isAuthed()) return;
   e.preventDefault();
-  const goLogin = confirm('此內容需登入後才能觀看。要立刻登入嗎？');
-  if (goLogin) {
-    const btn = $('#btnLogin');
-    if (btn) btn.click();
-  }
+  const btn = $('#btnLogin');
+  if (confirm('此內容需登入後才能觀看。要立刻登入嗎？') && btn) btn.click();
 }
 
-// 啟動
+// ---------- 啟動 ----------
 document.addEventListener('DOMContentLoaded', async () => {
   wireHeaderAuth();
   await refreshAuthUI();
   await guardPlayerIfAny();
 
-  // 只有首頁才有 data-requires-auth 的按鈕
+  // 只在首頁才有 data-requires-auth 的卡片
   if (document.querySelector('[data-requires-auth]')) {
     (await isAuthed()) ? unlockIndexCardsIfAny() : lockIndexCardsIfAny();
   }
 });
 
-// 監聽登入狀態變更
+// 登入狀態改變（包含 OAuth/Magic Link 回來）
 supa.auth.onAuthStateChange(async () => {
   await refreshAuthUI();
   (await isAuthed()) ? unlockIndexCardsIfAny() : lockIndexCardsIfAny();
 });
 
-// 給其它頁面查詢
+// 讓其它腳本可用
 window.Auth = { getUser, isAuthed };
+
 
