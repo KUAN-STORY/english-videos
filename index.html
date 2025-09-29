@@ -200,6 +200,123 @@
   });
 })();
 </script>
+  <script type="module" src="./login.js"></script>
+<script>
+(() => {
+  const $  = (s,r=document)=>r.querySelector(s);
+  const $$ = (s,r=document)=>[...r.querySelectorAll(s)];
+
+  const grid = $('#grid');
+  const dlg  = $('#dlgLogin');
+  const stat = $('#stat');
+  const q    = $('#q');
+
+  let ALL = [];
+  let filter = 'all';
+  let keyword = '';
+
+  const FREE_SLUGS = new Set(['mid-autumn']); // 白名單：未登入也能看
+
+  async function loadIndex(){
+    const res = await fetch('data/index.json', { cache:'no-store' });
+    if(!res.ok) throw new Error('讀取 data/index.json 失敗');
+    const meta = await res.json();
+    ALL = meta.items || [];
+    stat.textContent = `已收錄 ${ALL.length} 個故事`;
+    render();
+  }
+
+  function matchFilter(x){
+    if(filter!=='all' && (x.length||'').toLowerCase()!==filter) return false;
+    if(!keyword) return true;
+    const k = keyword.toLowerCase();
+    return (x.title||'').toLowerCase().includes(k)
+        || (x.subtitle||'').toLowerCase().includes(k)
+        || (x.slug||'').toLowerCase().includes(k);
+  }
+
+  function goto(slug){
+    location.href = `player.html?slug=${encodeURIComponent(slug)}`;
+  }
+
+  function render(){
+    grid.innerHTML = '';
+    const list = ALL.filter(matchFilter);
+
+    list.forEach(item=>{
+      const el = document.createElement('article');
+      el.className = 'card';
+      const coverImg = item.cover ? `<img class="card-cover" src="${item.cover}" loading="lazy" onerror="this.style.display='none'">` : '';
+      const isFree  = FREE_SLUGS.has(item.slug) || !!item.free;
+
+      el.innerHTML = `
+        <div class="card-cover-wrap">
+          ${coverImg}
+          <span class="badge ${isFree?'free':'lock'}">${isFree?'免費試看':'需登入'}</span>
+        </div>
+        <div class="body">
+          <div class="title">${item.title||''}</div>
+          <div class="meta">${item.subtitle||''}</div>
+          <div class="foot">
+            <a class="btn sm" data-act="go" data-slug="${item.slug}">前往 ▶</a>
+            <a class="btn sm ghost" data-act="quiz" data-slug="${item.slug}">測驗</a>
+          </div>
+        </div>
+      `;
+
+      // 單一入口：點「前往」才檢查登入；未登入→彈窗→按「去登入」幫你按右上角登入
+      el.addEventListener('click', async (e)=>{
+        const act  = e.target?.dataset?.act;
+        const slug = e.target?.dataset?.slug;
+        if(!act || !slug) return;
+
+        if(act==='quiz'){  // 測驗直接進對應分頁
+          location.href = `player.html?slug=${encodeURIComponent(slug)}&tab=quiz`;
+          e.preventDefault(); return;
+        }
+
+        if(act==='go'){
+          if(FREE_SLUGS.has(slug)){ goto(slug); e.preventDefault(); return; }
+
+          const authed = await (window.Auth?.isAuthed?.() || Promise.resolve(false));
+          if(authed){ goto(slug); e.preventDefault(); return; }
+
+          // 未登入：提示 + 代按右上角登入；登入成功自動前往
+          dlg.showModal();
+          const goBtn = $('#btnGoLogin');
+          if(goBtn){
+            goBtn.onclick = ()=>{
+              dlg.close();
+              window.__goAfterLogin = ()=>goto(slug);           // 登入完成後放行
+              const b = $('#btnLogin'); if(b) b.click();        // 幫你按右上角登入
+            };
+          }
+          e.preventDefault();
+        }
+      });
+
+      grid.appendChild(el);
+    });
+  }
+
+  q.addEventListener('input', ()=>{ keyword = q.value.trim(); render(); });
+  $$('.chip').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      $$('.chip').forEach(x=>x.classList.remove('active'));
+      btn.classList.add('active');
+      filter = btn.dataset.filter;
+      render();
+    });
+  });
+
+  $('#btnDlgClose').onclick = ()=> dlg.close();
+
+  loadIndex().catch(err=>{
+    grid.innerHTML = `<div class="muted" style="grid-column:1/-1;padding:16px;border:1px solid var(--border);border-radius:12px;background:#0f1a33">讀取失敗：${err.message}</div>`;
+  });
+})();
+</script>
+
 </body>
 </html>
 
