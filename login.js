@@ -1,4 +1,3 @@
-<script type="module">
 // login.js — 只用 Email Magic Link 登入；對外發出 auth-changed 事件讓頁面重新渲染
 
 import { supa, getUser, signOut } from './supa.js';
@@ -36,10 +35,7 @@ async function startEmailLogin() {
   try {
     await supa.auth.signInWithOtp({
       email,
-      options: {
-        // Magic Link 點回來的頁面（保持現在頁面即可）
-        emailRedirectTo: location.origin + location.pathname
-      }
+      options: { emailRedirectTo: location.origin + location.pathname }
     });
     alert('已寄出登入連結，請到信箱點擊完成登入。');
   } catch (e) {
@@ -56,7 +52,6 @@ function wireHeaderAuth() {
   if (btnLogout) btnLogout.addEventListener('click', async () => {
     await signOut();
     await refreshAuthUI();
-    // 通知其它腳本登入狀態已變
     window.dispatchEvent(new CustomEvent('auth-changed', { detail: { authed: false }}));
   });
 }
@@ -67,17 +62,16 @@ document.addEventListener('DOMContentLoaded', async () => {
   await refreshAuthUI();
 });
 
-// 跨分頁／Magic Link 回來：狀態改變時觸發
+// Magic Link 回來 / 狀態變化
 supa.auth.onAuthStateChange(async (_event, session) => {
   await refreshAuthUI();
   const authed = !!session;
-  // 通知其它腳本（例如 index.html）重新渲染按鈕解鎖
   window.dispatchEvent(new CustomEvent('auth-changed', { detail: { authed }}));
 });
 
 // 讓其它腳本能查詢
 window.Auth = { isAuthed };
-</script>
+
 
 
 
