@@ -6,12 +6,14 @@
   <title>用故事學英文 · Stories</title>
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E📘%3C/text%3E%3C/svg%3E">
   <style>
-    :root{--bg:#0b1324;--panel:#0f1a33;--border:#203057;--text:#e7eaf3;--muted:#a9b3cf;--brand:#3c7cff;--ok:#14b86e;--warn:#f5a524}
+    :root{
+      --bg:#0b1324;--panel:#0f1a33;--border:#203057;
+      --text:#e7eaf3;--muted:#a9b3cf;--brand:#3c7cff;--ok:#14b86e;--warn:#f5a524;
+    }
     *{box-sizing:border-box}
     html,body{height:100%;margin:0;background:var(--bg);color:var(--text);font-family:system-ui,-apple-system,Segoe UI,Roboto,Noto Sans,sans-serif}
     a{color:inherit;text-decoration:none}
     .wrap{max-width:1100px;margin:0 auto;padding:28px 16px 80px}
-
     header{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:18px}
     .brand{font-size:22px;font-weight:800;letter-spacing:.02em}
     .actions{display:flex;gap:10px;align-items:center}
@@ -20,19 +22,15 @@
     .chip{padding:6px 10px;border:1px solid var(--border);border-radius:999px;background:#121d3d;color:#c8d0ea;cursor:pointer}
     .chip.active{background:#1a2c66;color:#fff;border-color:#2d4ea7}
     .user{color:#c8d0ea}
-
     h1{font-size:30px;line-height:1.25;margin:10px 0 6px}
     .muted{color:var(--muted)}
     .row{display:flex;gap:10px;align-items:center}
     .space{flex:1}
-
     .toolbar{display:flex;gap:10px;align-items:center;margin:18px 0}
     .search{flex:1;min-width:240px;border:1px solid var(--border);background:#0f1a33;color:#fff;border-radius:12px;padding:10px 12px}
-
     .grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
     @media(max-width:980px){ .grid{grid-template-columns:repeat(2,1fr)} }
     @media(max-width:640px){ .grid{grid-template-columns:1fr} }
-
     .card{display:block;border:1px solid var(--border);border-radius:14px;background:var(--panel);overflow:hidden;position:relative}
     .card-cover-wrap{position:relative;overflow:hidden;background:#0b1324;height:200px;cursor:pointer}
     .card-cover{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block}
@@ -45,7 +43,6 @@
     .meta{display:flex;gap:8px;align-items:center;color:var(--muted);font-size:14px}
     .foot{display:flex;gap:8px;align-items:center;margin-top:12px}
     .btn.sm{padding:6px 10px;border-radius:999px}
-
     dialog{border:none;border-radius:14px;background:#0f1a33;color:#fff;max-width:460px}
     dialog::backdrop{background:rgba(0,0,0,.45)}
     .dlg-head{font-size:18px;font-weight:800;margin:0 0 6px}
@@ -67,7 +64,7 @@
   <div class="muted">從下方卡片選擇故事開始。大多數內容需登入後觀看，〈中秋節〉為免費試看。</div>
 
   <div class="toolbar">
-    <input id="q" class="search" placeholder="輸入關鍵字搜尋（中／英標題／標籤）…"/>
+    <input id="q" class="search" placeholder="輸入關鍵字搜尋…"/>
     <div class="row">
       <button class="chip active" data-filter="all">全部</button>
       <button class="chip" data-filter="short">短篇</button>
@@ -92,115 +89,78 @@
   </div>
 </dialog>
 
-<!-- 重要：用 ESM 載入 login.js（帶版本避免快取） -->
-<script type="module" src="./login.js?v=5"></script>
+<!-- 🔑 重要：用 ESM 載入 -->
+<script type="module" src="./login.js"></script>
 
-<!-- 首頁邏輯：讀 data/index.json、渲染卡片 -->
 <script>
 (() => {
-  const $  = (s,r=document)=> r.querySelector(s);
+  const $ = (s,r=document)=> r.querySelector(s);
   const $$ = (s,r=document)=> [...r.querySelectorAll(s)];
 
-  const grid = $('#grid');
-  const dlg  = $('#dlgLogin');
-  const stat = $('#stat');
-  const q    = $('#q');
-
-  let ALL = [];
-  let filter = 'all';
-  let keyword = '';
+  const grid = $('#grid'), dlg = $('#dlgLogin'), stat = $('#stat'), q = $('#q');
+  let ALL=[], filter='all', keyword='';
 
   async function loadIndex(){
-    const res = await fetch('data/index.json', {cache:'no-store'});
-    if(!res.ok) throw new Error('讀取 data/index.json 失敗');
+    const res = await fetch('data/index.json',{cache:'no-store'});
     const meta = await res.json();
-    ALL = meta.items || [];
+    ALL = meta.items||[];
     stat.textContent = `已收錄 ${ALL.length} 個故事`;
     render();
   }
 
   function passFilter(x){
-    if(filter !== 'all' && (x.length||'').toLowerCase() !== filter) return false;
+    if(filter!=='all'&&(x.length||'').toLowerCase()!==filter) return false;
     if(!keyword) return true;
-    const k = keyword.toLowerCase();
-    return (x.title||'').toLowerCase().includes(k)
-        || (x.subtitle||'').toLowerCase().includes(k)
-        || (x.slug||'').toLowerCase().includes(k);
+    const k=keyword.toLowerCase();
+    return (x.title||'').toLowerCase().includes(k) ||
+           (x.subtitle||'').toLowerCase().includes(k) ||
+           (x.slug||'').toLowerCase().includes(k);
   }
 
   function render(){
-    grid.innerHTML = '';
-    const list = ALL.filter(passFilter);
-
-    list.forEach(item=>{
-      const el = document.createElement('article');
-      el.className = 'card';
-
-      const coverImg = item.cover ? `<img class="card-cover" src="${item.cover}" loading="lazy" onerror="this.style.display='none'">` : '';
-      const isFree = !!item.free;
-
-      el.innerHTML = `
+    grid.innerHTML='';
+    ALL.filter(passFilter).forEach(item=>{
+      const el=document.createElement('article');
+      el.className='card';
+      el.innerHTML=`
         <div class="card-cover-wrap" data-act="go" data-slug="${item.slug}">
-          ${coverImg}
-          <span class="badge ${isFree ? 'free':'lock'}">${isFree?'免費試看':'需登入'}</span>
+          ${item.cover?`<img class="card-cover" src="${item.cover}" loading="lazy">`:''}
+          <span class="badge ${item.free?'free':'lock'}">${item.free?'免費試看':'需登入'}</span>
         </div>
         <div class="body">
           <div class="title">${item.title||''}</div>
           <div class="meta">${item.subtitle||''}</div>
           <div class="foot">
-            <a class="btn sm" data-act="go" data-slug="${item.slug}" ${isFree?'':'data-requires-auth'}>前往 ▶</a>
+            <a class="btn sm" data-act="go" data-slug="${item.slug}" ${item.free?'':'data-requires-auth'}>前往 ▶</a>
             <a class="btn sm ghost" data-act="quiz" data-slug="${item.slug}">測驗</a>
           </div>
-        </div>
-      `;
-
-      el.addEventListener('click', e=>{
-        const act  = e.target?.dataset?.act;
+        </div>`;
+      el.addEventListener('click',e=>{
+        const act=e.target?.dataset?.act, slug=e.target?.dataset?.slug;
         if(!act) return;
-        const slug = e.target.dataset.slug;
-
         if(act==='go'){
-          const free = !!item.free;
-          const p = window.Auth?.isAuthed?.() || Promise.resolve(false);
-          p.then(authed=>{
-            if(free || authed){
-              location.href = `player.html?slug=${encodeURIComponent(slug)}`;
-            }else{
-              dlg.showModal();
-            }
+          const free=!!item.free;
+          (window.Auth?.isAuthed?.()||Promise.resolve(false)).then(authed=>{
+            if(free||authed) location.href=`player.html?slug=${encodeURIComponent(slug)}`;
+            else dlg.showModal();
           });
         }else if(act==='quiz'){
-          location.href = `player.html?slug=${encodeURIComponent(slug)}&tab=quiz`;
+          location.href=`player.html?slug=${encodeURIComponent(slug)}&tab=quiz`;
         }
-        e.preventDefault();
-        e.stopPropagation();
+        e.preventDefault();e.stopPropagation();
       });
-
       grid.appendChild(el);
     });
   }
 
-  q.addEventListener('input', ()=>{ keyword = q.value.trim(); render(); });
-
-  $$('.chip').forEach(btn=>{
-    btn.addEventListener('click', ()=>{
-      $$('.chip').forEach(x=>x.classList.remove('active'));
-      btn.classList.add('active');
-      filter = btn.dataset.filter;
-      render();
-    });
-  });
-
-  document.getElementById('btnDlgClose').onclick = ()=> dlg.close();
-  document.getElementById('btnGoLogin').onclick  = ()=>{
-    dlg.close();
-    const b = document.getElementById('btnLogin');
-    if (b) b.click();
-  };
-
-  loadIndex().catch(err=>{
-    grid.innerHTML = `<div class="muted" style="grid-column:1/-1;padding:16px;border:1px solid var(--border);border-radius:12px;background:#0f1a33">讀取失敗：${err.message}</div>`;
-  });
+  q.addEventListener('input',()=>{keyword=q.value.trim();render();});
+  $$('.chip').forEach(btn=>btn.addEventListener('click',()=>{
+    $$('.chip').forEach(x=>x.classList.remove('active'));
+    btn.classList.add('active');filter=btn.dataset.filter;render();
+  }));
+  $('#btnDlgClose').onclick=()=>dlg.close();
+  $('#btnGoLogin').onclick=()=>{dlg.close();$('#btnLogin')?.click();}
+  loadIndex();
 })();
 </script>
 </body>
