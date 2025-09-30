@@ -1,100 +1,159 @@
 <!doctype html>
 <html lang="zh-Hant">
 <head>
-  <meta charset="utf-8"/>
-  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>看故事學英文 · Stories</title>
-  <link rel="icon" href="data:,">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
   <style>
-    :root{--bg:#0b1324;--panel:#0f1a33;--border:#203057;--text:#e7eaf3;--muted:#a9b3cf;--brand:#3c7cff}
-    html,body{margin:0;height:100%;background:var(--bg);color:var(--text);font-family:system-ui,-apple-system,Segoe UI,Roboto,Noto Sans,sans-serif}
-    header{display:flex;align-items:center;justify-content:space-between;padding:14px 18px;border-bottom:1px solid var(--border);background:#0b142a;position:sticky;top:0;z-index:20}
-    .h-title{font-size:20px;font-weight:700}
-    .btn{padding:8px 12px;border:1px solid var(--border);background:#15224a;color:#fff;border-radius:10px;cursor:pointer}
-    .btn:hover{filter:brightness(1.1)}
-    .wrap{max-width:1100px;margin:24px auto;padding:0 16px}
-    .cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:16px}
-    .card{background:var(--panel);border:1px solid var(--border);border-radius:14px;overflow:hidden}
-    .card img{width:100%;height:150px;object-fit:cover;display:block}
-    .card .box{padding:12px}
-    .tag{display:inline-block;font-size:12px;color:#9fb2ff;border:1px solid #2f4fb3;padding:2px 6px;border-radius:999px;margin-right:6px}
-    .row{display:flex;gap:8px;align-items:center}
-    .muted{color:var(--muted)}
-    /* 登入對話框 */
-    #loginDialog{display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:1000;align-items:center;justify-content:center}
-    #loginPanel{width:320px;background:#fff;color:#111;border-radius:12px;padding:16px}
-    #loginPanel input{width:100%;padding:10px;border:1px solid #ddd;border-radius:10px;margin:6px 0 10px 0}
-    #loginPanel h3{margin:0 0 10px 0}
+    :root{
+      --bg:#0b1324; --panel:#0f1a33; --border:#203057;
+      --text:#e7eaf3; --muted:#a9b3cf; --brand:#3c7cff; --ok:#14b86e;
+    }
+    html,body{margin:0;background:var(--bg);color:var(--text);
+      font-family:system-ui,-apple-system,Segoe UI,Roboto,Noto Sans,sans-serif}
+    .wrap{max-width:1200px;margin:0 auto;padding:24px}
+    h1{margin:0 0 8px 0;font-size:28px}
+    .sub{color:var(--muted);margin:0 0 24px 0}
+    .tools{display:flex;gap:8px;align-items:center;margin-bottom:16px}
+    .search{flex:1;padding:10px 12px;border:1px solid var(--border);
+      border-radius:12px;background:#0e1833;color:var(--text)}
+    .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:14px}
+    .card{background:var(--panel);border:1px solid var(--border);
+      border-radius:14px;overflow:hidden;display:flex;flex-direction:column}
+    .thumb{aspect-ratio:16/9;background:#000;display:block;width:100%;object-fit:cover}
+    .body{padding:12px}
+    .title{font-size:18px;margin:0 0 6px 0}
+    .meta{color:var(--muted);font-size:14px;margin-bottom:10px}
+    .actions{display:flex;gap:8px}
+    .btn{flex:1;text-align:center;text-decoration:none;color:#fff;background:#173065;
+      padding:8px 10px;border-radius:10px;border:1px solid var(--border)}
+    .btn:hover{filter:brightness(1.08)}
+    .lock{background:#291b2b;border:1px solid #533057}
+    .badge{display:inline-flex;align-items:center;gap:6px;font-size:12px;
+      padding:2px 8px;border-radius:999px;border:1px solid var(--border);color:var(--muted)}
+    .pill{padding:2px 8px;border-radius:999px;background:#11204a;border:1px solid var(--border);
+      color:var(--muted);font-size:12px}
+    .row{display:flex;gap:8px;align-items:center;justify-content:space-between}
+    .need-login{position:absolute;top:10px;left:10px;background:#311c26;border:1px solid #7c4059;
+      color:#f2c7d3;font-size:12px;padding:2px 8px;border-radius:999px}
+    .card-head{position:relative}
   </style>
 </head>
 <body>
-
-  <header>
-    <div class="h-title">看故事學英文 · Stories</div>
-    <div class="row">
-      <span id="whoami" class="muted" style="margin-right:8px"></span>
-      <button id="btnLogin"  class="btn">登入</button>
-      <button id="btnLogout" class="btn" style="display:none">登出</button>
-    </div>
-  </header>
-
   <div class="wrap">
-    <h2>用故事學英文：雙語字幕、測驗與單字</h2>
-    <p class="muted">從下方卡片選擇故事開始。帶「需登入」的內容會在登入後開放。</p>
+    <h1>看故事學英文 · Stories</h1>
+    <p class="sub">從下方卡片選擇故事開始。〈中秋節〉為免費試看；其餘內容需登入。</p>
 
-    <div class="cards" id="cards">
-      <!-- 免費示範：Mid-Autumn -->
-      <a class="card" href="player.html?slug=mid-autumn" data-requires-login="false">
-        <img src="https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?q=80&w=1200&auto=format&fit=crop" alt="Mid-Autumn">
-        <div class="box">
-          <div class="row"><span class="tag">免費</span><span class="muted">SHORT</span></div>
-          <h3>Mid-Autumn Festival</h3>
-          <div class="muted">中秋節</div>
-        </div>
-      </a>
-
-      <!-- 需登入：Houyi -->
-      <a class="card" href="player.html?slug=houyi" data-requires-login="true">
-        <img src="https://images.unsplash.com/photo-1483721310020-03333e577078?q=80&w=1200&auto=format&fit=crop" alt="Houyi">
-        <div class="box">
-          <div class="row"><span class="tag">需登入</span><span class="muted">SHORT</span></div>
-          <h3>Hou Yi Shoots the Suns</h3>
-          <div class="muted">后羿射日</div>
-        </div>
-      </a>
-
-      <!-- 需登入：Lantern -->
-      <a class="card" href="player.html?slug=lantern" data-requires-login="true">
-        <img src="https://images.unsplash.com/photo-1519681393784-d120267933ba?q=80&w=1200&auto=format&fit=crop" alt="Lantern Festival">
-        <div class="box">
-          <div class="row"><span class="tag">需登入</span><span class="muted">SHORT</span></div>
-          <h3>The Lantern Festival</h3>
-          <div class="muted">元宵節</div>
-        </div>
-      </a>
+    <div class="tools">
+      <input id="q" class="search" placeholder="輸入關鍵字搜尋（中 / 英標題 / 標籤）…" />
+      <span class="badge" id="authState">檢查登入中…</span>
     </div>
+
+    <div id="grid" class="grid"></div>
   </div>
 
-  <!-- 登入對話框 -->
-  <div id="loginDialog">
-    <div id="loginPanel">
-      <h3>會員登入</h3>
-      <input id="loginEmail" type="email" placeholder="Email">
-      <input id="loginPassword" type="password" placeholder="Password">
-      <div class="row" style="justify-content:flex-end;margin-top:8px">
-        <button id="btnLoginConfirm" class="btn">登入</button>
-        <button id="btnCloseLogin" class="btn" style="background:#eee;color:#222;border-color:#ddd">取消</button>
-      </div>
-      <div class="muted" style="margin-top:10px">也可用 Google 登入：</div>
-      <button id="btnLoginGoogle" class="btn" style="margin-top:6px">使用 Google 登入</button>
-    </div>
-  </div>
-
-  <!-- Supabase CDN（如已在 supa.js 初始化，也可保留） -->
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
-  <!-- 你的 login.js（見下方完整檔案） -->
+  <!-- 你的登入邏輯：請保持 login.js 會維護 window.__AUTH.signedIn 與 showLogin() -->
   <script src="login.js"></script>
 
+  <script>
+  // ========= 小工具 =========
+  const $ = (s, r=document)=> r.querySelector(s);
+  const $$ = (s, r=document)=> [...r.querySelectorAll(s)];
+
+  // 允許免登入的 slug（目前只有 mid-autumn）
+  const FREE_SLUGS = new Set(["mid-autumn"]);
+
+  // 取登入狀態（login.js 應維護 window.__AUTH.signedIn）
+  function isSignedIn(){
+    return !!(window.__AUTH && window.__AUTH.signedIn);
+  }
+
+  // 顯示登入提示（由 login.js 提供）
+  function openLogin(){
+    if (typeof window.showLogin === 'function') {
+      window.showLogin();
+    } else {
+      alert("此內容需登入才能觀看。");
+    }
+  }
+
+  // 渲染卡片
+  function renderCards(list){
+    const grid = $('#grid');
+    grid.innerHTML = list.map(story=>{
+      const requiresLogin = !FREE_SLUGS.has(story.slug);
+      const lockFlag = requiresLogin ? 'data-requires-login="true"' : '';
+      const badge = requiresLogin ? '<span class="need-login">需登入</span>' : '<span class="need-login" style="background:#12381f;border-color:#1d6a3c;color:#b8f3ce">免費</span>';
+      return `
+        <div class="card" data-slug="${story.slug}">
+          <div class="card-head">
+            ${badge}
+            <img class="thumb" src="videos/${story.slug}.jpg" alt="${story.title_en}">
+          </div>
+          <div class="body">
+            <h3 class="title">${story.title_en}</h3>
+            <div class="row">
+              <div class="meta">${story.title_zh || ''}</div>
+              <span class="pill">${(story.length || 'SHORT')}</span>
+            </div>
+            <div class="actions">
+              <a href="player.html?slug=${story.slug}" class="btn" ${lockFlag}>前往 ▶</a>
+              <a href="player.html?slug=${story.slug}&tab=quiz" class="btn ${requiresLogin?'lock':''}" ${lockFlag}>測驗</a>
+            </div>
+          </div>
+        </div>
+      `;
+    }).join('');
+
+    // 綁定「需要登入」攔截
+    $$('#grid a[data-requires-login]').forEach(a=>{
+      a.addEventListener('click', (ev)=>{
+        if (!isSignedIn()){
+          ev.preventDefault();
+          openLogin();
+        }
+      });
+    });
+  }
+
+  // 搜尋過濾
+  function setupSearch(all){
+    const q = $('#q');
+    q.addEventListener('input', ()=>{
+      const keyword = q.value.trim().toLowerCase();
+      if (!keyword) return renderCards(all);
+      const f = all.filter(x=>{
+        return (x.title_en||'').toLowerCase().includes(keyword)
+            || (x.title_zh||'').toLowerCase().includes(keyword)
+            || (x.slug||'').toLowerCase().includes(keyword);
+      });
+      renderCards(f);
+    });
+  }
+
+  // 更新右上狀態徽章
+  function paintAuthBadge(){
+    const el = $('#authState');
+    el.textContent = isSignedIn() ? '已登入' : '尚未登入';
+    el.style.color = isSignedIn() ? '#b8f3ce' : '#f3d3b8';
+    el.style.borderColor = isSignedIn() ? '#1d6a3c' : '#7c4059';
+    el.style.background = isSignedIn() ? '#12381f' : '#311c26';
+  }
+
+  (async ()=>{
+    // 嘗試讀 index.json 列表
+    const res = await fetch('data/index.json');
+    const meta = await res.json();
+    const items = meta.items || [];
+    renderCards(items);
+    setupSearch(items);
+    paintAuthBadge();
+
+    // 如果 login.js 會對外觸發事件，可在此更新徽章（你可以在 login.js 觸發 window.dispatchEvent(new CustomEvent('auth:change'))）
+    window.addEventListener('auth:change', paintAuthBadge);
+  })();
+  </script>
 </body>
 </html>
 
