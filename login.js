@@ -1,156 +1,119 @@
-// ======================
-// Supabase 初始化
-// ======================
-const SUPA_URL  = window.SUPA_URL  || 'https://qtgwedankftrqjmzuset.supabase.co';
-const SUPA_ANON = window.SUPA_ANON || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InF0Z3dlZGFua2Z0cnFqbXp1c2V0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTg4NDYxMDMsImV4cCI6MjA3NDQyMjEwM30.jyETpt09pgm66aCZheMgsjtbKlVmYo-lt-hrrt6BF8g';
+<script>
+// login.js  (V1.1)  — 假登入 + 守門 + 共用 UI
+(() => {
+  const STORAGE_KEY = 'authUser';
+  const PUBLIC_SLUGS = ['mid-autumn']; // 未登入可看的 slug 白名單
 
-window.supabaseClient = window.supabase.createClient(SUPA_URL, SUPA_ANON);
+  // ===== Auth 狀態 =====
+  const getUser = () => {
+    try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || 'null'); }
+    catch { return null; }
+  };
+  const isAuthed = () => !!getUser();
 
-// 小工具
-const $  = (s, r=document)=> r.querySelector(s);
-const $$ = (s, r=document)=> [...r.querySelectorAll(s)];
+  // ===== UI接線（右上角）=====
+  function updateAuthUI() {
+    const u = getUser();
+    const btnLogin  = document.getElementById('btnLogin');
+    const btnLogout = document.getElementById('btnLogout');
+    const badge     = document.getElementById('userNameBadge');
+    if (!btnLogin || !btnLogout || !badge) return;
 
-// ======================
-// 登入/登出 API
-// ======================
-async function signInWithPassword(email, password){
-  try{
-    const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });
-    if(error) throw error;
-    console.log('[login] signIn ok', data.user?.email);
-    return { ok:true, user:data.user };
-  }catch(err){
-    console.error('[login] signIn error', err);
-    alert(err.message || '登入失敗');
-    return { ok:false, err };
+    if (u) {
+      btnLogin.style.display  = 'none';
+      btnLogout.style.display = '';
+      badge.textContent = `👤 ${u.name || u.email}`;
+    } else {
+      btnLogin.style.display  = '';
+      btnLogout.style.display = 'none';
+      badge.textContent = '';
+    }
   }
-}
 
-async function signInWithGoogle(){
-  try{
-    const { data, error } = await supabaseClient.auth.signInWithOAuth({
-      provider: 'google',
-      options: { redirectTo: location.href }
+  function promptLogin(onDone) {
+    const name  = (prompt('請輸入顯示名稱（可留空）') || '').trim();
+    const email = (prompt('請輸入 Email（示範版，可亂填）') || '').trim();
+    if (!email) { alert('需要 Email 才能登入（示範版）'); return; }
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({ name, email, id: 'demo-'+Date.now() }));
+    updateAuthUI();
+    if (onDone) onDone();
+  }
+
+  function logout() {
+    localStorage.removeItem(STORAGE_KEY);
+    updateAuthUI();
+  }
+
+  function wireHeader() {
+    const btnLogin  = document.getElementById('btnLogin');
+    const btnLogout = document.getElementById('btnLogout');
+    if (btnLogin)  btnLogin.addEventListener('click', () => promptLogin(() => {
+      // 登入成功後讓首頁鎖定的卡片即時解鎖
+      unlockIndexCardsIfAny();
+    }));
+    if (btnLogout) btnLogout.addEventListener('click', () => {
+      logout();
+      lockIndexCardsIfAny();
     });
-    if(error) throw error;
-    return { ok:true };
-  }catch(err){
-    console.error('[login] google error', err);
-    alert(err.message || 'Google 登入失敗');
-    return { ok:false, err };
-  }
-}
-
-async function signOut(){
-  try{
-    await supabaseClient.auth.signOut();
-    console.log('[login] signed out');
-  }catch(err){
-    console.error('[login] signOut error', err);
-  }
-}
-
-// ======================
-// UI：對話框 + 按鈕綁定 + 入口卡攔截
-// ======================
-function openLoginDialog(){
-  $('#loginDialog').style.display = 'flex';
-  $('#loginEmail')?.focus();
-}
-function closeLoginDialog(){
-  $('#loginDialog').style.display = 'none';
-}
-
-function bindUIOnce(){
-  const btnLogin  = $('#btnLogin');
-  const btnLogout = $('#btnLogout');
-  const btnLoginConfirm = $('#btnLoginConfirm');
-  const btnCloseLogin   = $('#btnCloseLogin');
-  const btnLoginGoogle  = $('#btnLoginGoogle');
-  const emailEl = $('#loginEmail');
-  const passEl  = $('#loginPassword');
-
-  // 右上角登入/登出
-  if(btnLogin){
-    btnLogin.onclick = ()=> openLoginDialog();
-  }
-  if(btnLogout){
-    btnLogout.onclick = async ()=>{
-      await signOut();
-      updateHeaderUI(null);
-    };
+    updateAuthUI();
   }
 
-  // 對話框操作
-  if(btnLoginConfirm){
-    btnLoginConfirm.onclick = async ()=>{
-      const email = emailEl?.value?.trim();
-      const pass  = passEl?.value || '';
-      if(!email || !pass){ alert('請輸入 Email 與密碼'); return; }
-      const { ok } = await signInWithPassword(email, pass);
-      if(ok){ closeLoginDialog(); }
-    };
-  }
-  if(btnCloseLogin){
-    btnCloseLogin.onclick = ()=> closeLoginDialog();
-  }
-  if(btnLoginGoogle){
-    btnLoginGoogle.onclick = ()=> signInWithGoogle();
-  }
-
-  // 卡片攔截：需要登入的內容
-  $$('#cards a[data-requires-login="true"]').forEach(a=>{
-    a.addEventListener('click', async (ev)=>{
-      const { data:{ user } } = await supabaseClient.auth.getUser();
-      if(!user){
-        ev.preventDefault();
-        openLoginDialog();
+  // ===== Player 守門：未登入禁止看非白名單影片 =====
+  function guardPlayerIfAny() {
+    const player = document.getElementById('player');
+    if (!player) return; // 不在 player 頁
+    const slug = new URLSearchParams(location.search).get('slug') || '';
+    if (!isAuthed() && !PUBLIC_SLUGS.includes(slug)) {
+      if (confirm('這部影片需要登入後才能觀看。要立刻登入嗎？')) {
+        promptLogin(() => location.reload());
+      } else {
+        alert('之後接上 Supabase 真登入；目前示範版將返回首頁');
+        location.href = './index.html';
       }
-    });
-  });
-}
-
-function updateHeaderUI(user){
-  const btnLogin  = $('#btnLogin');
-  const btnLogout = $('#btnLogout');
-  const who       = $('#whoami');
-  if(user){
-    who.textContent = user.email || '';
-    btnLogin.style.display  = 'none';
-    btnLogout.style.display = 'inline-block';
-  }else{
-    who.textContent = '';
-    btnLogin.style.display  = 'inline-block';
-    btnLogout.style.display = 'none';
+    }
   }
-}
 
-// ======================
-// 監聽登入狀態
-// ======================
-function listenAuthState(){
-  supabaseClient.auth.onAuthStateChange(async (event, session)=>{
-    console.log('[login] auth change:', event, session?.user?.email);
-    updateHeaderUI(session?.user || null);
+  // ===== Index 卡片鎖定/解鎖（需加 data-requires-auth）=====
+  function lockIndexCardsIfAny() {
+    if (isAuthed()) return; // 已登入就不鎖
+    document.querySelectorAll('[data-requires-auth]').forEach(btn => {
+      btn.dataset.originalText = btn.dataset.originalText || btn.textContent;
+      btn.textContent = '🔒 前往';
+      btn.classList.add('locked');
+      btn.addEventListener('click', lockClick, { once:false });
+    });
+  }
+  function unlockIndexCardsIfAny() {
+    document.querySelectorAll('[data-requires-auth]').forEach(btn => {
+      if (btn.dataset.originalText) btn.textContent = btn.dataset.originalText;
+      btn.classList.remove('locked');
+      btn.removeEventListener('click', lockClick);
+    });
+  }
+  function lockClick(e) {
+    if (isAuthed()) return;
+    e.preventDefault();
+    if (confirm('此內容需登入後才能觀看。要立刻登入嗎？')) {
+      promptLogin(() => location.reload());
+    }
+  }
+
+  // ===== 啟動 =====
+  document.addEventListener('DOMContentLoaded', () => {
+    wireHeader();
+    guardPlayerIfAny();
+    // 在首頁才有 data-requires-auth 的卡片
+    if (document.querySelector('[data-requires-auth]')) {
+      isAuthed() ? unlockIndexCardsIfAny() : lockIndexCardsIfAny();
+    }
   });
 
-  // 首次載入時同步一次
-  supabaseClient.auth.getUser().then(({ data:{ user } })=>{
-    updateHeaderUI(user || null);
-  });
-}
+  // 讓其它腳本可查詢
+  window.Auth = { getUser, isAuthed };
+})();
+</script>
 
-// ======================
-// 啟動
-// ======================
-document.addEventListener('DOMContentLoaded', ()=>{
-  console.log('[login.js] loaded & DOM ready');
-  bindUIOnce();
-  listenAuthState();
-});
 
-// 對外（可選）
-window.openLoginDialog = openLoginDialog;
 
 
 
