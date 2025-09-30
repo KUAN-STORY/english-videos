@@ -1,157 +1,192 @@
 <!doctype html>
 <html lang="zh-Hant">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <title>看故事學英文 · Stories</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
   <style>
     :root{
-      --bg:#0b1324; --panel:#0f1a33; --border:#203057;
-      --text:#e7eaf3; --muted:#a9b3cf; --brand:#3c7cff; --ok:#14b86e;
+      --bg:#0b1324; --card:#0f1a33; --muted:#a9b3cf; --text:#e7eaf3;
+      --border:#203057; --brand:#3c7cff; --ok:#12b886; --warn:#f5a524;
     }
-    html,body{margin:0;background:var(--bg);color:var(--text);
-      font-family:system-ui,-apple-system,Segoe UI,Roboto,Noto Sans,sans-serif}
-    .wrap{max-width:1200px;margin:0 auto;padding:24px}
-    h1{margin:0 0 8px 0;font-size:28px}
-    .sub{color:var(--muted);margin:0 0 24px 0}
-    .tools{display:flex;gap:8px;align-items:center;margin-bottom:16px}
-    .search{flex:1;padding:10px 12px;border:1px solid var(--border);
-      border-radius:12px;background:#0e1833;color:var(--text)}
-    .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:14px}
-    .card{background:var(--panel);border:1px solid var(--border);
-      border-radius:14px;overflow:hidden;display:flex;flex-direction:column}
-    .thumb{aspect-ratio:16/9;background:#000;display:block;width:100%;object-fit:cover}
-    .body{padding:12px}
-    .title{font-size:18px;margin:0 0 6px 0}
-    .meta{color:var(--muted);font-size:14px;margin-bottom:10px}
-    .actions{display:flex;gap:8px}
-    .btn{flex:1;text-align:center;text-decoration:none;color:#fff;background:#173065;
-      padding:8px 10px;border-radius:10px;border:1px solid var(--border)}
+    html,body{height:100%;margin:0;background:var(--bg);color:var(--text);
+      font-family: system-ui,-apple-system,"Segoe UI",Roboto,"Noto Sans",sans-serif;}
+    .wrap{max-width:1200px;margin:0 auto;padding:28px 16px 56px;}
+    h1{font-size:28px;margin:0 0 8px}
+    p.lead{margin:0 0 18px;color:var(--muted)}
+    .topbar{display:flex;gap:10px;align-items:center;margin:16px 0 22px}
+    .search{flex:1;display:flex;align-items:center;background:#0d1730;border:1px solid var(--border);
+      border-radius:12px;padding:10px 12px}
+    .search input{flex:1;background:transparent;border:0;color:#fff;outline:0;font-size:15px}
+    .btn{padding:8px 12px;border:1px solid var(--border);background:#122147;color:#fff;border-radius:10px;cursor:pointer}
     .btn:hover{filter:brightness(1.08)}
-    .lock{background:#291b2b;border:1px solid #533057}
-    .badge{display:inline-flex;align-items:center;gap:6px;font-size:12px;
-      padding:2px 8px;border-radius:999px;border:1px solid var(--border);color:var(--muted)}
-    .pill{padding:2px 8px;border-radius:999px;background:#11204a;border:1px solid var(--border);
-      color:var(--muted);font-size:12px}
-    .row{display:flex;gap:8px;align-items:center;justify-content:space-between}
-    .need-login{position:absolute;top:10px;left:10px;background:#311c26;border:1px solid #7c4059;
-      color:#f2c7d3;font-size:12px;padding:2px 8px;border-radius:999px}
-    .card-head{position:relative}
+    .grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+    @media (max-width:980px){.grid{grid-template-columns:repeat(2,1fr)}}
+    @media (max-width:640px){.grid{grid-template-columns:1fr}}
+
+    .card{background:var(--card);border:1px solid var(--border);border-radius:14px;overflow:hidden;display:flex;flex-direction:column}
+    .thumb{aspect-ratio:16/9;background:#000;position:relative;overflow:hidden}
+    .thumb img{width:100%;height:100%;object-fit:cover;display:block}
+    .badge{position:absolute;left:10px;top:10px;padding:4px 8px;background:#16244f;border:1px solid var(--border);border-radius:999px;color:var(--muted);font-size:12px}
+    .badge.free{background:rgba(18,184,134,.15);border-color:#1c7a62;color:#a6f4d0}
+    .body{padding:12px 12px 14px}
+    .title{font-weight:700;margin:0 0 4px}
+    .meta{color:var(--muted);font-size:14px;margin-bottom:10px}
+    .actions{display:flex;gap:8px;margin-top:auto}
+    .actions .btn.primary{background:#1b3a83;border-color:#2d4ea7}
+    .lock{position:absolute;inset:0;background:linear-gradient(180deg,transparent,rgba(11,19,36,.86));
+      display:none;align-items:flex-end;justify-content:center;padding:12px}
+    .lock .pill{padding:8px 10px;border:1px dashed #446; background:#0c1734;border-radius:10px}
+    .card[aria-locked="true"] .lock{display:flex}
   </style>
 </head>
 <body>
   <div class="wrap">
     <h1>看故事學英文 · Stories</h1>
-    <p class="sub">從下方卡片選擇故事開始。〈中秋節〉為免費試看；其餘內容需登入。</p>
+    <p class="lead">從下方卡片選擇故事開始。〈中秋節〉為免費試看；其餘內容需登入。</p>
 
-    <div class="tools">
-      <input id="q" class="search" placeholder="輸入關鍵字搜尋（中 / 英標題 / 標籤）…" />
-      <span class="badge" id="authState">檢查登入中…</span>
+    <div class="topbar">
+      <div class="search">
+        <input id="q" type="search" placeholder="輸入關鍵字搜尋（中／英標題／標籤）…">
+        <button class="btn" id="btnCheck">檢查登入中…</button>
+      </div>
+      <button class="btn" id="btnAuth">登入</button>
     </div>
 
     <div id="grid" class="grid"></div>
   </div>
 
-  <!-- 你的登入邏輯：請保持 login.js 會維護 window.__AUTH.signedIn 與 showLogin() -->
+  <!-- 先載入 supa.js，再載入 login.js，最後主程式 -->
+  <script src="supa.js"></script>
   <script src="login.js"></script>
-
   <script>
-  // ========= 小工具 =========
-  const $ = (s, r=document)=> r.querySelector(s);
-  const $$ = (s, r=document)=> [...r.querySelectorAll(s)];
+  (()=>{
+    // ====== 工具 ======
+    const $ = (s, r=document)=> r.querySelector(s);
+    const $$ = (s, r=document)=> [...r.querySelectorAll(s)];
+    const FREE_SLUGS = new Set(['mid-autumn']); // 免費試看清單
 
-  // 允許免登入的 slug（目前只有 mid-autumn）
-  const FREE_SLUGS = new Set(["mid-autumn"]);
-
-  // 取登入狀態（login.js 應維護 window.__AUTH.signedIn）
-  function isSignedIn(){
-    return !!(window.__AUTH && window.__AUTH.signedIn);
-  }
-
-  // 顯示登入提示（由 login.js 提供）
-  function openLogin(){
-    if (typeof window.showLogin === 'function') {
-      window.showLogin();
-    } else {
-      alert("此內容需登入才能觀看。");
+    // 顯示登入狀態
+    async function refreshAuthUI() {
+      const { data: { session } } = await supa.auth.getSession();
+      $('#btnAuth').textContent = session ? '登出' : '登入';
+      $('#btnCheck').textContent = session ? '已登入' : '尚未登入';
     }
-  }
 
-  // 渲染卡片
-  function renderCards(list){
-    const grid = $('#grid');
-    grid.innerHTML = list.map(story=>{
-      const requiresLogin = !FREE_SLUGS.has(story.slug);
-      const lockFlag = requiresLogin ? 'data-requires-login="true"' : '';
-      const badge = requiresLogin ? '<span class="need-login">需登入</span>' : '<span class="need-login" style="background:#12381f;border-color:#1d6a3c;color:#b8f3ce">免費</span>';
-      return `
-        <div class="card" data-slug="${story.slug}">
-          <div class="card-head">
-            ${badge}
-            <img class="thumb" src="videos/${story.slug}.jpg" alt="${story.title_en}">
+    // 登入／登出按鈕
+    $('#btnAuth').onclick = async()=>{
+      const { data: { session } } = await supa.auth.getSession();
+      if(session){
+        await supa.auth.signOut();
+      }else{
+        // 交給 login.js 顯示登入彈窗（若你有現成 UI），若沒有會跳轉到 OAuth
+        if(typeof showLogin==='function'){ showLogin(); }
+        else{
+          const { error } = await supa.auth.signInWithOAuth({ provider:'google' });
+          if(error) alert(error.message);
+        }
+      }
+      refreshAuthUI();
+    };
+
+    // 監聽狀態變更（login.js 內也會監聽，這裡保險）
+    supa.auth.onAuthStateChange(()=>{
+      refreshAuthUI();
+    });
+
+    // ====== 載入資料 ======
+    let allItems = [];
+    async function loadData(){
+      const url = 'data/index.json?v=' + Date.now();
+      const res = await fetch(url);
+      if(!res.ok) throw new Error('index.json 載入失敗');
+      const json = await res.json();
+      allItems = json.items || [];
+      renderCards(allItems);
+    }
+
+    // ====== 渲染卡片 ======
+    function renderCards(list){
+      const g = $('#grid'); g.innerHTML = '';
+      list.forEach(item=>{
+        const locked = !FREE_SLUGS.has(item.slug);
+        const card = document.createElement('div');
+        card.className = 'card';
+        card.setAttribute('data-slug', item.slug);
+        card.setAttribute('aria-locked', locked ? 'true':'false');
+
+        card.innerHTML = `
+          <div class="thumb">
+            <img loading="lazy" src="${item.cover}" alt="${item.title_en}">
+            <div class="badge ${FREE_SLUGS.has(item.slug)?'free':''}">
+              ${FREE_SLUGS.has(item.slug)?'免費試看':'會員限定'}
+            </div>
+            <div class="lock"><div class="pill">登入後可觀看</div></div>
           </div>
           <div class="body">
-            <h3 class="title">${story.title_en}</h3>
-            <div class="row">
-              <div class="meta">${story.title_zh || ''}</div>
-              <span class="pill">${(story.length || 'SHORT')}</span>
-            </div>
+            <div class="title">${item.title_en}</div>
+            <div class="meta">${item.title_zh} · ${item.length||'SHORT'}</div>
             <div class="actions">
-              <a href="player.html?slug=${story.slug}" class="btn" ${lockFlag}>前往 ▶</a>
-              <a href="player.html?slug=${story.slug}&tab=quiz" class="btn ${requiresLogin?'lock':''}" ${lockFlag}>測驗</a>
+              <button class="btn primary" data-act="watch">前往</button>
+              <button class="btn" data-act="quiz">測驗</button>
             </div>
           </div>
-        </div>
-      `;
-    }).join('');
+        `;
 
-    // 綁定「需要登入」攔截
-    $$('#grid a[data-requires-login]').forEach(a=>{
-      a.addEventListener('click', (ev)=>{
-        if (!isSignedIn()){
-          ev.preventDefault();
-          openLogin();
-        }
+        // 事件：按鈕點擊
+        card.addEventListener('click', async (e)=>{
+          const btn = e.target.closest('button[data-act]');
+          if(!btn) return;
+
+          const act = btn.getAttribute('data-act');
+          const slug = item.slug;
+
+          // 檢查權限
+          const needLogin = !FREE_SLUGS.has(slug);
+          if(needLogin){
+            const { data:{ session } } = await supa.auth.getSession();
+            if(!session){
+              // 若有你的自訂登入 UI
+              if(typeof showLogin==='function'){ showLogin(); }
+              else{
+                const { error } = await supa.auth.signInWithOAuth({ provider:'google' });
+                if(error) alert(error.message);
+              }
+              return;
+            }
+          }
+
+          // 導向
+          if(act==='watch'){
+            location.href = `player.html?slug=${encodeURIComponent(slug)}`;
+          }else if(act==='quiz'){
+            location.href = `player.html?slug=${encodeURIComponent(slug)}&tab=quiz`;
+          }
+        });
+
+        g.appendChild(card);
       });
-    });
-  }
+    }
 
-  // 搜尋過濾
-  function setupSearch(all){
-    const q = $('#q');
-    q.addEventListener('input', ()=>{
-      const keyword = q.value.trim().toLowerCase();
-      if (!keyword) return renderCards(all);
-      const f = all.filter(x=>{
-        return (x.title_en||'').toLowerCase().includes(keyword)
-            || (x.title_zh||'').toLowerCase().includes(keyword)
-            || (x.slug||'').toLowerCase().includes(keyword);
+    // ====== 搜尋 ======
+    $('#q').addEventListener('input', ()=>{
+      const q = $('#q').value.trim().toLowerCase();
+      const list = !q ? allItems : allItems.filter(it=>{
+        return (it.title_en||'').toLowerCase().includes(q) ||
+               (it.title_zh||'').toLowerCase().includes(q) ||
+               (it.tags||[]).join(',').toLowerCase().includes(q);
       });
-      renderCards(f);
+      renderCards(list);
     });
-  }
 
-  // 更新右上狀態徽章
-  function paintAuthBadge(){
-    const el = $('#authState');
-    el.textContent = isSignedIn() ? '已登入' : '尚未登入';
-    el.style.color = isSignedIn() ? '#b8f3ce' : '#f3d3b8';
-    el.style.borderColor = isSignedIn() ? '#1d6a3c' : '#7c4059';
-    el.style.background = isSignedIn() ? '#12381f' : '#311c26';
-  }
-
-  (async ()=>{
-    // 嘗試讀 index.json 列表
-    const res = await fetch('data/index.json');
-    const meta = await res.json();
-    const items = meta.items || [];
-    renderCards(items);
-    setupSearch(items);
-    paintAuthBadge();
-
-    // 如果 login.js 會對外觸發事件，可在此更新徽章（你可以在 login.js 觸發 window.dispatchEvent(new CustomEvent('auth:change'))）
-    window.addEventListener('auth:change', paintAuthBadge);
+    // 初始化
+    (async()=>{
+      refreshAuthUI().catch(console.error);
+      loadData().catch(err=>{
+        console.error(err);
+        $('#grid').innerHTML = `<div style="color:#f66">載入失敗：${err.message}</div>`;
+      });
+    })();
   })();
   </script>
 </body>
