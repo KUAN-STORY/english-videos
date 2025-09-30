@@ -1,34 +1,39 @@
 {
+  "$schema": "https://example.com/learn-english-stories/index.schema.json",
   "items": [
     {
       "slug": "mid-autumn",
-      "title": "Mid-Autumn Festival",
-      "subtitle": "中秋節 · SHORT",
-      "cover": "videos/mid-autumn.jpg",
+      "title_en": "Mid-Autumn Festival",
+      "title_zh": "中秋節",
       "video": "videos/mid-autumn.mp4",
-      "free": true,
+      "cues": "data/cues-mid-autumn.json",
+      "quiz": "data/quiz-mid-autumn.json",
+      "cover": "videos/mid-autumn.jpg",
       "length": "SHORT",
-      "tags": ["中秋節", "短篇"]
+      "tags": ["festival","story","beginner"]
     },
     {
       "slug": "houyi",
-      "title": "Hou Yi Shoots the Suns",
-      "subtitle": "后羿射日 · SHORT",
-      "cover": "videos/houyi.jpg",
+      "title_en": "Hou Yi Shoots the Suns",
+      "title_zh": "后羿射日",
       "video": "videos/houyi.mp4",
-      "free": false,
+      "cues": "data/cues-houyi.json",
+      "quiz": "data/quiz-houyi.json",
+      "cover": "videos/houyi.jpg",
       "length": "SHORT",
-      "tags": ["后羿射日", "短篇"]
+      "tags": ["myth","hero"]
     },
     {
       "slug": "lantern",
-      "title": "Lantern Festival",
-      "subtitle": "元宵節 · SHORT",
+      "title_en": "Lantern Festival",
+      "title_zh": "元宵節",
+      "video": "videos/lantern.mp4",
+      "cues": "data/cues-lantern.json",
+      "quiz": "data/quiz-lantern.json",
       "cover": "videos/lantern.jpg",
-      "video": "videos/Lantern.mp4",
-      "free": false,
       "length": "SHORT",
-      "tags": ["元宵節", "短篇"]
+      "tags": ["festival","lantern"]
     }
   ]
 }
+
