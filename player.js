@@ -1,284 +1,245 @@
-/* player.js - A 版（不做登入限制）
- * 依 slug 載入 videos/<slug>.mp4、data/cues-*.json、quiz-*.json、vocab-*.json
- * 支援字幕跟隨、自動捲動、偏移、字級、A-B 循環等
- */
-
-(function () {
-  // ==== 工具 ====
-  const $ = (s, r = document) => r.querySelector(s);
-  const $$ = (s, r = document) => [...r.querySelectorAll(s)];
+/* player.js  — A 版本（無登入守門） */
+(function(){
+  const $ = (s, r=document)=>r.querySelector(s);
+  const $$ = (s, r=document)=>[...r.querySelectorAll(s)];
   const qs = new URLSearchParams(location.search);
-  const slug = (qs.get("slug") || "mid-autumn").trim();
-  const storeKey = (k) => `pv_${slug}_${k}`;
+  const slug = qs.get('slug') || 'mid-autumn';
 
-  const player = $("#player");
-  const cueTBody = $("#cueTable tbody");
-  const cueWrap = $("#cueWrap");
-  const cueEmpty = $("#cueEmpty");
+  // UI refs
+  const video = $('#player');
+  const subtbl = $('#subtbl tbody');
+  const rate = $('#rate'); const rateLabel = $('#rateLabel');
+  const zoom = $('#zoom'); const btnFit = $('#btnFit');
+  const btnPrev = $('#btnPrev'), btnNext = $('#btnNext'), btnPlay = $('#btnPlay');
+  const btnRepeat = $('#btnRepeat'), btnAB = $('#btnAB'), btnABClear = $('#btnABClear');
+  const follow = $('#follow'); const offMinus = $('#offMinus'); const offPlus = $('#offPlus');
+  const offsetLabel = $('#offsetLabel'); const search = $('#search');
+  const tabs = $$('.tab'); const panes = { sub:$('#pane-sub'), quiz:$('#pane-quiz'), vocab:$('#pane-vocab') };
+  const quizWrap = $('#quizWrap'); const btnShuffle = $('#btnShuffle'); const btnPrint = $('#btnPrint');
+  const vocabWrap = $('#vocabWrap'); const btnVocQuiz = $('#btnVocQuiz');
 
-  const rate = $("#rate");
-  const rateLabel = $("#rateLabel");
-  const zoom = $("#zoom");
-  const followChk = $("#follow");
-  const offsetText = $("#offsetText");
-  const offMinus = $("#offMinus");
-  const offPlus = $("#offPlus");
+  // State
+  let cues = [];           // [{time:'00:01', text:'en', zh:'xx'}]
+  let curIdx = -1;
+  let offset = 0;          // 秒
+  let abA = null, abB = null;
+  let vocab = [];          // [{word, zh, ex?}]
+  let quiz = [];           // [{q, a:[..], answer?}]  or  fill-in
 
-  let cues = [];            // [{t,en,zh}]
-  let offset = +(localStorage.getItem(storeKey("offset")) || 0);
-  let follow = localStorage.getItem(storeKey("follow"));
-  follow = follow == null ? true : (follow === "true");
-  followChk.checked = follow;
-  offsetText.textContent = offset.toFixed(1);
-
-  // A-B 循環
-  let aMark = null, bMark = null, repeatOneIdx = null;
-
-  // ==== 影片 ====
-  player.src = `videos/${slug}.mp4`;
-
-  // 變速
-  rate.addEventListener("input", () => {
-    player.playbackRate = +rate.value;
-    rateLabel.textContent = player.playbackRate.toFixed(2) + "×";
+  // ---- init ----
+  initTabs();
+  loadMetaAndData().then(()=>{
+    bindPlayer();
+    bindSubs();
+    bindQuiz();
+    bindVocab();
+    if(qs.get('tab')==='quiz') switchTab('quiz');
+    else if(qs.get('tab')==='vocab') switchTab('vocab');
+    else switchTab('sub');
   });
 
-  // 變焦（不蓋工具列，靠 video 物件縮放）
-  zoom.addEventListener("input", () => {
-    player.style.transform = `scale(${+zoom.value})`;
-    player.style.transformOrigin = "center center";
-  });
+  async function loadMetaAndData(){
+    // 讀 data/index.json -> 找到影片檔與各資料檔
+    const idx = await (await fetch('data/index.json?v='+Date.now())).json();
+    const it = (idx.items||[]).find(x=>x.slug===slug);
+    if(!it) throw new Error('找不到對應影片：'+slug);
 
-  // 基本控制
-  $("#playBtn").onclick = () => player[player.paused ? "play" : "pause"]();
-  $("#prevBtn").onclick = () => seekToPrev();
-  $("#nextBtn").onclick = () => seekToNext();
-  $("#repeatBtn").onclick = () => {
-    if (repeatOneIdx == null) repeatOneIdx = currentCueIndex();
-    else repeatOneIdx = null;
-    toast(repeatOneIdx == null ? "取消重複" : "重複本句中…");
-  };
-  $("#abBtn").onclick = () => {
-    if (aMark == null) { aMark = player.currentTime; toast("A 點已記錄"); }
-    else if (bMark == null) { bMark = player.currentTime; toast("B 點已記錄"); }
-    else { aMark = bMark = null; toast("已清除 A/B 點"); }
-  };
-  $("#abClearBtn").onclick = () => { aMark = bMark = null; toast("已清除 A/B 點"); };
+    // 設定 video
+    video.src = it.video || ('videos/'+slug+'.mp4');
 
-  // ==== 右側 tabs ====
-  $$(".tab").forEach(t => t.addEventListener("click", () => {
-    const name = t.dataset.tab;
-    $$(".tab").forEach(x => x.classList.toggle("active", x === t));
-    $$(".pane").forEach(p => p.classList.toggle("active", p.id === `pane-${name}`));
-  }));
+    // 讀字幕 / 測驗 / 單字
+    cues  = await safeJSON(it.cues  || ('data/cues-'+slug+'.json'));
+    quiz  = await safeJSON(it.quiz  || ('data/quiz-'+slug+'.json'));
+    vocab = await safeJSON(it.vocab || ('data/vocab-'+slug+'.json'));
 
-  // 字級
-  $$(".fsBtn").forEach(b => b.addEventListener("click", () => {
-    $$(".fsBtn").forEach(x => x.classList.remove("active"));
-    b.classList.add("active");
-    const fs = b.dataset.fs;
-    cueWrap.classList.remove("fs-s","fs-m","fs-l");
-    cueWrap.classList.add(`fs-${fs}`);
-    localStorage.setItem(storeKey("fs"), fs);
-  }));
-  const fsSaved = localStorage.getItem(storeKey("fs")) || "m";
-  cueWrap.classList.add(`fs-${fsSaved}`);
-  $(`.fsBtn[data-fs="${fsSaved}"]`).classList.add("active");
-
-  // 跟隨 & 偏移
-  followChk.addEventListener("change", () => {
-    follow = followChk.checked;
-    localStorage.setItem(storeKey("follow"), String(follow));
-  });
-  offMinus.addEventListener("click", () => changeOffset(-0.5));
-  offPlus.addEventListener("click", () => changeOffset(+0.5));
-  function changeOffset(delta){
-    offset = +(offset + delta).toFixed(1);
-    offsetText.textContent = offset.toFixed(1);
-    localStorage.setItem(storeKey("offset"), String(offset));
+    // 渲染字幕表
+    renderSubs(cues);
   }
 
-  // ==== 字幕載入 ====
-  init();
-  async function init(){
-    await loadCues();
-    await loadQuiz();
-    await loadVocab();
-    attachTimeUpdate();
-  }
-
-  async function loadCues(){
+  async function safeJSON(url){
     try{
-      const url = `data/cues-${slug}.json?v=${Date.now()}`;
-      const res = await fetch(url);
-      if(!res.ok) throw new Error(`HTTP ${res.status}`);
-      const raw = await res.json();
-
-      // 接受兩種格式：
-      // 1) [{time:"00:01", en:"...", zh:"..."}]
-      // 2) [{time:"00:01", text:"..."}]（英）
-      cues = (raw || []).map((x)=>({
-        t: toSec(x.time || x.t || "0:00"),
-        en: x.en ?? x.text ?? "",
-        zh: x.zh ?? x.cn ?? ""
-      })).sort((a,b)=>a.t-b.t);
-
-      renderCueTable();
-      cueEmpty.style.display = cues.length? "none":"";
-    }catch(err){
-      console.error("載入字幕失敗：", err);
-      cueEmpty.style.display = "";
+      const r = await fetch(url+'?v='+Date.now());
+      if(!r.ok) throw 0;
+      return await r.json();
+    }catch(e){
+      return [];
     }
   }
 
-  function renderCueTable(){
-    cueTBody.innerHTML = "";
-    cues.forEach((c,idx)=>{
-      const tr = document.createElement("tr");
-      tr.dataset.idx = idx;
-      tr.innerHTML = `
-        <td class="time">${fmt(c.t)}</td>
-        <td class="en">${escapeHTML(c.en)}</td>
-        <td class="zh">${escapeHTML(c.zh)}</td>
-      `;
-      tr.addEventListener("click", ()=> {
-        player.currentTime = Math.max(0, c.t + offset);
-        player.play();
-      });
-      cueTBody.appendChild(tr);
+  // ---- Tabs ----
+  function initTabs(){
+    tabs.forEach(t=>{
+      t.onclick = ()=> switchTab(t.dataset.tab);
+    });
+  }
+  function switchTab(name){
+    tabs.forEach(t=>t.classList.toggle('active', t.dataset.tab===name));
+    for(const k in panes) panes[k].style.display = (k===name?'block':'none');
+  }
+
+  // ---- Player / basic ----
+  function bindPlayer(){
+    rate.oninput = ()=>{ video.playbackRate = +rate.value; rateLabel.textContent = (+rate.value).toFixed(2)+'×'; };
+    rate.dispatchEvent(new Event('input'));
+
+    zoom.oninput = ()=>{ video.style.transform = `scale(${zoom.value})`; video.style.transformOrigin='center center'; };
+    btnFit.onclick = ()=>{ zoom.value = 1; zoom.dispatchEvent(new Event('input')); };
+
+    btnPlay.onclick = ()=> video.paused ? video.play() : video.pause();
+    btnPrev.onclick = ()=> jumpTo(findPrevIdx());
+    btnNext.onclick = ()=> jumpTo(findNextIdx());
+    btnRepeat.onclick = ()=> repeatCurrent();
+    btnAB.onclick = ()=> setAB();
+    btnABClear.onclick = ()=>{abA=abB=null;};
+
+    // A-B loop
+    video.addEventListener('timeupdate', ()=>{
+      // 跟隨高亮
+      if(cues.length){
+        const t = video.currentTime + offset;
+        const i = findActiveIdx(t);
+        if(i!==curIdx){ curIdx=i; highlightRow(i); if(follow.checked && i>-1) scrollToRow(i); }
+      }
+      // AB
+      if(abA!=null && abB!=null && video.currentTime>abB) video.currentTime = abA;
     });
   }
 
-  // 跟隨 & 自動捲動
-  function attachTimeUpdate(){
-    player.addEventListener("timeupdate", ()=>{
-      // A-B / Repeat One
-      if (aMark!=null && bMark!=null && player.currentTime>bMark) {
-        player.currentTime = aMark;
-      }
-      if (repeatOneIdx!=null){
-        const c = cues[repeatOneIdx];
-        if (c){
-          const next = cues[repeatOneIdx+1];
-          const endT = next? next.t : c.t + 5;
-          if (player.currentTime >= endT) player.currentTime = c.t + 0.01;
-        }
-      }
+  function findActiveIdx(sec){
+    // cues time: "mm:ss" or "hh:mm:ss" -> to sec
+    function ts(s){ let a=s.split(':').map(Number); return a.length===2? a[0]*60+a[1] : a[0]*3600+a[1]*60+a[2]; }
+    for(let i=cues.length-1;i>=0;i--){
+      const t = ts(cues[i].time);
+      const nt = (i+1<cues.length)?ts(cues[i+1].time):1e9;
+      if(sec>=t && sec<nt) return i;
+    }
+    return -1;
+  }
+  function findPrevIdx(){ return Math.max(0, (curIdx>0?curIdx-1:0)); }
+  function findNextIdx(){ return Math.min(cues.length-1, (curIdx>=0?curIdx+1:0)); }
 
-      const idx = currentCueIndex();
-      highlightRow(idx);
-      if (follow && idx != null) {
-        const row = cueTBody.querySelector(`tr[data-idx="${idx}"]`);
-        if (row) row.scrollIntoView({block:"nearest"});
+  function jumpTo(i){
+    if(i<0 || i>=cues.length) return;
+    const sec = hhmmssToSec(cues[i].time) - offset;
+    video.currentTime = Math.max(0, sec);
+    curIdx = i; highlightRow(i); if(follow.checked) scrollToRow(i);
+    video.play();
+  }
+
+  function repeatCurrent(){
+    if(curIdx<0) return;
+    const a = Math.max(0, hhmmssToSec(cues[curIdx].time) - offset);
+    const b = (curIdx+1<cues.length? hhmmssToSec(cues[curIdx+1].time) : a+2) - offset;
+    abA=a; abB=b;
+    video.currentTime = abA; video.play();
+  }
+
+  function setAB(){
+    const t = video.currentTime;
+    if(abA==null){ abA=t; alert('A 點已設定'); }
+    else if(abB==null){ abB=t>abA?t:abA+1; alert('B 點已設定'); }
+    else { abA=t; abB=null; alert('重設 A 點'); }
+  }
+
+  // ---- Subtitles ----
+  function renderSubs(list){
+    subtbl.innerHTML = '';
+    for(let i=0;i<list.length;i++){
+      const c=list[i];
+      const tr = document.createElement('tr');
+      tr.className='cue';
+      tr.innerHTML = `<td style="width:78px">${fmtTime(c.time)}</td><td>${esc(c.text||'')}</td><td>${esc(c.zh||'')}</td>`;
+      tr.addEventListener('click', ()=>jumpTo(i));
+      subtbl.appendChild(tr);
+    }
+    updateNoDataRow();
+  }
+
+  function esc(s){ return String(s).replace(/[&<>]/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;"}[m])); }
+  function fmtTime(t){ return t.length===4?('0'+t):t; }
+  function hhmmssToSec(t){ const a=t.split(':').map(Number); return a.length===2?a[0]*60+a[1]:a[0]*3600+a[1]*60+a[2]; }
+
+  function highlightRow(i){
+    $$('.cue', subtbl).forEach((tr,idx)=> tr.classList.toggle('active', idx===i));
+  }
+  function scrollToRow(i){
+    const tr = $$('.cue', subtbl)[i]; if(!tr) return;
+    tr.scrollIntoView({block:'center'});
+  }
+
+  // 偏移、搜尋
+  offMinus.onclick = ()=>{ offset = +(offset-0.5).toFixed(1); offsetLabel.textContent = offset.toFixed(1)+'s'; };
+  offPlus.onclick  = ()=>{ offset = +(offset+0.5).toFixed(1); offsetLabel.textContent = offset.toFixed(1)+'s'; };
+  search.addEventListener('input', ()=>{
+    const q = search.value.toLowerCase().trim();
+    $$('.cue', subtbl).forEach(tr=>{
+      const t = tr.children[1].textContent.toLowerCase();
+      const z = tr.children[2].textContent.toLowerCase();
+      tr.style.display = (!q || t.includes(q) || z.includes(q)) ? '' : 'none';
+    });
+  });
+
+  function updateNoDataRow(){
+    if(!cues.length){
+      subtbl.innerHTML = `<tr><td class="muted" colspan="3">查無字幕資料</td></tr>`;
+    }
+  }
+
+  // ---- Quiz ----
+  function bindQuiz(){
+    renderQuiz();
+    btnShuffle.onclick = renderQuiz;
+    btnPrint.onclick = ()=> window.print();
+  }
+  function renderQuiz(){
+    if(!quiz.length){ quizWrap.innerHTML = `<div class="muted">尚未提供題庫</div>`; return; }
+    const pool = [...quiz];
+    // 取 20 題（或全題）
+    const n = Math.min(20, pool.length);
+    shuffle(pool);
+    const pick = pool.slice(0,n);
+    let html = '';
+    pick.forEach((q,i)=>{
+      if(q.q && Array.isArray(q.a)){
+        // 選擇題
+        html += `<div style="margin:10px 0">
+          <div><b>(${i+1})</b> ${esc(q.q)}</div>
+          <div style="margin-top:6px">
+            ${q.a.map((opt,j)=>`<label style="display:block;margin:2px 0"><input type="radio" name="q${i}"> ${esc(opt)}</label>`).join('')}
+          </div>
+        </div>`;
+      }else if(q.fill){
+        // 填空
+        html += `<div style="margin:10px 0">
+          <div><b>(${i+1})</b> ${esc(q.fill)}</div>
+          <input style="width:100%;padding:8px;border-radius:8px;border:1px solid #2a3968;background:#0f1a33;color:#fff" placeholder="你的答案…">
+        </div>`;
       }
     });
+    quizWrap.innerHTML = html;
   }
 
-  function highlightRow(idx){
-    $$("#cueTable tbody tr").forEach(tr=>{
-      tr.classList.toggle("active", +tr.dataset.idx===idx);
-    });
+  // ---- Vocab ----
+  function bindVocab(){
+    renderVocab();
+    btnVocQuiz.onclick = ()=> alert('之後可加：單字練習模式（隨機抽問／拼字）');
   }
-  function currentCueIndex(){
-    const t = player.currentTime - offset;
-    for (let i=0;i<cues.length;i++){
-      const here = cues[i].t;
-      const next = (cues[i+1]?.t ?? 1e9);
-      if (t >= here && t < next) return i;
-    }
-    return null;
-  }
-  function seekToPrev(){
-    const idx = currentCueIndex();
-    const target = (idx==null? cues.length-1 : Math.max(0, idx-1));
-    if (cues[target]) player.currentTime = Math.max(0, cues[target].t + offset);
-  }
-  function seekToNext(){
-    const idx = currentCueIndex();
-    const target = (idx==null? 0 : Math.min(cues.length-1, idx+1));
-    if (cues[target]) player.currentTime = Math.max(0, cues[target].t + offset);
+  function renderVocab(){
+    if(!vocab.length){ vocabWrap.innerHTML = `<div class="muted">尚未提供單字清單</div>`; return; }
+    vocabWrap.innerHTML = vocab.map(v=>`
+      <div style="padding:8px 10px;border:1px solid #1a2a54;margin:6px 0;border-radius:10px;background:#0f1a33">
+        <b>${esc(v.word)}</b> <span class="muted">— ${esc(v.zh||'')}</span>
+        ${v.ex? `<div style="margin-top:6px;color:#cfe">${esc(v.ex)}</div>` : ``}
+      </div>
+    `).join('');
   }
 
-  // ==== 測驗 ====
-  async function loadQuiz(){
-    const el = $("#quizList");
-    el.innerHTML = "";
-    try{
-      const res = await fetch(`data/quiz-${slug}.json?v=${Date.now()}`);
-      if(!res.ok) throw new Error(`HTTP ${res.status}`);
-      const arr = await res.json();
-      if(!Array.isArray(arr) || !arr.length){
-        el.innerHTML = `<div class="warn">查無測驗資料</div>`;
-        return;
-      }
-      arr.forEach((q,i)=>{
-        // 支援兩種：{q:"?", a:[...], ans:1}  或 {q:"?", a:[...]}（沒有正解）
-        const card = document.createElement("div");
-        card.className = "qcard";
-        card.innerHTML = `<h4>${i+1}. ${escapeHTML(q.q||"")}</h4>`;
-        (q.a||[]).forEach((opt,j)=>{
-          const btn = document.createElement("div");
-          btn.className = "opt";
-          btn.textContent = opt;
-          btn.onclick = ()=>{
-            if (q.ans==null) return; // 無標準答案
-            const ok = (+q.ans===j);
-            btn.classList.add(ok? "correct":"wrong");
-          };
-          card.appendChild(btn);
-        });
-        el.appendChild(card);
-      });
-    }catch(err){
-      console.error("載入測驗失敗：", err);
-      el.innerHTML = `<div class="warn">載入測驗失敗</div>`;
-    }
-  }
-
-  // ==== 單字 ====
-  async function loadVocab(){
-    const ul = $("#vocabList");
-    ul.innerHTML = "";
-    try{
-      const res = await fetch(`data/vocab-${slug}.json?v=${Date.now()}`);
-      if(!res.ok) throw new Error(`HTTP ${res.status}`);
-      const arr = await res.json();
-      if(!Array.isArray(arr) || !arr.length){
-        ul.innerHTML = `<li class="warn">查無單字資料</li>`;
-        return;
-      }
-      arr.forEach(v=>{
-        // 支援 {en:"word", zh:"解釋"} 或字串
-        const li = document.createElement("li");
-        if (typeof v === "string") li.textContent = v;
-        else li.textContent = `${v.en || ""} — ${v.zh || ""}`.trim();
-        ul.appendChild(li);
-      });
-    }catch(err){
-      console.error("載入單字失敗：", err);
-      ul.innerHTML = `<li class="warn">載入單字失敗</li>`;
-    }
-  }
-
-  // ==== 小工具 ====
-  function toSec(s){
-    // 支援 "00:01" 或 "0:01" 或 "0:01.5"
-    if (typeof s !== "string") return +s||0;
-    const m = s.trim().split(":").map(Number);
-    if (m.length===3) return m[0]*3600+m[1]*60+m[2];
-    if (m.length===2) return m[0]*60+m[1];
-    return +s||0;
-  }
-  function fmt(sec){
-    sec=Math.max(0,sec|0);
-    const m=(sec/60|0).toString().padStart(2,"0");
-    const s=(sec%60|0).toString().padStart(2,"0");
-    return `[${m}:${s}]`;
-  }
-  function toast(msg){ console.log(msg); }
-  function escapeHTML(s){ return String(s ?? "").replace(/[&<>"']/g, m=>({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;" }[m])); }
+  // util
+  function shuffle(a){ for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; } }
 
 })();
+
+
 
 
 
