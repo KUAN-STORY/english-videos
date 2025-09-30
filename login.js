@@ -1,180 +1,177 @@
-// login.js — Email + Password 版（穩定＆含詳盡除錯訊息）
+// login.js — Email + Password 版本（穩定 + 詳細日誌）
+// 只需覆蓋本檔；index.html / supa.js 無需改動
 import { supa } from './supa.js';
 
-// ====== 可調整：未登入也可看的影片 slug（白名單）======
-const FREE_SLUGS = new Set(['mid-autumn']);
+// ========== 小工具 ==========
+const TAG = '[login.js]';
+const ts  = () => {
+  const d = new Date();
+  const pad = n => String(n).padStart(2, '0');
+  return `${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
+};
+const log  = (...a) => console.log(`${ts()} ${TAG}`, ...a);
+const warn = (...a) => console.warn(`${ts()} ${TAG}`, ...a);
+const err  = (...a) => console.error(`${ts()} ${TAG}`, ...a);
+const $    = (s, r = document) => r.querySelector(s);
 
-// ====== 小工具 ======
-const $  = (s, r = document) => r.querySelector(s);
-const now = () => new Date().toISOString().slice(11,19); // 只顯示 HH:MM:SS
-
+// ========== 狀態 ==========
 let currentUser = null;
 
-// 讀取使用者（從 Supabase）
-async function refreshUser() {
-  const { data: { user }, error } = await supa.auth.getUser();
-  if (error) console.warn(`[${now()}][login.js] getUser error:`, error);
-  currentUser = user || null;
-  console.log(`[${now()}][login.js] refreshUser =>`, currentUser?.email || null);
-  // 廣播（給 index / player 想聽的人）
-  window.dispatchEvent(new CustomEvent('auth:changed', { detail: { authed: !!currentUser, user: currentUser }}));
-  return currentUser;
+// ========== 基礎函式 ==========
+function assertSupa() {
+  if (!supa || !supa.auth) {
+    throw new Error('supa.js 尚未正確載入（請檢查 supa.js 是否語法正確、URL/ANON 是否為字串且不斷行）');
+  }
 }
 
-// UI：右上角徽章＆按鈕
+async function refreshUser() {
+  try {
+    assertSupa();
+    const { data, error } = await supa.auth.getUser();
+    if (error) {
+      warn('getUser error:', error.message);
+      currentUser = null;
+      return null;
+    }
+    currentUser = data?.user ?? null;
+    log('refreshUser =>', currentUser ? currentUser.email : null);
+    return currentUser;
+  } catch (e) {
+    err('refreshUser exception:', e?.message || e);
+    currentUser = null;
+    return null;
+  }
+}
+
 async function updateAuthUI() {
-  const badge = $('#userNameBadge');
-  const btnLogin  = $('#btnLogin');
-  const btnLogout = $('#btnLogout');
-  if (!badge || !btnLogin || !btnLogout) return;
+  const badge    = $('#userNameBadge');
+  const btnLogin = $('#btnLogin');
+  const btnLogout= $('#btnLogout');
+
+  if (!badge || !btnLogin || !btnLogout) {
+    // 沒有這些元素也不視為錯誤（例如在 player.html 之外的頁面）
+    warn('some auth UI elements not found (safe to ignore on pages without header)');
+    return;
+  }
 
   if (currentUser) {
-    const name = currentUser.user_metadata?.name || currentUser.email || '已登入';
-    badge.textContent = name;
+    badge.textContent = currentUser.user_metadata?.name || currentUser.email || '已登入';
     btnLogin.style.display  = 'none';
     btnLogout.style.display = 'inline-block';
+    log('updateAuthUI (authed=true)');
   } else {
     badge.textContent = '';
     btnLogin.style.display  = 'inline-block';
     btnLogout.style.display = 'none';
-  }
-  console.log(`[${now()}][login.js] updateAuthUI (authed=${!!currentUser})`);
-}
-
-// 右上角登入/登出綁定
-function wireHeaderAuth() {
-  const btnLogin  = $('#btnLogin');
-  const btnLogout = $('#btnLogout');
-  const dlg       = $('#dlgLogin');
-  const goLogin   = $('#btnGoLogin');
-  const dlgClose  = $('#btnDlgClose');
-
-  // 右上登入
-  btnLogin?.addEventListener('click', async (e) => {
-    e.preventDefault();
-    console.log(`[${now()}][login.js] <click> #btnLogin`);
-    await openAuthPrompt();
-  });
-
-  // 右上登出
-  btnLogout?.addEventListener('click', async (e) => {
-    e.preventDefault();
-    console.log(`[${now()}][login.js] <click> #btnLogout`);
-    await supa.auth.signOut();
-    currentUser = null;
-    await updateAuthUI();
-    alert('已登出');
-  });
-
-  // 卡片彈窗：去登入
-  goLogin?.addEventListener('click', async (e) => {
-    e.preventDefault();
-    console.log(`[${now()}][login.js] <click> #btnGoLogin`);
-    dlg?.close();
-    await openAuthPrompt();
-  });
-
-  // 卡片彈窗：取消
-  dlgClose?.addEventListener('click', (e) => {
-    e.preventDefault();
-    console.log(`[${now()}][login.js] <click> #btnDlgClose`);
-    dlg?.close();
-  });
-}
-
-// 簡單的 Email+密碼登入提示（測試用）
-async function openAuthPrompt() {
-  const email = prompt('請輸入 Email：');
-  if (!email) return;
-  const password = prompt('請輸入密碼：');
-  if (!password) return;
-
-  console.log(`[${now()}][login.js] signInWithPassword:`, email);
-
-  const { data, error } = await supa.auth.signInWithPassword({ email, password });
-  if (error) {
-    console.warn(`[${now()}][login.js] signIn error:`, error);
-    alert(`登入失敗：${error.message}`);
-    return;
-  }
-
-  console.log(`[${now()}][login.js] signIn ok =>`, data?.user?.email);
-  await refreshUser();
-  await updateAuthUI();
-  alert('登入成功！');
-}
-
-// 給 player.html 用的守門（如果你在 player 有用到 #player）
-async function guardPlayerIfAny() {
-  const player = $('#player');
-  if (!player) return; // 不在 player.html 直接略過
-
-  const slug = new URLSearchParams(location.search).get('slug') || '';
-  // 白名單放行
-  if (FREE_SLUGS.has(slug)) {
-    console.log(`[${now()}][login.js] guardPlayerIfAny: free slug "${slug}" → allow`);
-    return;
-  }
-
-  const authed = !!(await refreshUser());
-  if (!authed) {
-    console.log(`[${now()}][login.js] guardPlayerIfAny: need login`);
-    const go = confirm('這部影片需要登入後才能觀看，要立刻登入嗎？');
-    if (go) {
-      await openAuthPrompt();
-      // 登入後再檢查一次
-      const ok = !!(await refreshUser());
-      if (!ok) location.href = './index.html';
-    } else {
-      location.href = './index.html';
-    }
+    log('updateAuthUI (authed=false)');
   }
 }
 
-// ====== 對外介面（給 index.html 呼叫）======
+// ========== UI 綁定 ==========
+function wireButtons() {
+  const btnLogin    = $('#btnLogin');
+  const btnLogout   = $('#btnLogout');
+  const dlg         = $('#dlgLogin');
+  const btnGoLogin  = $('#btnGoLogin');
+  const btnDlgClose = $('#btnDlgClose');
+
+  if (btnLogin) {
+    btnLogin.onclick = async (ev) => {
+      ev?.preventDefault?.();
+      try {
+        assertSupa();
+        const email = prompt('請輸入 Email：');
+        if (!email) return;
+        const password = prompt('請輸入密碼：');
+        if (!password) return;
+
+        const { data, error } = await supa.auth.signInWithPassword({ email, password });
+        if (error) {
+          alert('登入失敗：' + error.message);
+          err('signIn fail:', error.message);
+          return;
+        }
+        log('signIn ok =>', data?.user?.email);
+        await refreshUser();
+        await updateAuthUI();
+        try { dlg?.close?.(); } catch {}
+        alert('登入成功！');
+      } catch (e) {
+        err('login exception:', e?.message || e);
+        alert('登入失敗：' + (e?.message || e));
+      }
+    };
+  } else {
+    warn('btnLogin not found');
+  }
+
+  if (btnLogout) {
+    btnLogout.onclick = async (ev) => {
+      ev?.preventDefault?.();
+      try {
+        assertSupa();
+        await supa.auth.signOut();
+        currentUser = null;
+        await updateAuthUI();
+        log('signOut ok');
+        alert('已登出');
+      } catch (e) {
+        err('signOut exception:', e?.message || e);
+        alert('登出失敗：' + (e?.message || e));
+      }
+    };
+  } else {
+    warn('btnLogout not found');
+  }
+
+  if (btnGoLogin) {
+    btnGoLogin.onclick = (ev) => {
+      ev?.preventDefault?.();
+      try { dlg?.close?.(); } catch {}
+      btnLogin?.click?.();
+    };
+  }
+
+  if (btnDlgClose) {
+    btnDlgClose.onclick = (ev) => {
+      ev?.preventDefault?.();
+      try { dlg?.close?.(); } catch {}
+    };
+  }
+}
+
+// ========== 對外介面（給 index.html 使用） ==========
 window.Auth = {
-  // 同步快速判斷
-  isAuthedSync: () => !!currentUser,
-  // 非同步判斷（會到 Supabase 取一次）
+  /** 回傳 true/false（會去向 Supabase 取一次最新使用者） */
   isAuthed: async () => !!(await refreshUser()),
-  // 取使用者
+  /** 不觸發遠端查詢的同步判斷（速度快，可能是前一次狀態） */
+  isAuthedSync: () => !!currentUser,
+  /** 取目前暫存的 user 物件（可能為 null） */
   getUser: () => currentUser,
-  // 直接呼叫登入（如果你之後想做自訂 UI 可以用）
-  signInWithEmailPassword: async (email, password) => {
-    const { data, error } = await supa.auth.signInWithPassword({ email, password });
-    if (error) throw error;
-    await refreshUser();
-    await updateAuthUI();
-    return data.user;
-  },
-  // 登出
-  signOut: async () => {
-    await supa.auth.signOut();
-    currentUser = null;
-    await updateAuthUI();
-  },
 };
 
-// ====== 初始化 ======
+// ========== 初始化 ==========
 document.addEventListener('DOMContentLoaded', async () => {
-  console.log(`[${now()}][login.js] loaded & DOM ready`);
-  await refreshUser();
+  log('loaded & DOM ready');
+  await refreshUser();   // 讓右上角初始就能顯示狀態
   await updateAuthUI();
-  wireHeaderAuth();
-  await guardPlayerIfAny();
+  wireButtons();
 });
 
-// ====== 監聽 Supabase 狀態變化（自動刷新 / 登入 / 登出）======
-supa.auth.onAuthStateChange(async (event, session) => {
-  console.log(`[${now()}][login.js] onAuthStateChange:`, event, session?.user?.email || null);
-  await refreshUser();
-  await updateAuthUI();
+// ========== 監聽 Supabase 狀態變更 ==========
+try {
+  assertSupa();
+  supa.auth.onAuthStateChange(async (event, session) => {
+    log('onAuthStateChange =>', event, !!session);
+    await refreshUser();
+    await updateAuthUI();
+  });
+} catch (e) {
+  err('onAuthStateChange not set:', e?.message || e);
+}
+
 });
 
-// ====== 額外：把事件 log 出來，方便觀察 index.html ↔ login.js 溝通 ======
-window.addEventListener('auth:changed', (e) => {
-  console.log(`[${now()}][login.js] event auth:changed ->`, e.detail);
-});
 
 
 
