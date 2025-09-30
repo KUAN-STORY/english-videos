@@ -191,6 +191,15 @@
   </script>
 </body>
 </html>
+<!-- 先載入 UMD 版 Supabase（一定要先） -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<!-- 建立全域 supa 實例 -->
+<script src="supa.js"></script>
+<!-- 你的登入彈窗 / 狀態監聽（會用到 supa） -->
+<script src="login.js"></script>
+
+<!-- 之後才是頁面自己用的腳本（如果有） -->
+<!-- <script src="index.js"></script> 或內嵌腳本 -->
 
 
 
