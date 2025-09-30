@@ -94,6 +94,76 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
   <!-- 你的 login.js（見下方完整檔案） -->
   <script src="login.js"></script>
+<script>
+(() => {
+  const $  = (s, r=document) => r.querySelector(s);
+
+  // --- 登入對話框操作 ---
+  const dlgOpen  = () => { $('#loginDialog').style.display = 'flex'; };
+  const dlgClose = () => { $('#loginDialog').style.display = 'none'; };
+  $('#btnCloseLogin').onclick = dlgClose;
+
+  // --- 標頭狀態切換 ---
+  async function refreshHeader() {
+    const { data:{ session } } = await supa.auth.getSession();
+    $('#btnLogin').style.display  = session ? 'none' : 'inline-block';
+    $('#btnLogout').style.display = session ? 'inline-block' : 'none';
+    $('#whoami').textContent = session ? (session.user?.email || '') : '';
+  }
+
+  // 初始與狀態監聽
+  refreshHeader().catch(console.error);
+  let pendingHref = null; // 使用者被擋下時要去的目標
+  supa.auth.onAuthStateChange((_evt, session) => {
+    refreshHeader();
+    if (session && pendingHref) {   // 登入成功→跳回剛剛的頁面
+      const to = pendingHref; pendingHref = null;
+      location.href = to;
+    }
+  });
+
+  // --- 右上角按鈕 ---
+  $('#btnLogin').onclick = dlgOpen;
+  $('#btnLogout').onclick = async () => { await supa.auth.signOut(); };
+
+  // --- 對話框內：Email/Password 登入 ---
+  $('#btnLoginConfirm').onclick = async () => {
+    const email = $('#loginEmail').value.trim();
+    const password = $('#loginPassword').value;
+    if (!email || !password) { alert('請輸入 Email 與密碼'); return; }
+
+    const { error } = await supa.auth.signInWithPassword({ email, password });
+    if (error) { alert(error.message); return; }
+    dlgClose();
+    // onAuthStateChange 會幫你導向 pendingHref
+  };
+
+  // --- 對話框內：Google 登入 ---
+  $('#btnLoginGoogle').onclick = async () => {
+    const { error } = await supa.auth.signInWithOAuth({
+      provider: 'google',
+      options: { redirectTo: location.href } // 登入回來仍在本頁
+    });
+    if (error) alert(error.message);
+  };
+
+  // --- 核心：攔截卡片點擊，未登入就擋 ---
+  document.getElementById('cards').addEventListener('click', async (e) => {
+    const a = e.target.closest('a.card');
+    if (!a) return;
+
+    const needLogin = a.dataset.requiresLogin === 'true';
+    if (!needLogin) return; // 免費卡片直接放行
+
+    const { data:{ session } } = await supa.auth.getSession();
+    if (!session) {
+      e.preventDefault();              // 阻止直接跳頁
+      pendingHref = a.href;            // 暫存想去的頁面
+      dlgOpen();                       // 打開登入框
+    }
+  });
+})();
+</script>
 
 </body>
 </html>
