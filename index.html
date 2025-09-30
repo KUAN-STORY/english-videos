@@ -14,15 +14,13 @@
     .btn:hover{filter:brightness(1.1)}
     .wrap{max-width:1100px;margin:24px auto;padding:0 16px}
     .cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:16px}
-    .card{background:var(--panel);border:1px solid var(--border);border-radius:14px;overflow:hidden;text-decoration:none;color:inherit}
+    .card{display:block;background:var(--panel);border:1px solid var(--border);border-radius:14px;overflow:hidden;text-decoration:none;color:inherit}
     .card img{width:100%;height:150px;object-fit:cover;display:block}
     .card .box{padding:12px}
     .tag{display:inline-block;font-size:12px;color:#9fb2ff;border:1px solid #2f4fb3;padding:2px 6px;border-radius:999px;margin-right:6px}
     .row{display:flex;gap:8px;align-items:center}
     .muted{color:var(--muted)}
-    h2{margin:0 0 10px}
-
-    /* 登入對話框（由 login.js 控制顯示） */
+    /* 登入對話框 */
     #loginDialog{display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:1000;align-items:center;justify-content:center}
     #loginPanel{width:320px;background:#fff;color:#111;border-radius:12px;padding:16px}
     #loginPanel input{width:100%;padding:10px;border:1px solid #ddd;border-radius:10px;margin:6px 0 10px 0}
@@ -31,7 +29,6 @@
 </head>
 <body>
 
-  <!-- 頁首 -->
   <header>
     <div class="h-title">看故事學英文 · Stories</div>
     <div class="row">
@@ -41,17 +38,16 @@
     </div>
   </header>
 
-  <!-- 內容 -->
   <div class="wrap">
     <h2>用故事學英文：雙語字幕、測驗與單字</h2>
     <p class="muted">從下方卡片選擇故事開始。〈中秋節〉為免費試看；其餘內容需登入。</p>
 
     <div class="cards" id="cards">
-      <!-- 免費示範：Mid-Autumn -->
-      <a class="card" href="player.html?slug=mid-autumn">
-        <img src="https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?q=80&w=1200&auto=format&fit=crop" alt="Mid-Autumn">
+      <!-- 免費：Mid-Autumn -->
+      <a class="card" href="player.html?slug=mid-autumn" data-requires-login="false">
+        <img src="videos/mid-autumn.jpg" alt="Mid-Autumn">
         <div class="box">
-          <div class="row"><span class="tag" style="border-color:#1c7a62;color:#7ee3c4">免費</span><span class="muted">SHORT</span></div>
+          <div class="row"><span class="tag">免費</span><span class="muted">SHORT</span></div>
           <h3>Mid-Autumn Festival</h3>
           <div class="muted">中秋節</div>
         </div>
@@ -59,7 +55,7 @@
 
       <!-- 需登入：Houyi -->
       <a class="card" href="player.html?slug=houyi" data-requires-login="true">
-        <img src="https://images.unsplash.com/photo-1483721310020-03333e577078?q=80&w=1200&auto=format&fit=crop" alt="Houyi">
+        <img src="videos/houyi.jpg" alt="Hou Yi">
         <div class="box">
           <div class="row"><span class="tag">需登入</span><span class="muted">SHORT</span></div>
           <h3>Hou Yi Shoots the Suns</h3>
@@ -69,7 +65,7 @@
 
       <!-- 需登入：Lantern -->
       <a class="card" href="player.html?slug=lantern" data-requires-login="true">
-        <img src="https://images.unsplash.com/photo-1519681393784-d120267933ba?q=80&w=1200&auto=format&fit=crop" alt="Lantern Festival">
+        <img src="videos/lantern.jpg" alt="Lantern Festival">
         <div class="box">
           <div class="row"><span class="tag">需登入</span><span class="muted">SHORT</span></div>
           <h3>The Lantern Festival</h3>
@@ -79,7 +75,7 @@
     </div>
   </div>
 
-  <!-- 登入對話框（login.js 會綁定按鈕） -->
+  <!-- 登入對話框 -->
   <div id="loginDialog">
     <div id="loginPanel">
       <h3>會員登入</h3>
@@ -90,66 +86,95 @@
         <button id="btnCloseLogin" class="btn" style="background:#eee;color:#222;border-color:#ddd">取消</button>
       </div>
       <div class="muted" style="margin-top:10px">也可用 Google 登入：</div>
-      <button id="btnLoginGoogle" class="btn" style="margin-top:6px" disabled>使用 Google 登入（若已啟用 OAuth）</button>
+      <button id="btnLoginGoogle" class="btn" style="margin-top:6px">使用 Google 登入</button>
     </div>
   </div>
 
-  <!-- ========= Script 載入順序：一定要照這個順序 ========= -->
-  <!-- 1) Supabase UMD -->
+  <!-- ① Supabase UMD（一定要先載入） -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
-  <!-- 2) 你的 supa.js（建立 window.supa） -->
-  <script src="supa.js"></script>
-  <!-- 3) 登入流程與對話框控制（會用到 supa） -->
-  <script src="login.js"></script>
 
-  <!-- 4) 本頁行為：攔截卡片點擊、未登入只彈窗不導頁；載入時刷新表頭 -->
+  <!-- ② 立刻建立全域 supa（把下面兩個常數換成你的專案值） -->
+  <script>
+    const SUPA_URL = 'https://qtgwedankftrqjmzuset.supabase.co';         // 🔁 改成你的
+    const SUPA_ANON_KEY = 'SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InF0Z3dlZGFua2Z0cnFqbXp1c2V0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTg4NDYxMDMsImV4cCI6MjA3NDQyMjEwM30.jyETpt09pgm66aCZheMgsjtbKlVmYo-lt-hrrt6BF8g';                    // 🔁 改成你的
+    window.supa = supabase.createClient(SUPA_URL, SUPA_ANON_KEY);
+  </script>
+
+  <!-- ③ 頁面主邏輯（攔截導向 + 登入/登出 + 狀態顯示） -->
   <script>
   (() => {
-    const $ = (s, r=document)=> r.querySelector(s);
-    const $$ = (s, r=document)=> [...r.querySelectorAll(s)];
+    const $ = s => document.querySelector(s);
 
-    // 免費清單（可依需求調整）
-    const FREE_SLUGS = new Set(['mid-autumn']);
+    const whoami   = $('#whoami');
+    const btnLogin = $('#btnLogin');
+    const btnLogout= $('#btnLogout');
 
-    // 攔截卡片點擊：未登入 + 非免費 => 只開登入窗、不導頁
-    document.addEventListener('click', async (e) => {
-      const a = e.target.closest('a.card[href]');
+    // 顯示登入狀態
+    async function refreshHeader() {
+      const { data:{ session } } = await supa.auth.getSession();
+      if (session?.user) {
+        whoami.textContent = session.user.email || '(未命名)';
+        btnLogin.style.display = 'none';
+        btnLogout.style.display = 'inline-block';
+      } else {
+        whoami.textContent = '';
+        btnLogin.style.display = 'inline-block';
+        btnLogout.style.display = 'none';
+      }
+    }
+
+    // 監聽 Auth 變更
+    supa.auth.onAuthStateChange((_e, _s) => refreshHeader());
+
+    // ===== 卡片攔截（未登入 → 彈出登入框；已登入 → 放行） =====
+    let pendingHref = null;
+    $('#cards').addEventListener('click', async (e) => {
+      const a = e.target.closest('a.card');
       if (!a) return;
+      const needLogin = a.dataset.requiresLogin === 'true';
+      if (!needLogin) return; // 免費：不攔
 
-      const url = new URL(a.href, location.href);
-      const slug = url.searchParams.get('slug') || '';
-      const needLogin = !FREE_SLUGS.has(slug);
-
-      if (!needLogin) return; // 免費直接放行
-
-      // 查目前是否已登入
-      try {
-        const { data: { session } } = await supa.auth.getSession();
-        if (!session) {
-          e.preventDefault();       // 關鍵：阻止跳 player.html
-          if (typeof showLogin === 'function') showLogin();
-        }
-      } catch (err) {
-        console.error('[auth] getSession error', err);
-        // 安全起見一律攔住
-        e.preventDefault();
-        if (typeof showLogin === 'function') showLogin();
+      e.preventDefault();     // 會員限定：先擋
+      const { data:{ session } } = await supa.auth.getSession();
+      if (session) {
+        location.href = a.href;     // 已登入 → 放行
+      } else {
+        pendingHref = a.href;       // 未登入 → 開登入窗
+        $('#loginDialog').style.display = 'flex';
       }
     });
 
-    // 初始刷新表頭（login.js 有提供 refreshHeader）
-    if (typeof refreshHeader === 'function') {
-      refreshHeader();
-    } else {
-      // 假如 login.js 還沒載好，稍後再補一次
-      window.addEventListener('load', () => {
-        if (typeof refreshHeader === 'function') refreshHeader();
-      });
-    }
+    // ===== 登入對話框 =====
+    $('#btnCloseLogin').onclick = () => {
+      $('#loginDialog').style.display = 'none';
+      pendingHref = null;
+    };
+
+    $('#btnLoginConfirm').onclick = async () => {
+      const email = $('#loginEmail').value.trim();
+      const password = $('#loginPassword').value;
+      const { error } = await supa.auth.signInWithPassword({ email, password });
+      if (error) { alert('登入失敗'); return; }
+      $('#loginDialog').style.display = 'none';
+      if (pendingHref) { location.href = pendingHref; pendingHref = null; }
+    };
+
+    $('#btnLoginGoogle').onclick = async () => {
+      const { error } = await supa.auth.signInWithOAuth({ provider:'google', options:{ redirectTo: location.href }});
+      if (error) alert(error.message);
+    };
+
+    // ===== 右上登入/登出按鈕 =====
+    btnLogin.onclick = () => { $('#loginDialog').style.display = 'flex'; };
+    btnLogout.onclick = async () => { await supa.auth.signOut(); };
+
+    // 啟動
+    refreshHeader();
   })();
   </script>
 </body>
 </html>
+
 
 
 
