@@ -1,153 +1,139 @@
 <!doctype html>
 <html lang="zh-Hant">
 <head>
-  <meta charset="utf-8"/>
-  <meta name="viewport" content="width=device-width, initial-scale=1"/>
-  <title>Learn English with Stories · Player</title>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>英語影片播放器</title>
+  <link rel="icon" href="data:,">
+
   <style>
     :root{
-      --bg:#0b1324; --panel:#0f1a33; --border:#203057;
-      --text:#e7eaf3; --muted:#a9b3cf; --brand:#3c7cff;
-      --gap:12px;
+      --bg:#0b1324; --panel:#0f1a33; --border:#203057; --text:#e7eaf3; --muted:#a9b3cf;
+      --brand:#3c7cff; --ok:#12b886; --warn:#f5a524;
     }
     html,body{height:100%;margin:0;background:var(--bg);color:var(--text);
-      font-family:system-ui,-apple-system,Segoe UI,Roboto,Noto Sans,sans-serif;}
+      font-family: system-ui,-apple-system,"Segoe UI",Roboto,"Noto Sans",sans-serif;}
+    .wrap{height:100%;display:grid;grid-template-columns:minmax(320px,1fr) 48%;gap:14px;padding:14px;box-sizing:border-box}
 
-    /* 整體兩欄：左影片 / 右面板 */
-    .layout{display:grid;grid-template-columns:1fr 1fr;gap:var(--gap);height:100vh;}
-    @media(max-width:1024px){.layout{grid-template-columns:1fr;grid-template-rows:auto auto;height:auto;}}
+    /* 左欄：影片 & 工具列 */
+    .stage{display:grid;grid-template-rows:1fr auto;gap:12px;border:1px solid var(--border);border-radius:14px;background:#0b1324;overflow:hidden}
+    .videoBox{display:flex;align-items:center;justify-content:center;background:#000}
+    video{max-width:100%;max-height:100%;object-fit:contain;aspect-ratio:9/16}
+    .toolbar{display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:center;
+      padding:12px;background:var(--panel);border-top:1px solid var(--border)}
+    .btn{padding:8px 12px;border:1px solid var(--border);background:#122147;color:#fff;border-radius:10px;cursor:pointer}
+    .btn:hover{filter:brightness(1.08)}
+    .row{display:inline-flex;gap:10px;align-items:center}
+    input[type="range"]{vertical-align:middle}
 
-    /* 左欄 = 上方影片舞台(1fr) + 下方工具列(auto) */
-    .videoColumn{
-      display:grid;grid-template-rows:1fr auto;min-height:0;border-right:1px solid var(--border);
-    }
+    /* 右欄：字幕/測驗/單字 */
+    .side{display:flex;flex-direction:column;border:1px solid var(--border);border-radius:14px;background:var(--panel);overflow:hidden}
+    .tabs{display:flex;border-bottom:1px solid var(--border);background:#0f1a33}
+    .tab{flex:1;text-align:center;padding:12px 8px;color:var(--muted);cursor:pointer;user-select:none}
+    .tab.active{font-weight:700;color:#fff;background:#132046}
+    .pane{flex:1;overflow:auto;padding:12px;display:none}
+    .pane.active{display:block}
 
-    /* 影片舞台：讓影片置中等比縮放，避免被裁切或捲動 */
-    .videoStage{
-      min-height:0;display:flex;align-items:center;justify-content:center;
-      background:#000;overflow:hidden;  /* 重要：避免縮放蓋到工具列 */
-      position:relative;
-    }
-    /* 影片包層：只縮放內層，不影響工具列高度 */
-    .videoInner{
-      transform-origin:center center;
-      will-change:transform;
-    }
-    video{
-      max-width:100%;max-height:100%;
-      width:auto;height:auto;object-fit:contain;background:#000;display:block;
-    }
+    /* 字幕控制列 */
+    .subbar{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:10px}
+    .pill{padding:6px 10px;border:1px solid var(--border);border-radius:999px;background:#122147;cursor:pointer}
+    .pill.active{background:#1b3a83;border-color:#2d4ea7}
+    .muted{color:var(--muted)}
 
-    /* 工具列（固定在左欄底部） */
-    .toolBar{
-      position:relative;z-index:2;padding:10px 12px;background:#101b39;
-      border-top:1px solid var(--border);
-      display:flex;flex-wrap:wrap;gap:8px;align-items:center;justify-content:center;
-    }
-    .btn,.chip{
-      border:1px solid var(--border);background:#15224a;color:#fff;
-      border-radius:10px;padding:8px 10px;cursor:pointer;user-select:none;
-    }
-    .btn:hover,.chip:hover{filter:brightness(1.1)}
-    .chip.active{background:#1a2c66;border-color:#2d4ea7}
-    .range{display:inline-flex;gap:8px;align-items:center;background:#15224a;border:1px solid var(--border);border-radius:10px;padding:6px 10px}
-    .range input{width:140px}
+    /* 字幕表格 */
+    table.cues{width:100%;border-collapse:collapse}
+    table.cues th, table.cues td{border-bottom:1px solid #19274f;padding:8px 6px;vertical-align:top}
+    table.cues tr.active{background:#13224a}
+    table.cues td.time{white-space:nowrap;color:#9fb2ff}
+    .fs-s .en, .fs-s .zh{font-size:14px}
+    .fs-m .en, .fs-m .zh{font-size:16px}
+    .fs-l .en, .fs-l .zh{font-size:18px}
 
-    /* 右側面板 */
-    .side{display:flex;flex-direction:column;min-height:0;background:var(--panel);}
-    .tabs{display:flex;border-bottom:1px solid var(--border)}
-    .tab{flex:1;padding:10px 12px;text-align:center;cursor:pointer;color:var(--muted);user-select:none}
-    .tab.active{color:var(--text);background:#132046;font-weight:700}
-    .toolbar{display:flex;gap:8px;align-items:center;padding:8px;border-bottom:1px solid var(--border);flex-wrap:wrap}
-    .panel{flex:1;overflow:auto}
-    .panelPad{padding:12px}
-
-    /* 字幕表格：三欄（時間 / 英 / 中） */
-    table.cues{width:100%;border-collapse:separate;border-spacing:0 6px;font-size:15px}
-    table.cues th, table.cues td{padding:8px 10px;vertical-align:top}
-    table.cues thead th{position:sticky;top:0;background:#0f1a33;border-bottom:1px solid var(--border);z-index:1}
-    tr.cueRow{border-radius:8px}
-    tr.cueRow.active{background:#1a2c66}
-    .time{color:var(--muted);font-variant-numeric:tabular-nums;white-space:nowrap;cursor:pointer}
-    .en{font-weight:600}
-    .zh{color:#cfd7f7}
-
-    /* 測驗 */
-    .qBox{background:#101b39;border:1px solid var(--border);border-radius:10px;padding:12px;margin:10px 0}
-    .opt{display:block;margin:6px 0;padding:8px 10px;border:1px solid #2a3f77;border-radius:8px;cursor:pointer}
-    .opt:hover{filter:brightness(1.08)}
-    .opt.correct{border-color:#2ec27e;background:rgba(18,184,134,.18)}
-    .opt.wrong{border-color:#e55353;background:rgba(229,83,83,.15)}
-
-    /* 單字 */
-    .vocab{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-    .word{background:#101b39;border:1px solid var(--border);border-radius:10px;padding:10px}
+    /* 測驗/單字 */
+    .qcard{border:1px solid var(--border);border-radius:10px;padding:10px;margin-bottom:10px;background:#101c39}
+    .qcard h4{margin:0 0 8px 0}
+    .opt{display:block;padding:8px;border:1px solid #2a3d76;border-radius:10px;margin:6px 0;cursor:pointer}
+    .opt:hover{background:#0f1f4d}
+    .opt.correct{border-color:#17c964;background:rgba(23,201,100,.07)}
+    .opt.wrong{border-color:#f31260;background:rgba(243,18,96,.07)}
+    .vlist li{margin:6px 0}
+    .warn{color:#f5a524}
   </style>
 </head>
 <body>
-<div class="layout">
-
-  <!-- 左：影片（上：舞台，下：工具列） -->
-  <section class="videoColumn">
-    <div class="videoStage">
-      <div class="videoInner">
+  <div class="wrap">
+    <!-- 左：影片 + 工具列（工具列固定在下方，不會被變焦蓋住） -->
+    <section class="stage">
+      <div class="videoBox">
         <video id="player" controls preload="metadata"></video>
       </div>
-    </div>
+      <div class="toolbar">
+        <div class="row">
+          <button class="btn" id="prevBtn">上一句</button>
+          <button class="btn" id="playBtn">播放/暫停</button>
+          <button class="btn" id="nextBtn">下一句</button>
+          <button class="btn" id="repeatBtn">重複本句</button>
+          <button class="btn" id="abBtn">A-B 循環</button>
+          <button class="btn" id="abClearBtn">取消循環</button>
+        </div>
+        <div class="row">
+          <label class="btn">速度
+            <input id="rate" type="range" min="0.5" max="2" step="0.05" value="1">
+            <span id="rateLabel">1.00×</span>
+          </label>
+          <label class="btn">變焦
+            <input id="zoom" type="range" min="1" max="2" step="0.05" value="1.00">
+          </label>
+        </div>
+      </div>
+    </section>
 
-    <!-- 固定在左欄底部的工具列 -->
-    <div class="toolBar">
-      <button class="btn" id="btnPrev">上一句</button>
-      <button class="btn" id="btnPlay">播放/暫停</button>
-      <button class="btn" id="btnNext">下一句</button>
+    <!-- 右：字幕 / 測驗 / 單字 -->
+    <section class="side">
+      <div class="tabs">
+        <div class="tab active" data-tab="sub">字幕</div>
+        <div class="tab" data-tab="quiz">測驗</div>
+        <div class="tab" data-tab="vocab">單字</div>
+      </div>
 
-      <button class="btn" id="btnRepeatOne">重複本句</button>
-      <button class="btn" id="btnAB">A-B 循環</button>
-      <button class="btn" id="btnABClear">取消循環</button>
+      <div id="pane-sub" class="pane active">
+        <div class="subbar">
+          <label class="pill"><input id="follow" type="checkbox" checked> 跟隨</label>
+          <span class="pill">偏移 <span id="offsetText">0.0</span>s</span>
+          <button class="pill" id="offMinus">-0.5s</button>
+          <button class="pill" id="offPlus">+0.5s</button>
+          <span class="muted">(尚未載入)</span>
+          <span style="margin-left:auto" class="row">
+            字級
+            <button class="pill fsBtn" data-fs="s">S</button>
+            <button class="pill fsBtn active" data-fs="m">M</button>
+            <button class="pill fsBtn" data-fs="l">L</button>
+          </span>
+        </div>
+        <div id="cueWrap" class="fs-m">
+          <table class="cues" id="cueTable">
+            <thead><tr><th>時間</th><th>英文</th><th>中文</th></tr></thead>
+            <tbody></tbody>
+          </table>
+          <div id="cueEmpty" class="warn" style="display:none">查無字幕資料</div>
+        </div>
+      </div>
 
-      <label class="range">速度
-        <input id="rate" type="range" min="0.5" max="2" step="0.05" value="1">
-        <span id="rateLabel">1.00×</span>
-      </label>
-      <label class="range">變焦
-        <input id="zoom" type="range" min="1" max="2" step="0.05" value="1">
-      </label>
-    </div>
-  </section>
+      <div id="pane-quiz" class="pane">
+        <div id="quizList"></div>
+      </div>
 
-  <!-- 右：字幕 / 測驗 / 單字 -->
-  <aside class="side">
-    <div class="tabs">
-      <div id="tabTranscript" class="tab active">字幕</div>
-      <div id="tabQuiz" class="tab">測驗</div>
-      <div id="tabVocab" class="tab">單字</div>
-    </div>
+      <div id="pane-vocab" class="pane">
+        <ul id="vocabList" class="vlist"></ul>
+      </div>
+    </section>
+  </div>
 
-    <!-- 字幕工具列 -->
-    <div class="toolbar" id="cueToolbar">
-      <input id="q" type="search" placeholder="搜尋字幕…（支援英/中）" style="flex:1;min-width:220px;background:#0d1730;border:1px solid var(--border);color:#fff;border-radius:10px;padding:8px 10px">
-      <span style="color:#a9b3cf">字級</span>
-      <button id="fS" class="chip">S</button>
-      <button id="fM" class="chip active">M</button>
-      <button id="fL" class="chip">L</button>
-      <button id="btnFollow" class="btn">跟隨</button>
-      <span style="color:#a9b3cf">校準</span>
-      <button id="btnEarly" class="chip">-0.5s</button>
-      <button id="btnLate"  class="chip">+0.5s</button>
-      <span id="offsetTip" class="chip" style="cursor:default">+0.0s</span>
-    </div>
-
-    <!-- 三個面板 -->
-    <div id="panelTranscript" class="panel"><div class="panelPad"><div id="cueContainer">載入中…</div></div></div>
-    <div id="panelQuiz" class="panel" style="display:none"><div class="panelPad" id="quizContainer">載入中…</div></div>
-    <div id="panelVocab" class="panel" style="display:none"><div class="panelPad" id="vocabContainer">載入中…</div></div>
-  </aside>
-</div>
-
-<!-- 主程式 -->
-<script src="player.js?v=20251001"></script>
+  <!-- 主程式 -->
+  <script src="player.js?v=3"></script>
 </body>
 </html>
+
 
 
 
