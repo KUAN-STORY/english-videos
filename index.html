@@ -14,15 +14,16 @@
     .btn:hover{filter:brightness(1.1)}
     .wrap{max-width:1100px;margin:24px auto;padding:0 16px}
     .cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:16px}
-    .card{background:var(--panel);border:1px solid var(--border);border-radius:14px;overflow:hidden}
+    .card{background:var(--panel);border:1px solid var(--border);border-radius:14px;overflow:hidden;text-decoration:none;color:inherit}
     .card img{width:100%;height:150px;object-fit:cover;display:block}
     .card .box{padding:12px}
     .tag{display:inline-block;font-size:12px;color:#9fb2ff;border:1px solid #2f4fb3;padding:2px 6px;border-radius:999px;margin-right:6px}
     .row{display:flex;gap:8px;align-items:center}
     .muted{color:var(--muted)}
+
     /* 登入對話框 */
     #loginDialog{display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:1000;align-items:center;justify-content:center}
-    #loginPanel{width:320px;background:#fff;color:#111;border-radius:12px;padding:16px}
+    #loginPanel{width:320px;background:#fff;color:#111;border-radius:12px;padding:16px;box-shadow:0 10px 30px rgba(0,0,0,.35)}
     #loginPanel input{width:100%;padding:10px;border:1px solid #ddd;border-radius:10px;margin:6px 0 10px 0}
     #loginPanel h3{margin:0 0 10px 0}
   </style>
@@ -47,7 +48,7 @@
       <a class="card" href="player.html?slug=mid-autumn" data-requires-login="false">
         <img src="https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?q=80&w=1200&auto=format&fit=crop" alt="Mid-Autumn">
         <div class="box">
-          <div class="row"><span class="tag">免費</span><span class="muted">SHORT</span></div>
+          <div class="row"><span class="tag" style="color:#a6f4d0;border-color:#1c7a62">免費</span><span class="muted">SHORT</span></div>
           <h3>Mid-Autumn Festival</h3>
           <div class="muted">中秋節</div>
         </div>
@@ -76,9 +77,9 @@
   </div>
 
   <!-- 登入對話框 -->
-  <div id="loginDialog">
-    <div id="loginPanel">
-      <h3>會員登入</h3>
+  <div id="loginDialog" aria-hidden="true">
+    <div id="loginPanel" role="dialog" aria-modal="true" aria-labelledby="loginTitle">
+      <h3 id="loginTitle">會員登入</h3>
       <input id="loginEmail" type="email" placeholder="Email">
       <input id="loginPassword" type="password" placeholder="Password">
       <div class="row" style="justify-content:flex-end;margin-top:8px">
@@ -90,83 +91,113 @@
     </div>
   </div>
 
-  <!-- Supabase CDN（如已在 supa.js 初始化，也可保留） -->
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
-  <!-- 你的 login.js（見下方完整檔案） -->
+  <!-- 先載入 UMD 版 Supabase（必要） -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+  <!-- 初始化 supa（你倉庫裡的設定檔，會建立 window.supa） -->
+  <script src="supa.js"></script>
+  <!-- 你現有的登入工具（會用到 window.supa；含 showLogin/hideLogin 等） -->
   <script src="login.js"></script>
-<script>
-(() => {
-  const $  = (s, r=document) => r.querySelector(s);
 
-  // --- 登入對話框操作 ---
-  const dlgOpen  = () => { $('#loginDialog').style.display = 'flex'; };
-  const dlgClose = () => { $('#loginDialog').style.display = 'none'; };
-  $('#btnCloseLogin').onclick = dlgClose;
+  <!-- 頁面邏輯：攔截卡片點擊 + 登入登出控制 -->
+  <script>
+  (function(){
+    const $ = (s, r=document)=> r.querySelector(s);
 
-  // --- 標頭狀態切換 ---
-  async function refreshHeader() {
-    const { data:{ session } } = await supa.auth.getSession();
-    $('#btnLogin').style.display  = session ? 'none' : 'inline-block';
-    $('#btnLogout').style.display = session ? 'inline-block' : 'none';
-    $('#whoami').textContent = session ? (session.user?.email || '') : '';
-  }
+    function showLogin(){ $('#loginDialog').style.display = 'flex'; }
+    function hideLogin(){ $('#loginDialog').style.display = 'none'; }
 
-  // 初始與狀態監聽
-  refreshHeader().catch(console.error);
-  let pendingHref = null; // 使用者被擋下時要去的目標
-  supa.auth.onAuthStateChange((_evt, session) => {
-    refreshHeader();
-    if (session && pendingHref) {   // 登入成功→跳回剛剛的頁面
-      const to = pendingHref; pendingHref = null;
-      location.href = to;
-    }
-  });
+    // 登入 / 登出按鈕
+    $('#btnLogin').addEventListener('click', showLogin);
+    $('#btnCloseLogin').addEventListener('click', hideLogin);
 
-  // --- 右上角按鈕 ---
-  $('#btnLogin').onclick = dlgOpen;
-  $('#btnLogout').onclick = async () => { await supa.auth.signOut(); };
-
-  // --- 對話框內：Email/Password 登入 ---
-  $('#btnLoginConfirm').onclick = async () => {
-    const email = $('#loginEmail').value.trim();
-    const password = $('#loginPassword').value;
-    if (!email || !password) { alert('請輸入 Email 與密碼'); return; }
-
-    const { error } = await supa.auth.signInWithPassword({ email, password });
-    if (error) { alert(error.message); return; }
-    dlgClose();
-    // onAuthStateChange 會幫你導向 pendingHref
-  };
-
-  // --- 對話框內：Google 登入 ---
-  $('#btnLoginGoogle').onclick = async () => {
-    const { error } = await supa.auth.signInWithOAuth({
-      provider: 'google',
-      options: { redirectTo: location.href } // 登入回來仍在本頁
+    $('#btnLogout').addEventListener('click', async()=>{
+      try{
+        await supa.auth.signOut();
+      }catch(e){ console.error(e); }
+      await refreshHeader();
     });
-    if (error) alert(error.message);
-  };
 
-  // --- 核心：攔截卡片點擊，未登入就擋 ---
-  document.getElementById('cards').addEventListener('click', async (e) => {
-    const a = e.target.closest('a.card');
-    if (!a) return;
+    // 對話框內：帳密登入
+    $('#btnLoginConfirm').addEventListener('click', async()=>{
+      const email = $('#loginEmail').value.trim();
+      const password = $('#loginPassword').value;
+      if(!email || !password) return alert('請輸入 Email / Password');
+      try{
+        const { error } = await supa.auth.signInWithPassword({ email, password });
+        if(error) return alert(error.message);
+        hideLogin();
+        await refreshHeader();
+      }catch(err){
+        console.error(err);
+        alert('登入失敗');
+      }
+    });
 
-    const needLogin = a.dataset.requiresLogin === 'true';
-    if (!needLogin) return; // 免費卡片直接放行
+    // 對話框內：Google 登入
+    $('#btnLoginGoogle').addEventListener('click', async()=>{
+      try{
+        const { error } = await supa.auth.signInWithOAuth({
+          provider:'google',
+          options:{ redirectTo: location.href }
+        });
+        if(error) alert(error.message);
+      }catch(err){ console.error(err); }
+    });
 
-    const { data:{ session } } = await supa.auth.getSession();
-    if (!session) {
-      e.preventDefault();              // 阻止直接跳頁
-      pendingHref = a.href;            // 暫存想去的頁面
-      dlgOpen();                       // 打開登入框
+    // 攔截卡片點擊：未登入就彈窗，不跳 player.html
+    document.querySelectorAll('.card').forEach(card=>{
+      card.addEventListener('click', async (e)=>{
+        e.preventDefault();
+        const requiresLogin = card.getAttribute('data-requires-login') === 'true';
+        const url = card.getAttribute('href');
+
+        if(requiresLogin){
+          try{
+            const { data:{ session } } = await supa.auth.getSession();
+            if(!session){ showLogin(); return; }
+          }catch(err){
+            console.error('檢查登入狀態失敗：', err);
+            showLogin();
+            return;
+          }
+        }
+        // 免費或已登入 → 允許跳轉
+        location.href = url;
+      });
+    });
+
+    // 顯示當前登入狀態（右上角）
+    async function refreshHeader(){
+      try{
+        const { data:{ session } } = await supa.auth.getSession();
+        if(session){
+          const email = session.user?.email || '已登入';
+          $('#whoami').textContent = email;
+          $('#btnLogin').style.display = 'none';
+          $('#btnLogout').style.display = '';
+        }else{
+          $('#whoami').textContent = '';
+          $('#btnLogin').style.display = '';
+          $('#btnLogout').style.display = 'none';
+        }
+      }catch(err){
+        console.error(err);
+        $('#whoami').textContent = '';
+        $('#btnLogin').style.display = '';
+        $('#btnLogout').style.display = 'none';
+      }
     }
-  });
-})();
-</script>
 
+    // 監聽狀態變化（安全保險）
+    supa.auth.onAuthStateChange(async (_e,_s)=>{ refreshHeader(); });
+
+    // 初始化
+    refreshHeader();
+  })();
+  </script>
 </body>
 </html>
+
 
 
 
