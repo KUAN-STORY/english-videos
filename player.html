@@ -4,38 +4,46 @@
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width,initial-scale=1"/>
   <title>影片播放器 · Stories</title>
-
-  <!-- ① 先載入登入守門程式（很重要：一定要在最上面） -->
-  <script type="module" src="./login.js?v=15"></script>
-
+  <script type="module" src="./login.js?v=20"></script>
   <style>
     body{margin:0;display:flex;height:100vh;background:#0b1220;color:#fff;font-family:system-ui,-apple-system,Segoe UI,Roboto,Noto Sans,sans-serif}
+    /* 左邊影片 */
     #videoWrap{flex:1;display:flex;flex-direction:column;border-right:1px solid #223}
     #player{flex:1;width:100%;background:#000}
     #controls{padding:8px;background:#1e293b;text-align:center;display:flex;gap:8px;justify-content:center;flex-wrap:wrap}
-    #controls .btn{padding:8px 10px;border:1px solid #334;background:#2a3b5c;color:#fff;border-radius:10px;cursor:pointer}
+    #controls .btn{padding:6px 10px;border:1px solid #334;background:#2a3b5c;color:#fff;border-radius:8px;cursor:pointer}
     #controls input[type="range"]{vertical-align:middle}
 
+    /* 右邊面板 */
     .right{width:50%;min-width:320px;background:#0f1a33;display:flex;flex-direction:column}
     .tabs{display:flex;border-bottom:1px solid #203057}
     .tab{flex:1;padding:10px;text-align:center;cursor:pointer;background:#132046;color:#a9b3cf;user-select:none}
     .tab.active{background:#1b2a56;color:#fff;font-weight:700}
     .pane{flex:1;overflow:auto;padding:10px;display:none}
     .pane.active{display:block}
+
+    /* 字幕表格 */
+    table.subs{width:100%;border-collapse:collapse;font-size:14px}
+    table.subs td{padding:4px 6px;border-bottom:1px solid #203057;vertical-align:top}
+    table.subs tr.active{background:#1a2c66}
+
+    /* 測驗 */
+    .q{padding:12px;border:1px solid #334;border-radius:10px;background:#101b39;margin:10px 0}
+    .opt{display:flex;gap:6px;margin:4px 0;cursor:pointer}
+    .result{margin-top:12px;padding:8px;border-radius:8px;display:none}
+    .result.pass{background:rgba(20,184,110,.12);border:1px solid #14b86e}
+    .result.fail{background:rgba(245,165,36,.12);border:1px solid #f5a524}
   </style>
 </head>
 <body>
-
-  <!-- ② 隱藏的登入元件（提供給 login.js 使用） -->
-  <button id="btnLogin"  style="display:none"></button>
+  <!-- 隱藏登入鈕 -->
+  <button id="btnLogin" style="display:none"></button>
   <button id="btnLogout" style="display:none"></button>
   <span id="userNameBadge" style="display:none"></span>
 
-  <!-- 左：影片區 -->
+  <!-- 左邊影片 -->
   <section id="videoWrap">
     <video id="player" controls preload="metadata"></video>
-
-    <!-- 你的固定工具列（範例，可自行擴充） -->
     <div id="controls">
       <button class="btn" id="btnPrev">上一句</button>
       <button class="btn" id="btnPlay">播放/暫停</button>
@@ -48,26 +56,113 @@
         <span id="rateLabel">1.00×</span>
       </label>
       <label class="btn">變焦
-        <input id="zoom" type="range" min="1" max="2" step="0.05" value="1.00">
+        <input id="zoom" type="range" min="1" max="2" step="0.05" value="1">
       </label>
     </div>
   </section>
 
-  <!-- 右：字幕 / 測驗 / 單字 -->
+  <!-- 右邊分頁 -->
   <section class="right">
     <div class="tabs">
       <div class="tab active" data-tab="sub">字幕</div>
       <div class="tab" data-tab="quiz">測驗</div>
       <div class="tab" data-tab="vocab">單字</div>
     </div>
-    <div id="pane-sub"   class="pane active">字幕載入中…</div>
-    <div id="pane-quiz"  class="pane">測驗載入中…</div>
-    <div id="pane-vocab" class="pane">單字載入中…</div>
+    <div id="pane-sub"   class="pane active"></div>
+    <div id="pane-quiz"  class="pane"></div>
+    <div id="pane-vocab" class="pane"></div>
   </section>
 
-  <!-- ③ 你的播放邏輯（維持原有 player.js） -->
-  <script src="./player.js?v=15"></script>
+  <script>
+  const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
+  const qs=new URLSearchParams(location.search), slug=qs.get("slug")||"";
+  let cues=[], follow=true;
+
+  async function loadMeta(){
+    const res=await fetch("data/index.json");const meta=await res.json();
+    return (meta.items||[]).find(x=>x.slug===slug)||meta.items?.[0];
+  }
+  function toSec(t){const [m,s]=String(t||"0:0").split(":").map(n=>+n||0);return m*60+s;}
+
+  // 字幕渲染
+  function renderSubs(list){
+    cues=list.map(r=>({tSec:toSec(r.time), en:r.en||r.text, zh:r.zh||"", raw:r}));
+    const box=$("#pane-sub");box.innerHTML="";
+    const table=document.createElement("table");table.className="subs";
+    cues.forEach((c,i)=>{
+      const tr=document.createElement("tr");
+      tr.innerHTML=`<td>[${c.raw.time}]</td><td>${c.en}</td><td>${c.zh}</td>`;
+      tr.onclick=()=>{const v=$("#player");v.currentTime=c.tSec;v.play();};
+      c.el=tr;table.appendChild(tr);
+    });
+    box.appendChild(table);
+  }
+  function highlight(t){
+    let idx=-1;for(let i=0;i<cues.length;i++){if(cues[i].tSec<=t) idx=i;else break;}
+    cues.forEach(c=>c.el.classList.remove("active"));
+    if(idx>=0){cues[idx].el.classList.add("active");if(follow)cues[idx].el.scrollIntoView({block:"center"});}
+  }
+
+  // 測驗渲染
+  function renderQuiz(list){
+    const box=$("#pane-quiz");box.innerHTML="";
+    list.slice(0,20).forEach((q,i)=>{
+      const div=document.createElement("div");div.className="q";
+      div.innerHTML=`<h4>${i+1}. ${q.q}</h4>`;
+      (q.opts||[]).forEach((opt,j)=>{
+        div.innerHTML+=`<label class="opt"><input type="radio" name="q${i}" value="${j}"> ${opt}</label>`;
+      });
+      box.appendChild(div);
+    });
+    const result=document.createElement("div");result.id="quizResult";result.className="result";box.appendChild(result);
+    const btn=document.createElement("button");btn.textContent="交卷";btn.className="btn";box.appendChild(btn);
+    btn.onclick=()=>{
+      let correct=0,total=list.length;
+      list.slice(0,20).forEach((q,i)=>{
+        const picked=$(`input[name="q${i}"]:checked`);if(picked&&+picked.value===q.ans)correct++;
+      });
+      result.style.display="block";const ratio=Math.round(correct/total*100);
+      result.className="result "+(ratio>=80?"pass":"fail");
+      result.textContent=`分數 ${correct}/${total} (${ratio}%)`;
+    }
+  }
+
+  // 單字渲染
+  function renderVocab(list){
+    const box=$("#pane-vocab");box.innerHTML="<ul>"+list.map(v=>`<li><b>${v.word}</b> — ${v.def}</li>`).join("")+"</ul>";
+  }
+
+  // 綁定 Tabs
+  $$(".tab").forEach(tab=>tab.onclick=()=>{
+    $$(".tab").forEach(t=>t.classList.remove("active"));
+    $$(".pane").forEach(p=>p.classList.remove("active"));
+    tab.classList.add("active");$("#pane-"+tab.dataset.tab).classList.add("active");
+  });
+
+  // 左邊工具列
+  function bindControls(){
+    $("#btnPrev").onclick=()=>{const t=$("#player").currentTime;const prev=[...cues].reverse().find(c=>c.tSec<t-0.05);if(prev)$("#player").currentTime=prev.tSec;};
+    $("#btnNext").onclick=()=>{const t=$("#player").currentTime;const next=cues.find(c=>c.tSec>t+0.05);if(next)$("#player").currentTime=next.tSec;};
+    $("#btnPlay").onclick=()=>{const v=$("#player");v.paused?v.play():v.pause();};
+    $("#btnRepeatOne").onclick=()=>{const t=$("#player").currentTime;const c=cues.findLast(x=>x.tSec<=t);if(c){$("#player").currentTime=c.tSec;}};
+    $("#btnAB").onclick=()=>alert("A-B 循環 demo，可擴充");
+    $("#btnABClear").onclick=()=>alert("清除循環 demo");
+    $("#rate").oninput=e=>{const v=$("#player");v.playbackRate=+e.target.value;$("#rateLabel").textContent=v.playbackRate.toFixed(2)+"×";}
+    $("#zoom").oninput=e=>{$("#player").style.transform=`scale(${+e.target.value})`;}
+  }
+
+  (async()=>{
+    const meta=await loadMeta();if(!meta)return;
+    $("#player").src=meta.video;
+    const cuesRes=await fetch(meta.cues);renderSubs(await cuesRes.json());
+    if(meta.quiz){const qRes=await fetch(meta.quiz);renderQuiz(await qRes.json());}
+    if(meta.vocab){const vRes=await fetch(meta.vocab);renderVocab(await vRes.json());}
+    $("#player").addEventListener("timeupdate",()=>highlight($("#player").currentTime));
+    bindControls();
+  })();
+  </script>
 </body>
 </html>
+
 
 
