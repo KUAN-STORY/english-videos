@@ -1,5 +1,5 @@
 // login.js — Email + Password 版（首頁/播放器守門 + 右上登入列）
-import { supa } from './supa.js';
+import { supa } from './supa.js?v11';
 
 // 未登入也可看的 slug（與 data/index.json 對應）
 const FREE_SLUGS = new Set(['mid-autumn']);
@@ -121,6 +121,7 @@ supa.auth.onAuthStateChange(async () => {
 
 // 讓你在 DevTools 看得到狀態改變
 window.addEventListener('auth:changed', (e)=>console.log('[auth:changed]', e.detail));
+
 
 
 
