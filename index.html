@@ -2,89 +2,91 @@
 <html lang="zh-Hant">
 <head>
   <meta charset="utf-8"/>
-  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
   <title>看故事學英文 · Stories</title>
+  <link rel="icon" href="data:,">
   <style>
-    :root{--bg:#0b1324;--panel:#0f1a33;--border:#203057;--text:#e7eaf3;--muted:#a9b3cf}
-    html,body{margin:0;height:100%;background:var(--bg);color:var(--text);font-family:system-ui,-apple-system,"Segoe UI",Roboto,"Noto Sans",sans-serif}
-    header{display:flex;align-items:center;justify-content:space-between;padding:14px 18px;border-bottom:1px solid var(--border);background:#0b142a}
-    .wrap{max-width:1100px;margin:22px auto;padding:0 16px}
-    h1{margin:0;font-size:22px}
-    p.muted{color:var(--muted)}
-    .cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:16px;margin-top:14px}
-    .card{display:block;background:var(--panel);border:1px solid var(--border);border-radius:14px;overflow:hidden;text-decoration:none;color:inherit}
+    :root{--bg:#0b1324;--panel:#0f1a33;--border:#203057;--text:#e7eaf3;--muted:#a9b3cf;--accent:#3c7cff}
+    html,body{margin:0;height:100%;background:var(--bg);color:var(--text);font-family:system-ui,-apple-system,Segoe UI,Roboto,Noto Sans,sans-serif}
+    header{padding:16px;border-bottom:1px solid var(--border);background:#0b142a}
+    .wrap{max-width:1100px;margin:24px auto;padding:0 16px}
+    h1{margin:0;font-size:20px}
+    .lead{color:var(--muted);margin:12px 0 20px}
+    .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:16px}
+    .card{background:var(--panel);border:1px solid var(--border);border-radius:14px;overflow:hidden;display:flex;flex-direction:column}
     .thumb{aspect-ratio:16/9;background:#000}
     .thumb img{width:100%;height:100%;object-fit:cover;display:block}
-    .box{padding:12px}
-    .row{display:flex;gap:8px;align-items:center;margin-bottom:6px}
-    .pill{font-size:12px;border:1px solid #2f4fb3;padding:2px 8px;border-radius:999px}
-    .pill.free{border-color:#1f7a63;color:#9ef7da}
-    .muted{color:var(--muted)}
+    .body{padding:12px}
+    .title{font-weight:700;margin:0 0 6px}
+    .muted{color:var(--muted);font-size:14px}
+    .badge{display:inline-block;margin-right:8px;border:1px solid #2f4fb3;color:#9fb2ff;border-radius:999px;padding:2px 8px;font-size:12px}
+    .actions{margin-top:10px;display:flex;gap:8px}
+    .btn{padding:8px 10px;border:1px solid var(--border);background:#15224a;color:#fff;border-radius:10px;cursor:pointer}
+    .btn:hover{filter:brightness(1.08)}
+    .search{display:flex;gap:8px;margin-bottom:16px}
+    .search input{flex:1;background:#0d1730;border:1px solid var(--border);border-radius:10px;color:#fff;padding:10px}
   </style>
 </head>
 <body>
-  <header>
+  <header class="wrap">
     <h1>看故事學英文 · Stories</h1>
-    <div class="muted">A 版（中秋節任何人可看）</div>
   </header>
 
-  <div class="wrap">
-    <p class="muted">先從免費的〈中秋節〉開始吧；其他故事之後再開放會員。</p>
+  <main class="wrap">
+    <p class="lead">所有影片皆可直接觀看；點「前往」開啟播放器（字幕／測驗／單字）。</p>
 
-    <div class="cards" id="cards">
-      <!-- Mid-Autumn：免費、可直接進入 -->
-      <a class="card" href="player.html?slug=mid-autumn" data-slug="mid-autumn" data-requires-login="false">
-        <div class="thumb"><img src="videos/mid-autumn.jpg" alt="Mid-Autumn"></div>
-        <div class="box">
-          <div class="row">
-            <span class="pill free">免費</span>
-            <span class="muted">SHORT</span>
-          </div>
-          <div>Mid-Autumn Festival</div>
-          <div class="muted">中秋節</div>
-        </div>
-      </a>
-
-      <!-- Houyi：暫不開放（先擋住） -->
-      <a class="card" href="player.html?slug=houyi" data-slug="houyi" data-requires-login="true">
-        <div class="thumb"><img src="videos/houyi.jpg" alt="Houyi"></div>
-        <div class="box">
-          <div class="row">
-            <span class="pill">需登入</span>
-            <span class="muted">SHORT</span>
-          </div>
-          <div>Hou Yi Shoots the Suns</div>
-          <div class="muted">后羿射日</div>
-        </div>
-      </a>
-
-      <!-- Lantern：暫不開放（先擋住） -->
-      <a class="card" href="player.html?slug=lantern" data-slug="lantern" data-requires-login="true">
-        <div class="thumb"><img src="videos/lantern.jpg" alt="Lantern"></div>
-        <div class="box">
-          <div class="row">
-            <span class="pill">需登入</span>
-            <span class="muted">SHORT</span>
-          </div>
-          <div>The Lantern Festival</div>
-          <div class="muted">元宵節</div>
-        </div>
-      </a>
+    <div class="search">
+      <input id="q" type="search" placeholder="輸入關鍵字搜尋（中／英標題／標籤）…" />
+      <button id="btnReload" class="btn">重新載入</button>
     </div>
-  </div>
+
+    <div id="grid" class="grid"></div>
+  </main>
 
   <script>
-    // A 版：僅 mid-autumn 放行；其他先擋住
-    document.querySelectorAll('.card').forEach(card=>{
-      card.addEventListener('click', (e)=>{
-        const needLogin = card.dataset.requiresLogin === 'true';
-        const slug = card.dataset.slug;
-        if(needLogin && slug !== 'mid-autumn'){
-          e.preventDefault();
-          alert('這個故事之後開放會員再看；現在先看免費的〈中秋節〉吧！');
-        }
-      });
+  (async function(){
+    const $ = (s, r=document)=>r.querySelector(s);
+    const grid = $('#grid');
+
+    async function loadList(){
+      const res = await fetch('data/index.json?v=' + Date.now());
+      if(!res.ok) throw new Error('index.json 載入失敗');
+      const list = (await res.json()).items || [];
+      render(list);
+      return list;
+    }
+
+    function render(items){
+      grid.innerHTML = '';
+      for(const it of items){
+        const el = document.createElement('div');
+        el.className = 'card';
+        el.innerHTML = `
+          <div class="thumb"><img src="${it.cover || 'videos/'+(it.slug)+'.jpg'}" alt=""></div>
+          <div class="body">
+            <div class="title">${it.title_en}</div>
+            <div class="muted">${it.title_zh} · ${it.length||'SHORT'}</div>
+            <div class="actions">
+              <a class="btn" href="player.html?slug=${encodeURIComponent(it.slug)}">前往</a>
+              <a class="btn" href="player.html?slug=${encodeURIComponent(it.slug)}&tab=quiz">測驗</a>
+            </div>
+          </div>`;
+        grid.appendChild(el);
+      }
+    }
+
+    const all = await loadList();
+    $('#btnReload').onclick = loadList;
+    $('#q').addEventListener('input', e=>{
+      const q = e.target.value.toLowerCase().trim();
+      if(!q) return render(all);
+      render(all.filter(it =>
+        (it.title_en||'').toLowerCase().includes(q) ||
+        (it.title_zh||'').toLowerCase().includes(q) ||
+        (it.tags||[]).join(',').toLowerCase().includes(q)
+      ));
     });
+  })();
   </script>
 </body>
 </html>
