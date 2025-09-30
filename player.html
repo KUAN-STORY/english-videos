@@ -1,488 +1,84 @@
 <!doctype html>
 <html lang="zh-Hant">
 <head>
-<meta charset="utf-8"/>
-<meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>Learn English with Stories · Player</title>
-<style>
-  :root{
-    --bg:#0b1324; --panel:#0f1a33; --border:#203057;
-    --text:#e7eaf3; --muted:#a9b3cf; --brand:#3c7cff;
-    --gap:12px;
-  }
-  html,body{height:100%;margin:0;background:var(--bg);color:var(--text);
-    font-family:system-ui,-apple-system,Segoe UI,Roboto,Noto Sans,sans-serif}
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>看故事學英文 · Player</title>
 
-  /* 兩欄佈局：左影片、右面板 */
-  .layout{display:grid;grid-template-columns:1fr 1fr;gap:var(--gap);height:100vh}
-  @media(max-width:1024px){ .layout{grid-template-columns:1fr} }
+  <!-- 1) Supabase UMD -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js" defer></script>
 
-  /* 左欄：上影片、下工具列（固定在可視範圍） */
-  .videoCol{display:grid;grid-template-rows:1fr auto;min-height:0;border-right:1px solid var(--border)}
-  .stage{min-height:0;display:flex;align-items:center;justify-content:center;background:#000;overflow:hidden}
-  video{max-width:100%;max-height:100%;width:auto;height:auto;object-fit:contain;background:#000}
+  <!-- 2) 初始化 Supabase 客戶端 (supa.js) -->
+  <script src="supa.js?v=2" defer></script>
 
-  .toolbar{position:relative;padding:10px 12px;background:#101b39;border-top:1px solid var(--border);
-    display:flex;gap:8px;align-items:center;flex-wrap:wrap}
-  .btn{padding:8px 10px;border:1px solid var(--border);background:#15224a;color:#fff;border-radius:10px;cursor:pointer}
-  .btn:hover{filter:brightness(1.07)}
-  .chip{padding:6px 8px;border:1px solid var(--border);border-radius:8px;background:#121d3d;color:var(--muted);cursor:pointer}
-  .chip.active{background:#1a2c66;color:#fff;border-color:#2d4ea7}
-  .range{vertical-align:middle;width:160px;margin-left:8px}
-  .muted{color:var(--muted)}
+  <!-- 3) 登入/驗證 UI 與狀態 (login.js) -->
+  <script src="login.js?v=2" defer></script>
 
-  /* 右欄 */
-  .side{display:flex;flex-direction:column;min-height:0;background:var(--panel)}
-  .tabs{display:flex;border-bottom:1px solid var(--border)}
-  .tab{flex:1;padding:10px 12px;text-align:center;cursor:pointer;color:var(--muted);user-select:none}
-  .tab.active{color:var(--text);background:#132046;font-weight:700}
-  .pToolbar{display:flex;gap:8px;align-items:center;padding:8px;border-bottom:1px solid var(--border)}
-  .panel{flex:1;overflow:auto;padding:0}
+  <!-- 4) 這個頁面的主要程式 -->
+  <script src="player.js?v=2" defer></script>
 
-  /* 字幕表格 */
-  .tHead,.tRow{display:grid;grid-template-columns:120px 1.2fr 1fr;gap:8px;padding:10px 12px}
-  .tHead{position:sticky;top:0;z-index:2;background:#102043;border-bottom:1px solid var(--border);color:#cfe1ff}
-  .tRow{border-bottom:1px solid #0f1a33}
-  .tRow:hover{background:#0e1b3a}
-  .tRow.active{background:#1a2c66}
-  .cell.time{color:#a9b3cf;font-variant-numeric:tabular-nums}
-  .cell.en{}
-  .cell.zh{color:#d6d9e7}
-  .search{flex:1;display:flex;align-items:center;background:#0d1730;border:1px solid var(--border);
-    border-radius:12px;padding:8px 10px}
-  .search input{flex:1;background:transparent;border:0;color:#fff;outline:0;font-size:14px}
-
-  /* 測驗 */
-  .qBox{padding:12px}
-  .q{padding:12px;border:1px solid var(--border);border-radius:12px;background:#0f1a33;margin:10px 0}
-  .q h4{margin:0 0 8px 0;font-weight:700}
-  .opt{display:flex;gap:8px;align-items:flex-start;margin:6px 0;cursor:pointer}
-  .opt input{margin-top:4px}
-  .foot{position:sticky;bottom:0;background:linear-gradient(180deg,rgba(11,19,36,0),rgba(11,19,36,1) 30%);padding:10px}
-  .bar{display:flex;gap:8px;justify-content:space-between;align-items:center;background:#101b39;border:1px solid var(--border);border-radius:12px;padding:10px}
-  .result{margin-top:8px;display:none;padding:10px;border-radius:10px}
-  .result.pass{background:rgba(18,184,134,.14);border:1px solid #12b886}
-  .result.fail{background:rgba(245,165,36,.14);border:1px solid #f5a524}
-
-  /* 單字 */
-  .vWrap{display:flex;flex-direction:column;height:100%}
-  .vTools{display:flex;gap:8px;align-items:center;padding:8px;border-bottom:1px solid var(--border)}
-  .vList{flex:1;overflow:auto}
-  .vRow{display:grid;grid-template-columns:180px 1fr 1.2fr;gap:8px;padding:10px 12px;border-bottom:1px solid #0f1a33}
-  .vHead{position:sticky;top:0;background:#102043;border-bottom:1px solid var(--border);z-index:2;color:#cfe1ff}
-</style>
+  <style>
+    body{margin:0;height:100%;display:flex;flex-direction:column;background:#0b1324;color:#e7eaf3;font-family:system-ui,-apple-system,Segoe UI,Roboto,Noto Sans,sans-serif}
+    header{display:flex;align-items:center;justify-content:space-between;padding:14px 18px;border-bottom:1px solid #203057;background:#0b142a;position:sticky;top:0;z-index:20}
+    .h-title{font-size:20px;font-weight:700}
+    .btn{padding:8px 12px;border:1px solid #203057;background:#15224a;color:#fff;border-radius:10px;cursor:pointer}
+    .btn:hover{filter:brightness(1.1)}
+    .wrap{flex:1;display:flex;overflow:hidden}
+    .video-panel{flex:2;display:flex;align-items:center;justify-content:center;background:#000}
+    .side-panel{flex:1;display:flex;flex-direction:column;background:#0f1a33;border-left:1px solid #203057}
+    .tabs{display:flex;border-bottom:1px solid #203057}
+    .tab{flex:1;text-align:center;padding:10px;cursor:pointer}
+    .tab.active{background:#15224a}
+    .content{flex:1;overflow:auto;padding:12px}
+    .error{color:#f66}
+  </style>
 </head>
 <body>
-<div class="layout">
-  <!-- 左：影片 + 工具列 -->
-  <section class="videoCol">
-    <div class="stage">
-      <video id="player" controls preload="metadata"></video>
+  <header>
+    <div class="h-title">看故事學英文 · Player</div>
+    <div class="row">
+      <span id="whoami" style="margin-right:8px"></span>
+      <button id="btnLogin"  class="btn">登入</button>
+      <button id="btnLogout" class="btn" style="display:none">登出</button>
     </div>
-    <div class="toolbar">
-      <button class="btn" id="btnPrev">上一句</button>
-      <button class="btn" id="btnPlay">播放/暫停</button>
-      <button class="btn" id="btnNext">下一句</button>
-      <button class="btn" id="btnRepeatOne">重複本句</button>
-      <button class="btn" id="btnAB">A-B 循環</button>
-      <button class="btn" id="btnABClear">取消循環</button>
+  </header>
 
-      <label class="chip">變焦
-        <input id="zoom" type="range" min="1" max="2" step="0.05" value="1" class="range">
-      </label>
-      <label class="chip">速度
-        <input id="rate" type="range" min="0.5" max="2" step="0.05" value="1" class="range">
-        <span id="rateLabel">1.00×</span>
-      </label>
-    </div>
-  </section>
-
-  <!-- 右：字幕 / 測驗 / 單字 -->
-  <aside class="side">
-    <div class="tabs">
-      <div id="tabTranscript" class="tab active">字幕</div>
-      <div id="tabQuiz" class="tab">測驗</div>
-      <div id="tabVocab" class="tab">單字</div>
+  <div class="wrap">
+    <!-- 左側影片 -->
+    <div class="video-panel">
+      <video id="video" width="100%" height="100%" controls></video>
     </div>
 
-    <!-- 字幕工具列 -->
-    <div class="pToolbar" id="toolsTranscript">
-      <div class="search"><input id="searchCue" placeholder="搜尋字幕…（支援英文或中文）"></div>
-      <span class="muted">字級</span>
-      <button id="fS" class="chip">S</button>
-      <button id="fM" class="chip active">M</button>
-      <button id="fL" class="chip">L</button>
-      <button id="btnFollow" class="btn">跟隨</button>
-      <span class="muted">校準</span>
-      <button id="btnCalibMinus" class="chip">-0.5s</button>
-      <button id="btnCalibPlus" class="chip">+0.5s</button>
-      <span class="muted" id="calibHint">(+0.0s)</span>
-    </div>
-
-    <!-- 字幕 -->
-    <div id="panelTranscript" class="panel">
-      <div class="tHead">
-        <div class="cell">時間</div><div class="cell">英文</div><div class="cell">中文</div>
+    <!-- 右側字幕/測驗 -->
+    <div class="side-panel">
+      <div class="tabs">
+        <div class="tab active" data-tab="sub">字幕</div>
+        <div class="tab" data-tab="quiz">測驗</div>
+        <div class="tab" data-tab="vocab">單字</div>
       </div>
-      <div id="cueList"></div>
-    </div>
-
-    <!-- 測驗 -->
-    <div id="panelQuiz" class="panel" style="display:none">
-      <div class="qBox" id="quizBox"></div>
-      <div class="foot">
-        <div class="bar">
-          <div class="muted" id="quizProgress">0 / 0</div>
-          <div>
-            <button id="btnCheck" class="btn">交卷</button>
-            <button id="btnRetry" class="btn" style="display:none">再試一次</button>
-          </div>
-        </div>
-        <div id="quizResult" class="result"></div>
+      <div class="content" id="tabContent">
+        載入中...
       </div>
     </div>
+  </div>
 
-    <!-- 單字 -->
-    <div id="panelVocab" class="panel" style="display:none">
-      <div class="vWrap">
-        <div class="vTools">
-          <div class="search" style="flex:1"><input id="searchWord" placeholder="搜尋單字 / 意義（中英文）」></div>
-        </div>
-        <div class="vHead vRow">
-          <div>單字</div><div>英解 / 詞性</div><div>中文 / 例句</div>
-        </div>
-        <div class="vList" id="vocabList"></div>
+  <!-- 登入對話框 -->
+  <div id="loginDialog" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:1000;align-items:center;justify-content:center">
+    <div style="width:320px;background:#fff;color:#111;border-radius:12px;padding:16px">
+      <h3>會員登入</h3>
+      <input id="loginEmail" type="email" placeholder="Email" style="width:100%;padding:10px;margin:6px 0 10px;border:1px solid #ddd;border-radius:10px">
+      <input id="loginPassword" type="password" placeholder="Password" style="width:100%;padding:10px;margin:6px 0 10px;border:1px solid #ddd;border-radius:10px">
+      <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:8px">
+        <button id="btnLoginConfirm" class="btn">登入</button>
+        <button id="btnCloseLogin" class="btn" style="background:#eee;color:#222;border-color:#ddd">取消</button>
       </div>
+      <div style="margin-top:10px;color:#666">也可用 Google 登入：</div>
+      <button id="btnLoginGoogle" class="btn" style="margin-top:6px">使用 Google 登入</button>
     </div>
-  </aside>
-</div>
-
-<!-- 依序載入：supa.js -> login.js（在 index 已有亦可，再載一次不影響） -->
-<script src="supa.js"></script>
-<script src="login.js"></script>
-<script>
-(()=>{
-  // ====== 基本工具 ======
-  const $ = (s, r=document)=> r.querySelector(s);
-  const $$ = (s, r=document)=> [...r.querySelectorAll(s)];
-  const FREE_SLUGS = new Set(['mid-autumn']); // 免費試看清單
-  const qs = new URLSearchParams(location.search);
-  const slug = qs.get('slug') || '';
-  const defaultTab = qs.get('tab') || 'transcript';
-
-  // ====== 守門（檢查登入） ======
-  async function guard(){
-    if(FREE_SLUGS.has(slug)) return; // 免費
-    const { data:{ session } } = await supa.auth.getSession();
-    if(!session){
-      // 你有自訂 UI 的話可以呼叫 showLogin() ，這裡先退回首頁
-      alert('此內容需要登入後方可觀看');
-      location.replace('index.html');
-    }
-  }
-
-  // ====== DOM / 狀態 ======
-  let meta=null, cues=[], filteredCues=[], cueNodes=[], follow=true, font='M';
-  let calib = 0; // 字幕校準秒數（+ 往後、- 往前）
-
-  // 影片 / A-B / repeat
-  const v = $('#player');
-  let A=null,B=null, abTimer=null;
-
-  // ====== 讀檔 ======
-  async function loadMeta(){
-    const res = await fetch('data/index.json');
-    if(!res.ok) throw new Error('index.json 載入失敗');
-    const data = await res.json();
-    meta = (data.items||[]).find(x=>x.slug===slug) || data.items?.[0];
-    if(!meta) throw new Error('無對應項目');
-  }
-
-  async function loadCues(){
-    const res = await fetch(meta.cues);
-    if(!res.ok) throw new Error('字幕 JSON 載入失敗');
-    const raw = await res.json();
-    // 支援：[{time,en,zh}] / {items:[...]} / [{time,text}]
-    const list = Array.isArray(raw)? raw : (raw.items||[]);
-    cues = list.map(x=>{
-      const t = x.time || x.t || x.start || '00:00';
-      const en = x.en || x.text || '';
-      const zh = x.zh || '';
-      return {t,en,zh,sec:toSec(t)};
-    });
-    filteredCues = cues;
-  }
-
-  function toSec(t){ const [m,s]=String(t).split(':').map(n=>parseInt(n,10)||0); return m*60+s; }
-  function fmtTime(sec){ const m=Math.floor(sec/60), s=Math.round(sec%60); return `[${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}]`; }
-
-  function renderCues(){
-    const list = $('#cueList'); list.innerHTML='';
-    cueNodes = filteredCues.map((row,i)=>{
-      const div = document.createElement('div');
-      div.className = 'tRow';
-      div.innerHTML = `
-        <div class="cell time">${fmtTime(row.sec)}</div>
-        <div class="cell en">${row.en||''}</div>
-        <div class="cell zh">${row.zh||''}</div>`;
-      div.onclick = ()=>{
-        v.currentTime = Math.max(0,row.sec + calib);
-        v.play();
-        highlightByTime(v.currentTime);
-      };
-      list.appendChild(div);
-      return div;
-    });
-  }
-
-  function highlightByTime(current){
-    // 找到 <= current 的最後一句
-    let idx = -1;
-    for(let i=0;i<filteredCues.length;i++){
-      const s = filteredCues[i].sec + calib;
-      if(s <= current+0.01) idx = i; else break;
-    }
-    cueNodes.forEach(n=>n.classList.remove('active'));
-    if(idx>=0){
-      const el = cueNodes[idx];
-      el.classList.add('active');
-      if(follow) el.scrollIntoView({block:'center',behavior:'smooth'});
-    }
-  }
-
-  // ====== 左工具列 ======
-  function jumpPrev(){
-    const t=v.currentTime - calib;
-    const prev=[...filteredCues].reverse().find(c=>c.sec < t-0.05);
-    if(prev){ v.currentTime = Math.max(0, prev.sec + calib); v.play(); }
-  }
-  function jumpNext(){
-    const t=v.currentTime - calib;
-    const next=filteredCues.find(c=>c.sec > t+0.05);
-    if(next){ v.currentTime = Math.max(0, next.sec + calib); v.play(); }
-  }
-  function setRepeatOne(){
-    const t=v.currentTime - calib;
-    let i=filteredCues.findIndex(c=>c.sec <= t);
-    if(i<0) i=0;
-    A = filteredCues[i].sec + calib;
-    B = (i+1<filteredCues.length ? filteredCues[i+1].sec + calib : null);
-    startAB(true);
-  }
-  function setAB(){
-    if(A==null){ A=v.currentTime; alert('已設定 A 點'); }
-    else if(B==null){ B=v.currentTime; alert('已設定 B 點；開始循環'); startAB(false); }
-    else { A=v.currentTime; B=null; alert('已重設 A 點，請再按一次設定 B 點'); }
-  }
-  function startAB(fromRepeat){
-    clearInterval(abTimer);
-    abTimer = setInterval(()=>{
-      if(B!=null && v.currentTime>=B-0.01) v.currentTime = A;
-    }, 120);
-  }
-  function clearLoop(){ A=null;B=null;clearInterval(abTimer); }
-
-  function bindLeft(){
-    $('#btnPrev').onclick = jumpPrev;
-    $('#btnNext').onclick = jumpNext;
-    $('#btnPlay').onclick = ()=> v.paused?v.play():v.pause();
-    $('#btnRepeatOne').onclick = setRepeatOne;
-    $('#btnAB').onclick = setAB;
-    $('#btnABClear').onclick = clearLoop;
-
-    $('#rate').oninput = e => { v.playbackRate = +e.target.value; $('#rateLabel').textContent = v.playbackRate.toFixed(2)+'×'; };
-    $('#zoom').oninput = e => { const z=+e.target.value; v.style.transform=`scale(${z})`; v.style.transformOrigin='center center'; };
-  }
-
-  // ====== 字幕工具列 ======
-  function setFont(s){
-    font=s;
-    const map={S:'13px',M:'15px',L:'17px'};
-    $('#panelTranscript').style.fontSize = map[s]||'15px';
-    ['#fS','#fM','#fL'].forEach(id=>$(id).classList.remove('active'));
-    ({S:'#fS',M:'#fM',L:'#fL'}[s] && $(({S:'#fS',M:'#fM',L:'#fL'}[s])).classList.add('active'));
-  }
-  function bindRightTools(){
-    $('#btnFollow').onclick = ()=>{ follow=!follow; $('#btnFollow').textContent = follow?'跟隨':'不跟隨'; };
-    $('#fS').onclick=()=>setFont('S'); $('#fM').onclick=()=>setFont('M'); $('#fL').onclick=()=>setFont('L');
-    $('#btnCalibMinus').onclick = ()=>{ calib -= .5; $('#calibHint').textContent = `(${calib>=0?'+':''}${calib.toFixed(1)}s)`; };
-    $('#btnCalibPlus').onclick = ()=>{ calib += .5; $('#calibHint').textContent = `(${calib>=0?'+':''}${calib.toFixed(1)}s)`; };
-    $('#searchCue').addEventListener('input', ()=>{
-      const q = $('#searchCue').value.trim().toLowerCase();
-      filteredCues = !q ? cues : cues.filter(c=>{
-        return (c.en||'').toLowerCase().includes(q) || (c.zh||'').toLowerCase().includes(q);
-      });
-      renderCues();
-    });
-  }
-
-  // ====== 測驗 ======
-  async function loadQuiz(){
-    if(!meta.quiz){ $('#tabQuiz').style.display='none'; return; }
-    const res = await fetch(meta.quiz);
-    if(!res.ok){ $('#tabQuiz').style.display='none'; return; }
-    const raw = await res.json();
-    const arr = Array.isArray(raw)? raw : (raw.items||raw.questions||[]);
-    const qs = arr.slice(0,20).map((x,i)=>{
-      const q = x.q || x.question || x.title || `Q${i+1}`;
-      const opts = x.a || x.options || x.choices || [];
-      let ans = (x.ans ?? x.answerIndex ?? x.correct);
-      if(typeof ans!=='number'){ // 若答案是文字，轉索引
-        const idx = opts.findIndex(o=> (o.text||o)===ans);
-        ans = idx>=0? idx : 0;
-      }
-      return {q,opts:opts.map(o=>o.text||o),ans};
-    });
-    renderQuiz(qs);
-  }
-  function renderQuiz(questions){
-    const box = $('#quizBox'); box.innerHTML='';
-    questions.forEach((q,i)=>{
-      const wrap = document.createElement('div');
-      wrap.className='q';
-      wrap.innerHTML = `<h4>${i+1}. ${q.q}</h4>`;
-      q.opts.forEach((opt,j)=>{
-        const id=`q${i}_${j}`;
-        const row=document.createElement('label');
-        row.className='opt';
-        row.innerHTML=`<input type="radio" name="q${i}" value="${j}" id="${id}"> <span>${opt}</span>`;
-        wrap.appendChild(row);
-      });
-      box.appendChild(wrap);
-    });
-    $('#quizProgress').textContent = `0 / ${questions.length}`;
-    box.addEventListener('change', ()=>{
-      const done = questions.filter((_,i)=> $(`input[name="q${i}"]:checked`, box)).length;
-      $('#quizProgress').textContent = `${done} / ${questions.length}`;
-    });
-
-    $('#btnCheck').onclick=()=>{
-      let correct=0;
-      questions.forEach((q,i)=>{
-        const pick = $(`input[name="q${i}"]:checked`, box);
-        if(pick && parseInt(pick.value,10)===q.ans) correct++;
-      });
-      const ratio=Math.round(correct/questions.length*100);
-      const res=$('#quizResult');
-      res.style.display='block';
-      res.className='result ' + (ratio>=80?'pass':'fail');
-      res.textContent=`分數：${correct} / ${questions.length}（${ratio}%）` + (ratio>=80?'  👍 太棒了！':'  再接再厲！');
-      $('#btnRetry').style.display='inline-block';
-    };
-    $('#btnRetry').onclick=()=>{
-      $$('input[type="radio"]', box).forEach(r=>r.checked=false);
-      $('#quizProgress').textContent = `0 / ${questions.length}`;
-      $('#quizResult').style.display='none';
-      $('#btnRetry').style.display='none';
-    };
-  }
-
-  // ====== 單字 ======
-  async function loadVocab(){
-    // words 檔命名：data/words-<slug>.json
-    const url = `data/words-${slug}.json`;
-    try{
-      const res = await fetch(url, {cache:'no-store'});
-      if(!res.ok) throw 0;
-      const raw = await res.json();
-      const list = Array.isArray(raw)? raw : (raw.items||[]);
-      if(!list.length) throw 0;
-      renderVocab(list);
-    }catch(_){
-      // 沒有單字就隱藏分頁
-      $('#tabVocab').style.display='none';
-      $('#panelVocab').style.display='none';
-    }
-  }
-  function renderVocab(items){
-    const box = $('#vocabList'); box.innerHTML='';
-    let data = items.map(x=>({
-      word: x.word || x.w || '',
-      pos: x.pos || x.part || '',
-      def: x.def || x.en || '',
-      zh : x.zh || x.cn || '',
-      example: x.example || x.ex || ''
-    }));
-    const draw = (arr)=>{
-      box.innerHTML='';
-      arr.forEach(r=>{
-        const row = document.createElement('div');
-        row.className='vRow';
-        row.innerHTML = `
-          <div><b>${r.word}</b> <span class="muted">${r.pos||''}</span></div>
-          <div>${r.def||''}</div>
-          <div>${r.zh||''}${r.example?`<div class="muted">例：${r.example}</div>`:''}</div>`;
-        box.appendChild(row);
-      });
-    };
-    draw(data);
-    $('#searchWord').addEventListener('input', ()=>{
-      const q = $('#searchWord').value.trim().toLowerCase();
-      const arr = !q ? data : data.filter(r=>{
-        return [r.word,r.def,r.zh,r.example].some(s=>(s||'').toLowerCase().includes(q));
-      });
-      draw(arr);
-    });
-  }
-
-  // ====== 分頁切換 ======
-  function bindTabs(){
-    const t1=$('#tabTranscript'), p1=$('#panelTranscript'), tool1=$('#toolsTranscript');
-    const t2=$('#tabQuiz'),       p2=$('#panelQuiz');
-    const t3=$('#tabVocab'),      p3=$('#panelVocab');
-
-    function go(which){
-      [t1,t2,t3].forEach(t=>t.classList.remove('active'));
-      [p1,p2,p3].forEach(p=>p.style.display='none');
-      tool1.style.display='none';
-      if(which==='transcript'){ t1.classList.add('active'); p1.style.display='block'; tool1.style.display='flex'; }
-      if(which==='quiz'){ t2.classList.add('active'); p2.style.display='block'; }
-      if(which==='vocab'){ t3.classList.add('active'); p3.style.display='block'; }
-    }
-
-    t1.onclick=()=>go('transcript');
-    t2.onclick=()=>go('quiz');
-    t3.onclick=()=>go('vocab');
-
-    go(defaultTab==='quiz'?'quiz':(defaultTab==='vocab'?'vocab':'transcript'));
-  }
-
-  // ====== 啟動 ======
-  (async ()=>{
-    await guard();
-    await loadMeta();
-    v.src = meta.video;
-
-    bindLeft();
-    bindRightTools();
-    setFont('M');
-
-    await loadCues();
-    renderCues();
-
-    await loadQuiz();   // 沒檔就自動隱藏
-    await loadVocab();  // 沒檔就自動隱藏
-
-    bindTabs();
-
-    v.addEventListener('timeupdate', ()=> highlightByTime(v.currentTime));
-  })().catch(err=>{
-    console.error(err);
-    $('#cueList').innerHTML = `<div style="padding:12px;color:#f66">載入失敗：${err.message}</div>`;
-  });
-})();
-</script>
+  </div>
 </body>
 </html>
-<!-- 先載入 UMD 版 Supabase（一定要先） -->
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
-<!-- 建立全域 supa 實例 -->
-<script src="supa.js"></script>
-<!-- 你的登入彈窗 / 狀態監聽（會用到 supa） -->
-<script src="login.js"></script>
 
-<!-- 之後才是頁面自己用的腳本（如果有） -->
-<!-- <script src="index.js"></script> 或內嵌腳本 -->
 
 
 
