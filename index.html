@@ -56,15 +56,20 @@
     <div id="grid" class="grid"></div>
   </div>
 
-  <!-- 先載入 supa.js，再載入 login.js，最後主程式 -->
+  <!-- 1) 先載入 UMD 版 Supabase（一定要先） -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+  <!-- 2) 建立全域 supa 實例（你的 supabase URL/KEY 在 supa.js 裡） -->
   <script src="supa.js"></script>
+  <!-- 3) 登入彈窗 / 狀態監聽（會用到 supa） -->
   <script src="login.js"></script>
+
+  <!-- 4) 本頁主程式 -->
   <script>
   (()=>{
-    // ====== 工具 ======
+
     const $ = (s, r=document)=> r.querySelector(s);
     const $$ = (s, r=document)=> [...r.querySelectorAll(s)];
-    const FREE_SLUGS = new Set(['mid-autumn']); // 免費試看清單
+    const FREE_SLUGS = new Set(['mid-autumn']); // 免費試看清單（可自行擴充）
 
     // 顯示登入狀態
     async function refreshAuthUI() {
@@ -79,7 +84,6 @@
       if(session){
         await supa.auth.signOut();
       }else{
-        // 交給 login.js 顯示登入彈窗（若你有現成 UI），若沒有會跳轉到 OAuth
         if(typeof showLogin==='function'){ showLogin(); }
         else{
           const { error } = await supa.auth.signInWithOAuth({ provider:'google' });
@@ -89,12 +93,10 @@
       refreshAuthUI();
     };
 
-    // 監聽狀態變更（login.js 內也會監聽，這裡保險）
-    supa.auth.onAuthStateChange(()=>{
-      refreshAuthUI();
-    });
+    // 監聽狀態變更
+    supa.auth.onAuthStateChange(()=> refreshAuthUI());
 
-    // ====== 載入資料 ======
+    // 載入資料
     let allItems = [];
     async function loadData(){
       const url = 'data/index.json?v=' + Date.now();
@@ -105,7 +107,7 @@
       renderCards(allItems);
     }
 
-    // ====== 渲染卡片 ======
+    // 渲染卡片
     function renderCards(list){
       const g = $('#grid'); g.innerHTML = '';
       list.forEach(item=>{
@@ -133,20 +135,17 @@
           </div>
         `;
 
-        // 事件：按鈕點擊
         card.addEventListener('click', async (e)=>{
           const btn = e.target.closest('button[data-act]');
           if(!btn) return;
-
-          const act = btn.getAttribute('data-act');
+          const act = btn.dataset.act;
           const slug = item.slug;
 
-          // 檢查權限
+          // 權限檢查
           const needLogin = !FREE_SLUGS.has(slug);
           if(needLogin){
             const { data:{ session } } = await supa.auth.getSession();
             if(!session){
-              // 若有你的自訂登入 UI
               if(typeof showLogin==='function'){ showLogin(); }
               else{
                 const { error } = await supa.auth.signInWithOAuth({ provider:'google' });
@@ -168,7 +167,7 @@
       });
     }
 
-    // ====== 搜尋 ======
+    // 搜尋
     $('#q').addEventListener('input', ()=>{
       const q = $('#q').value.trim().toLowerCase();
       const list = !q ? allItems : allItems.filter(it=>{
@@ -181,8 +180,8 @@
 
     // 初始化
     (async()=>{
-      refreshAuthUI().catch(console.error);
-      loadData().catch(err=>{
+      await refreshAuthUI().catch(console.error);
+      await loadData().catch(err=>{
         console.error(err);
         $('#grid').innerHTML = `<div style="color:#f66">載入失敗：${err.message}</div>`;
       });
@@ -191,15 +190,7 @@
   </script>
 </body>
 </html>
-<!-- 先載入 UMD 版 Supabase（一定要先） -->
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
-<!-- 建立全域 supa 實例 -->
-<script src="supa.js"></script>
-<!-- 你的登入彈窗 / 狀態監聽（會用到 supa） -->
-<script src="login.js"></script>
 
-<!-- 之後才是頁面自己用的腳本（如果有） -->
-<!-- <script src="index.js"></script> 或內嵌腳本 -->
 
 
 
