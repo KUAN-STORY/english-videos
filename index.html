@@ -4,107 +4,94 @@
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width,initial-scale=1"/>
   <title>看故事學英文 · Stories</title>
-  <link rel="icon" href="data:,">
+
+  <!-- 1) Supabase SDK -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js" defer></script>
+  <!-- 2) 初始化 supa -->
+  <script src="supa.js?v=2" defer></script>
+  <!-- 3) 登入控制 -->
+  <script src="login.js?v=2" defer></script>
+
   <style>
-    :root{--bg:#0b1324;--panel:#0f1a33;--border:#203057;--text:#e7eaf3;--muted:#a9b3cf;--brand:#3c7cff}
-    html,body{margin:0;height:100%;background:var(--bg);color:var(--text);font-family:system-ui,-apple-system,Segoe UI,Roboto,Noto Sans,sans-serif}
-    header{display:flex;align-items:center;justify-content:space-between;padding:14px 18px;border-bottom:1px solid var(--border);background:#0b142a;position:sticky;top:0;z-index:20}
-    .h-title{font-size:20px;font-weight:700}
-    .btn{padding:8px 12px;border:1px solid var(--border);background:#15224a;color:#fff;border-radius:10px;cursor:pointer}
-    .btn:hover{filter:brightness(1.1)}
-    .wrap{max-width:1100px;margin:24px auto;padding:0 16px}
-    .cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:16px}
-    .card{background:var(--panel);border:1px solid var(--border);border-radius:14px;overflow:hidden}
-    .card img{width:100%;height:150px;object-fit:cover;display:block}
-    .card .box{padding:12px}
-    .tag{display:inline-block;font-size:12px;color:#9fb2ff;border:1px solid #2f4fb3;padding:2px 6px;border-radius:999px;margin-right:6px}
-    .row{display:flex;gap:8px;align-items:center}
-    .muted{color:var(--muted)}
-    /* 登入對話框 */
-    #loginDialog{display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:1000;align-items:center;justify-content:center}
-    #loginPanel{width:320px;background:#fff;color:#111;border-radius:12px;padding:16px}
-    #loginPanel input{width:100%;padding:10px;border:1px solid #ddd;border-radius:10px;margin:6px 0 10px 0}
-    #loginPanel h3{margin:0 0 10px 0}
+    body { background:#0b1324; color:#e7eaf3; font-family:sans-serif; margin:0; }
+    header { display:flex; justify-content:space-between; padding:14px 18px; background:#0f1a33; }
+    .btn { padding:6px 12px; border:1px solid #203057; background:#15224a; color:#fff; border-radius:6px; cursor:pointer; }
+    .cards { display:grid; grid-template-columns:repeat(auto-fill,minmax(260px,1fr)); gap:16px; padding:20px; }
+    .card { background:#16244f; border:1px solid #203057; border-radius:10px; overflow:hidden; }
+    .card img { width:100%; height:150px; object-fit:cover; display:block; }
+    .box { padding:12px; }
+    .tag { font-size:12px; background:#203057; padding:2px 6px; border-radius:99px; margin-right:6px; }
+    .muted { color:#a9b3cf; }
   </style>
 </head>
 <body>
-
   <header>
-    <div class="h-title">看故事學英文 · Stories</div>
-    <div class="row">
-      <span id="whoami" class="muted" style="margin-right:8px"></span>
-      <button id="btnLogin"  class="btn">登入</button>
+    <div>看故事學英文 · Stories</div>
+    <div>
+      <span id="whoami" class="muted"></span>
+      <button id="btnLogin" class="btn">登入</button>
       <button id="btnLogout" class="btn" style="display:none">登出</button>
     </div>
   </header>
 
-  <div class="wrap">
-    <h2>用故事學英文：雙語字幕、測驗與單字</h2>
-    <p class="muted">從下方卡片選擇故事開始。帶「需登入」的內容會在登入後開放。</p>
-
-    <div class="cards" id="cards">
-      <!-- 免費示範：Mid-Autumn -->
+  <main>
+    <h2 style="padding:0 20px">用故事學英文：雙語字幕、測驗與單字</h2>
+    <div class="cards">
+      <!-- 免費：Mid-Autumn -->
       <a class="card" href="player.html?slug=mid-autumn" data-requires-login="false">
-        <img src="videos/mid-autumn.jpg" alt="Mid-Autumn">
-        <div class="box">
-          <div class="row"><span class="tag">免費</span><span class="muted">SHORT</span></div>
-          <h3>Mid-Autumn Festival</h3>
-          <div class="muted">中秋節</div>
-        </div>
+        <img src="cover-mid.jpg" alt="Mid-Autumn">
+        <div class="box"><span class="tag">免費</span> Mid-Autumn Festival <div class="muted">中秋節</div></div>
       </a>
-
       <!-- 需登入：Houyi -->
       <a class="card" href="player.html?slug=houyi" data-requires-login="true">
-        <img src="videos/houyi.jpg" alt="Houyi">
-        <div class="box">
-          <div class="row"><span class="tag">需登入</span><span class="muted">SHORT</span></div>
-          <h3>Hou Yi Shoots the Suns</h3>
-          <div class="muted">后羿射日</div>
-        </div>
+        <img src="cover-houyi.jpg" alt="Houyi">
+        <div class="box"><span class="tag">需登入</span> Hou Yi Shoots the Suns <div class="muted">后羿射日</div></div>
       </a>
-
       <!-- 需登入：Lantern -->
       <a class="card" href="player.html?slug=lantern" data-requires-login="true">
-        <img src="videos/lantern.jpg" alt="Lantern Festival">
-        <div class="box">
-          <div class="row"><span class="tag">需登入</span><span class="muted">SHORT</span></div>
-          <h3>The Lantern Festival</h3>
-          <div class="muted">元宵節</div>
-        </div>
+        <img src="cover-lantern.jpg" alt="Lantern">
+        <div class="box"><span class="tag">需登入</span> The Lantern Festival <div class="muted">元宵節</div></div>
       </a>
     </div>
-  </div>
+  </main>
 
-  <!-- 登入對話框 -->
-  <div id="loginDialog">
-    <div id="loginPanel">
-      <h3>會員登入</h3>
-      <input id="loginEmail" type="email" placeholder="Email">
-      <input id="loginPassword" type="password" placeholder="Password">
-      <div class="row" style="justify-content:flex-end;margin-top:8px">
-        <button id="btnLoginConfirm" class="btn">登入</button>
-        <button id="btnCloseLogin" class="btn" style="background:#eee;color:#222;border-color:#ddd">取消</button>
-      </div>
-      <div class="muted" style="margin-top:10px">也可用 Google 登入：</div>
-      <button id="btnLoginGoogle" class="btn" style="margin-top:6px">使用 Google 登入</button>
-    </div>
-  </div>
+  <script>
+    document.addEventListener("DOMContentLoaded", async () => {
+      // 更新登入狀態
+      async function refreshUI() {
+        const { data:{ session } } = await supa.auth.getSession();
+        document.getElementById("whoami").textContent = session?.user?.email || "";
+        document.getElementById("btnLogin").style.display = session ? "none" : "inline-block";
+        document.getElementById("btnLogout").style.display = session ? "inline-block" : "none";
+      }
 
-  <!-- ====== 正確順序載入 ====== -->
-  <!-- 1. Supabase 官方 CDN -->
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+      document.getElementById("btnLogin").onclick = ()=>showLogin();
+      document.getElementById("btnLogout").onclick = async ()=>{
+        await supa.auth.signOut();
+        refreshUI();
+      };
 
-  <!-- 2. 你的 supa.js（建立 supa client） -->
-  <script src="supa.js"></script>
+      supa.auth.onAuthStateChange(()=>refreshUI());
+      refreshUI();
 
-  <!-- 3. 登入邏輯 -->
-  <script src="login.js"></script>
-
-  <!-- 4. 其他頁面腳本（如有） -->
-  <!-- <script src="index.js"></script> -->
-
+      // 卡片點擊守門
+      document.querySelectorAll(".card").forEach(card=>{
+        card.addEventListener("click", async (e)=>{
+          const needLogin = card.dataset.requiresLogin === "true";
+          if(needLogin){
+            const { data:{ session } } = await supa.auth.getSession();
+            if(!session){
+              e.preventDefault(); // 阻止進入 player
+              showLogin();
+            }
+          }
+        });
+      });
+    });
+  </script>
 </body>
 </html>
+
 
 
 
