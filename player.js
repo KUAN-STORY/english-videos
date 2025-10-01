@@ -515,10 +515,18 @@ async function bootQuizTab() {
   const btnToggle = document.getElementById('btnToggleAns');
 
   // 工具：答案比對（忽略大小寫與多餘空白）
-  const norm = s => String(s ?? '')
-    .toLowerCase()
-    .replace(/\s+/g, ' ')
-    .trim();
+  // 取代舊的 norm，放在 463 行以下那段程式裡
+const norm = s => String(s ?? '')
+  .toLowerCase()
+  // 移除變音符號 (é -> e, ü -> u …)
+  .normalize('NFKD').replace(/[\u0300-\u036f]/g, '')
+  // 把各種彎引號等統一為普通撇或直接拿掉
+  .replace(/[\u2018\u2019\u201A\u2032]/g, "'")
+  // 只保留英數字，其他通通換成空白（' 也去掉）
+  .replace(/[^a-z0-9]+/g, ' ')
+  .replace(/\s+/g, ' ')
+  .trim();
+
 
   // 渲染一題
   const renderItem = (q, i) => {
@@ -736,6 +744,7 @@ async function bootQuizTab() {
 // 預防有的頁面先載到、或切頁沒觸發就進來
 try { bootQuizTab(); } catch (e) { console.error('[quiz] boot error:', e); }
 // ====== 覆蓋段落結束 ======
+
 
 
 
