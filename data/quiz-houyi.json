@@ -1,22 +1,135 @@
 [
-  {"type":"mcq","q":"How many suns were in the sky according to the legend?","options":["One","Three","Ten","Twelve"],"a":2},
-  {"type":"mcq","q":"Why were people unhappy when many suns appeared?","options":["It was very cold","It was very hot and dry","It was too dark","There were heavy rains"],"a":1},
-  {"type":"mcq","q":"Who helped the people by shooting down the suns?","options":["Chang’e","Hou Yi","Nuwa","The Jade Emperor"],"a":1},
-  {"type":"tf","q":"Hou Yi used a sword to shoot down the suns.","a":false},
-  {"type":"tf","q":"After Hou Yi shot down nine suns, one sun remained.","a":true},
-  {"type":"fill","q":"Hou Yi used a strong ______ to shoot the suns.","a":"bow"},
-  {"type":"fill","q":"Hou Yi’s wife was named ______.","a":"chang’e"},
-  {"type":"mcq","q":"Who gave Hou Yi a special pill?","options":["The Queen Mother of the West","The Jade Emperor","A dragon","A monk"],"a":0},
-  {"type":"mcq","q":"What could the pill do?","options":["Make someone immortal","Make someone invisible","Make someone very strong","Make someone fly"],"a":0},
-  {"type":"tf","q":"Hou Yi wanted to eat the pill immediately.","a":false},
-  {"type":"mcq","q":"Why did Hou Yi give the pill to Chang’e?","options":["To keep it safe","To sell it","To throw it away","To hide it under a tree"],"a":0},
-  {"type":"mcq","q":"Who tried to steal the pill from Chang’e?","options":["Hou Yi","Peng Meng","The Queen Mother","A soldier"],"a":1},
-  {"type":"fill","q":"Peng Meng wanted the ______ of immortality.","a":"pill"},
-  {"type":"tf","q":"Chang’e took the pill and flew up to the moon.","a":true},
-  {"type":"mcq","q":"Where did Chang’e finally live?","options":["The sun","The moon","The sea","The palace"],"a":1},
-  {"type":"mcq","q":"What did people do to remember Chang’e and Hou Yi?","options":["Dance with dragons","Eat tangyuan","Light lanterns and look at the moon","Swim in rivers"],"a":2},
-  {"type":"fill","q":"People admire the bright full ______ during the festival.","a":"moon"},
-  {"type":"tf","q":"The story of Hou Yi is often told during the Mid-Autumn Festival.","a":true},
-  {"type":"mcq","q":"Which of the following best describes Hou Yi?","options":["A kind archer","A greedy king","A sea god","A mountain guard"],"a":0},
-  {"type":"mcq","q":"What is the main theme of the story?","options":["Courage and love","War and peace","Business and trade","Travel and adventure"],"a":0}
+  {
+    "type": "mcq",
+    "question": "Who was Hou Yi’s wife in legend?",
+    "options": ["Nuwa", "Chang'e", "Guanyin", "Mulan"],
+    "answer": "Chang'e",
+    "explanation": "嫦娥是后羿的妻子。"
+  },
+  {
+    "type": "mcq",
+    "question": "How many suns appeared in the sky before Hou Yi shot them?",
+    "options": ["1", "3", "10", "12"],
+    "answer": "10",
+    "explanation": "傳說中同時出現十個太陽。"
+  },
+  {
+    "type": "mcq",
+    "question": "How many suns did Hou Yi shoot down?",
+    "options": ["All 10", "9", "5", "1"],
+    "answer": "9",
+    "explanation": "他射下九個，只留下1個。"
+  },
+  {
+    "type": "mcq",
+    "question": "Why did Hou Yi shoot down the suns?",
+    "options": ["They were too cold", "They caused floods", "They scorched the earth", "They blocked the moon"],
+    "answer": "They scorched the earth",
+    "explanation": "十日並出，烤焦大地，民不聊生。"
+  },
+  {
+    "type": "mcq",
+    "question": "Who gave Hou Yi the bow and arrows?",
+    "options": ["The Jade Emperor", "The Queen Mother of the West", "Nuwa", "A dragon king"],
+    "answer": "The Queen Mother of the West",
+    "explanation": "西王母賜予神弓神箭。"
+  },
+  {
+    "type": "mcq",
+    "question": "What was Hou Yi’s profession in legend?",
+    "options": ["Farmer", "Archer hero", "Doctor", "King"],
+    "answer": "Archer hero",
+    "explanation": "后羿以神射聞名。"
+  },
+  {
+    "type": "mcq",
+    "question": "What did Hou Yi receive as a reward for shooting the suns?",
+    "options": ["Wealth", "Elixir of immortality", "A palace", "A dragon"],
+    "answer": "Elixir of immortality",
+    "explanation": "他得到長生不老藥。"
+  },
+  {
+    "type": "mcq",
+    "question": "Why did Chang'e take the elixir?",
+    "options": ["She was hungry", "She was forced by Hou Yi", "To prevent Hou Yi’s enemy from stealing it", "For beauty"],
+    "answer": "To prevent Hou Yi’s enemy from stealing it",
+    "explanation": "嫦娥為保護仙藥，自己吞下飛月。"
+  },
+  {
+    "type": "mcq",
+    "question": "Where did Chang'e go after taking the elixir?",
+    "options": ["The Sun", "The Moon", "The Earth", "The Sea"],
+    "answer": "The Moon",
+    "explanation": "她奔月而去。"
+  },
+  {
+    "type": "mcq",
+    "question": "What animal accompanied Chang'e on the moon?",
+    "options": ["A rabbit", "A dragon", "A crane", "A fox"],
+    "answer": "A rabbit",
+    "explanation": "玉兔在月宮搗藥。"
+  },
+  {
+    "type": "mcq",
+    "question": "Who did Hou Yi become after losing his wife?",
+    "options": ["A god", "A lonely man", "A king", "A farmer"],
+    "answer": "A lonely man",
+    "explanation": "失去嫦娥後，后羿孤獨終生。"
+  },
+  {
+    "type": "mcq",
+    "question": "What natural phenomenon does the Hou Yi story explain?",
+    "options": ["The moon’s phases", "Why only one sun exists", "Earthquakes", "Rainbows"],
+    "answer": "Why only one sun exists",
+    "explanation": "傳說解釋了天上只有一個太陽。"
+  },
+  {
+    "type": "sa",
+    "question": "How many suns did Hou Yi leave in the sky?",
+    "answer": "1",
+    "explanation": "只留下唯一的一個太陽。"
+  },
+  {
+    "type": "sa",
+    "question": "What magical item did Hou Yi receive as a reward?",
+    "answer": "Elixir of immortality",
+    "explanation": "射日後獲得長生不老藥。"
+  },
+  {
+    "type": "sa",
+    "question": "Who granted Hou Yi the bow?",
+    "answer": "The Queen Mother of the West",
+    "explanation": "西王母所賜。"
+  },
+  {
+    "type": "sa",
+    "question": "What is the name of Hou Yi’s wife?",
+    "answer": "Chang'e",
+    "explanation": "嫦娥是其妻。"
+  },
+  {
+    "type": "sa",
+    "question": "Why did Hou Yi shoot down the suns?",
+    "answer": "Because they scorched the earth",
+    "explanation": "為拯救人間免於酷熱。"
+  },
+  {
+    "type": "sa",
+    "question": "What creature lives with Chang'e on the moon?",
+    "answer": "Rabbit",
+    "explanation": "玉兔相伴。"
+  },
+  {
+    "type": "sa",
+    "question": "What festival later became associated with their story?",
+    "answer": "Mid-Autumn Festival",
+    "explanation": "中秋節與嫦娥、后羿故事相關。"
+  },
+  {
+    "type": "sa",
+    "question": "What does the Hou Yi legend symbolize?",
+    "answer": "Human courage and sacrifice",
+    "explanation": "象徵人類勇氣與犧牲。"
+  }
 ]
+
