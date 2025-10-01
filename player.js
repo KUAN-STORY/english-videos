@@ -234,6 +234,146 @@ document.addEventListener('DOMContentLoaded', () => {
   // const tabQuiz = document.querySelector('[data-tab="quiz"]');
   // if (tabQuiz) tabQuiz.addEventListener('click', () => loadQuizForCurrentVideo());
 });
+// ======== QUIZ (只接測驗；不動其他功能) ========
+(() => {
+  const $ = s => document.querySelector(s);
+  const slug = new URL(location.href).searchParams.get('slug') || 'mid-autumn';
+  const quizPane = $('#pane-quiz') || document.querySelector('[data-pane="quiz"]');
+  if (!quizPane) return; // 沒有測驗容器就直接跳過
+
+  let quizData = null;
+  let quizLoaded = false;
+
+  async function loadQuiz() {
+    if (quizLoaded) return;
+    quizLoaded = true;
+
+    quizPane.innerHTML = '測驗載入中…';
+    try {
+      const res = await fetch(`data/quiz-${slug}.json?v=${Date.now()}`);
+      if (!res.ok) throw new Error('quiz json 讀取失敗');
+      const json = await res.json();
+      quizData = Array.isArray(json) ? json : (json.questions || json.items || []);
+      renderQuiz(quizData);
+    } catch (err) {
+      console.error(err);
+      quizPane.innerHTML = `<div style="color:#f66">讀取測驗失敗：${err.message}</div>`;
+    }
+  }
+
+  function renderQuiz(list) {
+    if (!list || !list.length) {
+      quizPane.innerHTML = '<div class="muted">尚無題目</div>';
+      return;
+    }
+    const html = [
+      `<div class="quiz-toolbar" style="display:flex;gap:8px;margin:8px 0;">
+         <button id="btnQuizCheck" class="btn">批改</button>
+         <button id="btnQuizReset" class="btn">清空</button>
+         <button id="btnQuizPrint" class="btn">列印</button>
+       </div>`,
+      `<ol class="quiz-list" style="line-height:1.6;">`,
+      list.map((q, idx) => qHTML(q, idx)).join(''),
+      `</ol>`
+    ].join('');
+    quizPane.innerHTML = html;
+
+    $('#btnQuizCheck')?.addEventListener('click', grade);
+    $('#btnQuizReset')?.addEventListener('click', () => renderQuiz(list));
+    $('#btnQuizPrint')?.addEventListener('click', printQuiz);
+  }
+
+  function qHTML(q, i) {
+    const id = `q${i}`;
+    const type = String(q.type || 'mcq').toLowerCase();
+    const stem = esc(q.question || q.stem || '');
+    if (type === 'mcq') {
+      const opts = (q.options || q.choices || []).map(opt => {
+        const val = esc(String(opt.value ?? opt));
+        const txt = esc(String(opt.text ?? opt));
+        return `<label style="display:block;margin:2px 0;">
+                  <input type="radio" name="${id}" value="${val}"> ${txt}
+                </label>`;
+      }).join('');
+      const ans = esc(String(q.answer ?? q.correct ?? ''));
+      return `<li data-type="mcq" data-answer="${ans}">
+                <div class="stem">${stem}</div>
+                <div class="opts">${opts}</div>
+                <div class="feedback" style="margin-top:4px;color:#9fb3ff"></div>
+              </li>`;
+    } else {
+      const ans = esc(String(q.answer ?? q.correct ?? ''));
+      return `<li data-type="fill" data-answer="${ans}">
+                <div class="stem">${stem}</div>
+                <input class="fill" type="text" placeholder="在此作答" style="margin-top:4px;width:100%;max-width:420px;">
+                <div class="feedback" style="margin-top:4px;color:#9fb3ff"></div>
+              </li>`;
+    }
+  }
+
+  function grade() {
+    const items = [...quizPane.querySelectorAll('ol.quiz-list > li')];
+    let correct = 0;
+    items.forEach(li => {
+      const ans = (li.dataset.answer || '').trim().toLowerCase();
+      let user = '';
+      if (li.dataset.type === 'mcq') {
+        user = (li.querySelector('input[type=radio]:checked')?.value || '').trim().toLowerCase();
+      } else {
+        user = (li.querySelector('input.fill')?.value || '').trim().toLowerCase();
+      }
+      const ok = ans && user && norm(user) === norm(ans);
+      const fb = li.querySelector('.feedback');
+      fb.textContent = ok ? '✔ 正確' : `✘ 正確答案：${li.dataset.answer}`;
+      fb.style.color = ok ? '#12b886' : '#f87171';
+      if (ok) correct++;
+    });
+    const total = items.length;
+    // 這裡用 console 當提示；如果你有現成 toast 就換掉它
+    console.log(`分數：${correct}/${total}`);
+  }
+
+  function printQuiz() {
+    const w = window.open('', '_blank');
+    const list = [...quizPane.querySelectorAll('li')].map((li, i) => ({
+      stem: li.querySelector('.stem')?.textContent || `第 ${i + 1} 題`,
+      type: li.dataset.type
+    }));
+    w.document.write(`<meta charset="utf-8"><title>測驗列印</title>
+      <div style="font-family:system-ui,Segoe UI,Roboto,Noto Sans,sans-serif;padding:16px;">
+        <h2>測驗：${slug}</h2>
+        <ol>
+          ${list.map(li => `
+            <li>
+              ${esc(li.stem)}
+              <div style="height:18px;border-bottom:1px dotted #999;margin:8px 0"></div>
+            </li>`).join('')}
+        </ol>
+      </div>`);
+    w.document.close();
+    w.focus();
+    w.print();
+  }
+
+  function esc(s) {
+    return String(s).replace(/[&<>"']/g, m => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;', "'":'&#39;' }[m]));
+  }
+  function norm(s) {
+    return s.replace(/\s+/g, '').replace(/[“”"']/g, '').toLowerCase();
+  }
+
+  // 只在「測驗分頁被點到」或網址帶 ?tab=quiz 時載入
+  function setupLazyLoad() {
+    const tabBtn = document.querySelector('[data-tab="quiz"], .tab[data-tab="quiz"], #tab-quiz');
+    if (tabBtn) tabBtn.addEventListener('click', () => loadQuiz(), { once: true });
+
+    const urlTab = new URL(location.href).searchParams.get('tab');
+    if (urlTab === 'quiz') loadQuiz();
+  }
+
+  setupLazyLoad();
+})();
+
 
 
 
