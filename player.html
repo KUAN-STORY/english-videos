@@ -144,11 +144,16 @@
             <div id="cuesStatus" class="muted" style="padding:10px 14px"></div>
           </div>
 
-          <!-- 測驗 -->
-          <div id="pane-quiz" style="display:none">
-            <div id="quizStatus" class="muted" style="padding:10px 14px">( 尚未載入 )</div>
-            <div id="quizBox" style="padding:0 14px 14px"></div>
-          </div>
+          <!-- 測驗面板 -->
+<div id="pane-quiz" class="pane">
+  <div id="quiz-controls" style="margin:8px 0; display:flex; gap:8px; align-items:center;">
+    <button class="btn" id="btnPrintQuiz">列印題目</button>
+    <button class="btn" id="btnShowAnswer">顯示答案</button>
+    <span id="quizMeta" style="color:#9fb3ff"></span>
+  </div>
+  <ol id="quizList" style="line-height:1.6;"></ol>
+</div>
+
 
           <!-- 單字 -->
           <div id="pane-vocab" style="display:none">
