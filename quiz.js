@@ -1,396 +1,249 @@
-/* quiz.js — 專責測驗邏輯（與 player.js 解耦）
- * 功能：
- *  1) 讀 ./data/quiz-<slug>.json
- *  2) 題型 MCQ/SA（單選/簡答）即時判斷；錯才顯示正解
- *  3) 交卷：每題 5 分，滿分 100；顯示評語
- *  4) 列印：A4 直式，含 LOGO 與公司名稱預留位
- */
+// quiz.js  — 模組版（直接覆蓋）
+// 匯出 initQuiz(slug) 供 player.js 呼叫
 
-const VERSION = '2025-10-01';
-
-// 簡易 $/$$ 輔助
-const $  = (s, el = document) => el.querySelector(s);
-const $$ = (s, el = document) => [...el.querySelectorAll(s)];
-
-// 題目正規化（容忍不同欄位名稱）
-function normalize(q, idx) {
-  const type =
-    (q.type || '').toLowerCase() ||
-    (Array.isArray(q.options || q.choices) ? 'mcq' : 'sa');
-
-  return {
-    id: idx + 1,
-    type: type === 'mcq' ? 'mcq' : 'sa',
-    question: q.question ?? q.q ?? '',
-    options: (q.options ?? q.choices ?? []).map(String),
-    answer: q.answer ?? q.ans ?? '',
-    explanation: q.explanation ?? q.ex ?? '',
-  };
+// ===== 工具：字串標準化 =====
+// 目的：把 ' ’ “ ” 變成標準直引號；移除多餘空白、大小寫差異、變音符號等
+function norm(s) {
+  if (s == null) return '';
+  return String(s)
+    // 統一各種引號
+    .replace(/[’‘‛`]/g, "'")
+    .replace(/[“”„‟]/g, '"')
+    // 轉半形
+    .normalize('NFKD')
+    .replace(/[\u0300-\u036f]/g, '')          // 去除變音符號（如 é -> e）
+    .replace(/\s+/g, ' ')                     // 摺疊多空白
+    .trim()                                   // 去頭尾空白
+    .toLowerCase();                           // 大小寫不敏感
 }
 
 // 讀題庫
-async function loadQuestions(slug) {
-  const url = `./data/quiz-${slug}.json?v=${VERSION}`;
+async function fetchQuiz(slug) {
+  const url = `./data/quiz-${slug}.json`;
   const r = await fetch(url, { cache: 'no-store' });
-  if (!r.ok) throw new Error(`read ${url} failed`);
+  if (!r.ok) throw new Error(`讀題庫失敗：${url} (${r.status})`);
   const raw = await r.json();
-  return (raw || []).map(normalize);
+  return normalizeQuiz(raw);
 }
 
-// 產出測驗容器（若不存在就自動補上）
-function ensureQuizShell() {
-  const pane = $('#pane-quiz') || document.body;
+// 統一題目結構 + 預先標準化正解與選項
+function normalizeQuiz(raw) {
+  const result = (raw || []).map((q, i) => {
+    const type = (q.type || (q.options ? 'mcq' : 'sa')).toLowerCase();
+    const question = q.question || q.q || '';
+    const options = (q.options || q.choices || []).map(String);
+    const answer = String(q.answer ?? q.ans ?? '');
+    const explanation = q.explanation || q.ex || '';
 
-  if (!$('#quizControls', pane)) {
-    const bar = document.createElement('div');
-    bar.id = 'quizControls';
-    bar.style.cssText =
-      'margin:8px 0;display:flex;gap:8px;align-items:center;flex-wrap:wrap';
+    // 預先儲存標準化版本，判分時就不會出錯
+    const answerKey = norm(answer);
+    const optionKeys = options.map(norm);
 
-    bar.innerHTML = `
-      <button class="btn" id="btnSubmitQuiz">交卷</button>
-      <button class="btn" id="btnPrintQuiz"  style="display:none">列印成績單</button>
-      <button class="btn" id="btnToggleAnswer" style="display:none">顯示答案</button>
-      <span id="quizMeta" style="color:#9fb3ff"></span>
-    `;
-    pane.appendChild(bar);
-  }
-
-  if (!$('#quizList', pane)) {
-    const ol = document.createElement('ol');
-    ol.id = 'quizList';
-    ol.style.lineHeight = '1.6';
-    pane.appendChild(ol);
-  }
-
-  // 成績區
-  if (!$('#quizScoreBoard', pane)) {
-    const box = document.createElement('div');
-    box.id = 'quizScoreBoard';
-    box.style.cssText = 'margin:6px 0 10px 0; color:#dbe7ff;';
-    pane.insertBefore(box, $('#quizList', pane));
-  }
-
-  return {
-    pane,
-    listEl: $('#quizList', pane),
-    metaEl: $('#quizMeta', pane),
-    sbEl: $('#quizScoreBoard', pane),
-    btnSubmit: $('#btnSubmitQuiz', pane),
-    btnPrint: $('#btnPrintQuiz', pane),
-    btnToggle: $('#btnToggleAnswer', pane),
-  };
-}
-
-// 測驗主程式入口（由 player.js 呼叫）
-export async function initQuiz(slug) {
-  const ui = ensureQuizShell();
-
-  ui.metaEl.textContent = '（載入題目中…）';
-  ui.listEl.innerHTML = '';
-  ui.sbEl.textContent = '';
-
-  let questions = [];
-  try {
-    questions = await loadQuestions(slug);
-  } catch (err) {
-    console.error('[quiz] load error:', err);
-    ui.metaEl.textContent = '⚠️ 題庫載入失敗';
-    return;
-  }
-
-  if (!questions.length) {
-    ui.metaEl.textContent = '（尚未載入）';
-    return;
-  }
-  ui.metaEl.textContent = `共 ${questions.length} 題（單選/簡答）`;
-
-  const state = {
-    answered: new Map(),    // id -> { user, correct }
-    revealAll: false,       // 交卷後允許顯示所有正解
-    score: 0,
-  };
-
-  renderQuestions(ui.listEl, questions, state);
-  bindControls(ui, questions, state, slug);
-}
-
-// 產生題目
-function renderQuestions(listEl, qs, state) {
-  listEl.innerHTML = '';
-
-  qs.forEach((q) => {
-    const li = document.createElement('li');
-    li.style.margin = '14px 0 18px 0';
-
-    const title = document.createElement('div');
-    title.style.cssText = 'font-weight:700;margin-bottom:6px;';
-    title.textContent = q.question;
-
-    const body = document.createElement('div');
-
-    const result = document.createElement('div');
-    result.className = 'q-result';
-    result.style.cssText = 'margin-top:8px;color:#ff8484;display:none;';
-    result.innerHTML = `❌ 錯誤`;
-
-    const correctLine = document.createElement('div');
-    correctLine.className = 'q-correct';
-    correctLine.style.cssText = 'margin-top:4px;color:#9fb3ff;display:none;';
-    correctLine.textContent = `正解：${q.answer}`;
-
-    const exLine = document.createElement('div');
-    exLine.style.cssText = 'margin-top:2px;color:#9fb3d9;';
-    exLine.textContent = q.explanation ? `解析：${q.explanation}` : '';
-    if (!q.explanation) exLine.style.display = 'none';
-
-    // 判斷顯示
-    const showCorrectIfNeed = (ok, userVal) => {
-      // 正確 → 顯示「正確」
-      if (ok) {
-        result.style.display = 'block';
-        result.style.color = '#5bd3c7';
-        result.textContent = '✅ 正確';
-        // 只要答對就隱藏正解行
-        correctLine.style.display = 'none';
-      } else {
-        // 答錯 → 顯示錯誤，並出現正解
-        result.style.display = 'block';
-        result.style.color = '#ff6b6b';
-        result.textContent = '❌ 錯誤';
-        correctLine.style.display = 'block';
-      }
-      // 儲存狀態
-      state.answered.set(q.id, { user: userVal ?? '', correct: !!ok });
+    return {
+      id: i + 1,
+      type,               // 'mcq' | 'sa'
+      question,
+      options,
+      optionKeys,
+      answer,
+      answerKey,
+      explanation
     };
+  });
+  return result;
+}
+
+// ===== DOM 幫手 =====
+const $  = (sel, el=document) => el.querySelector(sel);
+const $$ = (sel, el=document) => [...el.querySelectorAll(sel)];
+
+// ===== UI 產生 =====
+function renderQuiz(list, questions) {
+  list.innerHTML = '';
+  const frag = document.createDocumentFragment();
+
+  questions.forEach(q => {
+    const li = document.createElement('li');
+    li.dataset.id = q.id;
+    li.style.margin = '12px 0';
+    li.innerHTML = `
+      <div style="font-weight:700;margin:6px 0">${q.id}. ${q.question}</div>
+      <div class="quiz-body"></div>
+      <div class="quiz-foot" style="margin-top:6px">
+        <div class="quiz-msg" style="color:#9fb3d9"></div>
+        <div class="quiz-ans" style="margin-top:4px;color:#9fb3d9;display:none">
+          正解：<span class="ans-text"></span>
+        </div>
+      </div>
+    `;
+    const body = $('.quiz-body', li);
+    const msg  = $('.quiz-msg', li);
+    const ansBox = $('.quiz-ans', li);
+    const ansText= $('.ans-text', li);
+    ansText.textContent = q.answer;  // 顯示原始正解（不小寫、不去引號）
 
     if (q.type === 'mcq') {
-      // 單選題
       q.options.forEach((opt, idx) => {
-        const id = `q${q.id}_opt${idx}`;
-        const row = document.createElement('div');
-        row.style.margin = '2px 0';
-
+        const row = document.createElement('label');
+        row.style.cssText = 'display:flex;align-items:center;gap:8px;margin:6px 0;cursor:pointer';
         row.innerHTML = `
-          <label style="display:flex;align-items:center;gap:8px;cursor:pointer">
-            <input type="radio" name="q${q.id}" id="${id}" value="${escapeHtml(
-          opt
-        )}" />
-            <span>${escapeHtml(opt)}</span>
-          </label>
+          <input type="radio" name="q${q.id}" value="${idx}" />
+          <span>${opt}</span>
         `;
-
-        row.querySelector('input').addEventListener('change', (e) => {
-          const user = e.target.value;
-          const ok = normalizeAnswer(user) === normalizeAnswer(q.answer);
-          showCorrectIfNeed(ok, user);
+        const ipt = $('input', row);
+        ipt.addEventListener('change', () => {
+          const pickedKey = q.optionKeys[idx];        // 已標準化
+          const ok = pickedKey === q.answerKey;
+          li.dataset.correct = ok ? '1' : '0';
+          msg.style.color = ok ? '#5bd3c7' : '#ff6b6b';
+          msg.textContent = ok ? '✅ 正確' : '❌ 錯誤';
+          if (!ok) ansBox.style.display = '';        // 答錯才自動顯示正解
         });
-
         body.appendChild(row);
       });
     } else {
-      // 簡答題
+      // SA：簡答
       const wrap = document.createElement('div');
-      wrap.style.cssText = 'display:flex;gap:8px;align-items:center;';
+      wrap.style.cssText = 'display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:4px 0';
+      wrap.innerHTML = `
+        <input class="sa" type="text" placeholder="輸入答案…" 
+               style="padding:8px 10px;border:1px solid #334155;border-radius:8px;background:#0f223b;color:#dbe7ff;min-width:260px"/>
+        <button class="btnCheck" style="padding:6px 10px;border:1px solid #203057;background:#15224a;color:#fff;border-radius:6px;cursor:pointer">檢查</button>
+      `;
+      const ipt = $('.sa', wrap);
+      const btn = $('.btnCheck', wrap);
 
-      const ipt = document.createElement('input');
-      ipt.type = 'text';
-      ipt.placeholder = '輸入答案…';
-      ipt.style.cssText =
-        'padding:8px 10px;border:1px solid #334155;border-radius:8px;background:#0f223b;color:#dbe7ff;min-width:220px';
+      const doCheck = () => {
+        const ok = norm(ipt.value) === q.answerKey;
+        li.dataset.correct = ok ? '1' : '0';
+        msg.style.color = ok ? '#5bd3c7' : '#ff6b6b';
+        msg.textContent = ok ? '✅ 正確' : '❌ 錯誤';
+        if (!ok) ansBox.style.display = '';
+      };
 
-      const btn = document.createElement('button');
-      btn.className = 'btn';
-      btn.textContent = '檢查';
+      btn.addEventListener('click', doCheck);
+      ipt.addEventListener('blur', doCheck);
 
-      btn.addEventListener('click', () => {
-        const user = ipt.value.trim();
-        if (!user) {
-          // 未作答 → 視為錯誤但不顯正解（與題主要求一致：未答不要顯正解）
-          result.style.display = 'block';
-          result.style.color = '#ff6b6b';
-          result.textContent = '❌ 錯誤（尚未作答）';
-          correctLine.style.display = 'none';
-          state.answered.set(q.id, { user: '', correct: false });
-          return;
-        }
-        const ok = normalizeAnswer(user) === normalizeAnswer(q.answer);
-        showCorrectIfNeed(ok, user);
-      });
-
-      wrap.appendChild(ipt);
-      wrap.appendChild(btn);
       body.appendChild(wrap);
     }
 
-    li.appendChild(title);
-    li.appendChild(body);
-    li.appendChild(result);
-    li.appendChild(correctLine);
-    li.appendChild(exLine);
-    listEl.appendChild(li);
+    frag.appendChild(li);
   });
+
+  list.appendChild(frag);
 }
 
-// 綁定交卷 / 顯示答案 / 列印
-function bindControls(ui, qs, state, slug) {
-  ui.btnSubmit.onclick = () => {
-    // 未作答的題目視為錯
-    qs.forEach((q) => {
-      if (!state.answered.has(q.id)) state.answered.set(q.id, { user: '', correct: false });
-    });
-
-    const correctCount = [...state.answered.values()].filter((x) => x.correct).length;
-    const score = correctCount * 5; // 每題 5 分
-    state.score = score;
-    state.revealAll = true;
-
-    // 讓所有錯題顯示正解
-    revealAllAnswers(ui.listEl);
-
-    // 顯示得分 + 評語
-    const remark = makeRemark(score);
-    ui.sbEl.innerHTML = `
-      <div style="margin-bottom:6px">
-        <span style="font-weight:700">本次得分：</span> ${score} / 100
-      </div>
-      <div>${remark}</div>
-    `;
-
-    ui.btnPrint.style.display = 'inline-block';
-    ui.btnToggle.style.display = 'inline-block';
-    ui.btnToggle.textContent = '隱藏答案';
-  };
-
-  ui.btnToggle.onclick = () => {
-    state.revealAll = !state.revealAll;
-    toggleCorrectLines(ui.listEl, state.revealAll);
-    ui.btnToggle.textContent = state.revealAll ? '隱藏答案' : '顯示答案';
-  };
-
-  ui.btnPrint.onclick = () => {
-    printReport(slug, qs, state);
-  };
+// 交卷評語
+function commentFor(score) {
+  if (score >= 100) return '滿分！太強了！集滿五張滿分可兌換一組 LINE 表情貼 🎉';
+  if (score >= 90)  return '表現超棒！只差一步就滿分！繼續保持！';
+  if (score >= 80)  return '很不錯！再複習幾題就更穩了！';
+  if (score >= 70)  return '有進步！針對錯題回看影片會更有感！';
+  if (score >= 60)  return '剛好及格！多練練就會更熟！';
+  return '還差一點點～建議先看字幕再測驗，逐步累積就對了！';
 }
 
-// ===== 工具區 =====
-function escapeHtml(s) {
-  return String(s ?? '')
-    .replaceAll('&', '&amp;')
-    .replaceAll('<', '&lt;')
-    .replaceAll('>', '&gt;');
-}
-function normalizeAnswer(s) {
-  return String(s || '').trim().toLowerCase();
-}
-function revealAllAnswers(listEl) {
-  $$('.q-result', listEl).forEach((el) => (el.style.display = 'block'));
-  $$('.q-correct', listEl).forEach((el) => (el.style.display = 'block'));
-}
-function toggleCorrectLines(listEl, show) {
-  $$('.q-correct', listEl).forEach((el) => (el.style.display = show ? 'block' : 'none'));
-}
-
-// 依分數給評語（>=60 正向；否則建設性建議；滿分另有彩蛋）
-function makeRemark(score) {
-  const good = [
-    '表現很穩！繼續保持你的學習節奏。',
-    '做得很好！多練幾次就能更熟練。',
-    '太棒了！你的理解力很到位。',
-    '越做越好，加油！',
-    '很有進步，下一次挑戰更高分！',
-  ];
-  const improve = [
-    '別氣餒！先回顧錯的題目，再試一次。',
-    '可以先鎖定單字與關鍵句型，多看字幕會有幫助。',
-    '每次多對幾題，就會看到明顯進步！',
-    '先挑簡單題拿分，建立信心後再攻難題。',
-    '想像把題目情境講給朋友聽，會更清楚喔！',
-  ];
-
-  if (score === 100) {
-    return '滿分！太強了！🎉 集滿五張滿分可兌換一組 LINE 表情貼（請憑成績單向老師登記）';
-  }
-  if (score >= 60) {
-    return good[score % good.length];
-  }
-  return improve[score % improve.length];
-}
-
-// 列印成績單
-function printReport(slug, qs, state) {
-  const score = state.score || 0;
-  const date = new Date().toLocaleString();
-  const title = `Stories 測驗成績單（${slug}）`;
-
-  const rows = qs
-    .map((q) => {
-      const ans = state.answered.get(q.id) || { user: '', correct: false };
-      const user = escapeHtml(ans.user || '（未作答）');
-      const correct = escapeHtml(q.answer);
-      const ex = escapeHtml(q.explanation || '');
-      return `
-        <tr>
-          <td style="vertical-align:top">${escapeHtml(q.question)}</td>
-          <td style="vertical-align:top">${user}</td>
-          <td style="vertical-align:top">${correct}</td>
-          <td style="vertical-align:top">${ex}</td>
-        </tr>`;
-    })
-    .join('');
-
-  const win = window.open('', '_blank');
-  win.document.write(`
+// 列印（A4 單張）
+function printReport({ slug, score, total, timeStr, listEl }) {
+  const w = window.open('', '_blank');
+  const html = `
 <!doctype html>
 <html>
 <head>
-  <meta charset="utf-8"/>
-  <title>${title}</title>
-  <style>
-    @page { size: A4 portrait; margin: 18mm; }
-    body { font-family: system-ui, -apple-system, 'Segoe UI', Roboto, 'Noto Sans', sans-serif; color:#111; }
-    h1 { font-size: 20px; margin:0 0 8px 0; }
-    .meta { margin:0 0 12px 0; color:#333; }
-    .brand { display:flex; align-items:center; gap:10px; margin-bottom:10px; }
-    .brand .logo {
-      width:80px; height:80px; border:1px dashed #bbb; display:flex; align-items:center; justify-content:center;
-      color:#999; font-size:12px;
-    }
-    table { width:100%; border-collapse:collapse; }
-    th, td { border:1px solid #ccc; padding:8px; font-size:12px; }
-    th { background:#f4f6fb; }
-  </style>
+<meta charset="utf-8"/>
+<title>成績單 - ${slug}</title>
+<style>
+  @page { size: A4; margin: 16mm; }
+  body { font-family: system-ui, -apple-system, "Segoe UI", Roboto, Noto Sans, sans-serif; color:#111; }
+  h1 { margin:0 0 6px; }
+  .muted { color:#555; }
+  .item { margin:10px 0; }
+  .correct { color:#0a8a78; }
+  .wrong { color:#c0392b; }
+  .logo { height:40px; width:40px; background:#ddd; display:inline-block; vertical-align:middle; margin-right:8px; }
+  .brand { font-weight:700; font-size:18px; }
+</style>
 </head>
 <body>
-  <div class="brand">
-    <div class="logo">LOGO</div>
-    <div>
-      <div style="font-weight:700">公司/學校名稱（請置換）</div>
-      <div style="color:#666;font-size:13px">English Stories Assessment</div>
-    </div>
+  <div>
+    <span class="logo"></span><span class="brand">（公司名稱）</span>
   </div>
-
-  <h1>${title}</h1>
-  <div class="meta">成績：<b>${score} / 100</b>　日期：${date}</div>
-
-  <table>
-    <thead>
-      <tr>
-        <th style="width:40%">題目</th>
-        <th style="width:22%">作答</th>
-        <th style="width:18%">正解</th>
-        <th style="width:20%">解析</th>
-      </tr>
-    </thead>
-    <tbody>
-      ${rows}
-    </tbody>
-  </table>
+  <h1>英語影片測驗 · ${slug}</h1>
+  <div class="muted">${timeStr}</div>
+  <h2>成績：${score} / 100（共 ${total} 題）</h2>
+  <hr/>
+  ${[...listEl.querySelectorAll('li')].map(li=>{
+      const q = li.querySelector('.quiz-body')?.previousElementSibling?.textContent || '';
+      const ans = li.querySelector('.ans-text')?.textContent || '';
+      const ok = li.dataset.correct === '1';
+      return `
+        <div class="item">
+          <div>${q}</div>
+          <div class="${ok?'correct':'wrong'}">${ok?'✔ 已答對':'✘ 答錯'}；正解：${ans}</div>
+        </div>`;
+    }).join('')}
 </body>
-</html>
-  `);
-  win.document.close();
-  win.focus();
-  // 讓瀏覽器有時間渲染再列印
-  setTimeout(() => win.print(), 150);
+</html>`;
+  w.document.write(html);
+  w.document.close();
+  w.focus();
+  w.print();
 }
+
+// ===== 對外：初始化 =====
+export default async function initQuiz(slug) {
+  // 必備容器（存在才綁，不影響其他頁）
+  const listEl   = $('#quizList');
+  const submitEl = $('#btnSubmitQuiz');
+  const printEl  = $('#btnPrintQuiz');
+  const showEl   = $('#btnShowAnswer');
+  const metaEl   = $('#quizMeta');
+
+  if (!listEl) {
+    console.warn('[quiz] #quizList not found (skip)');
+    return;
+  }
+
+  // 題庫載入
+  const questions = await fetchQuiz(slug);
+
+  // UI
+  renderQuiz(listEl, questions);
+  if (metaEl) metaEl.textContent = `共 ${questions.length} 題（單選 / 簡答）`;
+
+  // 顯示答案（切換）
+  if (showEl) {
+    showEl.addEventListener('click', () => {
+      const vis = listEl.dataset.showAns === '1';
+      listEl.dataset.showAns = vis ? '' : '1';
+      $$('.quiz-ans', listEl).forEach(div => div.style.display = vis ? 'none' : '');
+    });
+  }
+
+  // 交卷
+  if (submitEl) {
+    submitEl.addEventListener('click', () => {
+      const total = questions.length;
+      const correct = $$('#quizList li').filter(li => li.dataset.correct === '1').length;
+      const score = Math.round((correct / total) * 100);
+
+      if (metaEl) {
+        metaEl.innerHTML =
+          `你的分數：<b>${score}</b> / 100（已答對 ${correct} 題）　<span style="color:#9fb3d9">${commentFor(score)}</span>`;
+      }
+    });
+  }
+
+  // 列印
+  if (printEl) {
+    printEl.addEventListener('click', () => {
+      const total = questions.length;
+      const correct = $$('#quizList li').filter(li => li.dataset.correct === '1').length;
+      const score = Math.round((correct / total) * 100);
+      const timeStr = new Date().toLocaleString();
+      printReport({ slug, score, total, timeStr, listEl });
+    });
+  }
+}
+
+
