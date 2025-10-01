@@ -460,371 +460,251 @@
     await loadAll();
   })();
 })();
-/* =========================
-   QUIZ: mount UI + logic + PRINT (A4 portrait)
-   ========================= */
+/* --- Quiz Mini-Module v1.4 (drop-in, paste below line 463) ----------------- */
+(function quizModule(){
+  // 安全防呆：若頁面沒有測驗容器，什麼都不做
+  const $ = (s, el=document)=>el.querySelector(s);
+  const $$ = (s, el=document)=>[...el.querySelectorAll(s)];
+  const quizBox   = $('#quizList');
+  const metaSpan  = $('#quizMeta') || $('#quizStatus');
+  const btnSubmit = $('#btnSubmitQuiz') || $('#btnQuizSubmit') || $('#btnSubmit');
+  const btnPrint  = $('#btnPrintQuiz');
+  const btnReveal = $('#btnShowAnswer');
 
-/** 可自訂公司名稱／LOGO（logo 可放絕對或相對路徑；留空則只顯示公司名） */
-const QUIZ_PRINT_BRAND = {
-  company: '（請填入公司／學校名稱）',
-  logoUrl: '' // 例如 './img/logo.png'；留空則不放圖
-};
+  if(!quizBox){ console.warn('[quiz] #quizList not found'); return; }
 
-/* ---------- 小工具 ---------- */
-const _qs  = (s, el=document) => el.querySelector(s);
-const _qsa = (s, el=document) => [...el.querySelectorAll(s)];
-const _esc = (t='') => String(t).replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;');
-
-/** 正規化題目（支援不同欄位命名） */
-function normalizeQuestion(raw, idx) {
-  const type = (raw.type || (raw.options ? 'mcq' : 'short')).toLowerCase();
-  return {
-    id: raw.id ?? (idx + 1),
-    type: (type === 'mcq' || type === 'multiple' ? 'mcq' : 'short'),
-    question: raw.question || raw.q || '',
-    options: raw.options || raw.choices || [],
-    answer: String(raw.answer ?? raw.ans ?? '').trim(),
-    explanation: raw.explanation || raw.ex || ''
-  };
-}
-
-/* ---------- 建 UI（不改 player.html；如果找不到就自動補） ---------- */
-function ensureQuizDOM() {
-  let host = _qs('#pane-quiz');
-  if (!host) {
-    host = document.createElement('section');
-    host.id = 'pane-quiz';
-    host.className = 'pane';
-    host.style.display = 'none';
-    document.body.appendChild(host);
+  // 取得 slug（避免吃不到外部變數）
+  function getSlug(){
+    const params = new URLSearchParams(location.search);
+    return params.get('slug') || 'mid-autumn';
   }
-  if (!_qs('#quizList', host)) {
+
+  // 題目標準化（兼容 quiz-houyi.json / quiz-lantern.json / 你現有格式）
+  function normalize(q, i){
+    const type = (q.type || (q.options || q.choices ? 'mcq':'sa')).toLowerCase();
+    return {
+      id: i+1,
+      type,                                 // 'mcq' | 'sa'
+      question: q.question || q.q || '',
+      options:  q.options  || q.choices || [],
+      answer:   (q.answer  ?? q.ans ?? '').toString().trim(),
+      explanation: q.explanation || q.ex || ''
+    };
+  }
+
+  async function loadQuiz(slug){
+    const url = `./data/quiz-${slug}.json`;
+    try{
+      const r = await fetch(url, {cache:'no-store'});
+      if(!r.ok) throw new Error(r.status);
+      const raw = await r.json();
+      return (raw||[]).map(normalize);
+    }catch(err){
+      metaSpan && (metaSpan.textContent = `（尚未載入）`);
+      console.error('[quiz] load fail:', err);
+      return [];
+    }
+  }
+
+  // 即時顯示對錯；交卷才計總分
+  function render(questions){
+    if(!questions.length){
+      metaSpan && (metaSpan.textContent = '（尚未載入）');
+      return;
+    }
+    metaSpan && (metaSpan.textContent = `共 ${questions.length} 題（ 單選 / 簡答 ）`);
+
+    const esc = s=>String(s??'')
+      .replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;');
+
+    quizBox.innerHTML = '';
+    questions.forEach((q, i)=>{
+      const li = document.createElement('li');
+      li.className = 'quiz-item';
+      li.style.cssText = 'margin:18px 0; line-height:1.6';
+      li.innerHTML = `
+        <div style="font-weight:700">${q.id}. ${esc(q.question)}</div>
+        <div class="quiz-body"></div>
+        <div class="quiz-feedback" style="margin-top:6px"></div>
+        <div class="quiz-solution" data-solved="0" style="margin-top:6px;color:#9fb3d9">
+          正解：<span class="ans"></span>
+          ${q.explanation ? `<div class="ex">解析：${esc(q.explanation)}</div>`:''}
+        </div>
+        <hr style="border:0;border-top:1px solid #15243d;margin:14px 0 0">
+      `;
+      const body = $('.quiz-body', li);
+      const fb   = $('.quiz-feedback', li);
+      const sol  = $('.quiz-solution', li);
+      const ansSpan = $('.ans', sol);
+      ansSpan.textContent = q.answer;
+
+      if(q.type === 'mcq'){
+        q.options.forEach(opt=>{
+          const id = `q${q.id}_${Math.random().toString(36).slice(2,7)}`;
+          const row = document.createElement('label');
+          row.style.cssText = 'display:flex;gap:10px;align-items:center;margin:6px 0;cursor:pointer';
+          row.innerHTML = `
+            <input type="radio" name="q${q.id}" value="${esc(opt)}" id="${id}">
+            <span>${esc(opt)}</span>
+          `;
+        // 即時檢查
+          row.querySelector('input').addEventListener('change',()=>{
+            const v = row.querySelector('input').value;
+            const ok = v.trim().toLowerCase() === q.answer.trim().toLowerCase();
+            fb.innerHTML = ok ? '✅ 正確' : '❌ 錯誤';
+            fb.style.color = ok ? '#42d9c8' : '#ff6b6b';
+            sol.dataset.solved = '1';                 // 交卷時可顯示正解
+          });
+          body.appendChild(row);
+        });
+      }else{
+        const wrap = document.createElement('div');
+        wrap.style.cssText = 'display:flex;gap:8px;align-items:center;margin:8px 0';
+        wrap.innerHTML = `
+          <input class="ipt" type="text" placeholder="輸入答案…" 
+                 style="padding:8px 10px;border:1px solid #334155;background:#0f223b;color:#dbe7ff;border-radius:8px;min-width:220px">
+          <button class="btnCheck" style="padding:6px 12px" type="button">檢查</button>
+        `;
+        const ipt = $('.ipt', wrap), btn = $('.btnCheck', wrap);
+        btn.addEventListener('click', ()=>{
+          const ok = ipt.value.trim().toLowerCase() === q.answer.trim().toLowerCase();
+          fb.innerHTML = ok ? '✅ 正確' : '❌ 錯誤';
+          fb.style.color = ok ? '#42d9c8' : '#ff6b6b';
+          sol.dataset.solved = '1';
+        });
+        body.appendChild(wrap);
+      }
+      quizBox.appendChild(li);
+    });
+  }
+
+  // 交卷：重新把所有題目逐一計分（未作答 = 0）
+  function computeScore(questions){
+    let correct = 0, answered = 0;
+    questions.forEach(q=>{
+      if(q.type === 'mcq'){
+        const checked = $(`input[name="q${q.id}"]:checked`, quizBox);
+        if(checked){
+          answered++;
+          if(checked.value.trim().toLowerCase() === q.answer.trim().toLowerCase()) correct++;
+        }
+      }else{
+        const ipt = $(`.quiz-item:nth-of-type(${q.id}) .ipt`, quizBox);
+        if(ipt && ipt.value.trim()!==''){
+          answered++;
+          if(ipt.value.trim().toLowerCase() === q.answer.trim().toLowerCase()) correct++;
+        }
+      }
+    });
+    const score = correct * 5; // 每題 5 分 / 20 題滿分 100
+    return {correct, answered, score};
+  }
+
+  // 依分數給評語（>=60 及格，含滿分獎勵訊息）
+  function commentBy(score){
+    if(score === 100) return '滿分！太強了！集滿五張滿分可兌換一組 LINE 表情貼 🎉';
+    if(score >= 90)   return '超讚的表現！只差一步就是滿分，繼續保持！';
+    if(score >= 80)   return '很棒！多練幾次就能更穩！';
+    if(score >= 60)   return '及格囉！把錯題再看一遍，下次更進步。';
+    return '再努力一下！先從錯題回顧開始，逐題擊破，你可以的！';
+  }
+
+  // 注入列印 CSS（A4 直式 / 預留 LOGO 與公司名）
+  function ensurePrintCSS(){
+    if($('#quizPrintCSS')) return;
+    const css = document.createElement('style');
+    css.id = 'quizPrintCSS';
+    css.textContent = `
+      @media print{
+        body{ background:#fff !important; color:#000 !important; }
+        .no-print, header, nav, footer, .tabs, #controls, #videoWrap{ display:none !important; }
+        #printSheet{ display:block !important; }
+        .sheet{ width:210mm; min-height:297mm; padding:18mm 18mm 20mm; margin:0 auto;
+                box-sizing:border-box; page-break-after:always; font:14px/1.6 "Noto Sans TC",system-ui; color:#000;}
+        .sheet h1{ margin:0 0 8px; font-size:20px; }
+        .brand{ display:flex; align-items:center; gap:12px; margin-bottom:14px; }
+        .brand .logo{ width:36px; height:36px; border:1px solid #ccc; display:inline-block; }
+        .scorebox{ border:1px solid #999; padding:8px 12px; margin:10px 0; }
+        .q{ margin:10px 0; }
+        .q .ans{ color:#d00; }
+      }
+      @media screen{ #printSheet{ display:none; } }
+    `;
+    document.head.appendChild(css);
+  }
+
+  function buildPrintDom(questions, stat){
+    ensurePrintCSS();
+    let host = $('#printSheet');
+    if(!host){ host = document.createElement('div'); host.id = 'printSheet'; document.body.appendChild(host); }
+    const company = (window.__COMPANY_NAME__ || 'Your Company');
     host.innerHTML = `
-      <div id="quizControls" style="display:flex;gap:10px;align-items:center;margin:8px 0">
-        <button class="btn" id="btnSubmitQuiz">交卷</button>
-        <button class="btn" id="btnToggleAnswers" style="display:none">顯示答案</button>
-        <button class="btn" id="btnPrintReport" style="display:none">列印成績單</button>
-        <span id="quizMeta" style="color:#9fb3ff"></span>
+      <div class="sheet">
+        <div class="brand"><span class="logo"></span><div>
+          <div style="font-weight:700">${company}</div>
+          <div>英文影片測驗成績單</div></div>
+        </div>
+        <div class="scorebox">分數：<b>${stat.score} / 100</b>　已作答：${stat.answered}/${questions.length}　正確：${stat.correct}</div>
+        <div>評語：${commentBy(stat.score)}</div>
+        <hr style="margin:10px 0 14px">
+        ${questions.map(q=>{
+          const sel = q.type==='mcq' ? ( ($(`input[name="q${q.id}"]:checked`, quizBox)||{}).value || '（未作答）' )
+                                      : ( ($(`.quiz-item:nth-of-type(${q.id}) .ipt`, quizBox)||{}).value || '（未作答）' );
+          return `
+            <div class="q">
+              <div><b>${q.id}. ${q.question}</b></div>
+              <div>你的答案：${esc(sel)}</div>
+              <div>正解：<span class="ans">${esc(q.answer)}</span></div>
+              ${q.explanation?`<div>解析：${esc(q.explanation)}</div>`:''}
+            </div>
+          `;
+        }).join('')}
       </div>
-      <div id="quizHeader" class="muted" style="margin:6px 0">( 尚未載入 )</div>
-      <ol id="quizList" style="line-height:1.6"></ol>
-      <div id="quizResult" style="display:none;margin-top:10px;border-top:1px solid #173; padding-top:10px">
-        <div id="quizScore" style="font-weight:700;margin-bottom:6px"></div>
-        <div id="quizComment"></div>
-      </div>
-      <!-- print sheet（列印時才顯示） -->
-      <div id="quizPrintSheet" class="print-only" aria-hidden="true"></div>
     `;
   }
-  addQuizPrintCSS(); // 只加一次列印 CSS
-  return {
-    host,
-    list: _qs('#quizList', host),
-    header: _qs('#quizHeader', host),
-    meta: _qs('#quizMeta', host),
-    btnSubmit: _qs('#btnSubmitQuiz', host),
-    btnToggle: _qs('#btnToggleAnswers', host),
-    btnPrint:  _qs('#btnPrintReport', host),
-    boxResult: _qs('#quizResult', host),
-    boxScore: _qs('#quizScore', host),
-    boxComment: _qs('#quizComment', host),
-    printSheet: _qs('#quizPrintSheet', host),
-  };
-}
 
-/* ---------- 注入 A4 列印 CSS（只注入一次） ---------- */
-function addQuizPrintCSS() {
-  if (_qs('#quizPrintCSS')) return;
-  const css = document.createElement('style');
-  css.id = 'quizPrintCSS';
-  css.textContent = `
-  /* 一般畫面隱藏 print-only 內容；列印時反過來 */
-  .print-only{display:none}
-  @media print {
-    @page { size: A4 portrait; margin: 18mm; }
-    body { background:#fff !important; }
-    /* 隱藏整個 App 的其他 UI（不會改變你的結構）*/
-    body * { visibility: hidden !important; }
-    #quizPrintSheet, #quizPrintSheet * { visibility: visible !important; }
-    #quizPrintSheet { position: absolute; left:0; top:0; right:0; }
-  }
-  /* 列印表格/版面 */
-  #quizPrintSheet .brand {
-    display:flex; align-items:center; gap:12px; margin-bottom:10px;
-  }
-  #quizPrintSheet .brand .logo {
-    width:80px; height:80px; border:1px dashed #999; display:flex; align-items:center; justify-content:center;
-    font-size:12px; color:#777; overflow:hidden;
-  }
-  #quizPrintSheet h1 {
-    font-size:20px; margin:6px 0 2px 0;
-  }
-  #quizPrintSheet .meta {
-    color:#555; font-size:12px; margin-bottom:10px;
-  }
-  #quizPrintSheet table {
-    width:100%; border-collapse: collapse; font-size:12px;
-  }
-  #quizPrintSheet th, #quizPrintSheet td {
-    border:1px solid #999; padding:6px 8px; vertical-align: top;
-  }
-  #quizPrintSheet th { background:#f0f0f0; text-align:left; }
-  `;
-  document.head.appendChild(css);
-}
-
-/* ---------- 載題 ---------- */
-async function loadQuizData(sg) {
-  try {
-    const r = await fetch(`./data/quiz-${sg}.json`, { cache: 'no-store' });
-    if (!r.ok) throw new Error(r.status);
-    const raw = await r.json();
-    return (raw || []).map(normalizeQuestion);
-  } catch (e) {
-    console.warn('[quiz] load error:', e);
-    return [];
-  }
-}
-
-/* ---------- 渲染題目、逐題判斷 ---------- */
-function renderQuizList(listEl, questions) {
-  listEl.innerHTML = '';
-  questions.forEach((q) => {
-    const li = document.createElement('li');
-    li.style.margin = '16px 0';
-    li.dataset.qid = q.id;
-
-    const title = `<div style="margin-bottom:8px">${_esc(q.question)}</div>`;
-    const feedback = `
-      <div class="quiz-feedback" style="margin-top:6px;min-height:20px">
-        <span class="quiz-mark"></span>
-        <div class="quiz-solution muted" style="margin-top:4px"></div>
-      </div>`;
-
-    if (q.type === 'mcq') {
-      const opts = q.options.map((opt, k) => {
-        const id = `q${q.id}_${k}`;
-        return `
-        <label for="${id}" style="display:flex;gap:8px;align-items:center;margin:4px 0;cursor:pointer">
-          <input type="radio" id="${id}" name="q${q.id}" value="${_esc(opt)}"/>
-          <span>${_esc(opt)}</span>
-        </label>`;
-      }).join('');
-      li.innerHTML = `${title}${opts}${feedback}`;
-      _qsa(`input[name="q${q.id}"]`, li).forEach(radio => {
-        radio.addEventListener('change', () => {
-          const val = radio.value.trim().toLowerCase();
-          const ans = q.answer.trim().toLowerCase();
-          q.userAnswer = radio.value;
-          q.isCorrect  = !!(val && val === ans);
-          paintFeedback(li, q, true);
+  // 綁定 reveal / print / submit
+  function bindActions(questions){
+    if(btnReveal){
+      btnReveal.style.display = 'none';
+      btnReveal.onclick = ()=>{
+        $$('.quiz-solution', quizBox).forEach(el=>{
+          el.style.color = '#ffcf7f';
+          el.querySelector('.ans').style.fontWeight = '700';
         });
-      });
-    } else {
-      const inputId = `q${q.id}_input`;
-      li.innerHTML = `
-        ${title}
-        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
-          <input id="${inputId}" type="text" placeholder="輸入答案…" 
-                 style="padding:8px 10px;border:1px solid #334155;border-radius:8px;background:#0f223b;color:#dbe7ff;min-width:260px"/>
-          <button class="btn btnCheck" data-qid="${q.id}">檢查</button>
-        </div>
-        ${feedback}
-      `;
-      li.querySelector('.btnCheck').addEventListener('click', () => {
-        const ipt = li.querySelector(`#${inputId}`);
-        const val = (ipt.value || '').trim().toLowerCase();
-        const ans = q.answer.trim().toLowerCase();
-        q.userAnswer = ipt.value;
-        q.isCorrect  = !!(val && val === ans);
-        paintFeedback(li, q, true);
-      });
+      };
     }
-    listEl.appendChild(li);
-  });
-}
-
-/* ---------- 單題回饋 ---------- */
-function paintFeedback(li, q, forceShowAnsWhenWrong=false) {
-  const mk = _qs('.quiz-mark', li);
-  const sol = _qs('.quiz-solution', li);
-  const ua = (q.userAnswer ?? '').trim();
-
-  if (!ua) { // 未作答
-    mk.textContent = '❌ 未作答';
-    mk.style.color = '#ff6b6b';
-    sol.textContent = '';
-    return;
-  }
-  if (q.isCorrect) {
-    mk.textContent = '✅ 正確';
-    mk.style.color = '#46e2c3';
-    sol.innerHTML = `正解：${_esc(q.answer)}${q.explanation ? `　<span style="color:#9fb3ff">${_esc(q.explanation)}</span>` : ''}`;
-  } else {
-    mk.textContent = '❌ 錯誤';
-    mk.style.color = '#ff6b6b';
-    if (forceShowAnsWhenWrong) {
-      sol.innerHTML = `正解：${_esc(q.answer)}${q.explanation ? `　<span style="color:#9fb3ff">${_esc(q.explanation)}</span>` : ''}`;
+    if(btnPrint){
+      btnPrint.style.display = 'none';
+      btnPrint.onclick = ()=>{
+        const stat = computeScore(questions);
+        buildPrintDom(questions, stat);
+        window.print();
+      };
+    }
+    if(btnSubmit){
+      btnSubmit.onclick = ()=>{
+        const stat = computeScore(questions);
+        if(metaSpan) metaSpan.textContent = `分數：${stat.score} / 100　${commentBy(stat.score)}`;
+        // 交卷後才顯示列印與「顯示答案」
+        btnPrint && (btnPrint.style.display = 'inline-block');
+        btnReveal && (btnReveal.style.display = 'inline-block');
+        // 交卷後，未顯示過的正解統一展開
+        $$('.quiz-solution', quizBox).forEach(el=>{ el.dataset.solved==='1' || (el.style.color='#9fb3d9'); });
+      };
     }
   }
-}
 
-/* ---------- 計分 + 評語（滿分 100；未作答 = 錯） ---------- */
-function gradeAndComment(questions) {
-  const total = questions.length;
-  const correct = questions.reduce((n, q) => n + (q.isCorrect ? 1 : 0), 0);
-  const score = total ? Math.round((correct / total) * 100) : 0;
-
-  let comment = '';
-  if (score >= 100) {
-    comment = '🌕 滿分！太強了！集滿五張滿分可兌換一組 LINE 表情貼！';
-  } else if (score >= 80) {
-    comment = '👍 很不錯！再努力一下就能滿分！';
-  } else if (score >= 60) {
-    comment = '🙂 恭喜及格，還有進步空間，加油！';
-  } else if (score >= 40) {
-    comment = '⚠️ 需要加強，建議重看影片與重作題目。';
-  } else {
-    comment = '💡 不要灰心，先看解析，再回去看影片，會更有感覺！';
+  // 啟動：只在「測驗」分頁或容器存在時跑
+  async function boot(){
+    const slug = getSlug();                 // <== 關鍵：不要吃全域
+    const qs   = await loadQuiz(slug);
+    render(qs);
+    bindActions(qs);
   }
-  return { score, correct, total, comment };
-}
+  boot();
+})();
 
-/* ---------- 顯示/隱藏 所有解析（交卷後才可開） ---------- */
-function toggleAllSolutions(listEl, show) {
-  _qsa('li', listEl).forEach(li => {
-    const mk  = _qs('.quiz-mark', li);
-    const sol = _qs('.quiz-solution', li);
-    if (show) {
-      const qid = Number(li.dataset.qid || 0);
-      const q = window.__QUIZ_STATE?.questions.find(x => Number(x.id) === qid);
-      if (q && (!q.userAnswer || !q.isCorrect)) {
-        mk.textContent = q.userAnswer ? '❌ 錯誤' : '❌ 未作答';
-        mk.style.color = '#ff6b6b';
-        sol.innerHTML = `正解：${_esc(q.answer)}${q.explanation ? `　<span style="color:#9fb3ff">${_esc(q.explanation)}</span>` : ''}`;
-      }
-      sol.style.display = '';
-    } else {
-      sol.style.display = 'none';
-    }
-  });
-}
-
-/* ---------- 生成列印表單內容（A4 直式） ---------- */
-function buildPrintSheet(printEl, slug, questions, result) {
-  const now = new Date();
-  const dateStr = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')} `
-                + `${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
-
-  const rows = questions.map((q, i) => {
-    const ua = (q.userAnswer ?? '').trim();
-    const ok = !!q.isCorrect;
-    return `
-      <tr>
-        <td>${i+1}</td>
-        <td>${_esc(q.question)}</td>
-        <td>${_esc(ua || '（未作答）')}</td>
-        <td>${_esc(q.answer)}</td>
-        <td>${ok ? '✔' : '✘'}</td>
-        <td>${_esc(q.explanation || '')}</td>
-      </tr>`;
-  }).join('');
-
-  const logo = QUIZ_PRINT_BRAND.logoUrl
-    ? `<img src="${_esc(QUIZ_PRINT_BRAND.logoUrl)}" alt="logo" style="max-width:100%;max-height:100%"/>`
-    : 'LOGO';
-
-  printEl.innerHTML = `
-    <div class="brand">
-      <div class="logo">${logo}</div>
-      <div>
-        <div style="font-weight:700">${_esc(QUIZ_PRINT_BRAND.company)}</div>
-        <div class="meta">影片：${_esc(slug)}　日期：${dateStr}</div>
-      </div>
-    </div>
-    <h1>英語學習測驗成績單</h1>
-    <div class="meta">分數：${result.score} / 100　（答對 ${result.correct} / ${result.total} 題）</div>
-    <div style="margin:6px 0 12px 0">${_esc(result.comment)}</div>
-    <table>
-      <thead>
-        <tr><th style="width:36px">題</th><th>題目</th><th style="width:22%">你的作答</th><th style="width:18%">正解</th><th style="width:34px">對錯</th><th style="width:24%">解析</th></tr>
-      </thead>
-      <tbody>${rows}</tbody>
-    </table>
-  `;
-}
-
-/* ---------- 啟動測驗分頁 ---------- */
-async function bootQuizTab() {
-  const { host, list, header, meta, btnSubmit, btnToggle, btnPrint, boxResult, boxScore, boxComment, printSheet } = ensureQuizDOM();
-
-  header.textContent = '( 載入題目中… )';
-  const qs = await loadQuizData(slug);
-  window.__QUIZ_STATE = { questions: qs, finished: false, showAnswers: false };
-
-  if (!qs.length) {
-    header.textContent = '⚠️ 查無題目資料';
-    list.innerHTML = '';
-    btnSubmit.style.display = 'none';
-    btnToggle.style.display = 'none';
-    btnPrint .style.display = 'none';
-    meta.textContent = '';
-    return;
-  }
-
-  header.textContent = `共 ${qs.length} 題（單選 / 簡答）`;
-  meta.textContent = '';
-  renderQuizList(list, qs);
-
-  btnSubmit.style.display = 'inline-block';
-  btnPrint .style.display = 'none';           // 交卷前不可列印
-  btnToggle.style.display = 'none';           // 交卷後才可切換答案
-
-  btnSubmit.onclick = () => {
-    // 未作答→視為錯
-    _qsa('li', list).forEach(li => {
-      const qid = Number(li.dataset.qid || 0);
-      const q = qs.find(x => Number(x.id) === qid);
-      if (!q) return;
-      if (q.type === 'mcq') {
-        const chosen = _qs(`input[name="q${q.id}"]:checked`, li);
-        if (!chosen) { q.userAnswer = ''; q.isCorrect = false; }
-      } else {
-        if (!('userAnswer' in q)) { q.userAnswer = ''; q.isCorrect = false; }
-      }
-      paintFeedback(li, q, true);
-    });
-
-    const res = gradeAndComment(qs);
-    boxResult.style.display = 'block';
-    boxScore.textContent   = `你的分數：${res.score} / 100　（答對 ${res.correct} / ${res.total} 題）`;
-    boxComment.textContent = res.comment;
-
-    // 建立列印內容、開啟列印按鈕
-    buildPrintSheet(printSheet, slug, qs, res);
-    btnPrint.style.display = 'inline-block';
-
-    // 交卷後才開啟「顯示答案」
-    btnToggle.style.display = 'inline-block';
-    btnToggle.textContent = '顯示答案';
-    window.__QUIZ_STATE.finished = true;
-    window.__QUIZ_STATE.showAnswers = false;
-    toggleAllSolutions(list, false);
-  };
-
-  btnToggle.onclick = () => {
-    if (!window.__QUIZ_STATE.finished) return;
-    window.__QUIZ_STATE.showAnswers = !window.__QUIZ_STATE.showAnswers;
-    btnToggle.textContent = window.__QUIZ_STATE.showAnswers ? '隱藏答案' : '顯示答案';
-    toggleAllSolutions(list, window.__QUIZ_STATE.showAnswers);
-  };
-
-  // 列印：直接呼叫 window.print()（A4 直式 CSS 已注入）
-  btnPrint.onclick = () => window.print();
-}
-
-/* 把測驗初始化掛上（不影響你原本流程） */
-try { bootQuizTab(); } catch (err) { console.warn('[quiz] boot error:', err); }
 
 
 
