@@ -460,235 +460,149 @@
     await loadAll();
   })();
 })();
-/* ----------------------- QUIZ (auto-mount, no HTML change) ----------------------- */
-(function attachQuiz() {
-  const host = document.querySelector('#pane-quiz');
-  if (!host) return;                // 沒有「測驗」分頁就不做
-  if (host.dataset.wired === '1') return;
-
-  // 1) 動態建立整個測驗區塊（不改 player.html）
-  host.innerHTML = `
-    <div id="quizControls" style="display:flex;gap:10px;align-items:center;margin:8px 0 14px 0">
-      <button id="btnSubmitQuiz" class="btn">交卷</button>
-      <button id="btnPrintQuiz" class="btn" style="display:none">列印成績單</button>
-      <button id="btnShowAnswer" class="btn" style="display:none">顯示答案</button>
-      <span id="quizMeta" style="color:#9fb3ff"></span>
-    </div>
-    <div id="quizStatus" class="muted">( 尚未載入 )</div>
-    <ol id="quizList" style="line-height:1.6;margin:0;padding-left:22px"></ol>
-    <div id="quizResult" style="display:none;margin-top:12px;border-top:1px solid #23334f;padding-top:10px">
-      <div id="quizScore" style="font-weight:700"></div>
-      <div id="quizComment" style="margin-top:6px"></div>
-    </div>
-  `;
-  host.dataset.wired = '1';
-
-  // 2) 工具
-  const $ = (sel, el = host) => el.querySelector(sel);
-  const esc = (t) => String(t ?? '').replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;');
-
-  // 3) 將不同題庫欄位正規化
-  const normalize = (q, i) => ({
-    id: i + 1,
-    type: (q.type || (q.options ? 'MCQ' : 'SA')).toUpperCase(), // MCQ 或 SA
-    question: q.question || q.q || '',
+/* ===== Quiz Section (from line 463 ↓) ===== */
+function normalizeQuestion(q, index) {
+  return {
+    id: index + 1,
+    type: q.type || (q.options ? "MCQ" : "FIB"),
+    question: q.question || q.q || "",
     options: q.options || q.choices || [],
-    answer: (q.answer ?? q.ans ?? '').toString().trim(),
-    explanation: q.explanation || q.ex || ''
-  });
+    answer: q.answer || q.ans || "",
+    explanation: q.explanation || q.ex || ""
+  };
+}
 
-  // 4) 依 URL slug 載入對應題庫
-  const slug = new URLSearchParams(location.search).get('slug') || 'mid-autumn';
-  let QUESTIONS = [];
-  let answered = new Map(); // id -> { ok:boolean, given:string }
-
-  (async function loadQuiz() {
-    try {
-      const res = await fetch(`./data/quiz-${slug}.json`, { cache: 'no-store' });
-      if (!res.ok) throw new Error(res.statusText);
-      const raw = await res.json();
-      QUESTIONS = (raw || []).map(normalize);
-      $('#quizStatus').textContent = '';
-      renderQuiz();
-      $('#quizMeta').textContent = `共 ${QUESTIONS.length} 題（單選 / 簡答）`;
-    } catch (e) {
-      console.warn('[quiz] load error:', e);
-      $('#quizStatus').textContent = '⚠️ 無法載入測驗題庫';
-    }
-  })();
-
-  // 5) 渲染題目 / 綁定即時判題
-  function renderQuiz() {
-    const list = $('#quizList');
-    list.innerHTML = '';
-    if (!QUESTIONS.length) return;
-
-    QUESTIONS.forEach(q => {
-      const li = document.createElement('li');
-      li.style.margin = '12px 0 18px';
-      li.innerHTML = `
-        <div style="font-weight:700;margin-bottom:6px">${esc(q.question)}</div>
-        <div class="qa"></div>
-        <div class="feedback" style="margin-top:6px"></div>
-        <div class="explain" style="margin-top:4px;color:#9fb3d9"></div>
-      `;
-      const qa = $('.qa', li);
-      const fb = $('.feedback', li);
-      const ex = $('.explain', li);
-
-      if (q.type === 'MCQ') {
-        q.options.forEach(opt => {
-          const id = `q${q.id}-${Math.random().toString(36).slice(2,8)}`;
-          const row = document.createElement('div');
-          row.style.margin = '4px 0';
-          row.innerHTML = `
-            <label for="${id}" style="display:flex;gap:8px;align-items:center;cursor:pointer">
-              <input id="${id}" type="radio" name="q-${q.id}" value="${esc(opt)}" />
-              <span>${esc(opt)}</span>
-            </label>
-          `;
-          row.querySelector('input').addEventListener('change', (ev) => {
-            const val = ev.target.value.trim();
-            const ok = val.toLowerCase() === q.answer.toLowerCase();
-            answered.set(q.id, { ok, given: val });
-            fb.innerHTML = ok
-              ? `<span style="color:#5bd3c7">✅ 正確</span>`
-              : `<span style="color:#ff6b6b">❌ 錯誤</span>`;
-            ex.innerHTML = `正解：<b>${esc(q.answer)}</b>${q.explanation ? `　解析：${esc(q.explanation)}` : ''}`;
-          });
-          qa.appendChild(row);
-        });
-      } else { // SA：簡答
-        const wrap = document.createElement('div');
-        wrap.style.display = 'flex';
-        wrap.style.gap = '8px';
-        wrap.style.alignItems = 'center';
-        wrap.innerHTML = `
-          <input class="ipt" type="text" placeholder="在此作答…" 
-                 style="flex:0 0 280px;padding:8px 10px;border:1px solid #334155;border-radius:8px;background:#0f223b;color:#dbe7ff"/>
-          <button class="btn chk">檢查</button>
-        `;
-        const ipt = $('.ipt', wrap);
-        $('.chk', wrap).addEventListener('click', () => {
-          const val = ipt.value.trim();
-          if (!val) { fb.innerHTML = `<span class="muted">請先作答</span>`; return; }
-          const ok = val.toLowerCase() === q.answer.toLowerCase();
-          answered.set(q.id, { ok, given: val });
-          fb.innerHTML = ok
-            ? `<span style="color:#5bd3c7">✅ 正確</span>`
-            : `<span style="color:#ff6b6b">❌ 錯誤</span>`;
-          ex.innerHTML = `正解：<b>${esc(q.answer)}</b>${q.explanation ? `　解析：${esc(q.explanation)}` : ''}`;
-        });
-        qa.appendChild(wrap);
-      }
-      list.appendChild(li);
-    });
+async function loadQuiz(slug) {
+  try {
+    const res = await fetch(`./data/quiz-${slug}.json`, { cache: "no-store" });
+    if (!res.ok) throw new Error("Quiz JSON not found");
+    const raw = await res.json();
+    return raw.map((q, i) => normalizeQuestion(q, i));
+  } catch (e) {
+    console.error("[quiz] loadQuiz error", e);
+    return [];
   }
+}
 
-  // 6) 交卷 → 出分數 + 評語（滿分 100；一題 5 分；及格 60）
-  $('#btnSubmitQuiz').addEventListener('click', () => {
-    if (!QUESTIONS.length) return;
-    // 未作答者視為錯
-    let correct = 0;
-    QUESTIONS.forEach(q => {
-      const rec = answered.get(q.id);
-      if (rec?.ok) correct++;
-    });
-    const score = correct * 5; // 每題 5 分
-    const commentsPositive = [
-      '表現非常亮眼，繼續保持！',
-      '觀念扎實，細節再雕琢會更棒！',
-      '解題流暢，值得讚賞！',
-      '邏輯清晰，學習成效很穩定！',
-      '幹得好！你正在建立很強的英文基礎！'
-    ];
-    const commentsConstructive = [
-      '離目標不遠了，建議重看關鍵句型與單字。',
-      '再多練幾題相似題型，熟能生巧！',
-      '可把錯題整理一下，下次會更快掌握重點。',
-      '先專注在易錯點，逐步拉高整體正確率。',
-      '建議重播影片重點片段，搭配字幕再練一次。'
-    ];
-    const comment = score >= 100
-      ? '💯 滿分！表現完美，連續拿滿五次可兌換 LINE 表情貼一組！'
-      : (score >= 60
-          ? commentsPositive[Math.floor(Math.random()*commentsPositive.length)]
-          : commentsConstructive[Math.floor(Math.random()*commentsConstructive.length)]
-        );
+function renderQuiz(questions) {
+  const list = document.getElementById("quizList");
+  if (!list) {
+    console.warn("[quiz] #quizList not found");
+    return;
+  }
+  list.innerHTML = "";
 
-    $('#quizResult').style.display = 'block';
-    $('#quizScore').textContent = `本次得分：${score} / 100（正確 ${correct}/${QUESTIONS.length} 題）`;
-    $('#quizComment').textContent = comment;
+  questions.forEach((q, i) => {
+    const li = document.createElement("li");
+    li.style.marginBottom = "16px";
 
-    // 顯示列印 / 顯示答案
-    $('#btnPrintQuiz').style.display = 'inline-block';
-    $('#btnShowAnswer').style.display = 'inline-block';
+    const qText = document.createElement("p");
+    qText.innerHTML = `<b>${i + 1}. ${q.question}</b>`;
+    li.appendChild(qText);
+
+    const answerBox = document.createElement("div");
+    answerBox.className = "answerBox";
+    li.appendChild(answerBox);
+
+    // ===== Multiple Choice =====
+    if (q.type.toUpperCase() === "MCQ") {
+      q.options.forEach(opt => {
+        const label = document.createElement("label");
+        label.style.display = "block";
+        const input = document.createElement("input");
+        input.type = "radio";
+        input.name = "q" + i;
+        input.value = opt;
+
+        input.addEventListener("change", () => {
+          const result = li.querySelector(".result");
+          const sol = li.querySelector(".solution");
+          if (input.value.trim().toLowerCase() === q.answer.trim().toLowerCase()) {
+            result.textContent = "✅ 正確";
+            result.style.color = "#5bd3c7";
+          } else {
+            result.textContent = "❌ 錯誤";
+            result.style.color = "#ff6b6b";
+          }
+          sol.textContent = "正解: " + q.answer;
+        });
+
+        label.appendChild(input);
+        label.appendChild(document.createTextNode(" " + opt));
+        answerBox.appendChild(label);
+      });
+    }
+    // ===== Fill in Blank =====
+    else {
+      const input = document.createElement("input");
+      input.type = "text";
+      input.placeholder = "輸入答案...";
+      input.style.marginRight = "8px";
+      const btn = document.createElement("button");
+      btn.textContent = "檢查";
+
+      btn.addEventListener("click", () => {
+        const result = li.querySelector(".result");
+        const sol = li.querySelector(".solution");
+        if (input.value.trim().toLowerCase() === q.answer.trim().toLowerCase()) {
+          result.textContent = "✅ 正確";
+          result.style.color = "#5bd3c7";
+        } else {
+          result.textContent = "❌ 錯誤";
+          result.style.color = "#ff6b6b";
+        }
+        sol.textContent = "正解: " + q.answer;
+      });
+
+      answerBox.appendChild(input);
+      answerBox.appendChild(btn);
+    }
+
+    // ===== Result display =====
+    const result = document.createElement("div");
+    result.className = "result";
+    result.style.marginTop = "6px";
+    li.appendChild(result);
+
+    const sol = document.createElement("div");
+    sol.className = "solution";
+    sol.style.color = "#9fb3ff";
+    sol.style.marginTop = "4px";
+    li.appendChild(sol);
+
+    list.appendChild(li);
   });
 
-  // 7) 顯示答案（僅將所有題目的「正解」與解析展開，不改選取）
-  $('#btnShowAnswer').addEventListener('click', () => {
-    const rows = host.querySelectorAll('#quizList > li');
-    rows.forEach((li, idx) => {
-      const ex = li.querySelector('.explain');
-      const q = QUESTIONS[idx];
-      if (ex && q) {
-        ex.innerHTML = `正解：<b>${esc(q.answer)}</b>${q.explanation ? `　解析：${esc(q.explanation)}` : ''}`;
+  // ===== Submit button =====
+  const submitBtn = document.getElementById("btnSubmitQuiz");
+  if (submitBtn) {
+    submitBtn.onclick = () => {
+      let score = 0;
+      questions.forEach((q, i) => {
+        const li = list.children[i];
+        const result = li.querySelector(".result");
+        if (result.textContent.includes("正確")) {
+          score += 5; // 每題 5 分
+        }
+      });
+
+      const percent = (score / (questions.length * 5)) * 100;
+      const resultBox = document.getElementById("quizResult");
+      if (resultBox) {
+        resultBox.style.display = "block";
+        document.getElementById("quizScore").textContent = `得分：${score} / ${questions.length * 5}`;
+        let comment = "";
+        if (percent === 100) comment = "滿分！太棒了！集滿五張滿分可兌換一組 LINE 貼圖 🎉";
+        else if (percent >= 90) comment = "非常優秀！繼續保持！";
+        else if (percent >= 75) comment = "表現不錯，還可以更上一層樓！";
+        else if (percent >= 60) comment = "及格了，加油再努力！";
+        else comment = "別氣餒，下次會更好！多複習字幕與單字 👍";
+        document.getElementById("quizComment").textContent = comment;
       }
-    });
-  });
+    };
+  }
+}
 
-  // 8) 列印（A4 直式；標頭含 LOGO 佔位與公司名）
-  $('#btnPrintQuiz').addEventListener('click', () => {
-    const score = $('#quizScore')?.textContent || '';
-    const comment = $('#quizComment')?.textContent || '';
-    const html = `
-      <html>
-      <head>
-        <meta charset="utf-8"/>
-        <title>成績單 - ${slug}</title>
-        <style>
-          @page { size: A4 portrait; margin: 14mm; }
-          body { font-family: system-ui,-apple-system,"Segoe UI",Roboto,"Noto Sans TC",sans-serif; color:#111; }
-          h1 { margin:0 0 8px 0; }
-          .hdr{ display:flex;justify-content:space-between;align-items:center;margin-bottom:14px }
-          .logo{ width:90px;height:90px;border:1px dashed #bbb;border-radius:10px;display:flex;align-items:center;justify-content:center;color:#888;font-size:12px }
-          .company{ font-size:14px;color:#333 }
-          .score{ margin:10px 0 6px 0;font-size:16px;font-weight:700 }
-          .comment{ margin-bottom:10px }
-          ol{ padding-left:20px;margin:0 }
-          li{ margin:10px 0 }
-          .ans{ color:#0b6; }
-          .exp{ color:#555; }
-        </style>
-      </head>
-      <body>
-        <div class="hdr">
-          <div class="logo">LOGO</div>
-          <div class="company">公司名稱 Company Name</div>
-        </div>
-        <h1>英語影片測驗成績單</h1>
-        <div class="score">${esc(score)}</div>
-        <div class="comment">${esc(comment)}</div>
-        <hr/>
-        <h2>題目與答案</h2>
-        <ol>
-          ${QUESTIONS.map((q,i)=>`
-            <li>
-              <div><b>${esc(q.question)}</b></div>
-              <div class="ans">正解：${esc(q.answer)}</div>
-              ${q.explanation ? `<div class="exp">解析：${esc(q.explanation)}</div>` : ``}
-            </li>`).join('')}
-        </ol>
-      </body>
-      </html>`;
-    const w = window.open('', '_blank');
-    w.document.write(html);
-    w.document.close();
-    w.focus();
-    w.print();
-    // w.close(); // 若需列印後自動關閉可打開這行
-  });
-})();
 
 
 
