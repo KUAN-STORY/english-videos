@@ -460,27 +460,69 @@
     await loadAll();
   })();
 })();
-// 這段放在 463 行以下（你的分頁切換事件內）：
+// ====== 下面全部覆蓋 463 行以下 ======
+
 async function bootQuizTab() {
-  // 與 player.js 既有的 slug 取得方式一致
+  // 1) 取 slug（與上面播放器一致）
   const params = new URLSearchParams(location.search);
   const slug = params.get('slug') || 'mid-autumn';
 
-  // 動態載入，帶版本避免快取
+  // 2) 取得測驗面板；若不存在就不要再往下跑
+  const pane = document.querySelector('#pane-quiz');
+  if (!pane) {
+    console.warn('[quiz] #pane-quiz not found');
+    return;
+  }
+
+  // 3) 若還沒建立控制列與清單，就自動建一份（避免 player.html 再動到）
+  if (!pane.querySelector('#quizList')) {
+    pane.innerHTML = `
+      <div id="quiz-controls" style="margin:8px 0; display:flex; gap:8px; align-items:center;">
+        <button class="btn" id="btnSubmitQuiz">交卷</button>
+        <button class="btn" id="btnPrintQuiz" style="display:none">列印成績單</button>
+        <button class="btn" id="btnShowAnswer" style="display:none">顯示答案</button>
+        <span id="quizMeta" style="color:#9fb3ff"></span>
+      </div>
+
+      <div id="quizScoreBoard" style="display:none; margin:8px 0; font-weight:700;"></div>
+
+      <div id="quizHint" style="margin:8px 0; color:#9fb3d9">( 載入題目中… )</div>
+      <ol id="quizList" style="line-height:1.6"></ol>
+    `;
+  }
+
+  // 4) 動態載入 quiz.js（加版本參數避免快取黏住）
   try {
-    const mod = await import('./quiz.js?v=2025-10-01');
-    mod.initQuiz(slug);
+    const mod = await import('./quiz.js?v=2025-10-02');
+    // 交給 quiz.js 初始化（會去抓 ./data/quiz-<slug>.json）
+    await mod.initQuiz(slug, {
+      listSel:   '#quizList',
+      hintSel:   '#quizHint',
+      scoreSel:  '#quizScoreBoard',
+      metaSel:   '#quizMeta',
+      btnSubmit: '#btnSubmitQuiz',
+      btnPrint:  '#btnPrintQuiz',
+      btnAnswer: '#btnShowAnswer',
+    });
   } catch (err) {
     console.error('[quiz] 載入失敗：', err);
+    const hint = document.querySelector('#quizHint');
+    if (hint) hint.textContent = '載入失敗，請重整或稍後再試';
   }
 }
 
-// 你原本的分頁切換事件中：
-tabs.forEach(tab => tab.addEventListener('click', () => {
-  // ...原本切換 pane 的程式
-  const n = tab.dataset.tab;
-  if (n === 'quiz') bootQuizTab();
-}));
+// 5) 讓「切到測驗分頁」時才載入（沒有 .tab 也不會報錯）
+(function wireQuizTabSwitcher() {
+  // 優先用 data-tab="quiz" 的按鈕；找不到就直接馬上初始化（避免「尚未載入」）
+  const tabQuizBtn = document.querySelector('[data-tab="quiz"]');
+  if (tabQuizBtn) {
+    tabQuizBtn.addEventListener('click', () => bootQuizTab(), { once: true });
+  } else {
+    // 沒有分頁按鈕（或你一進來就要顯示測驗頁）時，直接啟動
+    bootQuizTab();
+  }
+})();
+
 
 
 
