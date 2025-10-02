@@ -1,0 +1,22 @@
+[
+  {"type":"MCQ","question":"Why do people celebrate the Mid-Autumn Festival?","options":["To start a new year","To celebrate harvest and family reunion","To honor the sea","To welcome spring"],"answer":"To celebrate harvest and family reunion","explanation":"核心主題：收穫、團圓。"},
+  {"type":"MCQ","question":"Which food is most closely connected to the festival?","options":["Zongzi","Mooncakes","Rice noodles","Hot pot"],"answer":"Mooncakes","explanation":"月餅。"},
+  {"type":"MCQ","question":"What do people often do at night during the festival?","options":["Go swimming","Admire the full moon","Fly kites at noon","Visit museums"],"answer":"Admire the full moon","explanation":"賞月。"},
+  {"type":"MCQ","question":"Which character is a part of the legend?","options":["Athena","Nuwa","Chang'e","Snow White"],"answer":"Chang'e","explanation":"嫦娥傳說。"},
+  {"type":"MCQ","question":"Which value does the festival highlight most?","options":["Competition","Luck in exams","Reunion","Silence"],"answer":"Reunion","explanation":"家庭團圓。"},
+  {"type":"MCQ","question":"Which animal is often mentioned with the moon legend?","options":["Dog","Jade Rabbit","Tiger","Dragon boat"],"answer":"Jade Rabbit","explanation":"玉兔搗藥。"},
+  {"type":"MCQ","question":"When is the festival usually held?","options":["Lunar 1/1","Lunar 5/5","Lunar 7/7","Lunar 8/15"],"answer":"Lunar 8/15","explanation":"八月十五。"},
+  {"type":"MCQ","question":"Which activity is least likely during this festival?","options":["Picnic at night","Sharing mooncakes","Watching fireworks","Skiing"],"answer":"Skiing","explanation":"不合情境。"},
+  {"type":"MCQ","question":"Which taste is common for mooncakes?","options":["Red bean paste","Spicy hotpot","Sour lemon","Cheese fondue"],"answer":"Red bean paste","explanation":"紅豆餡常見。"},
+  {"type":"MCQ","question":"People sometimes write wishes and ____ them with family.","options":["hide","burn","share","ignore"],"answer":"share","explanation":"分享祝福。"},
+  {"type":"SA","question":"Name one thing families do together at night: ____","answer":"admire the moon","explanation":"關鍵活動。"},
+  {"type":"SA","question":"Write the animal’s name from the legend: ____ Rabbit.","answer":"Jade","explanation":"玉兔。"},
+  {"type":"SA","question":"What is the key food of the festival? ____","answer":"mooncakes","explanation":"月餅。"},
+  {"type":"SA","question":"The festival is mainly about family ____.","answer":"reunion","explanation":"主題字。"},
+  {"type":"SA","question":"Which calendar does the date follow? ____","answer":"lunar","explanation":"以農曆計。"},
+  {"type":"SA","question":"Write one filling of a mooncake: red ____ paste.","answer":"bean","explanation":"bean。"},
+  {"type":"SA","question":"Who is the lady on the moon in the legend? ____","answer":"Chang'e","explanation":"嫦娥。"},
+  {"type":"SA","question":"Families may have a small outdoor ____.","answer":"picnic","explanation":"野餐。"},
+  {"type":"SA","question":"Children sometimes carry colorful ____.","answer":"lanterns","explanation":"燈籠。"},
+  {"type":"SA","question":"Write a value the festival teaches: ____","answer":"gratitude","explanation":"也可用 reunion / love / family。"}
+]

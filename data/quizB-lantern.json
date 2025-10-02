@@ -1,0 +1,22 @@
+[
+  {"type":"MCQ","question":"Choose the verb: People ____ lanterns at night.","options":["carry","carries","carrying","to carry"],"answer":"carry","explanation":"主詞複數。"},
+  {"type":"MCQ","question":"Article: It is ____ important festival for families.","options":["a","an","the","(no article)"],"answer":"an","explanation":"important /ɪm/ 母音音。"},
+  {"type":"MCQ","question":"Preposition: Lanterns hang ____ the streets.","options":["on","in","over","at"],"answer":"over","explanation":"懸掛於上方 over the streets。"},
+  {"type":"MCQ","question":"Tense: We ____ riddles every year.","options":["solve","solved","are solving","had solved"],"answer":"solve","explanation":"一般現在表示習慣。"},
+  {"type":"MCQ","question":"Adjective order: Many ____ colorful lanterns.","options":["small beautiful","beautiful small","small and beautiful","beautiful and small"],"answer":"small and beautiful","explanation":"大小+美感。"},
+  {"type":"MCQ","question":"Gerund: Children enjoy ____ the parade.","options":["watch","to watch","watching","watched"],"answer":"watching","explanation":"enjoy + V-ing。"},
+  {"type":"MCQ","question":"Passive: Riddles ____ written on the lanterns.","options":["are","are being","are written","were writing"],"answer":"are written","explanation":"被動 are written。"},
+  {"type":"MCQ","question":"Adverb: The fireworks shine ____ in the sky.","options":["bright","brighter","brightly","brightness"],"answer":"brightly","explanation":"副詞修飾 shine。"},
+  {"type":"MCQ","question":"Comparison: Tonight is ____ than last night.","options":["lively","more lively","liveliest","most lively"],"answer":"more lively","explanation":"比較級：more lively。"},
+  {"type":"MCQ","question":"Conjunction: People laugh ____ they meet friends.","options":["so","because","when","but"],"answer":"when","explanation":"時間連接。"},
+  {"type":"SA","question":"Negative: We solve riddles every hour. → We ____ solve riddles every hour.","answer":"don’t","explanation":"否定句。"},
+  {"type":"SA","question":"Plural: This lantern is bright. → These ____ are bright.","answer":"lanterns","explanation":"名詞複數。"},
+  {"type":"SA","question":"Preposition: The parade goes ____ the main street.","answer":"along","explanation":"沿著街道。"},
+  {"type":"SA","question":"Correct form: Children ____ (enjoy) the fireworks.","answer":"enjoy","explanation":"一般現在。"},
+  {"type":"SA","question":"Tag: It is beautiful, ____?","answer":"isn’t it","explanation":"反問句。"},
+  {"type":"SA","question":"Comparative: The show is ____ (exciting) than last year.","answer":"more exciting","explanation":"比較級。"},
+  {"type":"SA","question":"Adverb: Fireworks explode ____ (loud).","answer":"loudly","explanation":"副詞。"},
+  {"type":"SA","question":"Article: It is ____ amazing lantern show.","answer":"an","explanation":"an + 母音音。"},
+  {"type":"SA","question":"Conjunction: We smile ____ we solve a riddle.","answer":"when","explanation":"時間從句。"},
+  {"type":"SA","question":"Preposition: Lanterns hang ____ the river.","answer":"over","explanation":"架於河面之上。"}
+]

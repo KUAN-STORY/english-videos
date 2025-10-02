@@ -1,0 +1,22 @@
+[
+  {"type":"MCQ","question":"Choose the verb: Hou Yi ____ nine suns.","options":["shoot","shot","shoots","shooting"],"answer":"shot","explanation":"過去式 shot。"},
+  {"type":"MCQ","question":"Passive: Nine suns ____ by Hou Yi.","options":["shoot","were shot","was shot","are shoot"],"answer":"were shot","explanation":"被動 were shot。"},
+  {"type":"MCQ","question":"Preposition: People suffered ____ the heat.","options":["from","of","to","for"],"answer":"from","explanation":"suffer from。"},
+  {"type":"MCQ","question":"Pronoun: ____ saved the people from the heat.","options":["He","They","It","We"],"answer":"He","explanation":"He=Hou Yi。"},
+  {"type":"MCQ","question":"Tense: Chang’e ____ to the moon after drinking the potion.","options":["fly","flies","flew","flying"],"answer":"flew","explanation":"過去式。"},
+  {"type":"MCQ","question":"Article: He used ____ strong bow.","options":["a","an","the","(no article)"],"answer":"a","explanation":"a strong。"},
+  {"type":"MCQ","question":"Gerund: People started ____ the cool nights again.","options":["enjoy","to enjoy","enjoying","enjoyed"],"answer":"enjoying","explanation":"start/stop + V-ing 亦可；此處給 enjoying。"},
+  {"type":"MCQ","question":"Adverb: He shot the suns ____ and bravely.","options":["quick","quicker","quickly","more quick"],"answer":"quickly","explanation":"修飾動詞用副詞。"},
+  {"type":"MCQ","question":"Comparison: The weather became ____ after the suns were gone.","options":["cool","cooler","coolest","more cool"],"answer":"cooler","explanation":"比較級。"},
+  {"type":"MCQ","question":"Conjunction: People were happy ____ the heat was gone.","options":["so","because","and","but"],"answer":"because","explanation":"因果。"},
+  {"type":"SA","question":"Change to negative: He shot ten suns. → He ____ shoot ten suns.","answer":"didn’t","explanation":"didn’t shoot 十個（實際 9 個）。"},
+  {"type":"SA","question":"Fill a preposition: People suffered ____ the heat.","answer":"from","explanation":"固定搭配。"},
+  {"type":"SA","question":"Make it plural: This arrow is strong. → These ____ are strong.","answer":"arrows","explanation":"名詞複數。"},
+  {"type":"SA","question":"Correct form: He ____ (save) many people.","answer":"saved","explanation":"過去式。"},
+  {"type":"SA","question":"Question word: ____ did he shoot the suns? (Why/When)","answer":"Why","explanation":"詢問原因。"},
+  {"type":"SA","question":"Tag question: He was brave, ____?","answer":"wasn’t he","explanation":"be 動詞過去式。"},
+  {"type":"SA","question":"Comparative: Today is ____ (cool) than yesterday.","answer":"cooler","explanation":"比較級。"},
+  {"type":"SA","question":"Article: He used ____ bow and arrows.","answer":"a","explanation":"a bow and arrows。"},
+  {"type":"SA","question":"Adverb: He shot ____ (quick).","answer":"quickly","explanation":"副詞。"},
+  {"type":"SA","question":"Conjunction: People were happy ____ the heat was gone.","answer":"because","explanation":"因果。"}
+]

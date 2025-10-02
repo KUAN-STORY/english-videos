@@ -1,0 +1,22 @@
+[
+  {"type":"MCQ","question":"When is the Lantern Festival celebrated?","options":["Lunar 1/1","Lunar 1/15","Lunar 5/5","Lunar 8/15"],"answer":"Lunar 1/15","explanation":"正月十五。"},
+  {"type":"MCQ","question":"Which food is most common during this festival?","options":["Mooncakes","Tangyuan","Zongzi","Noodles"],"answer":"Tangyuan","explanation":"湯圓。"},
+  {"type":"MCQ","question":"What do people like to solve on lanterns?","options":["Math tests","Riddles","News","Maps"],"answer":"Riddles","explanation":"燈謎。"},
+  {"type":"MCQ","question":"Which performances are popular?","options":["Lion and dragon dances","Opera shows only","Rock concerts only","Quiet reading"],"answer":"Lion and dragon dances","explanation":"舞龍舞獅。"},
+  {"type":"MCQ","question":"What do tangyuan symbolize?","options":["Speed","Strength","Reunion","Silence"],"answer":"Reunion","explanation":"團圓。"},
+  {"type":"MCQ","question":"What do children often carry at night?","options":["Flashlights","Colorful lanterns","Umbrellas","Kites"],"answer":"Colorful lanterns","explanation":"提燈籠。"},
+  {"type":"MCQ","question":"Which activity is least connected to the festival?","options":["Fireworks","Lantern shows","Solving riddles","Skiing"],"answer":"Skiing","explanation":"與情境不符。"},
+  {"type":"MCQ","question":"What feeling does the festival bring to streets?","options":["Darkness","Loneliness","Brightness and joy","Coldness"],"answer":"Brightness and joy","explanation":"燈火通明、熱鬧。"},
+  {"type":"MCQ","question":"The festival marks the end of ____.","options":["final exams","summer vacation","the New Year celebrations","the school year"],"answer":"the New Year celebrations","explanation":"年節慶祝結尾。"},
+  {"type":"MCQ","question":"Which is a correct statement?","options":["People stay at home quietly.","Families avoid sweets.","People gather to enjoy lights and puzzles.","Classrooms are open all night."],"answer":"People gather to enjoy lights and puzzles.","explanation":"核心活動。"},
+  {"type":"SA","question":"Lantern Festival is on the ____ day of the first lunar month.","answer":"fifteenth","explanation":"關鍵日期。"},
+  {"type":"SA","question":"Write the dessert’s English name: ____","answer":"tangyuan","explanation":"湯圓。"},
+  {"type":"SA","question":"People like to solve ____ on lanterns.","answer":"riddles","explanation":"燈謎。"},
+  {"type":"SA","question":"A common performance: ____ dance.","answer":"lion","explanation":"或 dragon 亦可，但此題目預設 lion。"},
+  {"type":"SA","question":"Tangyuan means family ____.","answer":"reunion","explanation":"象徵團圓。"},
+  {"type":"SA","question":"Children carry ____ lanterns.","answer":"colorful","explanation":"繽紛。"},
+  {"type":"SA","question":"Some places set off ____ at night.","answer":"fireworks","explanation":"煙火。"},
+  {"type":"SA","question":"The streets are ____ and lively.","answer":"bright","explanation":"明亮。"},
+  {"type":"SA","question":"This festival closes the New Year ____.","answer":"celebrations","explanation":"慶祝活動。"},
+  {"type":"SA","question":"People enjoy lights, puzzles, and time with ____.","answer":"family","explanation":"闔家同樂。"}
+]

@@ -1,0 +1,22 @@
+[
+  {"type":"MCQ","question":"The Lantern Festival is on the fifteenth day of the ____ lunar month.","options":["first","second","eighth","tenth"],"answer":"first","explanation":"元宵節：正月十五。"},
+  {"type":"MCQ","question":"People light colorful ____ at night.","options":["candles","lanterns","torches","bonfires"],"answer":"lanterns","explanation":"提燈籠。"},
+  {"type":"MCQ","question":"A popular food is sweet rice balls called ____ (Tangyuan).","options":["mooncakes","dumplings","tangyuan","rice cakes"],"answer":"tangyuan","explanation":"湯圓。"},
+  {"type":"MCQ","question":"Some places hold dragon and ____ dances.","options":["cat","lion","bird","fish"],"answer":"lion","explanation":"舞龍舞獅。"},
+  {"type":"MCQ","question":"People also enjoy solving ____ on lanterns.","options":["questions","riddles","stories","poems"],"answer":"riddles","explanation":"猜燈謎。"},
+  {"type":"MCQ","question":"Tangyuan are round and mean family ____.","options":["fortune","reunion","silence","luck only"],"answer":"reunion","explanation":"圓滿、團圓。"},
+  {"type":"MCQ","question":"The lights make the streets look ____.","options":["dark","quiet","bright","empty"],"answer":"bright","explanation":"街道燈火通明。"},
+  {"type":"MCQ","question":"Children love to carry ____ lanterns.","options":["heavy","colorful","broken","silent"],"answer":"colorful","explanation":"色彩繽紛。"},
+  {"type":"MCQ","question":"In some places, people set off ____ to celebrate.","options":["fireworks","balloons","kites","rockets"],"answer":"fireworks","explanation":"煙火慶祝。"},
+  {"type":"MCQ","question":"The festival marks the end of the Chinese New Year ____.","options":["season","month","holiday","celebrations"],"answer":"celebrations","explanation":"年節序幕的結束。"},
+  {"type":"SA","question":"Another name for Lantern Festival in Chinese is ____ (English spelling).","answer":"Yuanxiao","explanation":"Yuanxiao Festival。"},
+  {"type":"SA","question":"The round dessert is called ____ (English).","answer":"tangyuan","explanation":"或 glutinous rice balls。"},
+  {"type":"SA","question":"People love to guess ____.","answer":"riddles","explanation":"燈謎。"},
+  {"type":"SA","question":"Dances: dragon and ____ dance.","answer":"lion","explanation":"舞獅。"},
+  {"type":"SA","question":"The lights make the night ____.","answer":"bright","explanation":"明亮。"},
+  {"type":"SA","question":"Tangyuan stands for family ____.","answer":"reunion","explanation":"團圓。"},
+  {"type":"SA","question":"Kids carry ____ lanterns.","answer":"colorful","explanation":"繽紛的。"},
+  {"type":"SA","question":"The festival is on the ____ day of the first lunar month.","answer":"fifteenth","explanation":"正月十五。"},
+  {"type":"SA","question":"Some places set off ____ at night.","answer":"fireworks","explanation":"煙火。"},
+  {"type":"SA","question":"The festival closes the New Year ____.","answer":"celebrations","explanation":"慶祝活動。"}
+]

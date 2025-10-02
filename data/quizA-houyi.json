@@ -1,0 +1,22 @@
+[
+  {"type":"MCQ","question":"Hou Yi was a famous ____ in the legend.","options":["farmer","teacher","archer","singer"],"answer":"archer","explanation":"后羿是弓箭手。"},
+  {"type":"MCQ","question":"There were ____ suns in the sky making people suffer.","options":["two","five","ten","twelve"],"answer":"ten","explanation":"十個太陽。"},
+  {"type":"MCQ","question":"People were ____ because of the heat.","options":["cold","unhappy","sleepy","excited"],"answer":"unhappy","explanation":"酷熱使人痛苦。"},
+  {"type":"MCQ","question":"Hou Yi shot down ____ suns.","options":["nine","ten","eight","seven"],"answer":"nine","explanation":"留下了一個。"},
+  {"type":"MCQ","question":"He used a strong ____.","options":["sword","bow","shield","net"],"answer":"bow","explanation":"弓箭。"},
+  {"type":"MCQ","question":"Chang'e is Hou Yi’s ____.","options":["enemy","teacher","wife","sister"],"answer":"wife","explanation":"嫦娥是妻子。"},
+  {"type":"MCQ","question":"Hou Yi received a magic ____ in some versions.","options":["potion","ring","stone","book"],"answer":"potion","explanation":"仙丹、靈藥。"},
+  {"type":"MCQ","question":"Chang'e ____ the potion and flew to the moon.","options":["lost","drank","threw","hid"],"answer":"drank","explanation":"喝下靈藥。"},
+  {"type":"MCQ","question":"People admire the ____ to remember them.","options":["river","mountain","moon","sun"],"answer":"moon","explanation":"賞月懷念。"},
+  {"type":"MCQ","question":"Hou Yi is known for his great ____.","options":["speed","strength","archery","magic"],"answer":"archery","explanation":"箭術高超。"},
+  {"type":"SA","question":"Write the weapon Hou Yi used: ____ and arrows.","answer":"bow","explanation":"bow and arrows。"},
+  {"type":"SA","question":"How many suns were left? ____","answer":"one","explanation":"留下 1 個。"},
+  {"type":"SA","question":"People were very ____ because of the heat.","answer":"unhappy","explanation":"痛苦不堪。"},
+  {"type":"SA","question":"Who flew to the moon? ____","answer":"Chang'e","explanation":"嫦娥奔月。"},
+  {"type":"SA","question":"What skill was Hou Yi famous for? ____","answer":"archery","explanation":"箭術。"},
+  {"type":"SA","question":"What did Chang'e drink? a magic ____","answer":"potion","explanation":"靈藥。"},
+  {"type":"SA","question":"Why did Hou Yi shoot the suns? To help the ____","answer":"people","explanation":"為民除害。"},
+  {"type":"SA","question":"What shines in the sky at daytime? the ____","answer":"sun","explanation":"太陽。"},
+  {"type":"SA","question":"Where did Chang'e live after flying away? the ____","answer":"moon","explanation":"住在月亮。"},
+  {"type":"SA","question":"People admire the moon to show their ____ for them.","answer":"memory","explanation":"懷念、紀念。"}
+]

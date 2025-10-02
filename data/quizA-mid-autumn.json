@@ -1,0 +1,23 @@
+[
+  [
+  {"type":"MCQ","question":"The Mid-Autumn Festival is on the ____ day of the eighth lunar month.","options":["fifth","fifteenth","twentieth","twenty-fifth"],"answer":"fifteenth","explanation":"中秋在農曆八月十五。"},
+  {"type":"MCQ","question":"People eat ____ during the Mid-Autumn Festival.","options":["dumplings","rice cakes","mooncakes","noodles"],"answer":"mooncakes","explanation":"傳統食物為月餅。"},
+  {"type":"MCQ","question":"We admire the bright full ____ in the night sky.","options":["sun","star","moon","cloud"],"answer":"moon","explanation":"中秋賞月。"},
+  {"type":"MCQ","question":"Many families have a ____ under the moon.","options":["picnic","meeting","competition","class"],"answer":"picnic","explanation":"許多家庭在戶外野餐賞月。"},
+  {"type":"MCQ","question":"Mooncakes are often filled with sweet ____ paste.","options":["bean","meat","corn","pumpkin"],"answer":"bean","explanation":"豆沙餡常見。"},
+  {"type":"MCQ","question":"A legend says the lady ____ lives on the moon.","options":["Mulan","Nuwa","Chang'e","Athena"],"answer":"Chang'e","explanation":"嫦娥住在月亮。"},
+  {"type":"MCQ","question":"People light beautiful ____ to celebrate.","options":["candles","lanterns","torches","firecrackers"],"answer":"lanterns","explanation":"提燈籠慶祝。"},
+  {"type":"MCQ","question":"The rabbit on the moon is called the ____ Rabbit.","options":["White","Golden","Jade","Lucky"],"answer":"Jade","explanation":"玉兔。"},
+  {"type":"MCQ","question":"Families ____ together and share mooncakes.","options":["break","gather","separate","travel"],"answer":"gather","explanation":"闔家團聚。"},
+  {"type":"MCQ","question":"The festival is also about family ____.","options":["competition","fortune","reunion","silence"],"answer":"reunion","explanation":"象徵團圓。"},
+  {"type":"SA","question":"Write the missing word: Mid-Autumn Festival is a time to admire the full ____.","answer":"moon","explanation":"固定搭配 admire the full moon."},
+  {"type":"SA","question":"Another name for the Mid-Autumn Festival is the ____ Festival.","answer":"Moon","explanation":"Moon Festival。大小寫皆可由程式忽略。"},
+  {"type":"SA","question":"What do people usually eat? ____","answer":"mooncakes","explanation":"常見作答：mooncakes。"},
+  {"type":"SA","question":"The Chinese word for reunion is ____ (English).","answer":"reunion","explanation":"關鍵字。"},
+  {"type":"SA","question":"Chang'e’s animal friend on the moon is the ____ Rabbit.","answer":"Jade","explanation":"玉兔。"},
+  {"type":"SA","question":"People often carry colorful ____ at night.","answer":"lanterns","explanation":"提燈。"},
+  {"type":"SA","question":"Many mooncakes have sweet red ____ paste.","answer":"bean","explanation":"red bean paste。"},
+  {"type":"SA","question":"Families like to have a ____ together outdoors.","answer":"picnic","explanation":"戶外小型聚餐。"},
+  {"type":"SA","question":"The festival follows the ____ calendar.","answer":"lunar","explanation":"農曆 lunar calendar。"},
+  {"type":"SA","question":"Write one value the festival celebrates: ____ (e.g., reunion).","answer":"reunion","explanation":"重點觀念之一。"}
+]

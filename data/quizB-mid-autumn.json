@@ -1,0 +1,22 @@
+[
+  {"type":"MCQ","question":"Choose the best: People ____ mooncakes with their families.","options":["share","shares","sharing","to share"],"answer":"share","explanation":"主詞 people 複數用原形 share。"},
+  {"type":"MCQ","question":"Choose the article: It is ____ special day for reunion.","options":["a","an","the","(no article)"],"answer":"a","explanation":"special /sp/ 子音音，a special day。"},
+  {"type":"MCQ","question":"Preposition: They look ____ the full moon together.","options":["at","to","for","on"],"answer":"at","explanation":"look at 表示注視。"},
+  {"type":"MCQ","question":"Tense: We ____ the festival every year.","options":["celebrate","celebrated","have celebrated","are celebrating"],"answer":"celebrate","explanation":"一般現在表習慣。"},
+  {"type":"MCQ","question":"Subject-verb: The moon ____ round and bright on that night.","options":["is","are","be","were"],"answer":"is","explanation":"主詞單數 the moon。"},
+  {"type":"MCQ","question":"Gerund/Infinitive: Children enjoy ____ lanterns at night.","options":["carry","to carry","carrying","carried"],"answer":"carrying","explanation":"enjoy + V-ing。"},
+  {"type":"MCQ","question":"Pronoun: ____ eat mooncakes together.","options":["They","It","He","She"],"answer":"They","explanation":"指家庭成員複數。"},
+  {"type":"MCQ","question":"Comparison: The moon looks ____ than usual.","options":["bright","brighter","brightest","more bright"],"answer":"brighter","explanation":"比較級。"},
+  {"type":"MCQ","question":"Adverb: Families sit ____ and talk.","options":["quiet","more quiet","quietly","quietness"],"answer":"quietly","explanation":"修飾動詞用副詞。"},
+  {"type":"MCQ","question":"Passive: Mooncakes ____ by many people.","options":["eat","are eaten","eats","is eaten"],"answer":"are eaten","explanation":"被動 are eaten。"},
+  {"type":"SA","question":"Change to negative: We celebrate the festival every day. → We ____ celebrate the festival every day.","answer":"don’t","explanation":"一般現在否定 don’t celebrate。"},
+  {"type":"SA","question":"Fill in a preposition: People gather ____ the evening to admire the moon.","answer":"in","explanation":"in the evening。"},
+  {"type":"SA","question":"Make it plural: This lantern is beautiful. → These ____ are beautiful.","answer":"lanterns","explanation":"名詞複數。"},
+  {"type":"SA","question":"Comparative: Moon A is bright; Moon B is brighter. Which is brighter? ____","answer":"Moon B","explanation":"比較判斷題。"},
+  {"type":"SA","question":"Choose a verb form (write one word): Children ____ (enjoy) sharing stories.","answer":"enjoy","explanation":"一般現在。"},
+  {"type":"SA","question":"Article: It is ____ Mid-Autumn night.","answer":"a","explanation":"a + 形容詞 + 名詞。"},
+  {"type":"SA","question":"Make a question: ____ people eat mooncakes? (When)","answer":"When do","explanation":"疑問詞 + 助動詞 do。"},
+  {"type":"SA","question":"Rewrite with ‘because’: We stay outside. The weather is cool. → We stay outside ____ the weather is cool.","answer":"because","explanation":"因果連接。"},
+  {"type":"SA","question":"Preposition: We sit ____ the grass and talk.","answer":"on","explanation":"sit on the grass。"},
+  {"type":"SA","question":"Tag question: It’s beautiful, ____?","answer":"isn’t it","explanation":"be 動詞現在式反問句。"}
+]

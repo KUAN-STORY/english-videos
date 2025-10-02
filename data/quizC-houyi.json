@@ -1,0 +1,22 @@
+[
+  {"type":"MCQ","question":"Why did Hou Yi decide to shoot the suns?","options":["To win a game","To help the suffering people","To find treasure","To become king"],"answer":"To help the suffering people","explanation":"為民除害。"},
+  {"type":"MCQ","question":"How many suns were originally in the sky?","options":["Three","Five","Ten","Twelve"],"answer":"Ten","explanation":"傳說十日並出。"},
+  {"type":"MCQ","question":"How many suns did he leave in the sky?","options":["Zero","One","Two","Three"],"answer":"One","explanation":"留下一個。"},
+  {"type":"MCQ","question":"What skill made Hou Yi famous?","options":["Medicine","Archery","Singing","Dancing"],"answer":"Archery","explanation":"箭術。"},
+  {"type":"MCQ","question":"What happened to Chang’e in the end?","options":["She became a star","She flew to the moon","She moved to the sea","She met a dragon"],"answer":"She flew to the moon","explanation":"嫦娥奔月。"},
+  {"type":"MCQ","question":"What feeling did people have after the suns were gone?","options":["Colder and sadder","Hotter and angrier","Happier and safer","More tired"],"answer":"Happier and safer","explanation":"安全快樂。"},
+  {"type":"MCQ","question":"What did Hou Yi use to shoot the suns?","options":["A gun","A bow and arrows","A spear","A stone"],"answer":"A bow and arrows","explanation":"武器為弓箭。"},
+  {"type":"MCQ","question":"Which is NOT part of the legend?","options":["Ten suns","A magic potion","A flying carpet","The moon"],"answer":"A flying carpet","explanation":"不在此傳說。"},
+  {"type":"MCQ","question":"What did the many suns cause?","options":["Heavy rain","Snow","Terrible heat and drought","Earthquakes"],"answer":"Terrible heat and drought","explanation":"酷熱乾旱。"},
+  {"type":"MCQ","question":"What value does the story teach?","options":["Greed","Jealousy","Bravery and helping others","Laziness"],"answer":"Bravery and helping others","explanation":"勇敢助人。"},
+  {"type":"SA","question":"Write the number of suns Hou Yi shot down: ____","answer":"nine","explanation":"射下九個。"},
+  {"type":"SA","question":"Where did Chang’e go? the ____","answer":"moon","explanation":"奔月。"},
+  {"type":"SA","question":"What was Hou Yi’s job/skill? ____","answer":"archer","explanation":"或 archery 皆可。"},
+  {"type":"SA","question":"People suffered from terrible ____.","answer":"heat","explanation":"酷熱。"},
+  {"type":"SA","question":"He used a strong ____ to save people.","answer":"bow","explanation":"bow and arrows。"},
+  {"type":"SA","question":"After the event, people felt ____.","answer":"happy","explanation":"也可 safer/happier。"},
+  {"type":"SA","question":"How many suns remained? ____","answer":"one","explanation":"一個。"},
+  {"type":"SA","question":"The story encourages us to be ____ (brave/slow).","answer":"brave","explanation":"價值觀。"},
+  {"type":"SA","question":"To remember them, people admire the ____.","answer":"moon","explanation":"賞月。"},
+  {"type":"SA","question":"Write one thing the extra suns caused: ____","answer":"drought","explanation":"乾旱、酷熱皆可；程式做忽略大小寫比對。"}
+]
