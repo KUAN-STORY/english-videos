@@ -117,6 +117,10 @@
           <div class="tab" data-tab="quiz">測驗</div>
           <div class="tab" data-tab="vocab">單字</div>
         </div>
+        <!-- 追加：三顆新分頁按鈕（放在單字後面） -->
+<div class="tab" data-tab="quizA">測驗A</div>
+<div class="tab" data-tab="quizB">測驗B</div>
+<div class="tab" data-tab="quizC">測驗C</div>
 
         <!-- 字幕工具列 -->
         <div id="subToolbar" class="subToolbar">
@@ -149,6 +153,24 @@
             <div id="quizStatus" class="muted" style="padding:10px 14px">( 尚未載入 )</div>
             <div id="quizBox" style="padding:0 14px 14px"></div>
           </div>
+          <!-- 測驗 A 內容容器（預設隱藏） -->
+<div id="pane-quizA" class="pane" style="display:none">
+  <div id="quizAStatus" class="muted">(測驗 A 載入中…)</div>
+  <ol id="quizAList" style="line-height:1.6"></ol>
+</div>
+
+<!-- 測驗 B 內容容器（預設隱藏） -->
+<div id="pane-quizB" class="pane" style="display:none">
+  <div id="quizBStatus" class="muted">(測驗 B 載入中…)</div>
+  <ol id="quizBList" style="line-height:1.6"></ol>
+</div>
+
+<!-- 測驗 C 內容容器（預設隱藏） -->
+<div id="pane-quizC" class="pane" style="display:none">
+  <div id="quizCStatus" class="muted">(測驗 C 載入中…)</div>
+  <ol id="quizCList" style="line-height:1.6"></ol>
+</div>
+
 
           <!-- 單字 -->
           <div id="pane-vocab" style="display:none">
