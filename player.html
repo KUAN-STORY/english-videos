@@ -111,12 +111,20 @@
       </section>
 
       <!-- ===== 右：字幕 / 測驗 / 單字 ===== -->
-      <section class="right">
-        <div class="tabs">
-          <div class="tab active" data-tab="sub">字幕</div>
-          <div class="tab" data-tab="quiz">測驗</div>
-          <div class="tab" data-tab="vocab">單字</div>
-        </div>
+     <section class="right">
+  <div class="tabs">
+    <div class="tab active" data-tab="sub">字幕</div>
+    <div class="tab" data-tab="quiz">測驗</div>
+    <div class="tab" data-tab="vocab">單字</div>
+  </div>
+
+  <!-- 這三個 pane 的順序你本來就有 sub / vocab，
+       現在只要補「測驗」這一個 -->
+  <div id="pane-sub"   class="pane"></div>
+  <div id="pane-quiz"  class="pane"></div>  <!-- ← 只要加這一行 -->
+  <div id="pane-vocab" class="pane"></div>
+</section>
+
 
         <!-- 字幕工具列 -->
         <div id="subToolbar" class="subToolbar">
