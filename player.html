@@ -144,11 +144,26 @@
             <div id="cuesStatus" class="muted" style="padding:10px 14px"></div>
           </div>
 
-          <!-- 測驗 -->
-          <div id="pane-quiz" style="display:none">
-            <div id="quizStatus" class="muted" style="padding:10px 14px">( 尚未載入 )</div>
-            <div id="quizBox" style="padding:0 14px 14px"></div>
-          </div>
+                   <!-- 測驗分頁內容（同一分頁四區） -->
+<div id="quizTabs" class="q-tabs">
+  <button class="qtab on" data-qtab="vocab">單字</button>
+  <button class="qtab" data-qtab="grammar">文法</button>
+  <button class="qtab" data-qtab="reading">閱讀</button>
+  <button class="qtab" data-qtab="mixed">綜合</button>
+  <span id="quizMeta" class="muted" style="margin-left:12px">( 尚未載入 )</span>
+</div>
+
+<div id="quizWrap" class="q-wrap">
+  <ol id="quizList" style="line-height:1.6"></ol>
+
+  <div class="q-actions" style="margin:14px 0 6px; display:flex; gap:8px; align-items:center;">
+    <button class="btn" id="btnSubmitQuiz">交卷</button>
+    <button class="btn" id="btnShowAnswer" style="display:none">顯示答案</button>
+    <button class="btn" id="btnPrintQuiz" style="display:none">列印成績單</button>
+    <span id="quizScore" style="margin-left:8px"></span>
+  </div>
+</div>
+
 
           <!-- 單字 -->
           <div id="pane-vocab" style="display:none">
