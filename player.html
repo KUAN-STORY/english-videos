@@ -20,33 +20,28 @@
   header{display:flex;align-items:center;justify-content:space-between;padding:14px 20px;background:#0f172a;border-bottom:1px solid #0e203f}
   .wrap{padding:16px;height:calc(100vh - 58px);}
 
-  /* ===== 50 : 50 主版面 ===== */
+  /* 主版面 */
   .layout{height:100%;display:flex;gap:16px;overflow:hidden}
   .left,.right{flex:1;min-width:0;background:var(--panel);border:1px solid var(--border);border-radius:12px}
   .left{display:flex;flex-direction:column;padding:14px}
   .right{display:flex;flex-direction:column}
 
-  /* ===== 左邊：影片區 ===== */
-  .videoWrap{
-    position:relative; width:100%;
-    aspect-ratio:16/9;            /* 預設 16:9 畫面 */
-    background:#000; border-radius:10px; overflow:hidden;
-  }
-  .videoWrap video{position:absolute; inset:0; width:100%; height:100%; object-fit:contain; background:#000}
-  /*「填滿畫面」→ 佔滿左欄剩餘高度 + 以 cover 充滿容器（去黑邊） */
-  .videoWrap.fill{flex:1; aspect-ratio:auto; height:100%}
+  /* 左：影片 */
+  .videoWrap{position:relative;width:100%;aspect-ratio:16/9;background:#000;border-radius:10px;overflow:hidden}
+  .videoWrap video{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;background:#000}
+  .videoWrap.fill{flex:1;aspect-ratio:auto;height:100%}
   .videoWrap.fill video{object-fit:cover}
 
-  /* 工具列固定在左欄底部，可捲右邊時不影響左邊 */
+  /* 左：工具列 */
   .controls{margin-top:12px;background:#0e2038;border:1px solid #183459;border-radius:12px;padding:12px}
   .controls .row{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:.25rem 0}
   .chip{display:inline-flex;align-items:center;gap:6px;padding:7px 10px;border:1px solid #23446c;border-radius:10px;background:#10233d}
   .speed{display:flex;align-items:center;gap:10px}
   input[type="range"]{width:260px;accent-color:var(--accent)}
 
-  /* ===== 右邊：分頁 + 內容（右側獨立滾動） ===== */
-  .tabs{display:flex;gap:8px;padding:12px;border-bottom:1px solid var(--border)}
-  .tab{cursor:pointer;background:#122340;border:1px solid #1f375f;border-radius:10px;padding:8px 12px}
+  /* 右：分頁/內容 */
+  .tabs{display:flex;gap:8px;padding:12px;border-bottom:1px solid var(--border);flex-wrap:nowrap}
+  .tab{cursor:pointer;background:#122340;border:1px solid #1f375f;border-radius:10px;padding:8px 12px;white-space:nowrap}
   .tab.active{background:#154274}
   .subToolbar{display:flex;gap:10px;align-items:center;padding:12px;border-bottom:1px solid var(--border)}
   .pane{flex:1;overflow:auto}
@@ -57,7 +52,11 @@
   tbody tr:hover{background:#0f2a4e}
   tr.active{background:#173a6e}
 
-  /* RWD： <= 980 改為上下堆疊 */
+  /* 測驗子分頁 */
+  .q-tabs{display:flex;gap:8px;align-items:center;flex-wrap:wrap;padding:10px 14px;border-bottom:1px solid #162a48}
+  .qtab{background:#13233f;border:1px solid #24446f;border-radius:9px;padding:6px 10px;cursor:pointer}
+  .qtab.on{background:#1d3c6a;border-color:#3c6fd9}
+
   @media (max-width:980px){
     .layout{flex-direction:column}
     .left,.right{height:auto}
@@ -85,7 +84,6 @@
         </div>
 
         <div class="controls">
-          <!-- row1 -->
           <div class="row">
             <button id="btnPrev" class="btn">⏮ 上一句</button>
             <button id="btnPlay" class="btn">▶️ 播放</button>
@@ -94,14 +92,12 @@
             <button id="btnAutoPause" class="btn">🧠 逐句自動暫停</button>
             <button id="btnLoopSentence" class="btn">🔂 整段循環</button>
           </div>
-          <!-- row2 -->
           <div class="row">
             <button id="btnAB" class="btn">🅰🅱 A-B 循環</button>
             <button id="btnPointLoop" class="btn">🎯 點句即循環</button>
             <button id="btnClearLoop" class="btn">🧹 取消循環</button>
             <button id="btnFill" class="btn">🖼 填滿畫面</button>
           </div>
-          <!-- row3 -->
           <div class="row speed">
             <span class="muted">速度</span>
             <input id="speedRange" type="range" min="0.5" max="2" step="0.05" value="1"/>
@@ -111,95 +107,84 @@
       </section>
 
       <!-- ===== 右：字幕 / 測驗 / 單字 ===== -->
-     <section class="right">
-  <div class="tabs">
-    <div class="tab active" data-tab="sub">字幕</div>
-    <div class="tab" data-tab="quiz">測驗</div>
-    <div class="tab" data-tab="vocab">單字</div>
-  </div>
+      <section class="right">
+        <!-- ① 分頁鈕 -->
+        <div class="tabs">
+          <div class="tab active" data-tab="sub">字幕</div>
+          <div class="tab" data-tab="quiz">測驗</div>
+          <div class="tab" data-tab="vocab">單字</div>
+        </div>
 
-  <!-- 這三個 pane 的順序你本來就有 sub / vocab，
-       現在只要補「測驗」這一個 -->
-  <div id="pane-sub"   class="pane"></div>
-  <div id="pane-quiz"  class="pane"></div>  <!-- ← 只要加這一行 -->
-  <div id="pane-vocab" class="pane"></div>
-</section>
-
-
-        <!-- 字幕工具列 -->
+        <!-- ② 字幕工具列（三分頁共用外觀；字幕頁顯示用） -->
         <div id="subToolbar" class="subToolbar">
           <label class="chip"><input id="chkFollow" type="checkbox" checked/> 跟隨</label>
           <span class="chip">偏移 <span id="offsetVal">0.0s</span></span>
           <button id="btnOffsetMinus" class="btn">-0.5s</button>
           <button id="btnOffsetPlus" class="btn">+0.5s</button>
-          <span class="muted" style="margin-left:auto">( 尚未載入 )</span>
+          <span id="cuesHint" class="muted" style="margin-left:auto">( 尚未載入 )</span>
         </div>
 
-        <!-- 右側頁面容器（只讓這個區塊滾動） -->
-        <div class="pane">
-          <!-- 字幕 -->
-          <div id="pane-sub">
-            <table>
-              <thead>
-                <tr>
-                  <th style="width:80px">時間</th>
-                  <th>英文</th>
-                  <th style="width:40%">中文</th>
-                </tr>
-              </thead>
-              <tbody id="cuesBody"></tbody>
-            </table>
-            <div id="cuesStatus" class="muted" style="padding:10px 14px"></div>
+        <!-- ③ 三個 pane（只有這層！請勿再外包一個 .pane） -->
+        <!-- 字幕 -->
+        <div id="pane-sub" class="pane" style="display:block">
+          <table>
+            <thead>
+              <tr>
+                <th style="width:80px">時間</th>
+                <th>英文</th>
+                <th style="width:40%">中文</th>
+              </tr>
+            </thead>
+            <tbody id="cuesBody"></tbody>
+          </table>
+          <div id="cuesStatus" class="muted" style="padding:10px 14px"></div>
+        </div>
+
+        <!-- 測驗（四區） -->
+        <div id="pane-quiz" class="pane" style="display:none">
+          <div id="quizTabs" class="q-tabs">
+            <button class="qtab on" data-qtab="vocab">單字</button>
+            <button class="qtab" data-qtab="grammar">文法</button>
+            <button class="qtab" data-qtab="reading">閱讀</button>
+            <button class="qtab" data-qtab="mixed">綜合</button>
+            <span id="quizMeta" class="muted" style="margin-left:12px">( 載入中… )</span>
           </div>
 
-                   <!-- 測驗分頁內容（同一分頁四區） -->
-<div id="quizTabs" class="q-tabs">
-  <button class="qtab on" data-qtab="vocab">單字</button>
-  <button class="qtab" data-qtab="grammar">文法</button>
-  <button class="qtab" data-qtab="reading">閱讀</button>
-  <button class="qtab" data-qtab="mixed">綜合</button>
-  <span id="quizMeta" class="muted" style="margin-left:12px">( 尚未載入 )</span>
-</div>
-
-<div id="quizWrap" class="q-wrap">
-  <ol id="quizList" style="line-height:1.6"></ol>
-
-  <div class="q-actions" style="margin:14px 0 6px; display:flex; gap:8px; align-items:center;">
-    <button class="btn" id="btnSubmitQuiz">交卷</button>
-    <button class="btn" id="btnShowAnswer" style="display:none">顯示答案</button>
-    <button class="btn" id="btnPrintQuiz" style="display:none">列印成績單</button>
-    <span id="quizScore" style="margin-left:8px"></span>
-  </div>
-</div>
-
-
-          <!-- 單字 -->
-          <div id="pane-vocab" style="display:none">
-            <div id="vocabStatus" class="muted" style="padding:10px 14px">( 尚未載入 )</div>
-            <div id="vocabBox" style="padding:0 14px 14px"></div>
+          <div id="quizWrap" class="q-wrap">
+            <ol id="quizList" style="line-height:1.6"></ol>
+            <div class="q-actions" style="margin:14px 0 6px;display:flex;gap:8px;align-items:center">
+              <button class="btn" id="btnSubmitQuiz">交卷</button>
+              <button class="btn" id="btnShowAnswer" style="display:none">顯示答案</button>
+              <button class="btn" id="btnPrintQuiz" style="display:none">列印成績單</button>
+              <span id="quizScore" style="margin-left:8px"></span>
+            </div>
           </div>
+        </div>
+
+        <!-- 單字 -->
+        <div id="pane-vocab" class="pane" style="display:none">
+          <div id="vocabStatus" class="muted" style="padding:10px 14px">( 尚未載入 )</div>
+          <div id="vocabBox" style="padding:0 14px 14px"></div>
         </div>
       </section>
     </div>
   </div>
 
-  <!-- 你的播放器邏輯（V7.2） -->
+  <!-- 播放器邏輯（沿用你現有的 player.js / login.js） -->
   <script src="./player.js"></script>
-  <!-- 假登入（之後可換 Supabase Auth） -->
   <script src="./login.js"></script>
 
-  <!-- 只補「填滿畫面」狀態提示（不改你既有邏輯） -->
+  <!-- 同步「填滿畫面」按鈕標籤（不改既有邏輯） -->
   <script>
-    // 若 player.js 已綁定 btnFill 來切換 #videoWrap.fill，這段只同步按鈕文字
     (function(){
       const wrap = document.getElementById('videoWrap');
       const btn  = document.getElementById('btnFill');
       if(!wrap || !btn) return;
       const sync = () => btn.textContent = wrap.classList.contains('fill') ? '🖼 還原比例' : '🖼 填滿畫面';
-      // 嘗試接手一次點擊（若 player.js 已處理，也只是再同步文字，不影響）
       btn.addEventListener('click', ()=> setTimeout(sync, 0));
       sync();
     })();
   </script>
 </body>
 </html>
+
