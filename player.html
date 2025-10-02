@@ -1,22 +1,5 @@
 <!doctype html>
 <html lang="zh-Hant">
-  <style>
-.tabs {
-    display: flex;
-    gap: 6px;   /* 每個按鈕間距 */
-    flex-wrap: nowrap; /* 禁止換行 */
-}
-
-.tabs .tab {
-    padding: 6px 12px;
-    background: #1a2235;
-    color: white;
-    border-radius: 4px;
-    cursor: pointer;
-    white-space: nowrap; /* 避免自動換行 */
-}
-</style>
-
 <head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1"/>
@@ -127,26 +110,13 @@
         </div>
       </section>
 
-     <!-- ===== 右：字幕 / 測驗 A/B/C / 單字 ===== -->
-<!-- 主分頁（只留兩顆） -->
-<div class="tabs">
-  <div class="tab active" data-tab="sub">字幕</div>
-  <div class="tab" data-tab="vocab">單字</div>
-</div>
-
-<!-- 右側面板：移除測驗面板 -->
-<!-- <div id="pane-quiz" class="pane"></div> -->
-
-
-
-  <!-- 分頁對應內容 -->
-  <div id="pane-sub" class="tab-pane active">(字幕載入中…)</div>
-  <div id="pane-quizA" class="tab-pane">(測驗 A 載入中…)</div>
-  <div id="pane-quizB" class="tab-pane">(測驗 B 載入中…)</div>
-  <div id="pane-quizC" class="tab-pane">(測驗 C 載入中…)</div>
-  <div id="pane-vocab" class="tab-pane">(單字載入中…)</div>
-</section>
-
+      <!-- ===== 右：字幕 / 測驗 / 單字 ===== -->
+      <section class="right">
+        <div class="tabs">
+          <div class="tab active" data-tab="sub">字幕</div>
+          <div class="tab" data-tab="quiz">測驗</div>
+          <div class="tab" data-tab="vocab">單字</div>
+        </div>
 
         <!-- 字幕工具列 -->
         <div id="subToolbar" class="subToolbar">
@@ -210,4 +180,3 @@
   </script>
 </body>
 </html>
-
