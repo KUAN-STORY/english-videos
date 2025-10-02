@@ -110,13 +110,27 @@
         </div>
       </section>
 
-      <!-- ===== 右：字幕 / 測驗 / 單字 ===== -->
-      <section class="right">
-        <div class="tabs">
-          <div class="tab active" data-tab="sub">字幕</div>
-          <div class="tab" data-tab="quiz">測驗</div>
-          <div class="tab" data-tab="vocab">單字</div>
-        </div>
+     <!-- ===== 右：字幕 / 測驗 A/B/C / 單字 ===== -->
+<section class="right">
+  <div class="tabs">
+    <div class="tab active" data-tab="sub">字幕</div>
+
+    <!-- 原本的「測驗」拆成三個 -->
+    <div class="tab" data-tab="quizA">測驗 A</div>
+    <div class="tab" data-tab="quizB">測驗 B</div>
+    <div class="tab" data-tab="quizC">測驗 C</div>
+
+    <div class="tab" data-tab="vocab">單字</div>
+  </div>
+
+  <!-- 分頁對應內容 -->
+  <div id="pane-sub" class="tab-pane active">(字幕載入中…)</div>
+  <div id="pane-quizA" class="tab-pane">(測驗 A 載入中…)</div>
+  <div id="pane-quizB" class="tab-pane">(測驗 B 載入中…)</div>
+  <div id="pane-quizC" class="tab-pane">(測驗 C 載入中…)</div>
+  <div id="pane-vocab" class="tab-pane">(單字載入中…)</div>
+</section>
+
 
         <!-- 字幕工具列 -->
         <div id="subToolbar" class="subToolbar">
