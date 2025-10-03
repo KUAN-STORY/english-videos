@@ -1,4 +1,3 @@
-
 <!doctype html>
 <html lang="zh-Hant">
 <head>
@@ -137,9 +136,47 @@
       #ph-logo{height:18mm; object-fit:contain}
       #ph-meta{flex:1}
       #ph-meta h2{margin:0 0 4px 0; color:#0b1324}
-      #ph-meta .muted{color:#445}
       #ph-score{min-width:46mm; text-align:right}
       #ph-score .big{font-size:22px; font-weight:800}
+    }
+
+    /* ===== 手機版字幕表：把「中文」排到「英文」下方 ===== */
+    @media (max-width: 900px){
+      /* 隱藏表頭，改用兩行卡片式 */
+      #pane-sub table thead{ display:none; }
+
+      /* 每列：左側時間固定，右側英文在上、中文在下 */
+      #pane-sub tbody tr{
+        display:grid;
+        grid-template-columns: 70px 1fr;
+        grid-template-areas:
+          "time en"
+          "time zh";
+        gap:6px 12px;
+        padding:10px 8px;
+      }
+      /* 第 1 欄＝時間 */
+      #pane-sub td:nth-child(1){
+        grid-area: time;
+        color: var(--muted);
+        width: auto;
+        border-bottom: none;
+      }
+      /* 第 2 欄＝英文（上） */
+      #pane-sub td:nth-child(2){
+        grid-area: en;
+        font-size: 16px;
+        line-height: 1.5;
+        border-bottom: none;
+      }
+      /* 第 3 欄＝中文（下） */
+      #pane-sub td:nth-child(3){
+        grid-area: zh;
+        font-size: 14px;
+        color: #9fb0c9;
+        border-bottom: 1px solid #162a48;
+        padding-top: 2px;
+      }
     }
   </style>
 </head>
