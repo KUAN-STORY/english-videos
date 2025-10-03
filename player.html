@@ -28,8 +28,7 @@
     /* 影片 */
     .videoWrap{position:relative;width:100%;aspect-ratio:16/9;background:#000;border-radius:10px;overflow:hidden}
     .videoWrap video{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;background:#000}
-    /* ⬇ 填滿模式時改用 cover */
-    .videoWrap.fill video{object-fit:cover}
+    .videoWrap.fill video{object-fit:cover} /* 填滿模式 */
 
     /* 左側工具列（桌機） */
     .controls{margin-top:12px;background:#0e2038;border:1px solid #183459;border-radius:12px;padding:12px}
@@ -38,8 +37,8 @@
     input[type="range"]{width:260px;accent-color:var(--accent)}
     .chip{display:inline-flex;align-items:center;gap:6px;padding:7px 10px;border:1px solid #23446c;border-radius:10px;background:#10233d}
 
-    /* 右：分頁 */
-    .tabs{display:flex;gap:8px;padding:12px;border-bottom:1px solid var(--border)}
+    /* 右：分頁（上移、縮小間距以釋出空間） */
+    .tabs{display:flex;gap:8px;padding:6px 10px;margin-bottom:4px;border-bottom:1px solid var(--border)}
     .tab{cursor:pointer;background:#122340;border:1px solid #1f375f;border-radius:10px;padding:8px 12px}
     .tab.active{background:#154274}
 
@@ -50,12 +49,20 @@
     tbody tr:hover{background:#0f2a4e}
     tr.active{background:#173a6e}
 
+    /* 調整字幕英文/中文的斷行與行高（桌機也適用） */
+    #pane-sub td:nth-child(2),
+    #pane-sub td:nth-child(3){
+      word-break: break-word;
+      white-space: normal;
+      line-height: 1.6;
+    }
+
     /* 測驗上方四分區按鈕 */
     .q-tabs{display:flex;gap:8px;flex-wrap:wrap}
     .q-tabs .qtab{background:#122340;border:1px solid #1f375f;border-radius:10px;padding:6px 12px;color:#e6efff;cursor:pointer}
     .q-tabs .qtab.on{background:#154274}
 
-    /* ===== 手機行為：影片固定在頂，右邊內容獨立滾動；工具列改底部抽屜 ===== */
+    /* ===== 手機：影片固定在頂，右邊內容獨立滾動；工具列改底部抽屜；字幕英文上中文下 ===== */
     @media (max-width: 900px){
       .wrap{height:calc(100vh - 58px); padding:12px;}
       .layout{flex-direction:column; height:100%}
@@ -78,13 +85,21 @@
       .grab-bar{ width:44px; height:4px; border-radius:4px; margin:0 auto 4px; background:#2b4a78; }
       .drawer-title{font-size:12px; color:#9fb0c9;}
 
-      /* 字幕堆疊（時間一行、英文上、中文下） */
+      /* 字幕堆疊（英文上、中文下），中文略大、顏色更亮，避免被擠掉 */
       #pane-sub table thead { display:none; }
       #pane-sub table, #pane-sub tbody, #pane-sub tr, #pane-sub td { display:block; width:100%; }
-      #pane-sub tr { border-bottom:1px solid #162a48; padding:8px 0; }
+      #pane-sub tr { border-bottom:1px solid #162a48; padding:10px 0; }
       #pane-sub td:nth-child(1){ font-size:12px; color:var(--muted); margin-bottom:4px; }
-      #pane-sub td:nth-child(2){ font-size:16px; line-height:1.5; color:#e6efff; margin-bottom:2px; }
-      #pane-sub td:nth-child(3){ font-size:14px; line-height:1.5; color:#9fb0c9; }
+      #pane-sub td:nth-child(2){ font-size:17px; line-height:1.55; color:#e6efff; margin-bottom:3px; }
+      #pane-sub td:nth-child(3){
+        display:block;
+        font-size:15.5px;
+        line-height:1.7;
+        color:#d6e4ff;
+        margin-top:2px;
+        word-break: break-word;
+        white-space: normal;
+      }
 
       /* 專心模式：測驗/單字時隱藏影片與抽屜（整頁顯示） */
       body.focus-mode .left{ display:none !important; }
@@ -94,7 +109,7 @@
 
     /* ===== 列印：只印右側、白底黑字、題目不切半 + 抬頭 ===== */
     @media print{
-      html, body{ background:#fff !important; color:#000 !important; }
+      html, body{ background:#fff !important; color:#000 !重要; }
       header, .left, .tabs, .controls{ display:none !important; }
       .wrap{ padding:0 !important; }
       .layout{ display:block !important; height:auto !important; overflow:visible !important; }
@@ -145,7 +160,7 @@
     <div class="layout">
       <!-- 左：影片 -->
       <section class="left" id="videoContainer">
-        <!-- ⬇ 預設就填滿 -->
+        <!-- 預設填滿 -->
         <div id="videoWrap" class="videoWrap fill">
           <video id="player" playsinline controls></video>
         </div>
@@ -162,7 +177,6 @@
             <button id="btnPlay" class="btn">▶️ 播放</button>
             <button id="btnNext" class="btn">⏭ 下一句</button>
             <button id="btnReplay" class="btn blue">🔁 重複本句</button>
-            <!-- 文字會隨狀態切換 -->
             <button id="btnFill" class="btn">🖼 還原比例</button>
           </div>
 
@@ -327,7 +341,7 @@
         }
         if (phRemark) phRemark.textContent = remark;
       }
-      btnPrint.addEventListener('click', () => { fillPrintHeader(); window.print(); });
+      document.getElementById('btnPrintQuiz')?.addEventListener('click', () => { fillPrintHeader(); window.print(); });
       window.addEventListener('beforeprint', fillPrintHeader);
     })();
 
@@ -343,6 +357,7 @@
   </script>
 </body>
 </html>
+
 
 
 
