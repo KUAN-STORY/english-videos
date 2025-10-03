@@ -178,6 +178,64 @@
         padding-top: 2px;
       }
     }
+    /* === 手機版修正（iOS Safari 可靠版）=== */
+@media (max-width: 900px){
+
+  /* 版面：左右改上下堆疊，避免擠成兩欄 */
+  .layout{ flex-direction: column; }
+  .left, .right{ min-width: 0; }
+
+  /* 隱藏字幕表頭 */
+  #pane-sub table thead{ display:none; }
+
+  /* 解除 table 語意，讓 tr/td 可以用 grid/flex */
+  #pane-sub table{ display:block; width:100%; border-collapse:separate; }
+  #pane-sub tbody{ display:block; width:100%; }
+  #pane-sub tr{ display:grid; grid-template-columns:70px 1fr; 
+                grid-template-areas:
+                  "time en"
+                  "time zh";
+                gap:6px 12px;
+                padding:10px 8px;
+                border-bottom:1px solid #162a48;
+                background:transparent; }
+  #pane-sub td{ display:block; width:auto; border:none; padding:0; }
+
+  /* 第 1 欄＝時間（固定在左） */
+  #pane-sub td:nth-child(1){
+    grid-area: time;
+    color: var(--muted);
+    font-size: 12px;
+    line-height: 1.2;
+  }
+
+  /* 第 2 欄＝英文（上方） */
+  #pane-sub td:nth-child(2){
+    grid-area: en;
+    font-size: 16px;
+    line-height: 1.5;
+    color: #e6efff;
+  }
+
+  /* 第 3 欄＝中文（英文下方） */
+  #pane-sub td:nth-child(3){
+    grid-area: zh;
+    font-size: 14px;
+    line-height: 1.5;
+    color: #9fb0c9;
+    margin-top: 2px;
+  }
+}
+
+/* 加強：手機橫向時也套用（某些機型寬度仍 >900px） */
+@media (orientation: landscape) and (max-height: 520px){
+  .layout{ flex-direction: column; }
+  #pane-sub table thead{ display:none; }
+  #pane-sub table, #pane-sub tbody{ display:block; }
+  #pane-sub tr{ display:grid; grid-template-columns:70px 1fr;
+                grid-template-areas:"time en" "time zh"; }
+}
+
   </style>
 </head>
 <body>
