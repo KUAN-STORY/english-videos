@@ -128,23 +128,42 @@
   </header>
 
   <!-- 列印抬頭（僅列印時顯示；JS 會填入分數/評語/影片名） -->
-  <div id="printHeader">
-    <div id="ph-row">
-      <img id="ph-logo" src="./images/bookwide-logo.png" alt="BookWide">
-      <div id="ph-meta">
-        <h2 id="ph-org">BookWide 英語學習系統</h2>
-        <div class="muted">
-          影片：<span id="ph-title">—</span>　
-          卷別：<span id="ph-section">—</span>　
-          日期：<span id="ph-date">—</span>
-        </div>
-      </div>
-      <div id="ph-score">
-        <div class="big" id="ph-score-val">—</div>
-        <div class="muted" id="ph-comment">—</div>
-      </div>
-    </div>
-  </div>
+ /* ===== 列印表頭 + 解除捲動，確保全部 20 題都印出 ===== */
+@media print{
+  /* 顏色維持 */
+  body{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+
+  /* 只印右側內容 */
+  header,.left,.tabs,.subToolbar{display:none !important}
+
+  /* 解除版面限制（很關鍵） */
+  .wrap{padding:0}
+  .layout{display:block; height:auto; overflow:visible}
+  .right{display:block; border:none; height:auto}
+  .pane, #pane-quiz, .quiz-shell{overflow:visible; height:auto; max-height:none}
+  #quizList{overflow:visible; height:auto; max-height:none}
+
+  /* 每一題不要被切半 */
+  #quizList > li{
+    break-inside: avoid;
+    page-break-inside: avoid;
+    margin-bottom: 10px;
+  }
+
+  /* 列印抬頭（logo / 機構 / 分數 / 評語） */
+  #printHeader{display:block; padding:6mm 0 2mm 0; border-bottom:1px solid #d0d7e2; margin-bottom:6mm}
+  #ph-row{display:flex; align-items:center; gap:10px}
+  #ph-logo{height:18mm; object-fit:contain}
+  #ph-meta{flex:1}
+  #ph-meta h2{margin:0 0 4px 0; color:#0b1324}
+  #ph-meta .muted{color:#445}
+  #ph-score{min-width:46mm; text-align:right}
+  #ph-score .big{font-size:22px; font-weight:800}
+
+  /* 列印時隱藏操作按鈕 */
+  .q-actions button{display:none}
+}
+
 
   <div class="wrap">
     <div class="layout">
