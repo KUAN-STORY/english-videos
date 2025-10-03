@@ -1,70 +1,71 @@
 <!doctype html>
 <html lang="zh-Hant">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>英語影片播放器</title>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>英語影片播放器</title>
+<style>
+  :root{
+    --bg:#0b1324; --panel:#0f172a; --border:#1f2a44;
+    --ink:#e6efff; --muted:#9fb0c9; --accent:#3c7cff;
+  }
+  *{box-sizing:border-box}
+  html,body{height:100%;margin:0;background:var(--bg);color:var(--ink);font-family:ui-sans-serif,system-ui,"Noto Sans TC"}
+  h1{font-size:20px;margin:0}
+  .btn{background:#13233f;border:1px solid #24446f;border-radius:10px;padding:8px 12px;color:#fff;cursor:pointer}
+  .btn.blue{background:#14335f;border-color:#2c5aa3}
+  .btn.green{background:#0f3d39;border-color:#1f7a6d}
+  .muted{color:var(--muted)}
 
-  <!-- 簡要樣式：保留你現有風格；只加了 q-tabs 的顯示樣式 -->
-  <style>
-    :root{
-      --bg:#0b1324; --panel:#0f172a; --border:#1f2a44;
-      --ink:#e6efff; --muted:#9fb0c9; --accent:#3c7cff;
-    }
-    *{box-sizing:border-box}
-    html,body{height:100%;margin:0;background:var(--bg);color:var(--ink);font-family:ui-sans-serif,system-ui,"Noto Sans TC"}
-    .btn{background:#13233f;border:1px solid #24446f;border-radius:10px;padding:8px 12px;color:#fff;cursor:pointer}
-    .btn.blue{background:#14335f;border-color:#2c5aa3}
-    .muted{color:var(--muted)}
+  header{display:flex;align-items:center;justify-content:space-between;padding:14px 20px;background:#0f172a;border-bottom:1px solid #0e203f}
+  .wrap{padding:16px;height:calc(100vh - 58px);}
 
-    header{display:flex;align-items:center;justify-content:space-between;padding:14px 20px;background:#0f172a;border-bottom:1px solid #0e203f}
-    h1{font-size:20px;margin:0}
+  /* 版面：左右 50/50 */
+  .layout{height:100%;display:flex;gap:16px;overflow:hidden}
+  .left,.right{flex:1;min-width:0;background:var(--panel);border:1px solid var(--border);border-radius:12px}
+  .left{display:flex;flex-direction:column;padding:14px}
+  .right{display:flex;flex-direction:column}
 
-    .wrap{padding:16px;height:calc(100vh - 58px);}
-    .layout{height:100%;display:flex;gap:16px;overflow:hidden}
-    .left,.right{flex:1;min-width:0;background:var(--panel);border:1px solid var(--border);border-radius:12px}
-    .left{display:flex;flex-direction:column;padding:14px}
-    .right{display:flex;flex-direction:column}
+  /* 左：影片 */
+  .videoWrap{position:relative;width:100%;aspect-ratio:16/9;background:#000;border-radius:10px;overflow:hidden}
+  .videoWrap video{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;background:#000}
+  .videoWrap.fill{flex:1;aspect-ratio:auto;height:100%}
+  .videoWrap.fill video{object-fit:cover}
 
-    .videoWrap{position:relative;width:100%;aspect-ratio:16/9;background:#000;border-radius:10px;overflow:hidden}
-    .videoWrap video{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;background:#000}
-    .videoWrap.fill{flex:1;aspect-ratio:auto;height:100%}
-    .videoWrap.fill video{object-fit:cover}
+  .controls{margin-top:12px;background:#0e2038;border:1px solid #183459;border-radius:12px;padding:12px}
+  .controls .row{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:.25rem 0}
+  .chip{display:inline-flex;align-items:center;gap:6px;padding:7px 10px;border:1px solid #23446c;border-radius:10px;background:#10233d}
+  .speed{display:flex;align-items:center;gap:10px}
+  input[type="range"]{width:260px;accent-color:var(--accent)}
 
-    .controls{margin-top:12px;background:#0e2038;border:1px solid #183459;border-radius:12px;padding:12px}
-    .controls .row{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:.25rem 0}
-    .chip{display:inline-flex;align-items:center;gap:6px;padding:7px 10px;border:1px solid #23446c;border-radius:10px;background:#10233d}
-    .speed{display:flex;align-items:center;gap:10px}
-    input[type="range"]{width:260px;accent-color:var(--accent)}
+  /* 右：分頁 */
+  .tabs{display:flex;gap:8px;padding:12px;border-bottom:1px solid var(--border)}
+  .tab{cursor:pointer;background:#122340;border:1px solid #1f375f;border-radius:10px;padding:8px 12px;white-space:nowrap}
+  .tab.active{background:#154274}
 
-    .tabs{display:flex;gap:8px;padding:12px;border-bottom:1px solid var(--border)}
-    .tab{cursor:pointer;background:#122340;border:1px solid #1f375f;border-radius:10px;padding:8px 12px}
-    .tab.active{background:#154274}
-    .subToolbar{display:flex;gap:10px;align-items:center;padding:12px;border-bottom:1px solid var(--border)}
-    .pane{flex:1;overflow:auto}
+  .subToolbar{display:flex;gap:10px;align-items:center;padding:12px;border-bottom:1px solid var(--border)}
+  .pane{flex:1;overflow:auto}
 
-    table{width:100%;border-collapse:collapse}
-    th,td{padding:10px 12px;border-bottom:1px solid #162a48;vertical-align:top}
-    tbody tr{background:#0f1f34}
-    tbody tr:nth-child(2n){background:#0d1a2b}
-    tbody tr:hover{background:#0f2a4e}
-    tr.active{background:#173a6e}
+  table{width:100%;border-collapse:collapse}
+  th,td{padding:10px 12px;border-bottom:1px solid #162a48;vertical-align:top}
+  tbody tr{background:#0f1f34}
+  tbody tr:nth-child(2n){background:#0d1a2b}
+  tbody tr:hover{background:#0f2a4e}
+  tr.active{background:#173a6e}
 
-    /* ── 測驗分頁中的四小分頁（單字/文法/閱讀/綜合）── */
-    .q-tabs{display:flex;gap:8px;align-items:center;margin:12px 12px 6px}
-    .qtab{background:#122340;border:1px solid #1f375f;border-radius:8px;padding:6px 12px;color:#e6efff;cursor:pointer}
-    .qtab.on{background:#154274}
-    .q-actions{margin:14px 12px 10px;display:flex;gap:8px;align-items:center}
+  /* 測驗上方分頁（單字／文法／閱讀／綜合） */
+  .q-tabs{display:flex;gap:6px;padding:10px;border-bottom:1px solid #1f2a44;position:sticky;top:0;background:#0f172a;z-index:5}
+  .qtab{cursor:pointer;background:#13233f;border:1px solid #24446f;border-radius:8px;padding:6px 12px;font-size:14px}
+  .qtab.on{background:#154274}
 
-    @media (max-width:980px){
-      .layout{flex-direction:column}
-      .left,.right{height:auto}
-      .videoWrap{aspect-ratio:16/9}
-      .videoWrap.fill{height:auto}
-    }
-  </style>
+  @media (max-width:980px){
+    .layout{flex-direction:column}
+    .left,.right{height:auto}
+    .videoWrap{aspect-ratio:16/9}
+    .videoWrap.fill{height:auto}
+  }
+</style>
 </head>
-
 <body>
   <header>
     <h1>英語影片播放器</h1>
@@ -77,12 +78,11 @@
 
   <div class="wrap">
     <div class="layout">
-      <!-- ===== 左：影片 + 工具 ===== -->
+      <!-- 左：影片 + 工具 -->
       <section class="left">
         <div id="videoWrap" class="videoWrap">
           <video id="player" playsinline controls></video>
         </div>
-
         <div class="controls">
           <div class="row">
             <button id="btnPrev" class="btn">⏮ 上一句</button>
@@ -100,13 +100,13 @@
           </div>
           <div class="row speed">
             <span class="muted">速度</span>
-            <input id="speedRange" type="range" min="0.5" max="2" step="0.05" value="1">
+            <input id="speedRange" type="range" min="0.5" max="2" step="0.05" value="1"/>
             <span id="speedVal">1.00x</span>
           </div>
         </div>
       </section>
 
-      <!-- ===== 右：字幕 / 測驗 / 單字 ===== -->
+      <!-- 右：字幕 / 測驗 / 單字 -->
       <section class="right">
         <div class="tabs">
           <div class="tab active" data-tab="sub">字幕</div>
@@ -114,83 +114,126 @@
           <div class="tab" data-tab="vocab">單字</div>
         </div>
 
-        <!-- 字幕工具列（保留原本） -->
-        <div id="subToolbar" class="subToolbar">
-          <label class="chip"><input id="chkFollow" type="checkbox" checked /> 跟隨</label>
-          <span class="chip">偏移 <span id="offsetVal">0.0s</span></span>
-          <button id="btnOffsetMinus" class="btn">-0.5s</button>
-          <button id="btnOffsetPlus"  class="btn">+0.5s</button>
-          <span class="muted" style="margin-left:auto">( 尚未載入 )</span>
+        <!-- 字幕面板 -->
+        <div id="pane-sub" class="pane">
+          <div id="subToolbar" class="subToolbar">
+            <label class="chip"><input id="chkFollow" type="checkbox" checked/> 跟隨</label>
+            <span class="chip">偏移 <span id="offsetVal">0.0s</span></span>
+            <button id="btnOffsetMinus" class="btn">-0.5s</button>
+            <button id="btnOffsetPlus" class="btn">+0.5s</button>
+            <span id="cuesStatus" class="muted" style="margin-left:auto">( 尚未載入 )</span>
+          </div>
+          <table>
+            <thead>
+              <tr>
+                <th style="width:80px">時間</th>
+                <th>英文</th>
+                <th style="width:40%">中文</th>
+              </tr>
+            </thead>
+            <tbody id="cuesBody"></tbody>
+          </table>
         </div>
 
-        <!-- 右側各分頁內容容器（只讓這個區塊滾動） -->
-        <div class="pane">
-
-          <!-- ===== 字幕分頁 ===== -->
-          <div id="pane-sub">
-            <table>
-              <thead>
-                <tr>
-                  <th style="width:80px">時間</th>
-                  <th>英文</th>
-                  <th style="width:40%">中文</th>
-                </tr>
-              </thead>
-              <tbody id="cuesBody"></tbody>
-            </table>
-            <div id="cuesStatus" class="muted" style="padding:10px 14px"></div>
+        <!-- 測驗面板 -->
+        <div id="pane-quiz" class="pane" style="display:none">
+          <!-- 上方四分頁（轉接到底部分頁） -->
+          <div id="topQuizTabs" class="q-tabs">
+            <button class="qtab on" data-qtab="vocab">單字</button>
+            <button class="qtab" data-qtab="grammar">文法</button>
+            <button class="qtab" data-qtab="reading">閱讀</button>
+            <button class="qtab" data-qtab="mixed">綜合</button>
           </div>
 
-          <!-- ===== 測驗分頁（四小分頁移到上方） ===== -->
-          <div id="pane-quiz" style="display:none">
-            <div id="quizTabs" class="q-tabs">
-              <button class="qtab on" data-qtab="vocab">單字</button>
-              <button class="qtab"    data-qtab="grammar">文法</button>
-              <button class="qtab"    data-qtab="reading">閱讀</button>
-              <button class="qtab"    data-qtab="mixed">綜合</button>
-              <span id="quizMeta" class="muted" style="margin-left:12px">( 尚未載入 )</span>
-            </div>
+          <!-- 保留你原本底部分頁（供 JS 綁定與渲染使用） -->
+          <div id="quizTabs" class="q-tabs" style="display:none">
+            <button class="qtab on" data-qtab="vocab">單字</button>
+            <button class="qtab" data-qtab="grammar">文法</button>
+            <button class="qtab" data-qtab="reading">閱讀</button>
+            <button class="qtab" data-qtab="mixed">綜合</button>
+          </div>
 
-            <div id="quizWrap" class="q-wrap" style="padding:0 12px">
-              <ol id="quizList" style="line-height:1.6"></ol>
-              <div class="q-actions">
-                <button class="btn" id="btnSubmitQuiz">交卷</button>
-                <button class="btn" id="btnShowAnswer" style="display:none">顯示答案</button>
-                <button class="btn" id="btnPrintQuiz" style="display:none">列印成績單</button>
-                <span id="quizScore" style="margin-left:8px"></span>
-              </div>
+          <div id="quizWrap" class="q-wrap" style="padding:10px 12px">
+            <ol id="quizList" style="line-height:1.6"></ol>
+            <div class="q-actions" style="margin:14px 0 6px; display:flex; gap:8px; align-items:center;">
+              <button class="btn" id="btnSubmitQuiz">交卷</button>
+              <button class="btn" id="btnShowAnswer" style="display:none">顯示答案</button>
+              <button class="btn" id="btnPrintQuiz" style="display:none">列印成績單</button>
+              <span id="quizScore" style="margin-left:8px"></span>
             </div>
           </div>
+        </div>
 
-          <!-- ===== 單字分頁 ===== -->
-          <div id="pane-vocab" style="display:none">
-            <div id="vocabStatus" class="muted" style="padding:10px 14px">( 尚未載入 )</div>
-            <div id="vocabBox" style="padding:0 14px 14px"></div>
-          </div>
-
+        <!-- 單字面板 -->
+        <div id="pane-vocab" class="pane" style="display:none">
+          <div id="vocabStatus" class="muted" style="padding:10px 14px">( 尚未載入 )</div>
+          <div id="vocabBox" style="padding:0 14px 14px"></div>
         </div>
       </section>
     </div>
   </div>
 
-  <!-- 你的主程式（維持不變） -->
+  <!-- 你的播放器主程式（請保留） -->
   <script src="./player.js"></script>
-  <script src="./login.js"></script>
-  <!-- 如果你把測驗邏輯拆到 quiz.js，這行保留；沒有 quiz.js 也不影響 -->
-  <script src="./quiz.js"></script>
 
-  <!-- 小工具：同步「填滿畫面」按鈕文字（不影響 player.js 的功能） -->
+  <!-- 右側三大分頁切換（簡易、不影響既有 JS） -->
   <script>
-    (function(){
-      const wrap = document.getElementById('videoWrap');
-      const btn  = document.getElementById('btnFill');
-      if(!wrap || !btn) return;
-      const sync = () => btn.textContent = wrap.classList.contains('fill') ? '🖼 還原比例' : '🖼 填滿畫面';
-      btn.addEventListener('click', ()=> setTimeout(sync, 0));
-      sync();
+    (function tabs3(){
+      const tabs = document.querySelectorAll('.tabs .tab');
+      const panes = {
+        sub: document.getElementById('pane-sub'),
+        quiz: document.getElementById('pane-quiz'),
+        vocab: document.getElementById('pane-vocab'),
+      };
+      const show = (key)=>{
+        tabs.forEach(t=>t.classList.toggle('active', t.dataset.tab===key));
+        panes.sub.style.display   = (key==='sub')   ? '' : 'none';
+        panes.quiz.style.display  = (key==='quiz')  ? '' : 'none';
+        panes.vocab.style.display = (key==='vocab') ? '' : 'none';
+      };
+      tabs.forEach(t=> t.addEventListener('click', ()=> show(t.dataset.tab)));
+      show('sub'); // 進頁面顯示「字幕」
+    })();
+  </script>
+
+  <!-- 測驗上／下分頁轉接橋（把上列點擊轉發到底部，沿用你既有邏輯） -->
+  <script>
+    (function bridgeQuizTabs() {
+      const pane = document.querySelector('#pane-quiz');
+      if (!pane) return;
+      const topTabs    = pane.querySelectorAll('#topQuizTabs .qtab');
+      const bottomTabs = pane.querySelectorAll('#quizTabs .qtab');
+      if (!topTabs.length || !bottomTabs.length) return;
+
+      const clickBottomByKey = (key) => {
+        const btn = pane.querySelector(`#quizTabs .qtab[data-qtab="${key}"]`);
+        btn?.click();
+      };
+
+      topTabs.forEach(t => {
+        t.addEventListener('click', () => {
+          const key = t.dataset.qtab;
+          topTabs.forEach(x => x.classList.toggle('on', x === t));
+          clickBottomByKey(key);
+        });
+      });
+
+      bottomTabs.forEach(b => {
+        b.addEventListener('click', () => {
+          const key = b.dataset.qtab;
+          topTabs.forEach(x => x.classList.toggle('on', x.dataset.qtab === key));
+        });
+      });
+
+      const activeBottom = pane.querySelector('#quizTabs .qtab.on') || bottomTabs[0];
+      if (activeBottom) {
+        const key = activeBottom.dataset.qtab;
+        topTabs.forEach(x => x.classList.toggle('on', x.dataset.qtab === key));
+      }
     })();
   </script>
 </body>
 </html>
+
 
 
