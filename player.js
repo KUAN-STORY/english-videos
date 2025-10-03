@@ -460,98 +460,161 @@
     await loadAll();
   })();
 })();
-// ====== Quiz (minimal, tolerant loader) ======
+// ====== Quiz (Top/Bottom toolbars kept in sync) ======
 async function bootQuizTab() {
-  // 1) 拿 slug
   const params = new URLSearchParams(location.search);
   const slug = params.get('slug') || 'mid-autumn';
 
-  // 2) 定位測驗 pane，沒有就跳過
   const pane = document.querySelector('#pane-quiz');
   if (!pane) {
     console.warn('[quiz] #pane-quiz not found; skip quiz boot.');
     return;
   }
 
-  // 3) 補齊容器（若 html 沒放）
-  //    只會在不存在時建立，避免影響你原本版型
+  // 建一個外殼（只在不存在時建立，避免干擾版型）
   if (!pane.querySelector('.quiz-shell')) {
     const shell = document.createElement('div');
     shell.className = 'quiz-shell';
     shell.innerHTML = `
-      <div style="display:flex;gap:8px;margin:6px 0">
-        <button class="btn" data-sec="Vocabulary">單字</button>
-        <button class="btn" data-sec="Grammar">文法</button>
-        <button class="btn" data-sec="Reading">閱讀</button>
-        <button class="btn" data-sec="Mixed">綜合</button>
-        <span id="quizMeta" style="margin-left:auto;color:#9fb3ff"></span>
+      <style>
+        .q-toolbar{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:8px 0}
+        .q-toolbar .btn{background:#122340;border:1px solid #1f375f;border-radius:10px;padding:6px 10px;cursor:pointer}
+        .q-toolbar .btn.on{background:#154274}
+        .q-toolbar .btn[disabled]{opacity:.6;cursor:not-allowed}
+        .q-meta{margin-left:auto;color:#9fb3ff}
+        .q-actions{display:flex;gap:8px;align-items:center}
+        .q-wrap{margin-top:6px}
+        ol.q-list{line-height:1.6;padding-left:22px}
+      </style>
+
+      <!-- TOP toolbar -->
+      <div class="q-toolbar" id="qbarTop">
+        <div class="q-tabs">
+          <button class="btn qtab" data-sec="Vocabulary">單字</button>
+          <button class="btn qtab" data-sec="Grammar">文法</button>
+          <button class="btn qtab" data-sec="Reading">閱讀</button>
+          <button class="btn qtab" data-sec="Mixed">綜合</button>
+        </div>
+        <div class="q-actions" style="margin-left:auto">
+          <button class="btn" id="qSubmitTop">交卷</button>
+          <button class="btn" id="qShowTop" style="display:none">顯示答案</button>
+          <button class="btn" id="qPrintTop" style="display:none">列印成績單</button>
+        </div>
+        <span class="q-meta" id="qMetaTop">( 尚未載入 )</span>
       </div>
-      <ol id="quizList" style="line-height:1.6;"></ol>
-      <div style="display:flex;gap:8px;margin-top:10px">
-        <button id="btnSubmitQuiz" class="btn">交卷</button>
-        <button id="btnPrintQuiz" class="btn" style="display:none">列印成績單</button>
-        <button id="btnShowAnswer" class="btn" style="display:none">顯示答案</button>
+
+      <!-- 題目區 -->
+      <div class="q-wrap">
+        <ol class="q-list" id="qList"></ol>
+        <div id="qResult" style="display:none;margin-top:8px"></div>
       </div>
-      <div id="quizResult" style="display:none;margin-top:10px"></div>
+
+      <!-- BOTTOM toolbar -->
+      <div class="q-toolbar" id="qbarBottom">
+        <div class="q-tabs">
+          <button class="btn qtab" data-sec="Vocabulary">單字</button>
+          <button class="btn qtab" data-sec="Grammar">文法</button>
+          <button class="btn qtab" data-sec="Reading">閱讀</button>
+          <button class="btn qtab" data-sec="Mixed">綜合</button>
+        </div>
+        <div class="q-actions" style="margin-left:auto">
+          <button class="btn" id="qSubmitBottom">交卷</button>
+          <button class="btn" id="qShowBottom" style="display:none">顯示答案</button>
+          <button class="btn" id="qPrintBottom" style="display:none">列印成績單</button>
+        </div>
+        <span class="q-meta" id="qMetaBottom"></span>
+      </div>
     `;
     pane.appendChild(shell);
   }
 
+  // 快取元素（Top & Bottom + 共用列表、結果、狀態）
   const $ = (s, el = pane) => el.querySelector(s);
   const $$ = (s, el = pane) => [...el.querySelectorAll(s)];
-  const listEl = $('#quizList');
-  const metaEl = $('#quizMeta');
-  const resultEl = $('#quizResult');
-  const btnSubmit = $('#btnSubmitQuiz');
-  const btnPrint = $('#btnPrintQuiz');
-  const btnShowAns = $('#btnShowAnswer');
 
-  // 4) 載題庫（容錯大小寫/欄位命名）
+  const listEl   = $('#qList');
+  const resultEl = $('#qResult');
+
+  const tabsTop    = $$('#qbarTop .qtab');
+  const tabsBottom = $$('#qbarBottom .qtab');
+
+  const metaTop    = $('#qMetaTop');
+  const metaBottom = $('#qMetaBottom');
+
+  const btnSubmitTop    = $('#qSubmitTop');
+  const btnShowTop      = $('#qShowTop');
+  const btnPrintTop     = $('#qPrintTop');
+  const btnSubmitBottom = $('#qSubmitBottom');
+  const btnShowBottom   = $('#qShowBottom');
+  const btnPrintBottom  = $('#qPrintBottom');
+
+  // 同步顯示/啟用狀態的小工具
+  function setResultsVisible(v) {
+    const disp = v ? 'inline-block' : 'none';
+    btnShowTop.style.display = btnPrintTop.style.display =
+    btnShowBottom.style.display = btnPrintBottom.style.display = disp;
+  }
+  function setActiveTab(sec) {
+    [...tabsTop, ...tabsBottom].forEach(b =>
+      b.classList.toggle('on', b.dataset.sec === sec)
+    );
+  }
+  function setMeta(text) {
+    metaTop.textContent = text;
+    metaBottom.textContent = text;
+  }
+
+  // 讀題庫
   let raw = [];
   try {
-    const r = await fetch(`./data/quiz-${slug}.json?v=${Date.now()}`, { cache: 'no-store' });
+    const r = await fetch(`./data/quiz-${slug}.json?v=${Date.now()}`, { cache:'no-store' });
     if (!r.ok) throw new Error(`${r.status} ${r.statusText}`);
     raw = await r.json();
     if (!Array.isArray(raw)) throw new Error('JSON root must be an array.');
   } catch (err) {
-    metaEl.textContent = `⚠️ 題庫載入失敗：${err.message}`;
-    console.error('[quiz] load fail', err);
+    setMeta(`⚠️ 題庫載入失敗：${err.message}`);
     return;
   }
 
-  // 5) 正規化
   const norm = q => ({
     section: (q.section || '').trim() || 'Mixed',
     type: (q.type || '').toUpperCase() === 'SA' ? 'SA' : 'MCQ',
     question: q.question || q.q || '',
     options: q.options || q.choices || [],
-    answer: q.answer ?? q.ans ?? '',
+    answer: (q.answer ?? q.ans ?? '').toString(),
     explanation: q.explanation || q.ex || ''
   });
   const questions = raw.map(norm);
-
-  // 6) 目前顯示哪個區
+  const sections  = ['Vocabulary','Grammar','Reading','Mixed'];
   let currentSection = 'Vocabulary';
-  const sections = ['Vocabulary', 'Grammar', 'Reading', 'Mixed'];
+  let submitted = false;   // 是否已交卷（決定是否顯示顯示答案/列印）
 
+  function escapeHtml(t){
+    return String(t||'').replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;');
+  }
   function renderSection(sec) {
     currentSection = sec;
+    setActiveTab(sec);
+    resultEl.style.display = 'none';
+    submitted = false;
+    setResultsVisible(false);
+
     const data = questions.filter(q => q.section === sec);
     if (!data.length) {
       listEl.innerHTML = `<li style="color:#9fb3ff">（此分區無題目）</li>`;
-      metaEl.textContent = `0 題`;
+      setMeta(`${sec}：0 題`);
       return;
     }
     listEl.innerHTML = data.map((q, i) => {
       const idx = i + 1;
       if (q.type === 'MCQ') {
-        const opts = q.options.map((opt, k) => `
+        const opts = q.options.map(opt => `
           <label style="display:block;margin:4px 0">
             <input type="radio" name="q${sec}-${idx}" value="${String(opt)}"> ${String(opt)}
           </label>
         `).join('');
         return `
-          <li data-sec="${sec}" data-idx="${idx}" data-type="MCQ" data-ans="${String(q.answer)}">
+          <li data-sec="${sec}" data-idx="${idx}" data-type="MCQ" data-ans="${escapeHtml(q.answer)}">
             <div style="font-weight:700;margin:4px 0">${idx}. ${escapeHtml(q.question)}</div>
             <div>${opts}</div>
             <div class="msg" style="margin-top:4px"></div>
@@ -560,7 +623,7 @@ async function bootQuizTab() {
         `;
       } else {
         return `
-          <li data-sec="${sec}" data-idx="${idx}" data-type="SA" data-ans="${String(q.answer)}">
+          <li data-sec="${sec}" data-idx="${idx}" data-type="SA" data-ans="${escapeHtml(q.answer)}">
             <div style="font-weight:700;margin:4px 0">${idx}. ${escapeHtml(q.question)}</div>
             <input type="text" placeholder="輸入答案…" style="padding:6px 8px;border:1px solid #334155;border-radius:6px;background:#0f223b;color:#dbe7ff">
             <button class="btn btn-check" style="margin-left:6px">檢查</button>
@@ -570,10 +633,10 @@ async function bootQuizTab() {
         `;
       }
     }).join('');
-    metaEl.textContent = `${sec}：${data.length} 題`;
+    setMeta(`${sec}：${data.length} 題`);
   }
 
-  // 交互：單題即時檢查（SA）
+  // SA 單題立即檢查
   listEl.addEventListener('click', e => {
     if (!e.target.classList.contains('btn-check')) return;
     const li = e.target.closest('li');
@@ -581,22 +644,22 @@ async function bootQuizTab() {
     const msg = li.querySelector('.msg');
     const exp = li.querySelector('.exp');
     const user = (ipt.value || '').trim().toLowerCase();
-    const ans = String(li.dataset.ans || '').trim().toLowerCase();
-    const ok = user === ans || (ans && user && user === ans.toLowerCase());
+    const ans  = (li.dataset.ans || '').trim().toLowerCase();
+    const ok   = user === ans;
     msg.textContent = ok ? '✅ 正確' : '❌ 錯誤';
     msg.style.color = ok ? '#5bd3c7' : '#ff6b6b';
-    exp.textContent = ok ? '' : `正解：${li.dataset.ans}`;
+    exp.textContent  = ok ? '' : `正解：${li.dataset.ans}`;
   });
 
-  // 交卷
-  btnSubmit.onclick = () => {
+  // 交卷核心（被上下兩排按鈕共用）
+  function doSubmit() {
     const items = [...listEl.querySelectorAll('li')];
     if (!items.length) return;
 
-    let got = 0, total = items.length, detail = [];
+    let got = 0, total = items.length;
     items.forEach(li => {
       const type = li.dataset.type;
-      const ans = String(li.dataset.ans || '').trim();
+      const ans  = (li.dataset.ans || '').trim();
       let ok = false;
 
       if (type === 'MCQ') {
@@ -607,7 +670,7 @@ async function bootQuizTab() {
         const exp = li.querySelector('.exp');
         msg.textContent = ok ? '✅ 正確' : '❌ 錯誤';
         msg.style.color = ok ? '#5bd3c7' : '#ff6b6b';
-        exp.textContent = ok ? '' : `正解：${ans}`;
+        exp.textContent  = ok ? '' : `正解：${ans}`;
       } else {
         const ipt = li.querySelector('input[type="text"]');
         const user = (ipt.value || '').trim();
@@ -616,45 +679,45 @@ async function bootQuizTab() {
         const exp = li.querySelector('.exp');
         msg.textContent = ok ? '✅ 正確' : '❌ 錯誤';
         msg.style.color = ok ? '#5bd3c7' : '#ff6b6b';
-        exp.textContent = ok ? '' : `正解：${ans}`;
+        exp.textContent  = ok ? '' : `正解：${ans}`;
       }
       if (ok) got++;
-      detail.push({ ok, ans });
     });
 
-    const score = got * 5; // 每題 5 分
-    const comment = getComment(score, total * 5);
+    const score = got * 5;
+    const full  = total * 5;
     resultEl.style.display = 'block';
     resultEl.innerHTML = `
-      <div style="margin-top:8px">
-        <div style="font-weight:700">本分區分數：${score} / ${total * 5}</div>
-        <div style="color:#9fb3ff">${comment}</div>
-      </div>
+      <div style="font-weight:700">本分區分數：${score} / ${full}</div>
+      <div style="color:#9fb3ff">${getComment(score, full)}</div>
     `;
-    btnPrint.style.display = 'inline-block';
-    btnShowAns.style.display = 'inline-block';
-  };
 
-  btnShowAns.onclick = () => {
+    submitted = true;
+    setResultsVisible(true);
+  }
+  function doShowAnswers() {
     listEl.querySelectorAll('li').forEach(li => {
       const exp = li.querySelector('.exp');
       if (exp && !exp.textContent) exp.textContent = `正解：${li.dataset.ans}`;
     });
-  };
+  }
+  function doPrint() { window.print(); }
 
-  btnPrint.onclick = () => window.print();
+  // 綁定上下兩排按鈕（同一函式，確保同步）
+  btnSubmitTop.onclick = btnSubmitBottom.onclick = doSubmit;
+  btnShowTop.onclick   = btnShowBottom.onclick   = doShowAnswers;
+  btnPrintTop.onclick  = btnPrintBottom.onclick  = doPrint;
 
-  // 區塊切換
-  pane.querySelectorAll('.quiz-shell .btn[data-sec]').forEach(b =>
-    b.addEventListener('click', () => renderSection(b.dataset.sec))
-  );
+  // 分區切換（上下兩排一起亮）
+  [...tabsTop, ...tabsBottom].forEach(b => {
+    b.addEventListener('click', () => renderSection(b.dataset.sec));
+  });
 
-  // 先顯示「單字」分區
+  // 顯示預設分區
   renderSection('Vocabulary');
 
-  function escapeHtml(t){return String(t||'').replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;');}
   function getComment(score, full){
-    const p = (score / full) * 100;
+    const p = (score/full) * 100;
     if (p === 100) return '滿分！太強了！集滿五張滿分可兌換一組 LINE 表情貼 🎉';
     if (p >= 90)  return '很棒！細節再加強，就更完美。';
     if (p >= 80)  return '不錯的基礎，建議複習錯題字彙與句型。';
@@ -664,8 +727,10 @@ async function bootQuizTab() {
   }
 }
 
-// 若當前 tab=quiz 再啟動；或直接在 init 時呼叫 bootQuizTab()
+// 頁面載入就啟動（或你也可以只在點到測驗分頁時啟動）
 try { bootQuizTab(); } catch (e) { console.error(e); }
+
+
 
 
 
