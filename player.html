@@ -57,57 +57,63 @@
     tbody tr:hover{background:#0f2a4e}
     tr.active{background:#173a6e}
 
-    /* 測驗上方四分區按鈕 */
+    /* 測驗上方四分區按鈕（避免換行掉落） */
     .q-tabs{display:flex;gap:8px;flex-wrap:wrap}
     .q-tabs .qtab{background:#122340;border:1px solid #1f375f;border-radius:10px;padding:6px 12px;color:#e6efff;cursor:pointer}
     .q-tabs .qtab.on{background:#154274}
 
-    /* ===== 手機浮動工具列 ===== */
-    @media (max-width: 768px){
-      .layout{flex-direction:column; gap:12px; overflow:visible}
-      .videoWrap{aspect-ratio:16/9}
-      .pane{max-height:none; overflow:auto}
+    /* ===== 單字詞卡 ===== */
+    #pane-vocab { padding: 0 8px 24px; }
+    .voc-row{ display:grid; grid-template-columns:110px 1fr 320px;
+      gap:18px; padding:22px 12px; border-bottom:1px solid #14243b; }
+    .voc-time{ display:flex; align-items:center; gap:10px; color:#9fc1ff; }
+    .voc-time .btn{ width:36px; height:36px; display:inline-flex; align-items:center; justify-content:center;
+      border-radius:999px; background:#0f2a4e; border:1px solid #274a7f; color:#dbe7ff; padding:0;}
+    .voc-time .time-link{ cursor:pointer; text-decoration:underline; color:#9fc1ff; }
+    .voc-core{ min-width:0; }
+    .voc-sent{ font-size:20px; line-height:1.6; }
+    .voc-ipt{ margin-top:8px; display:flex; flex-wrap:wrap; gap:8px; align-items:center; }
+    .voc-ipt input{ height:44px; min-width:220px; padding:10px 12px; border:1px solid #334155; border-radius:12px;
+      background:#0f223b; color:#dbe7ff;}
+    .voc-ipt .btn{ height:40px; border-radius:10px; padding:0 14px;}
+    .voc-ipt .ok{ color:#5bd3c7; } .voc-ipt .ng{ color:#ff6b6b; }
+    .voc-gram{ margin-top:8px; color:#9fb3d9; font-size:13px; }
+    .voc-right{ background:#0f1f2f; border:1px solid #1b2f52; border-radius:14px; padding:14px; }
+    .voc-word{ display:flex; align-items:center; gap:10px; font-size:26px; font-weight:800; letter-spacing:.02em; }
+    .voc-word .btn{ width:36px; height:36px; padding:0; display:inline-flex; align-items:center; justify-content:center;
+      border-radius:10px; background:#102a4a; border:1px solid #23578c;}
+    .voc-pos{ color:#9fb3d9; font-size:13px; }
+    .voc-zh{ margin-top:6px; font-size:18px; }
+    .voc-en{ margin-top:2px; color:#9fb3d9; font-size:14px; }
+    .voc-actions{ margin-top:8px; display:flex; gap:8px; }
+    .voc-actions .btn{ border-radius:10px; padding:6px 10px; }
+    @media (max-width:980px){ .voc-row{ grid-template-columns:1fr } .voc-right{ order:3 } }
 
-      .controls{display:none}
-      .controls.is-open{
-        display:block;
-        position:fixed;
-        left:12px; right:12px; bottom:calc(12px + env(safe-area-inset-bottom));
-        z-index:99;
-        max-height:60vh; overflow:auto;
-        border-radius:12px;
-        background:#0e2038ee;
-        backdrop-filter: blur(6px);
-        box-shadow:0 8px 24px rgba(0,0,0,.35);
-      }
-      .controls.is-open .row{display:grid; grid-template-columns:1fr 1fr; gap:8px}
-      .controls.is-open .speed{grid-column:1 / -1}
-
-      #mobileToolsBtn{
-        position:fixed; right:12px; bottom:calc(12px + env(safe-area-inset-bottom));
-        z-index:100;
-        border-radius:999px;
-        padding:12px 14px;
-        background:#154274; border:1px solid #2a5fb0; color:#fff;
-        box-shadow:0 6px 16px rgba(0,0,0,.35);
-        display:flex; align-items:center; gap:8px;
-      }
-    }
-    @media (min-width: 769px){
-      #mobileToolsBtn{ display:none }
-    }
-
-    /* ===== 列印：黑字白底 + 全部題目 ===== */
+    /* ===== 列印 ===== */
     @media print{
-      body{-webkit-print-color-adjust:exact;print-color-adjust:exact; background:#fff; color:#000}
-      header,.left,.tabs,.subToolbar,#mobileToolsBtn{display:none !important}
+      body{-webkit-print-color-adjust:exact;print-color-adjust:exact;background:#fff;color:#000}
+      header,.left,.tabs,.subToolbar{display:none !important}
       .wrap{padding:0}
-      .layout{display:block; height:auto; overflow:visible}
-      .right{display:block; border:none; height:auto}
-      .pane, #pane-quiz, .quiz-shell{overflow:visible; height:auto; max-height:none; background:#fff; color:#000}
-      #quizList{overflow:visible; height:auto; max-height:none}
-      #quizList > li{break-inside: avoid; page-break-inside: avoid; margin-bottom:10px}
+      .layout{display:block;height:auto;overflow:visible}
+      .right{border:none;height:auto}
+      .pane,#pane-quiz,.quiz-shell{overflow:visible;height:auto;max-height:none}
+      #quizList{overflow:visible;height:auto;max-height:none}
+      #quizList>li{break-inside:avoid;page-break-inside:avoid;margin-bottom:6px}
       .q-actions button{display:none}
+    }
+
+    /* ===== 手機版 RWD ===== */
+    @media (max-width:768px){
+      .layout{flex-direction:column}
+      .left,.right{width:100%;height:auto}
+      .controls .row{flex-wrap:wrap;justify-content:center}
+      .controls .btn{flex:1 1 45%;min-width:120px;text-align:center}
+      .tabs{flex-wrap:wrap;justify-content:center}
+      .tab{flex:1 1 auto;min-width:80px;text-align:center}
+      .subToolbar{flex-wrap:wrap;gap:6px}
+      .chip{flex:1 1 auto;justify-content:center}
+      #quizList{padding:0 8px}
+      .q-actions{flex-wrap:wrap;justify-content:center}
     }
   </style>
 </head>
@@ -149,8 +155,6 @@
             <span id="speedVal">1.00x</span>
           </div>
         </div>
-        <!-- 手機版浮動按鈕 -->
-        <button id="mobileToolsBtn" aria-label="開關工具列">⚙ 工具</button>
       </section>
 
       <!-- 右：字幕 / 測驗 / 單字 -->
@@ -161,24 +165,23 @@
           <div class="tab" data-tab="vocab">單字</div>
         </div>
 
-        <!-- 字幕工具列 -->
-        <div id="subToolbar" class="subToolbar">
-          <label class="chip"><input id="chkFollow" type="checkbox" checked/> 跟隨</label>
-          <span class="chip">偏移 <span id="offsetVal">0.0s</span></span>
-          <button id="btnOffsetMinus" class="btn">-0.5s</button>
-          <button id="btnOffsetPlus" class="btn">+0.5s</button>
-          <span class="muted" style="margin-left:auto">( 尚未載入 )</span>
-        </div>
-
-        <!-- 右側內容 -->
         <div class="pane">
-          <!-- 字幕 -->
-          <div id="pane-sub"></div>
-
-          <!-- 測驗 -->
+          <div id="pane-sub">
+            <table>
+              <thead>
+                <tr>
+                  <th style="width:80px">時間</th>
+                  <th>英文</th>
+                  <th style="width:40%">中文</th>
+                </tr>
+              </thead>
+              <tbody id="cuesBody"></tbody>
+            </table>
+            <div id="cuesStatus" class="muted" style="padding:10px 14px"></div>
+          </div>
           <div id="pane-quiz" style="display:none">
             <div class="quiz-shell">
-              <div id="quizTabs" class="q-tabs">
+              <div id="quizTabs" class="q-tabs" style="margin:6px 0 10px 0;">
                 <button class="qtab on" data-sec="Vocabulary">單字</button>
                 <button class="qtab" data-sec="Grammar">文法</button>
                 <button class="qtab" data-sec="Reading">閱讀</button>
@@ -195,9 +198,10 @@
               <div id="quizResult" style="display:none;margin-top:10px"></div>
             </div>
           </div>
-
-          <!-- 單字 -->
-          <div id="pane-vocab" style="display:none"></div>
+          <div id="pane-vocab" style="display:none">
+            <div id="vocabStatus" class="muted" style="padding:10px 14px">( 尚未載入 )</div>
+            <div id="vocabBox" style="padding:0 14px 14px"></div>
+          </div>
         </div>
       </section>
     </div>
@@ -205,27 +209,18 @@
 
   <script src="./player.js"></script>
   <script src="./login.js"></script>
-
   <script>
-    // 手機浮動工具列開關
     (function(){
-      const btn=document.getElementById('mobileToolsBtn');
-      const box=document.querySelector('.controls');
-      if(!btn||!box) return;
-      const toggle=()=>{
-        box.classList.toggle('is-open');
-        document.body.style.overflow = box.classList.contains('is-open') ? 'hidden' : '';
-      };
-      btn.addEventListener('click',toggle);
-      document.addEventListener('click',(e)=>{
-        if(window.innerWidth>768) return;
-        if(!box.classList.contains('is-open')) return;
-        if(!(box.contains(e.target)||btn.contains(e.target))) toggle();
-      });
+      const wrap=document.getElementById('videoWrap');
+      const btn=document.getElementById('btnFill');
+      if(!wrap||!btn) return;
+      const sync=()=>btn.textContent=wrap.classList.contains('fill')?'🖼 還原比例':'🖼 填滿畫面';
+      btn.addEventListener('click',()=>setTimeout(sync,0)); sync();
     })();
   </script>
 </body>
 </html>
+
 
 
 
