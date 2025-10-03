@@ -25,9 +25,9 @@
     .right{display:flex;flex-direction:column}
     .pane{flex:1;overflow:auto}
 
-    /* 影片 */
+    /* 影片：預設填滿 */
     .videoWrap{position:relative;width:100%;aspect-ratio:16/9;background:#000;border-radius:10px;overflow:hidden}
-    .videoWrap video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;background:#000} /* 一律填滿 */
+    .videoWrap video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;background:#000}
 
     /* 左側工具列（桌機） */
     .controls{margin-top:12px;background:#0e2038;border:1px solid #183459;border-radius:12px;padding:12px}
@@ -61,7 +61,7 @@
     .q-tabs .qtab{background:#122340;border:1px solid #1f375f;border-radius:10px;padding:6px 12px;color:#e6efff;cursor:pointer}
     .q-tabs .qtab.on{background:#154274}
 
-    /* ===== 手機：影片固定在頂，右邊內容獨立滾動；工具列改底部抽屜；字幕英文上中文下 ===== */
+    /* ===== 手機：影片固定在頂；右邊內容獨立滾動；工具列＝底部抽屜；字幕英文上中文下 ===== */
     @media (max-width: 900px){
       .wrap{height:calc(100vh - 58px); padding:12px;}
       .layout{flex-direction:column; height:100%}
@@ -161,7 +161,6 @@
     <div class="layout">
       <!-- 左：影片 -->
       <section class="left" id="videoContainer">
-        <!-- 預設填滿 -->
         <div id="videoWrap" class="videoWrap">
           <video id="player" playsinline controls></video>
         </div>
@@ -178,8 +177,7 @@
             <button id="btnPrev" class="btn">⏮ 上一句</button>
             <button id="btnPlay" class="btn">▶️ 播放</button>
             <button id="btnNext" class="btn">⏭ 下一句</button>
-            <button id="btnReplay" class="btn blue">🔁 重複本句</button>
-            <button id="btnCancelReplay" class="btn">❌ 取消重複本句</button>
+            <button id="btnReplay" class="btn">🔁 重複本句</button>
           </div>
 
           <!-- 跟隨 / 偏移 -->
@@ -260,7 +258,7 @@
   <script src="./player.js"></script>
   <script src="./login.js"></script>
 
-  <!-- 行為腳本：抽屜、分頁切換（專心模式）、列印抬頭、取消重複 -->
+  <!-- 行為腳本：抽屜、分頁切換（專心模式）、列印抬頭、重複本句單鍵切換 -->
   <script>
     /* 分頁切換 + 專心模式（手機：測驗/單字整頁顯示） */
     (function(){
@@ -350,22 +348,39 @@
       window.addEventListener('beforeprint', fillPrintHeader);
     })();
 
-    /* 取消重複本句：優先呼叫 player.clearRepeat()，並提供 fallback */
+    /* 重複本句：單鍵切換（再按一次取消） */
     (function(){
-      const btnCancel = document.getElementById('btnCancelReplay');
-      if(!btnCancel) return;
-      btnCancel.addEventListener('click', ()=>{
-        try{
-          if (window.player?.clearRepeat) { window.player.clearRepeat(); return; }
-          if (window.player?.cancelRepeat) { window.player.cancelRepeat(); return; }
-        }catch(e){}
-        // 發出自定事件，若 player.js 有監聽可一併處理
-        document.dispatchEvent(new CustomEvent('cancel-repeat'));
-      });
+      const btn = document.getElementById('btnReplay');
+      if(!btn) return;
+
+      const setOn  = () => { btn.dataset.active = '1'; btn.classList.add('blue');  };
+      const setOff = () => { btn.dataset.active = '0'; btn.classList.remove('blue'); };
+
+      setOff(); // 初始關閉
+
+      // 捕獲階段攔截：已開啟時再按會先取消，避免 player.js 又把重複打開
+      btn.addEventListener('click', function(e){
+        const isOn = btn.dataset.active === '1';
+
+        if (isOn) {
+          e.stopImmediatePropagation();
+          try{
+            if (window.player?.clearRepeat)      window.player.clearRepeat();
+            else if (window.player?.cancelRepeat)window.player.cancelRepeat();
+            else document.dispatchEvent(new CustomEvent('cancel-repeat'));
+          }catch(err){}
+          setOff();
+          return;
+        }
+
+        // 開啟：讓原本 player.js 的 handler 正常運作
+        setOn();
+      }, true); // << 捕獲階段
     })();
   </script>
 </body>
 </html>
+
 
 
 
