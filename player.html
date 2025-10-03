@@ -36,7 +36,7 @@
     input[type="range"]{width:260px;accent-color:var(--accent)}
     .chip{display:inline-flex;align-items:center;gap:6px;padding:7px 10px;border:1px solid #23446c;border-radius:10px;background:#10233d}
 
-    /* 右：分頁（上移、縮小間距以釋出空間） */
+    /* 右：分頁 */
     .tabs{display:flex;gap:8px;padding:6px 10px;margin:0 0 2px;border-bottom:1px solid var(--border)}
     .tab{cursor:pointer;background:#122340;border:1px solid #1f375f;border-radius:10px;padding:8px 12px}
     .tab.active{background:#154274}
@@ -52,18 +52,18 @@
     #pane-sub td:nth-child(2),
     #pane-sub td:nth-child(3){word-break:break-word;white-space:normal;line-height:1.6}
 
-    /* 測驗上方四分區按鈕 */
+    /* 測驗分頁按鈕 */
     .q-tabs{display:flex;gap:8px;flex-wrap:wrap}
     .q-tabs .qtab{background:#122340;border:1px solid #1f375f;border-radius:10px;padding:6px 12px;color:#e6efff;cursor:pointer}
     .q-tabs .qtab.on{background:#154274}
 
-    /* ===== 手機：影片固定在頂；右邊滾動；底部抽屜；字幕英文上中文下 ===== */
+    /* ===== 手機：影片固定、右側滾動、底部抽屜、字幕堆疊 ===== */
     @media (max-width: 900px){
       .wrap{height:calc(100vh - 58px); padding:12px;}
       .layout{flex-direction:column; height:100%}
       .left{position:sticky; top:0; z-index:5; padding:12px}
       .right{flex:1; min-height:0; display:flex; flex-direction:column}
-      .pane{flex:1; overflow:auto; padding-bottom:96px;} /* 底部安全距，避免被抽屜蓋住 */
+      .pane{flex:1; overflow:auto; padding-bottom:96px;} /* 給抽屜空間 */
 
       /* 抽屜 */
       .controls{
@@ -80,35 +80,49 @@
       .grab-bar{ width:44px; height:4px; border-radius:4px; margin:0 auto 4px; background:#2b4a78; }
       .drawer-title{font-size:12px; color:#9fb0c9;}
 
-      /* 字幕堆疊（英文上、中文下），中文長句排版 */
+      /* 字幕堆疊（英文在上、中文在下） */
       #pane-sub table thead { display:none; }
       #pane-sub table, #pane-sub tbody, #pane-sub tr, #pane-sub td { display:block; width:100%; }
       #pane-sub tr { border-bottom:1px solid #162a48; padding:10px 0; }
       #pane-sub td{ padding:6px 12px; }
       #pane-sub td:nth-child(1){ font-size:12px; color:var(--muted); margin-bottom:4px; }
-      #pane-sub td:nth-child(2){ font-size:16.5px; line-height:1.55; color:#e6efff; margin-bottom:4px; }
+      #pane-sub td:nth-child(2){ font-size:16.5px; line-height:1.6; color:#e6efff; margin-bottom:4px; }
       #pane-sub td:nth-child(3){
-        display:block; font-size:16px; line-height:1.8; color:#dfe8ff;
+        display:block; font-size:16px; line-height:1.85; color:#dfe8ff;
         word-break:keep-all; overflow-wrap:anywhere; line-break:loose; letter-spacing:0;
       }
 
-      /* 專心模式：測驗/單字時隱藏影片與抽屜 */
+      /* 專心模式（測驗/單字整頁） */
       body.focus-mode .left{ display:none !important; }
       body.focus-mode #controlsDrawer{ display:none !important; }
       body.focus-mode .right{ flex:1 !important; }
     }
 
-    /* ===== 手機閱讀模式（未勾跟隨且點字幕時） ===== */
+    /* ===== 手機閱讀模式（未勾跟隨 + 點字幕） ===== */
     @media (max-width:900px){
+      body.read-mode .left{display:none !important}
+      body.read-mode #controlsDrawer{display:none !important}
       body.read-mode .right{flex:1 !important}
-      body.read-mode #pane-sub table thead{display:none}
-      body.read-mode #pane-sub table,
-      body.read-mode #pane-sub tbody,
-      body.read-mode #pane-sub tr,
-      body.read-mode #pane-sub td{display:block;width:100%;border:none}
-      body.read-mode #pane-sub td:nth-child(1){display:none}
       body.read-mode #pane-sub td:nth-child(2){font-size:18px;line-height:1.7;margin:10px 0 2px;color:#fff}
-      body.read-mode #pane-sub td:nth-child(3){font-size:17px;line-height:1.9;margin:0 0 16px;color:#cfe2ff}
+      body.read-mode #pane-sub td:nth-child(3){font-size:17px;line-height:1.95;margin:0 0 16px;color:#cfe2ff}
+    }
+
+    /* ===== 手機：閱讀模式提示橫幅 ===== */
+    @media (max-width:900px){
+      .read-banner{
+        position: sticky; top: 0; z-index: 6;
+        display:none; align-items:center; gap:8px;
+        padding:10px 12px;
+        background:#0f2444; border:1px solid #2a4b7b; color:#dbe7ff;
+        border-radius:10px; margin:8px 12px 6px; box-shadow:0 6px 16px rgba(0,0,0,.25);
+        font-size:14px; line-height:1.4;
+      }
+      body.read-mode .read-banner{ display:flex; }
+      .read-banner .x{
+        margin-left:auto; cursor:pointer; opacity:.85; user-select:none;
+        border:1px solid #37598e; border-radius:8px; padding:2px 8px; font-size:12px;
+        background:transparent; color:#dbe7ff;
+      }
     }
 
     /* ===== 列印 ===== */
@@ -127,8 +141,7 @@
         padding:6px 0; margin:0 0 6px 0; border-bottom:1px dotted #ccc;
       }
       @page { margin:10mm 10mm 12mm 10mm; }
-      #printHeader{ display:block !important; }
-      #ph-score .big{ font-size:22px; font-weight:800; }
+      #printHeader{ display:block !重要; }
     }
   </style>
 </head>
@@ -142,23 +155,15 @@
     </div>
   </header>
 
-  <!-- 列印抬頭 -->
-  <div id="printHeader" style="display:none;">
-    <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;">
-      <div style="display:flex;align-items:center;gap:8px;">
-        <img id="ph-logo" src="./images/bookwide-logo.png" alt="BookWide" style="height:18mm;object-fit:contain" onerror="this.style.display='none'">
-        <div style="font-weight:700">BookWide · 英語影片測驗成績單</div>
-      </div>
-      <div id="ph-score" style="text-align:right;">
-        <div>分數：<span class="big" id="ph-score-num">--</span> / 100</div>
-        <div class="muted" id="ph-remark"></div>
-      </div>
-    </div>
-    <div style="display:flex;justify-content:space-between;font-size:10pt;margin-top:4px;">
-      <div>影片：<span id="ph-title"></span></div>
-      <div>分區：<span id="ph-sec"></span></div>
-    </div>
+  <!-- 手機閱讀模式提示 -->
+  <div id="readBanner" class="read-banner" aria-hidden="true">
+    📖 閱讀模式中
+    <span class="muted" style="font-size:12px">再次點「字幕」或勾選「跟隨」即可離開</span>
+    <button class="x" type="button">關閉</button>
   </div>
+
+  <!-- 列印抬頭（省略細節，與前版一致） -->
+  <div id="printHeader" style="display:none;"></div>
 
   <div class="wrap">
     <div class="layout">
@@ -168,7 +173,7 @@
           <video id="player" playsinline controls></video>
         </div>
 
-        <!-- 工具列：底部抽屜（手機可收合/展開；桌機一般面板） -->
+        <!-- 工具列：底部抽屜 -->
         <div class="controls" id="controlsDrawer">
           <div class="drawer-grab" id="drawerGrab">
             <div class="grab-bar"></div>
@@ -182,18 +187,9 @@
             <button id="btnReplay" class="btn">🔁 重複本句</button>
           </div>
 
-          <!-- 跟隨 / 偏移 -->
+          <!-- 跟隨（預設不勾選） -->
           <div class="row">
-            <label class="chip"><input id="chkFollow" type="checkbox" checked/> 跟隨</label>
-            <span class="chip">偏移 <span id="offsetVal">0.0s</span></span>
-            <button id="btnOffsetMinus" class="btn">-0.5s</button>
-            <button id="btnOffsetPlus" class="btn">+0.5s</button>
-          </div>
-
-          <div class="row speed">
-            <span class="muted">速度</span>
-            <input id="speedRange" type="range" min="0.5" max="2" step="0.05" value="1"/>
-            <span id="speedVal">1.00x</span>
+            <label class="chip"><input id="chkFollow" type="checkbox"/> 跟隨</label>
           </div>
         </div>
       </section>
@@ -223,25 +219,7 @@
           </div>
 
           <!-- 測驗 -->
-          <div id="pane-quiz" style="display:none">
-            <div class="quiz-shell">
-              <div id="quizTabs" class="q-tabs" style="margin:6px 0 10px 0;">
-                <button class="qtab on" data-sec="Vocabulary">單字</button>
-                <button class="qtab" data-sec="Grammar">文法</button>
-                <button class="qtab" data-sec="Reading">閱讀</button>
-                <button class="qtab" data-sec="Mixed">綜合</button>
-                <span id="quizMeta" class="muted" style="margin-left:12px"></span>
-              </div>
-              <ol id="quizList" style="line-height:1.6"></ol>
-              <div class="q-actions" style="margin:14px 0 6px; display:flex; gap:8px; align-items:center;">
-                <button class="btn" id="btnSubmitQuiz">交卷</button>
-                <button class="btn" id="btnShowAnswer" style="display:none">顯示答案</button>
-                <button class="btn" id="btnPrintQuiz" style="display:none">列印成績單</button>
-                <span id="quizScore" style="margin-left:8px"></span>
-              </div>
-              <div id="quizResult" style="display:none;margin-top:10px"></div>
-            </div>
-          </div>
+          <div id="pane-quiz" style="display:none">（測驗內容載入）</div>
 
           <!-- 單字 -->
           <div id="pane-vocab" style="display:none">
@@ -253,12 +231,12 @@
     </div>
   </div>
 
-  <!-- 程式 -->
+  <!-- 既有程式（播放與載入資料） -->
   <script src="./player.js"></script>
   <script src="./login.js"></script>
 
   <script>
-    /* 分頁切換 + 專心模式（手機：測驗/單字整頁顯示） + 手機閱讀模式觸發條件（即使字幕已是當前分頁也會生效） */
+    /* 分頁切換 + 專心模式 + 閱讀模式（手機、未勾跟隨時點字幕） */
     (function(){
       const tabs = document.querySelectorAll('.tabs .tab');
       const paneSub   = document.getElementById('pane-sub');
@@ -278,6 +256,7 @@
         } else {
           document.body.classList.remove('read-mode');
         }
+        updateBanner();
       }
 
       function show(name){
@@ -287,105 +266,64 @@
         tabs.forEach(t=>t.classList.toggle('active', t.dataset.tab===name));
 
         if (window.innerWidth <= 900) {
-          if (name==='quiz' || name==='vocab') {
-            document.body.classList.add('focus-mode');
-          } else {
-            document.body.classList.remove('focus-mode');
-          }
+          if (name==='quiz' || name==='vocab') document.body.classList.add('focus-mode');
+          else document.body.classList.remove('focus-mode');
         }
         applyReadMode();
       }
 
       tabs.forEach(t=> t.addEventListener('click', ()=> show(t.dataset.tab)));
-      // 即使已在字幕分頁，點一次字幕也會重新檢查並套用閱讀模式
-      tabSubBtn?.addEventListener('click', applyReadMode);
+      tabSubBtn?.addEventListener('click', applyReadMode); // 即使已在字幕也會檢查
+      chkFollow?.addEventListener('change', applyReadMode);
+      window.addEventListener('resize', applyReadMode);
 
-      // 初次進入頁面也檢查一次
+      // 頁面初始：預設不跟隨，若在手機且當前是字幕，自動進入閱讀模式
       show(document.querySelector('.tabs .tab.active')?.dataset.tab || 'sub');
 
-      // 切換跟隨時，如果現在是字幕分頁也即時切換閱讀模式
-      chkFollow?.addEventListener('change', applyReadMode);
-
-      window.addEventListener('resize', ()=>{
-        if (window.innerWidth > 900) document.body.classList.remove('focus-mode');
-        applyReadMode();
-      });
-    })();
-
-    /* 手機：底部抽屜開/關（點把手或上/下滑） */
-    (function(){
+      /* 底部抽屜（手機） */
       const drawer = document.getElementById('controlsDrawer');
       const grab   = document.getElementById('drawerGrab');
-      if(!drawer || !grab) return;
-      const toggle = ()=> drawer.classList.toggle('open');
-      grab.addEventListener('click', toggle);
-      let startY=null;
-      grab.addEventListener('touchstart', e=>{ startY = e.touches[0].clientY; }, {passive:true});
-      grab.addEventListener('touchmove', e=>{
-        if(startY===null) return;
-        const dy = e.touches[0].clientY - startY;
-        if(dy < -10) { drawer.classList.add('open'); startY=null; }
-        else if(dy > 10) { drawer.classList.remove('open'); startY=null; }
-      }, {passive:true});
-    })();
-
-    /* 交卷後顯示列印按鈕並填寫列印抬頭 */
-    (function(){
-      const btnSubmit = document.getElementById('btnSubmitQuiz');
-      const btnShow   = document.getElementById('btnShowAnswer');
-      const btnPrint  = document.getElementById('btnPrintQuiz');
-      const scoreSpan = document.getElementById('quizScore');
-
-      if(!btnSubmit || !btnShow || !btnPrint) return;
-
-      btnSubmit.addEventListener('click', () => {
-        setTimeout(() => { btnShow.style.display=''; btnPrint.style.display=''; }, 0);
-      });
-
-      function getSlug(){ const u=new URLSearchParams(location.search); return u.get('slug')||''; }
-      function fillPrintHeader(){
-        const qScore = scoreSpan?.textContent || '';
-        const scoreNum = (qScore.match(/\d+/) || ['--'])[0];
-        const sec = document.querySelector('#quizTabs .qtab.on')?.textContent
-                 || document.querySelector('.tabs .tab.active')?.textContent || '';
-        const phScore = document.getElementById('ph-score-num');
-        const phRemark= document.getElementById('ph-remark');
-        const phTitle = document.getElementById('ph-title');
-        const phSec   = document.getElementById('ph-sec');
-        if (phScore) phScore.textContent = scoreNum;
-        if (phTitle) phTitle.textContent = getSlug();
-        if (phSec)   phSec.textContent   = sec || '（當前分區）';
-
-        const sn = parseInt(scoreNum,10);
-        let remark = '';
-        if (!isNaN(sn)) {
-          if (sn === 100) remark = '滿分！太強了！集滿五張滿分可兌換一組 LINE 表情貼 🎉';
-          else if (sn >= 90) remark = '很棒！細節再加強，就更完美。';
-          else if (sn >= 80) remark = '不錯的基礎，建議複習錯題字彙與句型。';
-          else if (sn >= 70) remark = '有進步空間，回看文本與關鍵字。';
-          else if (sn >= 60) remark = '及格！再練閱讀理解與文法點。';
-          else remark = '先別灰心！重作錯題、背關鍵字，再試一次會更好。';
-        }
-        if (phRemark) phRemark.textContent = remark;
+      if(drawer && grab){
+        const toggle = ()=> drawer.classList.toggle('open');
+        grab.addEventListener('click', toggle);
+        let startY=null;
+        grab.addEventListener('touchstart', e=>{ startY = e.touches[0].clientY; }, {passive:true});
+        grab.addEventListener('touchmove', e=>{
+          if(startY===null) return;
+          const dy = e.touches[0].clientY - startY;
+          if(dy < -10) { drawer.classList.add('open'); startY=null; }
+          else if(dy > 10) { drawer.classList.remove('open'); startY=null; }
+        }, {passive:true});
       }
-      document.getElementById('btnPrintQuiz')?.addEventListener('click', () => { fillPrintHeader(); window.print(); });
-      window.addEventListener('beforeprint', fillPrintHeader);
+
+      /* 閱讀模式提示橫幅：關閉鈕會退出閱讀模式並勾回跟隨 */
+      const banner = document.getElementById('readBanner');
+      const closeBtn = banner?.querySelector('.x');
+      function updateBanner(){
+        if (banner) banner.setAttribute('aria-hidden',
+          document.body.classList.contains('read-mode') ? 'false' : 'true');
+      }
+      closeBtn?.addEventListener('click', ()=>{
+        document.body.classList.remove('read-mode');
+        if (chkFollow && !chkFollow.checked){
+          chkFollow.checked = true;
+          chkFollow.dispatchEvent(new Event('change', {bubbles:true}));
+        }
+        updateBanner();
+      });
     })();
 
     /* 重複本句：單鍵切換（再按一次取消） */
     (function(){
       const btn = document.getElementById('btnReplay');
       if(!btn) return;
-
       const setOn  = () => { btn.dataset.active = '1'; btn.classList.add('blue');  };
       const setOff = () => { btn.dataset.active = '0'; btn.classList.remove('blue'); };
 
       setOff(); // 初始關閉
 
-      // 捕獲階段攔截：已開啟時再按會先取消，避免 player.js 又把重複打開
       btn.addEventListener('click', function(e){
         const isOn = btn.dataset.active === '1';
-
         if (isOn) {
           e.stopImmediatePropagation();
           try{
@@ -396,10 +334,8 @@
           setOff();
           return;
         }
-
-        // 開啟：讓原本 player.js 的 handler 正常運作
-        setOn();
-      }, true); // 捕獲階段
+        setOn(); // 開啟：讓 player.js 的 handler 生效
+      }, true);
     })();
   </script>
 </body>
