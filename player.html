@@ -17,7 +17,6 @@
     .muted{color:var(--muted)}
     header{display:flex;align-items:center;justify-content:space-between;padding:14px 20px;background:#0f172a;border-bottom:1px solid #0e203f}
 
-    /* 主要容器（桌機） */
     .wrap{padding:16px;height:calc(100vh - 58px);}
     .layout{height:100%;display:flex;gap:16px;overflow:hidden}
     .left,.right{flex:1;min-width:0;background:var(--panel);border:1px solid var(--border);border-radius:12px}
@@ -25,18 +24,16 @@
     .right{display:flex;flex-direction:column}
     .pane{flex:1;overflow:auto}
 
-    /* 影片 */
     .videoWrap{position:relative;width:100%;aspect-ratio:16/9;background:#000;border-radius:10px;overflow:hidden}
     .videoWrap video{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;background:#000}
+    .videoWrap.fill video{object-fit:cover;} /* 填滿模式 */
 
-    /* 左側工具列（桌機） */
     .controls{margin-top:12px;background:#0e2038;border:1px solid #183459;border-radius:12px;padding:12px}
     .controls .row{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:.25rem 0}
     .speed{display:flex;align-items:center;gap:10px}
     input[type="range"]{width:260px;accent-color:var(--accent)}
     .chip{display:inline-flex;align-items:center;gap:6px;padding:7px 10px;border:1px solid #23446c;border-radius:10px;background:#10233d}
 
-    /* 右：分頁 */
     .tabs{display:flex;gap:8px;padding:12px;border-bottom:1px solid var(--border)}
     .tab{cursor:pointer;background:#122340;border:1px solid #1f375f;border-radius:10px;padding:8px 12px}
     .tab.active{background:#154274}
@@ -48,12 +45,10 @@
     tbody tr:hover{background:#0f2a4e}
     tr.active{background:#173a6e}
 
-    /* 測驗上方四分區按鈕 */
     .q-tabs{display:flex;gap:8px;flex-wrap:wrap}
     .q-tabs .qtab{background:#122340;border:1px solid #1f375f;border-radius:10px;padding:6px 12px;color:#e6efff;cursor:pointer}
     .q-tabs .qtab.on{background:#154274}
 
-    /* ===== 手機行為：影片固定在頂，右邊內容獨立滾動；工具列改底部抽屜 ===== */
     @media (max-width: 900px){
       .wrap{height:calc(100vh - 58px); padding:12px;}
       .layout{flex-direction:column; height:100%}
@@ -61,7 +56,6 @@
       .right{flex:1; min-height:0; display:flex; flex-direction:column}
       .pane{flex:1; overflow:auto}
 
-      /* 抽屜：預設收合，只露出把手；展開後覆蓋底部 */
       .controls{
         position:fixed; left:8px; right:8px; bottom:8px;
         border-radius:16px 16px 12px 12px;
@@ -76,7 +70,6 @@
       .grab-bar{ width:44px; height:4px; border-radius:4px; margin:0 auto 4px; background:#2b4a78; }
       .drawer-title{font-size:12px; color:#9fb0c9;}
 
-      /* 字幕堆疊（時間一行、英文上、中文下） */
       #pane-sub table thead { display:none; }
       #pane-sub table, #pane-sub tbody, #pane-sub tr, #pane-sub td { display:block; width:100%; }
       #pane-sub tr { border-bottom:1px solid #162a48; padding:8px 0; }
@@ -84,13 +77,11 @@
       #pane-sub td:nth-child(2){ font-size:16px; line-height:1.5; color:#e6efff; margin-bottom:2px; }
       #pane-sub td:nth-child(3){ font-size:14px; line-height:1.5; color:#9fb0c9; }
 
-      /* 專心模式：測驗/單字時隱藏影片與抽屜（整頁顯示） */
       body.focus-mode .left{ display:none !important; }
       body.focus-mode #controlsDrawer{ display:none !important; }
       body.focus-mode .right{ flex:1 !important; }
     }
 
-    /* ===== 列印：只印右側、白底黑字、題目不切半 + 抬頭 ===== */
     @media print{
       html, body{ background:#fff !important; color:#000 !important; }
       header, .left, .tabs, .controls{ display:none !important; }
@@ -121,33 +112,13 @@
     </div>
   </header>
 
-  <!-- 列印抬頭（列印時顯示） -->
-  <div id="printHeader" style="display:none;">
-    <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;">
-      <div style="display:flex;align-items:center;gap:8px;">
-        <img id="ph-logo" src="./images/bookwide-logo.png" alt="BookWide" style="height:18mm;object-fit:contain" onerror="this.style.display='none'">
-        <div style="font-weight:700">BookWide · 英語影片測驗成績單</div>
-      </div>
-      <div id="ph-score" style="text-align:right;">
-        <div>分數：<span class="big" id="ph-score-num">--</span> / 100</div>
-        <div class="muted" id="ph-remark"></div>
-      </div>
-    </div>
-    <div style="display:flex;justify-content:space-between;font-size:10pt;margin-top:4px;">
-      <div>影片：<span id="ph-title"></span></div>
-      <div>分區：<span id="ph-sec"></span></div>
-    </div>
-  </div>
-
   <div class="wrap">
     <div class="layout">
-      <!-- 左：影片 -->
       <section class="left" id="videoContainer">
-        <div id="videoWrap" class="videoWrap">
+        <div id="videoWrap" class="videoWrap fill">
           <video id="player" playsinline controls></video>
         </div>
 
-        <!-- 工具列：底部抽屜（手機可收合/展開；桌機一般面板） -->
         <div class="controls" id="controlsDrawer">
           <div class="drawer-grab" id="drawerGrab">
             <div class="grab-bar"></div>
@@ -159,26 +130,11 @@
             <button id="btnPlay" class="btn">▶️ 播放</button>
             <button id="btnNext" class="btn">⏭ 下一句</button>
             <button id="btnReplay" class="btn blue">🔁 重複本句</button>
-            <button id="btnFill" class="btn">🖼 填滿畫面</button>
-          </div>
-
-          <!-- 跟隨 / 偏移 -->
-          <div class="row">
-            <label class="chip"><input id="chkFollow" type="checkbox" checked/> 跟隨</label>
-            <span class="chip">偏移 <span id="offsetVal">0.0s</span></span>
-            <button id="btnOffsetMinus" class="btn">-0.5s</button>
-            <button id="btnOffsetPlus" class="btn">+0.5s</button>
-          </div>
-
-          <div class="row speed">
-            <span class="muted">速度</span>
-            <input id="speedRange" type="range" min="0.5" max="2" step="0.05" value="1"/>
-            <span id="speedVal">1.00x</span>
+            <button id="btnFill" class="btn">🖼 還原比例</button>
           </div>
         </div>
       </section>
 
-      <!-- 右：字幕 / 測驗 / 單字 -->
       <section class="right" id="studyContainer">
         <div class="tabs">
           <div class="tab active" data-tab="sub">字幕</div>
@@ -187,7 +143,6 @@
         </div>
 
         <div class="pane">
-          <!-- 字幕 -->
           <div id="pane-sub">
             <table>
               <thead>
@@ -199,143 +154,40 @@
               </thead>
               <tbody id="cuesBody"></tbody>
             </table>
-            <div id="cuesStatus" class="muted" style="padding:10px 14px"></div>
           </div>
 
-          <!-- 測驗 -->
           <div id="pane-quiz" style="display:none">
             <div class="quiz-shell">
-              <div id="quizTabs" class="q-tabs" style="margin:6px 0 10px 0;">
-                <button class="qtab on" data-sec="Vocabulary">單字</button>
-                <button class="qtab" data-sec="Grammar">文法</button>
-                <button class="qtab" data-sec="Reading">閱讀</button>
-                <button class="qtab" data-sec="Mixed">綜合</button>
-                <span id="quizMeta" class="muted" style="margin-left:12px"></span>
-              </div>
-              <ol id="quizList" style="line-height:1.6"></ol>
-              <div class="q-actions" style="margin:14px 0 6px; display:flex; gap:8px; align-items:center;">
+              <ol id="quizList"></ol>
+              <div class="q-actions">
                 <button class="btn" id="btnSubmitQuiz">交卷</button>
                 <button class="btn" id="btnShowAnswer" style="display:none">顯示答案</button>
                 <button class="btn" id="btnPrintQuiz" style="display:none">列印成績單</button>
-                <span id="quizScore" style="margin-left:8px"></span>
               </div>
-              <div id="quizResult" style="display:none;margin-top:10px"></div>
+              <div id="quizResult"></div>
             </div>
           </div>
 
-          <!-- 單字 -->
           <div id="pane-vocab" style="display:none">
-            <div id="vocabStatus" class="muted" style="padding:10px 14px">( 尚未載入 )</div>
-            <div id="vocabBox" style="padding:0 14px 14px"></div>
+            <div id="vocabBox"></div>
           </div>
         </div>
       </section>
     </div>
   </div>
 
-  <!-- 程式 -->
-  <script src="./player.js"></script>
-  <script src="./login.js"></script>
-
-  <!-- 行為腳本：抽屜、分頁切換（專心模式）、列印抬頭 -->
   <script>
-    /* 分頁切換 + 專心模式（手機：測驗/單字整頁顯示） */
-    (function(){
-      const tabs = document.querySelectorAll('.tabs .tab');
-      const paneSub   = document.getElementById('pane-sub');
-      const paneQuiz  = document.getElementById('pane-quiz');
-      const paneVocab = document.getElementById('pane-vocab');
-
-      function show(name){
-        paneSub.style.display   = name==='sub'   ? '' : 'none';
-        paneQuiz.style.display  = name==='quiz'  ? '' : 'none';
-        paneVocab.style.display = name==='vocab' ? '' : 'none';
-        tabs.forEach(t=>t.classList.toggle('active', t.dataset.tab===name));
-
-        // 手機：quiz/vocab 進入專心模式；sub 退出專心模式
-        if (window.innerWidth <= 900) {
-          if (name==='quiz' || name==='vocab') document.body.classList.add('focus-mode');
-          else document.body.classList.remove('focus-mode');
-        }
-      }
-      tabs.forEach(t=> t.addEventListener('click', ()=> show(t.dataset.tab)));
-      show(document.querySelector('.tabs .tab.active')?.dataset.tab || 'sub');
-
-      window.addEventListener('resize', ()=>{
-        // 視窗切換大小時，若從手機回桌機，移除 focus-mode
-        if (window.innerWidth > 900) document.body.classList.remove('focus-mode');
-      });
-    })();
-
-    /* 手機：底部抽屜開/關（點把手或上/下滑） */
-    (function(){
-      const drawer = document.getElementById('controlsDrawer');
-      const grab   = document.getElementById('drawerGrab');
-      if(!drawer || !grab) return;
-      const toggle = ()=> drawer.classList.toggle('open');
-      grab.addEventListener('click', toggle);
-      let startY=null;
-      grab.addEventListener('touchstart', e=>{ startY = e.touches[0].clientY; }, {passive:true});
-      grab.addEventListener('touchmove', e=>{
-        if(startY===null) return;
-        const dy = e.touches[0].clientY - startY;
-        if(dy < -10) { drawer.classList.add('open'); startY=null; }
-        else if(dy > 10) { drawer.classList.remove('open'); startY=null; }
-      }, {passive:true});
-    })();
-
-    /* 交卷後顯示「顯示答案／列印成績單」並填寫列印抬頭 */
-    (function(){
-      const btnSubmit = document.getElementById('btnSubmitQuiz');
-      const btnShow   = document.getElementById('btnShowAnswer');
-      const btnPrint  = document.getElementById('btnPrintQuiz');
-      const scoreSpan = document.getElementById('quizScore');
-
-      if(!btnSubmit || !btnShow || !btnPrint) return;
-
-      btnSubmit.addEventListener('click', () => {
-        setTimeout(() => { btnShow.style.display=''; btnPrint.style.display=''; }, 0);
-      });
-
-      function getSlug(){ const u=new URLSearchParams(location.search); return u.get('slug')||''; }
-      function fillPrintHeader(){
-        const qScore = scoreSpan?.textContent || '';
-        const scoreNum = (qScore.match(/\d+/) || ['--'])[0];
-        const sec = document.querySelector('#quizTabs .qtab.on')?.textContent
-                 || document.querySelector('.tabs .tab.active')?.textContent || '';
-
-        const phScore = document.getElementById('ph-score-num');
-        const phRemark= document.getElementById('ph-remark');
-        const phTitle = document.getElementById('ph-title');
-        const phSec   = document.getElementById('ph-sec');
-
-        if (phScore) phScore.textContent = scoreNum;
-        if (phTitle) phTitle.textContent = getSlug();
-        if (phSec)   phSec.textContent   = sec || '（當前分區）';
-
-        const sn = parseInt(scoreNum,10);
-        let remark = '';
-        if (!isNaN(sn)) {
-          if (sn === 100) remark = '滿分！太強了！集滿五張滿分可兌換一組 LINE 表情貼 🎉';
-          else if (sn >= 90) remark = '很棒！細節再加強，就更完美。';
-          else if (sn >= 80) remark = '不錯的基礎，建議複習錯題字彙與句型。';
-          else if (sn >= 70) remark = '有進步空間，回看文本與關鍵字。';
-          else if (sn >= 60) remark = '及格！再練閱讀理解與文法點。';
-          else remark = '先別灰心！重作錯題、背關鍵字，再試一次會更好。';
-        }
-        if (phRemark) phRemark.textContent = remark;
-      }
-      btnPrint.addEventListener('click', () => { fillPrintHeader(); window.print(); });
-      window.addEventListener('beforeprint', fillPrintHeader);
-    })();
-
-    // 同步「填滿畫面」按鈕文字（維持既有行為）
     (function(){
       const wrap=document.getElementById('videoWrap');
       const btn=document.getElementById('btnFill');
       if(!wrap||!btn) return;
+
       const sync=()=>btn.textContent=wrap.classList.contains('fill')?'🖼 還原比例':'🖼 填滿畫面';
-      btn.addEventListener('click',()=>setTimeout(sync,0)); sync();
+      btn.addEventListener('click',()=>{
+        wrap.classList.toggle('fill');
+        sync();
+      });
+      sync();
     })();
   </script>
 </body>
