@@ -201,7 +201,7 @@
       <!-- 右：字幕 / 測驗 / 單字 -->
       <section class="right" id="studyContainer">
         <div class="tabs">
-          <div class="tab active" data-tab="sub">字幕</div>
+          <div class="tab active" data-tab="sub" id="tabSub">字幕</div>
           <div class="tab" data-tab="quiz">測驗</div>
           <div class="tab" data-tab="vocab">單字</div>
         </div>
@@ -258,13 +258,27 @@
   <script src="./login.js"></script>
 
   <script>
-    /* 分頁切換 + 專心模式（手機：測驗/單字整頁顯示） + 手機閱讀模式觸發條件 */
+    /* 分頁切換 + 專心模式（手機：測驗/單字整頁顯示） + 手機閱讀模式觸發條件（即使字幕已是當前分頁也會生效） */
     (function(){
       const tabs = document.querySelectorAll('.tabs .tab');
       const paneSub   = document.getElementById('pane-sub');
       const paneQuiz  = document.getElementById('pane-quiz');
       const paneVocab = document.getElementById('pane-vocab');
       const chkFollow = document.getElementById('chkFollow');
+      const tabSubBtn = document.getElementById('tabSub');
+
+      function applyReadMode(){
+        if (window.innerWidth <= 900) {
+          const activeTab = document.querySelector('.tabs .tab.active')?.dataset.tab;
+          if (activeTab === 'sub' && chkFollow && !chkFollow.checked) {
+            document.body.classList.add('read-mode');
+          } else {
+            document.body.classList.remove('read-mode');
+          }
+        } else {
+          document.body.classList.remove('read-mode');
+        }
+      }
 
       function show(name){
         paneSub.style.display   = name==='sub'   ? '' : 'none';
@@ -275,31 +289,26 @@
         if (window.innerWidth <= 900) {
           if (name==='quiz' || name==='vocab') {
             document.body.classList.add('focus-mode');
-            document.body.classList.remove('read-mode');
           } else {
             document.body.classList.remove('focus-mode');
-            // 未勾跟隨 → 進入閱讀模式；勾選→退出
-            if (chkFollow && !chkFollow.checked) document.body.classList.add('read-mode');
-            else document.body.classList.remove('read-mode');
           }
         }
+        applyReadMode();
       }
+
       tabs.forEach(t=> t.addEventListener('click', ()=> show(t.dataset.tab)));
+      // 即使已在字幕分頁，點一次字幕也會重新檢查並套用閱讀模式
+      tabSubBtn?.addEventListener('click', applyReadMode);
+
+      // 初次進入頁面也檢查一次
       show(document.querySelector('.tabs .tab.active')?.dataset.tab || 'sub');
 
-      // 手動切換跟隨時，若停在字幕頁，也同步切換閱讀模式
-      chkFollow?.addEventListener('change', ()=>{
-        const active = document.querySelector('.tabs .tab.active')?.dataset.tab;
-        if (window.innerWidth <= 900 && active==='sub') {
-          if (!chkFollow.checked) document.body.classList.add('read-mode');
-          else document.body.classList.remove('read-mode');
-        }
-      });
+      // 切換跟隨時，如果現在是字幕分頁也即時切換閱讀模式
+      chkFollow?.addEventListener('change', applyReadMode);
 
       window.addEventListener('resize', ()=>{
-        if (window.innerWidth > 900) {
-          document.body.classList.remove('focus-mode','read-mode');
-        }
+        if (window.innerWidth > 900) document.body.classList.remove('focus-mode');
+        applyReadMode();
       });
     })();
 
@@ -395,6 +404,7 @@
   </script>
 </body>
 </html>
+
 
 
 
