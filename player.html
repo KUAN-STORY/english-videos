@@ -31,17 +31,17 @@
     .videoWrap.fill{flex:1;aspect-ratio:auto;height:100%}
     .videoWrap.fill video{object-fit:cover}
 
-    /* 左側工具列（精簡） */
+    /* 左側工具列（精簡＋加入跟隨/偏移） */
     .controls{margin-top:12px;background:#0e2038;border:1px solid #183459;border-radius:12px;padding:12px}
     .controls .row{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:.25rem 0}
     .speed{display:flex;align-items:center;gap:10px}
     input[type="range"]{width:260px;accent-color:var(--accent)}
+    .chip{display:inline-flex;align-items:center;gap:6px;padding:7px 10px;border:1px solid #23446c;border-radius:10px;background:#10233d}
 
     /* 右：分頁 */
-    .tabs{display:flex;gap:8px;padding:12px;border-bottom:1px solid #1f2a44}
+    .tabs{display:flex;gap:8px;padding:12px;border-bottom:1px solid var(--border)}
     .tab{cursor:pointer;background:#122340;border:1px solid #1f375f;border-radius:10px;padding:8px 12px}
     .tab.active{background:#154274}
-    .subToolbar{display:flex;gap:10px;align-items:center;padding:12px;border-bottom:1px solid #1f2a44}
 
     table{width:100%;border-collapse:collapse}
     th,td{padding:10px 12px;border-bottom:1px solid #162a48;vertical-align:top}
@@ -55,9 +55,8 @@
     .q-tabs .qtab{background:#122340;border:1px solid #1f375f;border-radius:10px;padding:6px 12px;color:#e6efff;cursor:pointer}
     .q-tabs .qtab.on{background:#154274}
 
-    /* ===== 手機：字幕堆疊，隱藏原工具列 ===== */
+    /* ===== 手機：字幕堆疊（時間一行、英文上、中文下） ===== */
     @media (max-width: 900px){
-      #subToolbar{ display:none !important; }
       #pane-sub table thead { display:none; }
       #pane-sub table, #pane-sub tbody, #pane-sub tr, #pane-sub td { display:block; width:100%; }
       #pane-sub tr { border-bottom:1px solid #162a48; padding:8px 0; }
@@ -69,7 +68,7 @@
     /* ===== 列印：只印右側、白底黑字、題目不切半 + 抬頭 ===== */
     @media print{
       html, body{ background:#fff !important; color:#000 !important; }
-      header, .left, .tabs, .subToolbar, .controls{ display:none !important; }
+      header, .left, .tabs, .controls{ display:none !important; }
       .wrap{ padding:0 !important; }
       .layout{ display:block !important; height:auto !important; overflow:visible !important; }
       .right{ display:block !important; border:none !important; height:auto !important; }
@@ -123,7 +122,7 @@
           <video id="player" playsinline controls></video>
         </div>
 
-        <!-- 工具列（精簡後） -->
+        <!-- 工具列（精簡＋加入跟隨/偏移） -->
         <div class="controls">
           <div class="row">
             <button id="btnPrev" class="btn">⏮ 上一句</button>
@@ -132,6 +131,15 @@
             <button id="btnReplay" class="btn blue">🔁 重複本句</button>
             <button id="btnFill" class="btn">🖼 填滿畫面</button>
           </div>
+
+          <!-- 跟隨／偏移（移到左下工具列） -->
+          <div class="row">
+            <label class="chip"><input id="chkFollow" type="checkbox" checked/> 跟隨</label>
+            <span class="chip">偏移 <span id="offsetVal">0.0s</span></span>
+            <button id="btnOffsetMinus" class="btn">-0.5s</button>
+            <button id="btnOffsetPlus" class="btn">+0.5s</button>
+          </div>
+
           <div class="row speed">
             <span class="muted">速度</span>
             <input id="speedRange" type="range" min="0.5" max="2" step="0.05" value="1"/>
@@ -146,14 +154,6 @@
           <div class="tab active" data-tab="sub">字幕</div>
           <div class="tab" data-tab="quiz">測驗</div>
           <div class="tab" data-tab="vocab">單字</div>
-        </div>
-
-        <!-- 字幕工具列（桌機顯示） -->
-        <div id="subToolbar" class="subToolbar">
-          <label class="chip"><input id="chkFollow" type="checkbox" checked/> 跟隨</label>
-          <span class="chip">偏移 <span id="offsetVal">0.0s</span></span>
-          <button id="btnOffsetMinus" class="btn">-0.5s</button>
-          <button id="btnOffsetPlus" class="btn">+0.5s</button>
         </div>
 
         <div class="pane">
@@ -283,5 +283,6 @@
   </script>
 </body>
 </html>
+
 
 
