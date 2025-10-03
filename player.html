@@ -52,40 +52,27 @@
     tbody tr:hover{background:#0f2a4e}
     tr.active{background:#173a6e}
 
-    /* 測驗上方四分區按鈕（避免換行掉落） */
+    /* 測驗上方四分區按鈕 */
     .q-tabs{display:flex;gap:8px;flex-wrap:wrap}
     .q-tabs .qtab{background:#122340;border:1px solid #1f375f;border-radius:10px;padding:6px 12px;color:#e6efff;cursor:pointer}
     .q-tabs .qtab.on{background:#154274}
 
-    /* ===== 單字詞卡（沿用你要的樣式） ===== */
+    /* ===== 單字詞卡 ===== */
     #pane-vocab { padding: 0 8px 24px; }
-    .voc-row{
-      display:grid; grid-template-columns:110px 1fr 320px;
-      gap:18px; padding:22px 12px; border-bottom:1px solid #14243b;
-    }
+    .voc-row{ display:grid; grid-template-columns:110px 1fr 320px; gap:18px; padding:22px 12px; border-bottom:1px solid #14243b; }
     .voc-time{ display:flex; align-items:center; gap:10px; color:#9fc1ff; }
-    .voc-time .btn{
-      width:36px; height:36px; display:inline-flex; align-items:center; justify-content:center;
-      border-radius:999px; background:#0f2a4e; border:1px solid #274a7f; color:#dbe7ff; padding:0;
-    }
+    .voc-time .btn{ width:36px; height:36px; display:inline-flex; align-items:center; justify-content:center; border-radius:999px; background:#0f2a4e; border:1px solid #274a7f; color:#dbe7ff; padding:0; }
     .voc-time .time-link{ cursor:pointer; text-decoration:underline; color:#9fc1ff; }
     .voc-core{ min-width:0; }
     .voc-sent{ font-size:20px; line-height:1.6; }
     .voc-ipt{ margin-top:8px; display:flex; flex-wrap:wrap; gap:8px; align-items:center; }
-    .voc-ipt input{
-      height:44px; min-width:220px; padding:10px 12px; border:1px solid #334155; border-radius:12px;
-      background:#0f223b; color:#dbe7ff;
-    }
+    .voc-ipt input{ height:44px; min-width:220px; padding:10px 12px; border:1px solid #334155; border-radius:12px; background:#0f223b; color:#dbe7ff; }
     .voc-ipt .btn{ height:40px; border-radius:10px; padding:0 14px; }
     .voc-ipt .ok{ color:#5bd3c7; } .voc-ipt .ng{ color:#ff6b6b; }
     .voc-gram{ margin-top:8px; color:#9fb3d9; font-size:13px; }
-
     .voc-right{ background:#0f1f2f; border:1px solid #1b2f52; border-radius:14px; padding:14px; }
     .voc-word{ display:flex; align-items:center; gap:10px; font-size:26px; font-weight:800; letter-spacing:.02em; }
-    .voc-word .btn{
-      width:36px; height:36px; padding:0; display:inline-flex; align-items:center; justify-content:center;
-      border-radius:10px; background:#102a4a; border:1px solid #23578c;
-    }
+    .voc-word .btn{ width:36px; height:36px; padding:0; display:inline-flex; align-items:center; justify-content:center; border-radius:10px; background:#102a4a; border:1px solid #23578c; }
     .voc-pos{ color:#9fb3d9; font-size:13px; }
     .voc-zh{ margin-top:6px; font-size:18px; }
     .voc-en{ margin-top:2px; color:#9fb3d9; font-size:14px; }
@@ -96,41 +83,18 @@
     /* ===== 列印：白底黑字 + 解除捲動 + 題目防切半 + 表頭 ===== */
     #printHeader{ display:none; }
     @media print{
-
-      /* 白底黑字 */
       html, body{ background:#fff !important; color:#000 !important; }
       .right, .pane, .btn, .q-tabs .qtab{ background:#fff !important; color:#000 !important; }
       .btn, .q-tabs .qtab, table, th, td{ border-color:#999 !important; }
-
-      /* 只印右側；隱藏影音與工具 */
-      header, .left, .tabs, .subToolbar, .controls,
-      #quizTabs, .q-actions { display:none !important; }
-
-      /* 解除高度/滾動限制（關鍵，避免只印前幾題） */
+      header, .left, .tabs, .subToolbar, .controls, #quizTabs, .q-actions { display:none !important; }
       .wrap{ padding:0 }
       .layout{ display:block; height:auto; overflow:visible }
       .right{ display:block; border:none; height:auto }
-      .pane, #pane-quiz, .quiz-shell, #quizList{
-        height:auto !important;
-        max-height:none !important;
-        overflow:visible !important;
-      }
-
-      /* 題目更緊湊以省紙 & 不切半 */
+      .pane, #pane-quiz, .quiz-shell, #quizList{ height:auto !important; max-height:none !important; overflow:visible !important; }
       #quizList{ font-size:12.5pt; line-height:1.25; }
-      #quizList > li{
-        break-inside: avoid;
-        page-break-inside: avoid;
-        padding:6px 0;
-        margin:0 0 6px 0;
-        border-bottom:1px dotted #ccc;
-      }
+      #quizList > li{ break-inside: avoid; page-break-inside: avoid; padding:6px 0; margin:0 0 6px 0; border-bottom:1px dotted #ccc; }
       #quizList .msg, #quizList .exp{ margin-top:2px; }
-
-      /* 版心邊界 */
       @page { margin: 10mm 10mm 12mm 10mm; }
-
-      /* 列印抬頭（logo / 機構 / 分數 / 評語 / slug / 分區） */
       #printHeader{display:block !important; padding:6mm 0 2mm 0; border-bottom:1px solid #d0d7e2; margin-bottom:6mm}
       #ph-row{display:flex; align-items:center; gap:10px}
       #ph-logo{height:18mm; object-fit:contain}
@@ -140,102 +104,39 @@
       #ph-score .big{font-size:22px; font-weight:800}
     }
 
-    /* ===== 手機版字幕表：把「中文」排到「英文」下方 ===== */
+    /* ===== 手機版修正：把左右欄改上下；中文在英文下方（iOS Safari 可靠） ===== */
     @media (max-width: 900px){
-      /* 隱藏表頭，改用兩行卡片式 */
-      #pane-sub table thead{ display:none; }
+      /* 版面：左右改上下堆疊 */
+      .layout{ flex-direction: column; }
+      .left, .right{ min-width: 0; }
 
-      /* 每列：左側時間固定，右側英文在上、中文在下 */
-      #pane-sub tbody tr{
+      /* 字幕表：隱藏表頭、解除 table 佈局、使用 grid 排版 */
+      #pane-sub table thead{ display:none; }
+      #pane-sub table{ display:block; width:100%; border-collapse:separate; }
+      #pane-sub tbody{ display:block; width:100%; }
+      #pane-sub tr{
         display:grid;
-        grid-template-columns: 70px 1fr;
+        grid-template-columns:70px 1fr;
         grid-template-areas:
           "time en"
           "time zh";
         gap:6px 12px;
         padding:10px 8px;
+        border-bottom:1px solid #162a48;
+        background:transparent;
       }
-      /* 第 1 欄＝時間 */
-      #pane-sub td:nth-child(1){
-        grid-area: time;
-        color: var(--muted);
-        width: auto;
-        border-bottom: none;
-      }
-      /* 第 2 欄＝英文（上） */
-      #pane-sub td:nth-child(2){
-        grid-area: en;
-        font-size: 16px;
-        line-height: 1.5;
-        border-bottom: none;
-      }
-      /* 第 3 欄＝中文（下） */
-      #pane-sub td:nth-child(3){
-        grid-area: zh;
-        font-size: 14px;
-        color: #9fb0c9;
-        border-bottom: 1px solid #162a48;
-        padding-top: 2px;
-      }
+      #pane-sub td{ display:block; width:auto; border:none; padding:0; }
+      #pane-sub td:nth-child(1){ grid-area: time; color: var(--muted); font-size:12px; line-height:1.2; }
+      #pane-sub td:nth-child(2){ grid-area: en; font-size:16px; line-height:1.5; color:#e6efff; }
+      #pane-sub td:nth-child(3){ grid-area: zh; font-size:14px; line-height:1.5; color:#9fb0c9; margin-top:2px; }
     }
-    /* === 手機版修正（iOS Safari 可靠版）=== */
-@media (max-width: 900px){
-
-  /* 版面：左右改上下堆疊，避免擠成兩欄 */
-  .layout{ flex-direction: column; }
-  .left, .right{ min-width: 0; }
-
-  /* 隱藏字幕表頭 */
-  #pane-sub table thead{ display:none; }
-
-  /* 解除 table 語意，讓 tr/td 可以用 grid/flex */
-  #pane-sub table{ display:block; width:100%; border-collapse:separate; }
-  #pane-sub tbody{ display:block; width:100%; }
-  #pane-sub tr{ display:grid; grid-template-columns:70px 1fr; 
-                grid-template-areas:
-                  "time en"
-                  "time zh";
-                gap:6px 12px;
-                padding:10px 8px;
-                border-bottom:1px solid #162a48;
-                background:transparent; }
-  #pane-sub td{ display:block; width:auto; border:none; padding:0; }
-
-  /* 第 1 欄＝時間（固定在左） */
-  #pane-sub td:nth-child(1){
-    grid-area: time;
-    color: var(--muted);
-    font-size: 12px;
-    line-height: 1.2;
-  }
-
-  /* 第 2 欄＝英文（上方） */
-  #pane-sub td:nth-child(2){
-    grid-area: en;
-    font-size: 16px;
-    line-height: 1.5;
-    color: #e6efff;
-  }
-
-  /* 第 3 欄＝中文（英文下方） */
-  #pane-sub td:nth-child(3){
-    grid-area: zh;
-    font-size: 14px;
-    line-height: 1.5;
-    color: #9fb0c9;
-    margin-top: 2px;
-  }
-}
-
-/* 加強：手機橫向時也套用（某些機型寬度仍 >900px） */
-@media (orientation: landscape) and (max-height: 520px){
-  .layout{ flex-direction: column; }
-  #pane-sub table thead{ display:none; }
-  #pane-sub table, #pane-sub tbody{ display:block; }
-  #pane-sub tr{ display:grid; grid-template-columns:70px 1fr;
-                grid-template-areas:"time en" "time zh"; }
-}
-
+    /* 手機橫向的保險（高度矮但寬度大時也套用） */
+    @media (orientation: landscape) and (max-height: 520px){
+      .layout{ flex-direction: column; }
+      #pane-sub table thead{ display:none; }
+      #pane-sub table, #pane-sub tbody{ display:block; }
+      #pane-sub tr{ display:grid; grid-template-columns:70px 1fr; grid-template-areas:"time en" "time zh"; }
+    }
   </style>
 </head>
 <body>
@@ -248,7 +149,7 @@
     </div>
   </header>
 
-  <!-- 列印抬頭（僅列印時顯示；JS 會填入分數/評語/影片名/分區） -->
+  <!-- 列印抬頭 -->
   <div id="printHeader" style="display:none;">
     <div id="ph-row" style="justify-content:space-between;">
       <div style="display:flex;align-items:center;gap:8px;">
@@ -313,7 +214,7 @@
           <span class="muted" style="margin-left:auto">( 尚未載入 )</span>
         </div>
 
-        <!-- 右側內容（可捲動） -->
+        <!-- 右側內容 -->
         <div class="pane">
           <!-- 字幕 -->
           <div id="pane-sub">
@@ -330,7 +231,7 @@
             <div id="cuesStatus" class="muted" style="padding:10px 14px"></div>
           </div>
 
-          <!-- 測驗（上方四分區；下方只三鍵） -->
+          <!-- 測驗 -->
           <div id="pane-quiz" style="display:none">
             <div class="quiz-shell">
               <div id="quizTabs" class="q-tabs" style="margin:6px 0 10px 0;">
@@ -354,7 +255,7 @@
             </div>
           </div>
 
-          <!-- 單字（詞卡） -->
+          <!-- 單字 -->
           <div id="pane-vocab" style="display:none">
             <div id="vocabStatus" class="muted" style="padding:10px 14px">( 尚未載入 )</div>
             <div id="vocabBox" style="padding:0 14px 14px"></div>
@@ -368,7 +269,7 @@
   <script src="./player.js"></script>
   <script src="./login.js"></script>
 
-  <!-- 列印：列印前展開容器 + 填抬頭；列印後還原 -->
+  <!-- 列印：展開容器 + 填抬頭；印完還原 -->
   <script>
     (function () {
       function getSlug(){ const u=new URLSearchParams(location.search); return u.get('slug')||''; }
@@ -387,7 +288,6 @@
         if (phTitle)  phTitle.textContent = slug;
         if (phSec)    phSec.textContent   = sec || '（當前分區）';
 
-        // 依分數給一句評語（與 quiz.js 同邏輯）
         const sn = parseInt(scoreNum,10);
         let remark = '';
         if (!isNaN(sn)) {
@@ -403,10 +303,8 @@
       }
 
       function expandForPrint(){
-        const pane = document.querySelector('.pane');
-        const qz   = document.getElementById('pane-quiz');
-        const list = document.getElementById('quizList');
-        [pane,qz,list].forEach(el=>{
+        const els=[document.querySelector('.pane'), document.getElementById('pane-quiz'), document.getElementById('quizList')];
+        els.forEach(el=>{
           if(!el) return;
           el.dataset._h  = el.style.height;
           el.dataset._mh = el.style.maxHeight;
@@ -417,12 +315,9 @@
         });
         fillPrintHeader();
       }
-
       function restoreAfterPrint(){
-        const pane = document.querySelector('.pane');
-        const qz   = document.getElementById('pane-quiz');
-        const list = document.getElementById('quizList');
-        [pane,qz,list].forEach(el=>{
+        const els=[document.querySelector('.pane'), document.getElementById('pane-quiz'), document.getElementById('quizList')];
+        els.forEach(el=>{
           if(!el) return;
           el.style.height    = el.dataset._h  || '';
           el.style.maxHeight = el.dataset._mh || '';
@@ -442,7 +337,7 @@
       }
     })();
 
-    // 同步「填滿畫面」按鈕文字（保留原行為）
+    // 同步「填滿畫面」按鈕文字
     (function(){
       const wrap=document.getElementById('videoWrap');
       const btn=document.getElementById('btnFill');
