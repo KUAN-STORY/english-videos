@@ -1,135 +1,735 @@
-[
-  {
-    "type": "mcq",
-    "question": "Who was Hou Yi’s wife in legend?",
-    "options": ["Nuwa", "Chang'e", "Guanyin", "Mulan"],
-    "answer": "Chang'e",
-    "explanation": "嫦娥是后羿的妻子。"
-  },
-  {
-    "type": "mcq",
-    "question": "How many suns appeared in the sky before Hou Yi shot them?",
-    "options": ["1", "3", "10", "12"],
-    "answer": "10",
-    "explanation": "傳說中同時出現十個太陽。"
-  },
-  {
-    "type": "mcq",
-    "question": "How many suns did Hou Yi shoot down?",
-    "options": ["All 10", "9", "5", "1"],
-    "answer": "9",
-    "explanation": "他射下九個，只留下1個。"
-  },
-  {
-    "type": "mcq",
-    "question": "Why did Hou Yi shoot down the suns?",
-    "options": ["They were too cold", "They caused floods", "They scorched the earth", "They blocked the moon"],
-    "answer": "They scorched the earth",
-    "explanation": "十日並出，烤焦大地，民不聊生。"
-  },
-  {
-    "type": "mcq",
-    "question": "Who gave Hou Yi the bow and arrows?",
-    "options": ["The Jade Emperor", "The Queen Mother of the West", "Nuwa", "A dragon king"],
-    "answer": "The Queen Mother of the West",
-    "explanation": "西王母賜予神弓神箭。"
-  },
-  {
-    "type": "mcq",
-    "question": "What was Hou Yi’s profession in legend?",
-    "options": ["Farmer", "Archer hero", "Doctor", "King"],
-    "answer": "Archer hero",
-    "explanation": "后羿以神射聞名。"
-  },
-  {
-    "type": "mcq",
-    "question": "What did Hou Yi receive as a reward for shooting the suns?",
-    "options": ["Wealth", "Elixir of immortality", "A palace", "A dragon"],
-    "answer": "Elixir of immortality",
-    "explanation": "他得到長生不老藥。"
-  },
-  {
-    "type": "mcq",
-    "question": "Why did Chang'e take the elixir?",
-    "options": ["She was hungry", "She was forced by Hou Yi", "To prevent Hou Yi’s enemy from stealing it", "For beauty"],
-    "answer": "To prevent Hou Yi’s enemy from stealing it",
-    "explanation": "嫦娥為保護仙藥，自己吞下飛月。"
-  },
-  {
-    "type": "mcq",
-    "question": "Where did Chang'e go after taking the elixir?",
-    "options": ["The Sun", "The Moon", "The Earth", "The Sea"],
-    "answer": "The Moon",
-    "explanation": "她奔月而去。"
-  },
-  {
-    "type": "mcq",
-    "question": "What animal accompanied Chang'e on the moon?",
-    "options": ["A rabbit", "A dragon", "A crane", "A fox"],
-    "answer": "A rabbit",
-    "explanation": "玉兔在月宮搗藥。"
-  },
-  {
-    "type": "mcq",
-    "question": "Who did Hou Yi become after losing his wife?",
-    "options": ["A god", "A lonely man", "A king", "A farmer"],
-    "answer": "A lonely man",
-    "explanation": "失去嫦娥後，后羿孤獨終生。"
-  },
-  {
-    "type": "mcq",
-    "question": "What natural phenomenon does the Hou Yi story explain?",
-    "options": ["The moon’s phases", "Why only one sun exists", "Earthquakes", "Rainbows"],
-    "answer": "Why only one sun exists",
-    "explanation": "傳說解釋了天上只有一個太陽。"
-  },
-  {
-    "type": "sa",
-    "question": "How many suns did Hou Yi leave in the sky?",
-    "answer": "1",
-    "explanation": "只留下唯一的一個太陽。"
-  },
-  {
-    "type": "sa",
-    "question": "What magical item did Hou Yi receive as a reward?",
-    "answer": "Elixir of immortality",
-    "explanation": "射日後獲得長生不老藥。"
-  },
-  {
-    "type": "sa",
-    "question": "Who granted Hou Yi the bow?",
-    "answer": "The Queen Mother of the West",
-    "explanation": "西王母所賜。"
-  },
-  {
-    "type": "sa",
-    "question": "What is the name of Hou Yi’s wife?",
-    "answer": "Chang'e",
-    "explanation": "嫦娥是其妻。"
-  },
-  {
-    "type": "sa",
-    "question": "Why did Hou Yi shoot down the suns?",
-    "answer": "Because they scorched the earth",
-    "explanation": "為拯救人間免於酷熱。"
-  },
-  {
-    "type": "sa",
-    "question": "What creature lives with Chang'e on the moon?",
-    "answer": "Rabbit",
-    "explanation": "玉兔相伴。"
-  },
-  {
-    "type": "sa",
-    "question": "What festival later became associated with their story?",
-    "answer": "Mid-Autumn Festival",
-    "explanation": "中秋節與嫦娥、后羿故事相關。"
-  },
-  {
-    "type": "sa",
-    "question": "What does the Hou Yi legend symbolize?",
-    "answer": "Human courage and sacrifice",
-    "explanation": "象徵人類勇氣與犧牲。"
+{
+  "title": "Houyi (Ten Suns)",
+  "version": "1.0",
+  "sections": {
+    "vocab": [
+      {
+        "type": "MCQ",
+        "question": "In the legend, there were ten ____ in the sky.",
+        "options": [
+          "moons",
+          "suns",
+          "stars",
+          "clouds"
+        ],
+        "answer": "suns",
+        "explanation": ""
+      },
+      {
+        "type": "MCQ",
+        "question": "People were very ____ and unhappy.",
+        "options": [
+          "cold",
+          "hot",
+          "hungry",
+          "sleepy"
+        ],
+        "answer": "hot",
+        "explanation": ""
+      },
+      {
+        "type": "MCQ",
+        "question": "A brave man named ____ helped them.",
+        "options": [
+          "Mulan",
+          "Hou Yi",
+          "Jade",
+          "Chang'e"
+        ],
+        "answer": "Hou Yi",
+        "explanation": ""
+      },
+      {
+        "type": "MCQ",
+        "question": "He used a strong ____.",
+        "options": [
+          "sword",
+          "bow",
+          "stick",
+          "net"
+        ],
+        "answer": "bow",
+        "explanation": ""
+      },
+      {
+        "type": "MCQ",
+        "question": "He shot down ____ suns.",
+        "options": [
+          "eight",
+          "nine",
+          "ten",
+          "seven"
+        ],
+        "answer": "nine",
+        "explanation": ""
+      },
+      {
+        "type": "MCQ",
+        "question": "Only ____ sun was left.",
+        "options": [
+          "one",
+          "two",
+          "three",
+          "no"
+        ],
+        "answer": "one",
+        "explanation": ""
+      },
+      {
+        "type": "MCQ",
+        "question": "People ____ Hou Yi for saving them.",
+        "options": [
+          "forgot",
+          "loved",
+          "feared",
+          "ignored"
+        ],
+        "answer": "loved",
+        "explanation": ""
+      },
+      {
+        "type": "MCQ",
+        "question": "Hou Yi climbed a tall ____.",
+        "options": [
+          "tree",
+          "mountain",
+          "house",
+          "tower"
+        ],
+        "answer": "mountain",
+        "explanation": ""
+      },
+      {
+        "type": "MCQ",
+        "question": "The world became ____ again.",
+        "options": [
+          "hotter",
+          "colder",
+          "cooler",
+          "darker"
+        ],
+        "answer": "cooler",
+        "explanation": ""
+      },
+      {
+        "type": "MCQ",
+        "question": "Hou Yi was very ____.",
+        "options": [
+          "brave",
+          "quiet",
+          "lazy",
+          "shy"
+        ],
+        "answer": "brave",
+        "explanation": ""
+      },
+      {
+        "type": "SA",
+        "question": "Write the weapon: a strong ____.",
+        "answer": "bow",
+        "explanation": ""
+      },
+      {
+        "type": "SA",
+        "question": "He shot down ____ suns.",
+        "answer": "nine",
+        "explanation": ""
+      },
+      {
+        "type": "SA",
+        "question": "People were very ____ before.",
+        "answer": "hot",
+        "explanation": ""
+      },
+      {
+        "type": "SA",
+        "question": "Hou Yi climbed a tall ____.",
+        "answer": "mountain",
+        "explanation": ""
+      },
+      {
+        "type": "SA",
+        "question": "Only ____ sun was left.",
+        "answer": "one",
+        "explanation": ""
+      },
+      {
+        "type": "SA",
+        "question": "The hero's name: ____",
+        "answer": "Hou Yi",
+        "explanation": ""
+      },
+      {
+        "type": "SA",
+        "question": "People ____ him for saving them.",
+        "answer": "loved",
+        "explanation": ""
+      },
+      {
+        "type": "SA",
+        "question": "There were ten ____ in the sky.",
+        "answer": "suns",
+        "explanation": ""
+      },
+      {
+        "type": "SA",
+        "question": "Hou Yi is a ____ man.",
+        "answer": "brave",
+        "explanation": ""
+      },
+      {
+        "type": "SA",
+        "question": "The world became ____ after that.",
+        "answer": "cooler",
+        "explanation": ""
+      }
+    ],
+    "grammar": [
+      {
+        "type": "MCQ",
+        "question": "Choose the tense: Long ago, there ____ ten suns.",
+        "options": [
+          "are",
+          "were",
+          "was",
+          "be"
+        ],
+        "answer": "were",
+        "explanation": ""
+      },
+      {
+        "type": "MCQ",
+        "question": "Choose the verb: He ____ down nine suns.",
+        "options": [
+          "shoot",
+          "shoots",
+          "shot",
+          "is shooting"
+        ],
+        "answer": "shot",
+        "explanation": "過去式。"
+      },
+      {
+        "type": "MCQ",
+        "question": "Choose the preposition: He climbed ____ a tall mountain.",
+        "options": [
+          "to",
+          "on",
+          "up",
+          "at"
+        ],
+        "answer": "up",
+        "explanation": ""
+      },
+      {
+        "type": "MCQ",
+        "question": "Choose the pronoun for 'people': ____ were very hot.",
+        "options": [
+          "He",
+          "She",
+          "They",
+          "It"
+        ],
+        "answer": "They",
+        "explanation": ""
+      },
+      {
+        "type": "MCQ",
+        "question": "Choose the adjective: Hou Yi is ____.",
+        "options": [
+          "bravely",
+          "brave",
+          "braver",
+          "bravery"
+        ],
+        "answer": "brave",
+        "explanation": ""
+      },
+      {
+        "type": "SA",
+        "question": "Change to past: People love him.",
+        "answer": "People loved him.",
+        "explanation": ""
+      },
+      {
+        "type": "SA",
+        "question": "Fill in: He ____ (use) a strong bow.",
+        "answer": "used",
+        "explanation": ""
+      },
+      {
+        "type": "SA",
+        "question": "Fill in: Only one sun ____ (be) left.",
+        "answer": "was",
+        "explanation": ""
+      },
+      {
+        "type": "SA",
+        "question": "Fill in: He ____ (climb) a tall mountain.",
+        "answer": "climbed",
+        "explanation": ""
+      },
+      {
+        "type": "SA",
+        "question": "Fill in: People ____ (be) very hot.",
+        "answer": "were",
+        "explanation": ""
+      },
+      {
+        "type": "MCQ",
+        "question": "Choose the conjunction: He was brave ____ he helped people.",
+        "options": [
+          "and",
+          "but",
+          "because",
+          "so"
+        ],
+        "answer": "so",
+        "explanation": ""
+      },
+      {
+        "type": "MCQ",
+        "question": "Choose the form: People were ____ unhappy.",
+        "options": [
+          "very",
+          "much",
+          "many",
+          "lot"
+        ],
+        "answer": "very",
+        "explanation": ""
+      },
+      {
+        "type": "MCQ",
+        "question": "Choose the adverb: He shot ____ with his bow.",
+        "options": [
+          "strong",
+          "strongly",
+          "strength",
+          "strengthen"
+        ],
+        "answer": "strongly",
+        "explanation": ""
+      },
+      {
+        "type": "MCQ",
+        "question": "Choose: The world became ____.",
+        "options": [
+          "cool",
+          "cooler",
+          "coolest",
+          "more cool"
+        ],
+        "answer": "cooler",
+        "explanation": ""
+      },
+      {
+        "type": "MCQ",
+        "question": "Choose: There ____ only one sun.",
+        "options": [
+          "is",
+          "are",
+          "was",
+          "were"
+        ],
+        "answer": "was",
+        "explanation": ""
+      },
+      {
+        "type": "SA",
+        "question": "Passive: Hou Yi shot down nine suns. → Nine suns ____ ____ by Hou Yi.",
+        "answer": "were shot",
+        "explanation": ""
+      },
+      {
+        "type": "SA",
+        "question": "Make a question: Hou Yi helped people. → Who ____ people?",
+        "answer": "helped",
+        "explanation": "Who helped people?"
+      },
+      {
+        "type": "SA",
+        "question": "Rewrite with 'because': People loved Hou Yi. He saved them.",
+        "answer": "People loved Hou Yi because he saved them.",
+        "explanation": ""
+      },
+      {
+        "type": "SA",
+        "question": "Make it negative: There were ten moons.",
+        "answer": "There were not ten moons.",
+        "explanation": ""
+      },
+      {
+        "type": "SA",
+        "question": "Change to past: He climbs a mountain.",
+        "answer": "He climbed a mountain.",
+        "explanation": ""
+      }
+    ],
+    "reading_text": "Long ago, ten suns appeared in the sky at the same time. The world became very hot and people were unhappy. A brave man named Hou Yi climbed a tall mountain and shot down nine suns with his strong bow. Only one sun was left, and the world became cooler. Everyone loved Hou Yi for saving them.",
+    "reading": [
+      {
+        "type": "MCQ",
+        "question": "How many suns appeared at the same time?",
+        "options": [
+          "one",
+          "two",
+          "ten",
+          "nine"
+        ],
+        "answer": "ten",
+        "explanation": ""
+      },
+      {
+        "type": "MCQ",
+        "question": "How did people feel?",
+        "options": [
+          "happy",
+          "unhappy",
+          "sleepy",
+          "excited"
+        ],
+        "answer": "unhappy",
+        "explanation": ""
+      },
+      {
+        "type": "MCQ",
+        "question": "Who helped them?",
+        "options": [
+          "Mulan",
+          "Hou Yi",
+          "Chang'e",
+          "Nuwa"
+        ],
+        "answer": "Hou Yi",
+        "explanation": ""
+      },
+      {
+        "type": "MCQ",
+        "question": "What did he use?",
+        "options": [
+          "a sword",
+          "a bow",
+          "a stick",
+          "a net"
+        ],
+        "answer": "a bow",
+        "explanation": ""
+      },
+      {
+        "type": "MCQ",
+        "question": "How many suns were left?",
+        "options": [
+          "one",
+          "two",
+          "three",
+          "none"
+        ],
+        "answer": "one",
+        "explanation": ""
+      },
+      {
+        "type": "SA",
+        "question": "He climbed a tall ____.",
+        "answer": "mountain",
+        "explanation": ""
+      },
+      {
+        "type": "SA",
+        "question": "He shot down ____ suns.",
+        "answer": "nine",
+        "explanation": ""
+      },
+      {
+        "type": "SA",
+        "question": "The world became ____.",
+        "answer": "cooler",
+        "explanation": ""
+      },
+      {
+        "type": "SA",
+        "question": "People ____ Hou Yi.",
+        "answer": "loved",
+        "explanation": ""
+      },
+      {
+        "type": "SA",
+        "question": "The suns made the world very ____.",
+        "answer": "hot",
+        "explanation": ""
+      },
+      {
+        "type": "MCQ",
+        "question": "Which happened first?",
+        "options": [
+          "He shot the suns.",
+          "Ten suns appeared.",
+          "People loved him.",
+          "The world became cooler."
+        ],
+        "answer": "Ten suns appeared.",
+        "explanation": ""
+      },
+      {
+        "type": "MCQ",
+        "question": "Which is TRUE?",
+        "options": [
+          "He used a sword.",
+          "He used a bow.",
+          "He used a net.",
+          "He used fire."
+        ],
+        "answer": "He used a bow.",
+        "explanation": ""
+      },
+      {
+        "type": "MCQ",
+        "question": "Why did people love him?",
+        "options": [
+          "He told stories.",
+          "He saved them.",
+          "He sold mooncakes.",
+          "He painted lanterns."
+        ],
+        "answer": "He saved them.",
+        "explanation": ""
+      },
+      {
+        "type": "MCQ",
+        "question": "Where did he climb?",
+        "options": [
+          "a house",
+          "a tree",
+          "a mountain",
+          "a hill"
+        ],
+        "answer": "a mountain",
+        "explanation": ""
+      },
+      {
+        "type": "MCQ",
+        "question": "What is the main idea?",
+        "options": [
+          "A rainy day",
+          "A brave hero",
+          "A school trip",
+          "A quiet night"
+        ],
+        "answer": "A brave hero",
+        "explanation": ""
+      },
+      {
+        "type": "SA",
+        "question": "People were very ____ before.",
+        "answer": "hot",
+        "explanation": ""
+      },
+      {
+        "type": "SA",
+        "question": "Only one ____ was left.",
+        "answer": "sun",
+        "explanation": ""
+      },
+      {
+        "type": "SA",
+        "question": "He is a ____ man.",
+        "answer": "brave",
+        "explanation": ""
+      },
+      {
+        "type": "SA",
+        "question": "Everyone ____ Hou Yi.",
+        "answer": "loved",
+        "explanation": ""
+      },
+      {
+        "type": "SA",
+        "question": "He used a strong ____.",
+        "answer": "bow",
+        "explanation": ""
+      }
+    ],
+    "mixed": [
+      {
+        "type": "MCQ",
+        "question": "Choose the best title.",
+        "options": [
+          "The Ten Suns",
+          "Mooncakes",
+          "A Class Trip",
+          "The Jade Rabbit"
+        ],
+        "answer": "The Ten Suns",
+        "explanation": ""
+      },
+      {
+        "type": "MCQ",
+        "question": "Which word means 'very brave'?",
+        "options": [
+          "shy",
+          "heroic",
+          "sleepy",
+          "quiet"
+        ],
+        "answer": "heroic",
+        "explanation": ""
+      },
+      {
+        "type": "MCQ",
+        "question": "Pick the correct sentence.",
+        "options": [
+          "He were brave.",
+          "He was brave.",
+          "He be brave.",
+          "He am brave."
+        ],
+        "answer": "He was brave.",
+        "explanation": ""
+      },
+      {
+        "type": "MCQ",
+        "question": "What is NOT in the story?",
+        "options": [
+          "suns",
+          "bow",
+          "mountain",
+          "lantern show"
+        ],
+        "answer": "lantern show",
+        "explanation": ""
+      },
+      {
+        "type": "MCQ",
+        "question": "Which happened last?",
+        "options": [
+          "He climbed a mountain.",
+          "People loved him.",
+          "Ten suns appeared.",
+          "He shot nine suns."
+        ],
+        "answer": "People loved him.",
+        "explanation": ""
+      },
+      {
+        "type": "SA",
+        "question": "Change to past: People feel hot.",
+        "answer": "People felt hot.",
+        "explanation": ""
+      },
+      {
+        "type": "SA",
+        "question": "Make a question: He used a bow. → What did he ____?",
+        "answer": "use",
+        "explanation": "What did he use?"
+      },
+      {
+        "type": "SA",
+        "question": "Fill in: There ____ (be) ten suns.",
+        "answer": "were",
+        "explanation": ""
+      },
+      {
+        "type": "SA",
+        "question": "Fill in: He ____ (shoot) nine suns.",
+        "answer": "shot",
+        "explanation": ""
+      },
+      {
+        "type": "SA",
+        "question": "Rewrite: He helped people, ____ they loved him. (選 so/because)",
+        "answer": "so",
+        "explanation": ""
+      },
+      {
+        "type": "MCQ",
+        "question": "Choose the synonym of 'unhappy'.",
+        "options": [
+          "sad",
+          "glad",
+          "proud",
+          "safe"
+        ],
+        "answer": "sad",
+        "explanation": ""
+      },
+      {
+        "type": "MCQ",
+        "question": "Choose the antonym of 'hot'.",
+        "options": [
+          "warm",
+          "cold",
+          "hard",
+          "soft"
+        ],
+        "answer": "cold",
+        "explanation": ""
+      },
+      {
+        "type": "MCQ",
+        "question": "Which word fits: He climbed a ____ mountain.",
+        "options": [
+          "tall",
+          "slow",
+          "quiet",
+          "early"
+        ],
+        "answer": "tall",
+        "explanation": ""
+      },
+      {
+        "type": "MCQ",
+        "question": "Which is a noun?",
+        "options": [
+          "brave",
+          "bravely",
+          "bravery",
+          "braver"
+        ],
+        "answer": "bravery",
+        "explanation": ""
+      },
+      {
+        "type": "MCQ",
+        "question": "Which is a verb?",
+        "options": [
+          "love",
+          "happy",
+          "mountain",
+          "hot"
+        ],
+        "answer": "love",
+        "explanation": ""
+      },
+      {
+        "type": "SA",
+        "question": "Spell the hero’s name: ____ ____",
+        "answer": "Hou Yi",
+        "explanation": ""
+      },
+      {
+        "type": "SA",
+        "question": "Write the number left: ____ sun.",
+        "answer": "one",
+        "explanation": ""
+      },
+      {
+        "type": "SA",
+        "question": "Translate: 人們愛他 → People ____ him.",
+        "answer": "loved",
+        "explanation": ""
+      },
+      {
+        "type": "SA",
+        "question": "Fill in: He used a strong ____.",
+        "answer": "bow",
+        "explanation": ""
+      },
+      {
+        "type": "SA",
+        "question": "Change to negative: He was weak.",
+        "answer": "He was not weak.",
+        "explanation": ""
+      }
+    ]
   }
-]
-
+}
