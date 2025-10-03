@@ -1,137 +1,739 @@
-[
-  {
-    "type": "mcq",
-    "question": "During the Lantern Festival, people traditionally light what?",
-    "options": ["Torches", "Firecrackers", "Lanterns", "Candles in bottles"],
-    "answer": "Lanterns",
-    "explanation": "元宵節的重點是點燈、賞燈。"
-  },
-  {
-    "type": "mcq",
-    "question": "On which day of the lunar calendar is the Lantern Festival celebrated?",
-    "options": ["1st of the 1st month", "15th of the 1st month", "8th of the 8th month", "15th of the 12th month"],
-    "answer": "15th of the 1st month",
-    "explanation": "農曆正月十五，為元宵節。"
-  },
-  {
-    "type": "mcq",
-    "question": "What food is traditionally eaten during the Lantern Festival?",
-    "options": ["Zongzi", "Tangyuan (glutinous rice balls)", "Mooncakes", "Spring rolls"],
-    "answer": "Tangyuan (glutinous rice balls)",
-    "explanation": "元宵節吃湯圓，寓意團圓。"
-  },
-  {
-    "type": "mcq",
-    "question": "What do lantern riddles symbolize?",
-    "options": ["Wisdom and joy", "Wealth", "Love", "Longevity"],
-    "answer": "Wisdom and joy",
-    "explanation": "猜燈謎既娛樂又開智。"
-  },
-  {
-    "type": "mcq",
-    "question": "Which dynasty is believed to have started large-scale Lantern Festival celebrations?",
-    "options": ["Tang", "Song", "Han", "Qing"],
-    "answer": "Han",
-    "explanation": "漢朝開始盛行點燈。"
-  },
-  {
-    "type": "mcq",
-    "question": "The Lantern Festival marks the end of which holiday period?",
-    "options": ["Dragon Boat Festival", "Chinese New Year celebrations", "Mid-Autumn Festival", "Qingming Festival"],
-    "answer": "Chinese New Year celebrations",
-    "explanation": "正月十五元宵節，象徵農曆新年的收尾。"
-  },
-  {
-    "type": "mcq",
-    "question": "What shape are Tangyuan usually?",
-    "options": ["Square", "Round", "Triangle", "Star-shaped"],
-    "answer": "Round",
-    "explanation": "圓形象徵團圓、美滿。"
-  },
-  {
-    "type": "mcq",
-    "question": "Which color lantern is often associated with good luck?",
-    "options": ["Blue", "Red", "White", "Black"],
-    "answer": "Red",
-    "explanation": "紅色代表吉祥喜慶。"
-  },
-  {
-    "type": "mcq",
-    "question": "In southern China, Tangyuan are often filled with what?",
-    "options": ["Lotus paste", "Sesame paste", "Minced meat", "Cheese"],
-    "answer": "Sesame paste",
-    "explanation": "黑芝麻餡湯圓香甜濃郁。"
-  },
-  {
-    "type": "mcq",
-    "question": "In northern China, the Lantern Festival food is sometimes called?",
-    "options": ["Jiaozi", "Yuanxiao", "Baozi", "Mochi"],
-    "answer": "Yuanxiao",
-    "explanation": "北方稱元宵，南方叫湯圓。"
-  },
-  {
-    "type": "mcq",
-    "question": "What do people believe watching the first full moon of the year brings?",
-    "options": ["Bad luck", "Good fortune", "Illness prevention", "Wealth only"],
-    "answer": "Good fortune",
-    "explanation": "正月十五的圓月象徵吉祥。"
-  },
-  {
-    "type": "mcq",
-    "question": "Which animal year is often highlighted in lantern shapes?",
-    "options": ["The year's zodiac animal", "Dragon only", "Rabbit only", "Tiger only"],
-    "answer": "The year's zodiac animal",
-    "explanation": "每年生肖動物常被做成花燈。"
-  },
-  {
-    "type": "sa",
-    "question": "What round food is eaten to symbolize family unity during the Lantern Festival?",
-    "answer": "Tangyuan",
-    "explanation": "湯圓寓意團團圓圓。"
-  },
-  {
-    "type": "sa",
-    "question": "What kind of puzzles do people solve written on lanterns?",
-    "answer": "Riddles",
-    "explanation": "燈謎增加趣味與智慧。"
-  },
-  {
-    "type": "sa",
-    "question": "Which dynasty started the Lantern Festival tradition of lighting lamps?",
-    "answer": "Han",
-    "explanation": "漢代已有點燈習俗。"
-  },
-  {
-    "type": "sa",
-    "question": "What festival does the Lantern Festival conclude?",
-    "answer": "Chinese New Year",
-    "explanation": "元宵節標誌農曆新年的結束。"
-  },
-  {
-    "type": "sa",
-    "question": "What is another name for Tangyuan in northern China?",
-    "answer": "Yuanxiao",
-    "explanation": "北方稱湯圓為元宵。"
-  },
-  {
-    "type": "sa",
-    "question": "What is the symbolic meaning of the round shape of Tangyuan?",
-    "answer": "Reunion",
-    "explanation": "圓形象徵團圓。"
-  },
-  {
-    "type": "sa",
-    "question": "What color are lucky lanterns usually?",
-    "answer": "Red",
-    "explanation": "紅色代表吉祥。"
-  },
-  {
-    "type": "sa",
-    "question": "What do people do under lanterns besides watching them?",
-    "answer": "Solve riddles",
-    "explanation": "猜燈謎是重要習俗。"
+{
+  "title": "Lantern Festival",
+  "version": "1.0",
+  "sections": {
+    "vocab": [
+      {
+        "type": "MCQ",
+        "question": "The Lantern Festival marks the first full ____ of the lunar year.",
+        "options": [
+          "sun",
+          "star",
+          "moon",
+          "cloud"
+        ],
+        "answer": "moon",
+        "explanation": ""
+      },
+      {
+        "type": "MCQ",
+        "question": "People watch beautiful ____ shows at night.",
+        "options": [
+          "flower",
+          "lantern",
+          "kite",
+          "fire"
+        ],
+        "answer": "lantern",
+        "explanation": ""
+      },
+      {
+        "type": "MCQ",
+        "question": "Children carry ____ lanterns.",
+        "options": [
+          "heavy",
+          "colorful",
+          "quiet",
+          "cold"
+        ],
+        "answer": "colorful",
+        "explanation": ""
+      },
+      {
+        "type": "MCQ",
+        "question": "People often solve ____ riddles.",
+        "options": [
+          "number",
+          "lantern",
+          "animal",
+          "math"
+        ],
+        "answer": "lantern",
+        "explanation": ""
+      },
+      {
+        "type": "MCQ",
+        "question": "A popular sweet is ____ balls (tangyuan).",
+        "options": [
+          "rice",
+          "bean",
+          "corn",
+          "wheat"
+        ],
+        "answer": "rice",
+        "explanation": ""
+      },
+      {
+        "type": "MCQ",
+        "question": "Tangyuan are filled with sweet ____ paste.",
+        "options": [
+          "bean",
+          "meat",
+          "salt",
+          "chili"
+        ],
+        "answer": "bean",
+        "explanation": ""
+      },
+      {
+        "type": "MCQ",
+        "question": "Families walk together on the ____.",
+        "options": [
+          "river",
+          "street",
+          "mountain",
+          "beach"
+        ],
+        "answer": "street",
+        "explanation": ""
+      },
+      {
+        "type": "MCQ",
+        "question": "Some people release ____ lanterns to the sky.",
+        "options": [
+          "paper",
+          "metal",
+          "glass",
+          "stone"
+        ],
+        "answer": "paper",
+        "explanation": ""
+      },
+      {
+        "type": "MCQ",
+        "question": "The festival is on the 15th day of the first ____ month.",
+        "options": [
+          "solar",
+          "lunar",
+          "school",
+          "work"
+        ],
+        "answer": "lunar",
+        "explanation": ""
+      },
+      {
+        "type": "MCQ",
+        "question": "People hope for good ____ in the new year.",
+        "options": [
+          "grades",
+          "luck",
+          "weather",
+          "prices"
+        ],
+        "answer": "luck",
+        "explanation": ""
+      },
+      {
+        "type": "SA",
+        "question": "Write the sweet: ____ balls (tangyuan).",
+        "answer": "rice",
+        "explanation": ""
+      },
+      {
+        "type": "SA",
+        "question": "Tangyuan often have red ____ paste.",
+        "answer": "bean",
+        "explanation": ""
+      },
+      {
+        "type": "SA",
+        "question": "People watch ____ shows.",
+        "answer": "lantern",
+        "explanation": ""
+      },
+      {
+        "type": "SA",
+        "question": "Children carry ____ lanterns.",
+        "answer": "colorful",
+        "explanation": ""
+      },
+      {
+        "type": "SA",
+        "question": "The first full ____ appears.",
+        "answer": "moon",
+        "explanation": ""
+      },
+      {
+        "type": "SA",
+        "question": "People solve ____ riddles.",
+        "answer": "lantern",
+        "explanation": ""
+      },
+      {
+        "type": "SA",
+        "question": "Some release ____ lanterns.",
+        "answer": "paper",
+        "explanation": ""
+      },
+      {
+        "type": "SA",
+        "question": "They walk on the ____ together.",
+        "answer": "street",
+        "explanation": ""
+      },
+      {
+        "type": "SA",
+        "question": "The month type is ____.",
+        "answer": "lunar",
+        "explanation": ""
+      },
+      {
+        "type": "SA",
+        "question": "People hope for good ____.",
+        "answer": "luck",
+        "explanation": ""
+      }
+    ],
+    "grammar": [
+      {
+        "type": "MCQ",
+        "question": "Choose: People ____ riddles at night.",
+        "options": [
+          "solve",
+          "solves",
+          "solving",
+          "is solve"
+        ],
+        "answer": "solve",
+        "explanation": ""
+      },
+      {
+        "type": "MCQ",
+        "question": "Choose: The festival is ____ the fifteenth day.",
+        "options": [
+          "on",
+          "in",
+          "at",
+          "to"
+        ],
+        "answer": "on",
+        "explanation": ""
+      },
+      {
+        "type": "MCQ",
+        "question": "Choose: Lanterns ____ colorful.",
+        "options": [
+          "is",
+          "are",
+          "was",
+          "be"
+        ],
+        "answer": "are",
+        "explanation": ""
+      },
+      {
+        "type": "MCQ",
+        "question": "Choose: People ____ tangyuan together.",
+        "options": [
+          "eat",
+          "eats",
+          "ate",
+          "is eating"
+        ],
+        "answer": "eat",
+        "explanation": ""
+      },
+      {
+        "type": "MCQ",
+        "question": "Choose: They walk ____ the street.",
+        "options": [
+          "in",
+          "on",
+          "at",
+          "to"
+        ],
+        "answer": "on",
+        "explanation": ""
+      },
+      {
+        "type": "SA",
+        "question": "Fill in: Children ____ (carry) lanterns.",
+        "answer": "carry",
+        "explanation": ""
+      },
+      {
+        "type": "SA",
+        "question": "Fill in: It ____ (be) the first full moon.",
+        "answer": "is",
+        "explanation": ""
+      },
+      {
+        "type": "SA",
+        "question": "Fill in: People ____ (hope) for good luck.",
+        "answer": "hope",
+        "explanation": ""
+      },
+      {
+        "type": "SA",
+        "question": "Fill in: Lantern riddles ____ (be) fun.",
+        "answer": "are",
+        "explanation": ""
+      },
+      {
+        "type": "SA",
+        "question": "Change to past: People watch lantern shows.",
+        "answer": "People watched lantern shows.",
+        "explanation": ""
+      },
+      {
+        "type": "MCQ",
+        "question": "Choose: Tangyuan ____ sweet.",
+        "options": [
+          "is",
+          "are",
+          "were",
+          "be"
+        ],
+        "answer": "are",
+        "explanation": ""
+      },
+      {
+        "type": "MCQ",
+        "question": "Choose: The riddles are ____.",
+        "options": [
+          "interest",
+          "interests",
+          "interesting",
+          "interested"
+        ],
+        "answer": "interesting",
+        "explanation": ""
+      },
+      {
+        "type": "MCQ",
+        "question": "Choose: This is the first full moon ____ the lunar year.",
+        "options": [
+          "in",
+          "of",
+          "on",
+          "to"
+        ],
+        "answer": "of",
+        "explanation": ""
+      },
+      {
+        "type": "MCQ",
+        "question": "Choose: People feel ____.",
+        "options": [
+          "luck",
+          "lucky",
+          "luckily",
+          "luckiness"
+        ],
+        "answer": "lucky",
+        "explanation": ""
+      },
+      {
+        "type": "MCQ",
+        "question": "Choose: People release paper lanterns ____ the sky.",
+        "options": [
+          "to",
+          "for",
+          "in",
+          "of"
+        ],
+        "answer": "to",
+        "explanation": ""
+      },
+      {
+        "type": "SA",
+        "question": "Passive: People watch shows. → Shows ____ ____ by people.",
+        "answer": "are watched",
+        "explanation": ""
+      },
+      {
+        "type": "SA",
+        "question": "Make a question: They eat tangyuan. → What do they ____?",
+        "answer": "eat",
+        "explanation": ""
+      },
+      {
+        "type": "SA",
+        "question": "Negative: Lanterns are heavy.",
+        "answer": "Lanterns are not heavy.",
+        "explanation": ""
+      },
+      {
+        "type": "SA",
+        "question": "Rewrite: People enjoy the night because it is colorful.",
+        "answer": "People enjoy the night because it is colorful.",
+        "explanation": ""
+      },
+      {
+        "type": "SA",
+        "question": "Fill in: The festival ____ (take) place on the fifteenth day.",
+        "answer": "takes",
+        "explanation": ""
+      }
+    ],
+    "reading_text": "The Lantern Festival celebrates the first full moon of the lunar year. Families walk on the street, carry colorful lanterns, and watch beautiful shows. People also eat sweet rice balls called tangyuan and solve lantern riddles. Many hope for good luck in the new year.",
+    "reading": [
+      {
+        "type": "MCQ",
+        "question": "What does the festival celebrate?",
+        "options": [
+          "a new school",
+          "the first full moon",
+          "a sports game",
+          "a market"
+        ],
+        "answer": "the first full moon",
+        "explanation": ""
+      },
+      {
+        "type": "MCQ",
+        "question": "What do families do on the street?",
+        "options": [
+          "drive cars",
+          "walk",
+          "swim",
+          "sleep"
+        ],
+        "answer": "walk",
+        "explanation": ""
+      },
+      {
+        "type": "MCQ",
+        "question": "What food do people eat?",
+        "options": [
+          "mooncakes",
+          "tangyuan",
+          "dumplings",
+          "noodles"
+        ],
+        "answer": "tangyuan",
+        "explanation": ""
+      },
+      {
+        "type": "MCQ",
+        "question": "What puzzles do people solve?",
+        "options": [
+          "math",
+          "lantern",
+          "animal",
+          "music"
+        ],
+        "answer": "lantern",
+        "explanation": ""
+      },
+      {
+        "type": "MCQ",
+        "question": "What do people hope for?",
+        "options": [
+          "good luck",
+          "good prices",
+          "snow",
+          "vacations"
+        ],
+        "answer": "good luck",
+        "explanation": ""
+      },
+      {
+        "type": "SA",
+        "question": "They carry colorful ____.",
+        "answer": "lanterns",
+        "explanation": ""
+      },
+      {
+        "type": "SA",
+        "question": "They eat sweet rice ____.",
+        "answer": "balls",
+        "explanation": ""
+      },
+      {
+        "type": "SA",
+        "question": "It is the first full ____.",
+        "answer": "moon",
+        "explanation": ""
+      },
+      {
+        "type": "SA",
+        "question": "People ____ lantern shows.",
+        "answer": "watch",
+        "explanation": ""
+      },
+      {
+        "type": "SA",
+        "question": "People solve lantern ____.",
+        "answer": "riddles",
+        "explanation": ""
+      },
+      {
+        "type": "MCQ",
+        "question": "Which is TRUE?",
+        "options": [
+          "People swim in the river.",
+          "Families walk on the street.",
+          "Tangyuan is salty.",
+          "Lanterns are heavy."
+        ],
+        "answer": "Families walk on the street.",
+        "explanation": ""
+      },
+      {
+        "type": "MCQ",
+        "question": "Which word describes tangyuan?",
+        "options": [
+          "sweet",
+          "bitter",
+          "spicy",
+          "sour"
+        ],
+        "answer": "sweet",
+        "explanation": ""
+      },
+      {
+        "type": "MCQ",
+        "question": "Where are the lanterns?",
+        "options": [
+          "in the sky only",
+          "underwater",
+          "on the street and in shows",
+          "in the forest"
+        ],
+        "answer": "on the street and in shows",
+        "explanation": ""
+      },
+      {
+        "type": "MCQ",
+        "question": "What is NOT mentioned?",
+        "options": [
+          "shows",
+          "riddles",
+          "fireworks",
+          "tangyuan"
+        ],
+        "answer": "fireworks",
+        "explanation": ""
+      },
+      {
+        "type": "MCQ",
+        "question": "When is the festival?",
+        "options": [
+          "the first day of the solar year",
+          "the fifteenth day of the first lunar month",
+          "the last day of school",
+          "the tenth day of summer"
+        ],
+        "answer": "the fifteenth day of the first lunar month",
+        "explanation": ""
+      },
+      {
+        "type": "SA",
+        "question": "People hope for good ____.",
+        "answer": "luck",
+        "explanation": ""
+      },
+      {
+        "type": "SA",
+        "question": "People watch beautiful ____.",
+        "answer": "shows",
+        "explanation": ""
+      },
+      {
+        "type": "SA",
+        "question": "They walk on the ____ together.",
+        "answer": "street",
+        "explanation": ""
+      },
+      {
+        "type": "SA",
+        "question": "They carry ____ lanterns.",
+        "answer": "colorful",
+        "explanation": ""
+      },
+      {
+        "type": "SA",
+        "question": "They eat ____ rice balls.",
+        "answer": "sweet",
+        "explanation": ""
+      }
+    ],
+    "mixed": [
+      {
+        "type": "MCQ",
+        "question": "Best title for the passage:",
+        "options": [
+          "A Rainy Night",
+          "The Lantern Festival",
+          "Making Bread",
+          "A Quiet Library"
+        ],
+        "answer": "The Lantern Festival",
+        "explanation": ""
+      },
+      {
+        "type": "MCQ",
+        "question": "Which is a festival food?",
+        "options": [
+          "tangyuan",
+          "hamburgers",
+          "pizza",
+          "ice cream"
+        ],
+        "answer": "tangyuan",
+        "explanation": ""
+      },
+      {
+        "type": "MCQ",
+        "question": "Pick the correct sentence.",
+        "options": [
+          "People watches shows.",
+          "People watch shows.",
+          "People watched is shows.",
+          "People is watch shows."
+        ],
+        "answer": "People watch shows.",
+        "explanation": ""
+      },
+      {
+        "type": "MCQ",
+        "question": "Which word is closest to 'hope'?",
+        "options": [
+          "jump",
+          "wish",
+          "wash",
+          "push"
+        ],
+        "answer": "wish",
+        "explanation": ""
+      },
+      {
+        "type": "MCQ",
+        "question": "Which is NOT related?",
+        "options": [
+          "lanterns",
+          "riddles",
+          "tangyuan",
+          "basketball match"
+        ],
+        "answer": "basketball match",
+        "explanation": ""
+      },
+      {
+        "type": "SA",
+        "question": "Fill in: People ____ (walk) on the street.",
+        "answer": "walk",
+        "explanation": ""
+      },
+      {
+        "type": "SA",
+        "question": "Question: They eat tangyuan. → What do they ____?",
+        "answer": "eat",
+        "explanation": ""
+      },
+      {
+        "type": "SA",
+        "question": "Past: People solve riddles at night.",
+        "answer": "People solved riddles at night.",
+        "explanation": ""
+      },
+      {
+        "type": "SA",
+        "question": "Negative: Lanterns are heavy.",
+        "answer": "Lanterns are not heavy.",
+        "explanation": ""
+      },
+      {
+        "type": "SA",
+        "question": "Vocabulary: Another word for 'lucky' is ____.",
+        "answer": "fortunate",
+        "explanation": ""
+      },
+      {
+        "type": "MCQ",
+        "question": "Choose the antonym of 'sweet'.",
+        "options": [
+          "bitter",
+          "soft",
+          "small",
+          "short"
+        ],
+        "answer": "bitter",
+        "explanation": ""
+      },
+      {
+        "type": "MCQ",
+        "question": "Choose the synonym of 'colorful'.",
+        "options": [
+          "plain",
+          "bright",
+          "dark",
+          "quiet"
+        ],
+        "answer": "bright",
+        "explanation": ""
+      },
+      {
+        "type": "MCQ",
+        "question": "Choose the correct preposition: shows ____ night.",
+        "options": [
+          "in",
+          "on",
+          "at",
+          "to"
+        ],
+        "answer": "at",
+        "explanation": ""
+      },
+      {
+        "type": "MCQ",
+        "question": "Which order is correct?",
+        "options": [
+          "people lanterns carry",
+          "carry people lanterns",
+          "people carry lanterns",
+          "lanterns carry people"
+        ],
+        "answer": "people carry lanterns",
+        "explanation": ""
+      },
+      {
+        "type": "MCQ",
+        "question": "Which is a noun?",
+        "options": [
+          "walk",
+          "colorful",
+          "luck",
+          "lucky"
+        ],
+        "answer": "luck",
+        "explanation": ""
+      },
+      {
+        "type": "SA",
+        "question": "Spell the food: t a n g y u a n → ____",
+        "answer": "tangyuan",
+        "explanation": ""
+      },
+      {
+        "type": "SA",
+        "question": "Write the phrase: good ____",
+        "answer": "luck",
+        "explanation": ""
+      },
+      {
+        "type": "SA",
+        "question": "Fill in: Lantern riddles are ____.",
+        "answer": "fun",
+        "explanation": ""
+      },
+      {
+        "type": "SA",
+        "question": "Translate: 觀看表演 → ____ shows",
+        "answer": "watch",
+        "explanation": ""
+      },
+      {
+        "type": "SA",
+        "question": "Fill in: It is the first full ____.",
+        "answer": "moon",
+        "explanation": ""
+      }
+    ]
   }
-]
+}
+
 
 
 
