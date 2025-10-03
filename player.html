@@ -84,7 +84,7 @@
     #printHeader{ display:none; }
     @media print{
       html, body{ background:#fff !important; color:#000 !important; }
-      .right, .pane, .btn, .q-tabs .qtab{ background:#fff !important; color:#000 !重要; }
+      .right, .pane, .btn, .q-tabs .qtab{ background:#fff !important; color:#000 !important; }
       .btn, .q-tabs .qtab, table, th, td{ border-color:#999 !important; }
       header, .left, .tabs, .subToolbar, .controls, #quizTabs, .q-actions { display:none !important; }
       .wrap{ padding:0 }
@@ -101,20 +101,18 @@
       #ph-score .big{font-size:22px; font-weight:800}
     }
 
-    /* ===== 手機版：影片固定在上、右側內容滾動、工具列做底部抽屜 ===== */
+    /* ===== 手機：影片固定在上、右側內容滾動、工具列底部抽屜 ===== */
     @media (max-width: 900px){
       html,body{height:100%}
       .wrap{height:calc(100vh - 58px); padding:12px;}
       .layout{flex-direction:column; height:100%}
       .left{position:sticky; top:0; z-index:5; padding:12px}
-      /* 影片固定(跟著 header 下方) */
       #videoWrap{aspect-ratio:16/9}
 
-      /* 右側可滾動，占滿剩餘高度 */
       .right{flex:1; min-height:0; display:flex; flex-direction:column}
       .pane{flex:1; overflow:auto}
 
-      /* 抽屜：預設收合，只露出 28px 把手 */
+      /* 抽屜：預設收合，只露出把手 */
       .controls{
         position:fixed; left:8px; right:8px; bottom:8px;
         border-radius:16px 16px 12px 12px;
@@ -126,18 +124,13 @@
       }
       .controls.open{ transform:translateY(0); }
       .controls .row{ margin:.35rem 0; }
-      /* 把手 */
-      .drawer-grab{
-        width:100%; text-align:center; cursor:pointer; user-select:none;
-        padding:4px 0 8px; margin-bottom:6px;
-      }
-      .grab-bar{
-        width:44px; height:4px; border-radius:4px; margin:0 auto 4px; background:#2b4a78;
-      }
+
+      .drawer-grab{ width:100%; text-align:center; cursor:pointer; user-select:none; padding:4px 0 8px; margin-bottom:6px; }
+      .grab-bar{ width:44px; height:4px; border-radius:4px; margin:0 auto 4px; background:#2b4a78; }
       .drawer-title{font-size:12px; color:#9fb0c9;}
     }
 
-    /* ===== 手機字幕：時間一行、英文在上、中文在下 ===== */
+    /* ===== 手機：字幕堆疊（時間一行、英文上、中文下） ===== */
     @media (max-width: 900px){
       #pane-sub table thead { display: none; }
       #pane-sub table, #pane-sub tbody, #pane-sub tr, #pane-sub td { display: block; width: 100%; }
@@ -145,6 +138,13 @@
       #pane-sub td:nth-child(1) { font-size: 12px; color: var(--muted); margin-bottom: 4px; }
       #pane-sub td:nth-child(2) { font-size: 16px; line-height: 1.5; color: #e6efff; margin-bottom: 2px; }
       #pane-sub td:nth-child(3) { font-size: 14px; line-height: 1.5; color: #9fb0c9; }
+    }
+
+    /* ===== 手機：專心作答模式（隱藏影片與抽屜） ===== */
+    @media (max-width: 900px){
+      body.quiz-mode .left{ display:none !important; }
+      body.quiz-mode .right{ flex:1 !important; }
+      body.quiz-mode #controlsDrawer{ display:none !important; }
     }
   </style>
 </head>
@@ -158,7 +158,7 @@
     </div>
   </header>
 
-  <!-- 列印抬頭（略） -->
+  <!-- 列印抬頭（印出成績單用） -->
   <div id="printHeader" style="display:none;">
     <div id="ph-row" style="justify-content:space-between;">
       <div style="display:flex;align-items:center;gap:8px;">
@@ -283,10 +283,10 @@
   <script src="./player.js"></script>
   <script src="./login.js"></script>
 
-  <!-- 輔助腳本：列印 + 手機抽屜控制 -->
+  <!-- 輔助腳本：列印 + 手機抽屜 + 手機分頁切換成專心作答模式 -->
   <script>
     (function () {
-      /* 列印區：展開/還原（原本邏輯） */
+      /* 列印區：展開/還原 */
       function getSlug(){ const u=new URLSearchParams(location.search); return u.get('slug')||''; }
       function fillPrintHeader(){
         const qScore = document.getElementById('quizScore')?.textContent || '';
@@ -294,7 +294,6 @@
         const sec = document.querySelector('#quizTabs .qtab.on')?.textContent || '';
         const slug = getSlug();
         const phScore = document.getElementById('ph-score-num');
-        const phRemark= document.getElementById('ph-remark');
         const phTitle = document.getElementById('ph-title');
         const phSec   = document.getElementById('ph-sec');
         if (phScore)  phScore.textContent = scoreNum;
@@ -336,10 +335,9 @@
       const drawer = document.getElementById('controlsDrawer');
       const grab   = document.getElementById('drawerGrab');
       if(!drawer || !grab) return;
-      // 預設收合；點把手切換
       const toggle = ()=> drawer.classList.toggle('open');
       grab.addEventListener('click', toggle);
-      // 也允許上滑展開、下滑收合（簡易觸控）
+      // 簡易觸控手勢：上滑展開 / 下滑收合
       let startY=null;
       grab.addEventListener('touchstart', e=>{ startY = e.touches[0].clientY; }, {passive:true});
       grab.addEventListener('touchmove', e=>{
@@ -348,6 +346,27 @@
         if(dy < -10) { drawer.classList.add('open'); startY=null; }
         else if(dy > 10) { drawer.classList.remove('open'); startY=null; }
       }, {passive:true});
+    })();
+
+    /* 手機：切到測驗/單字就進入專心作答模式（隱藏影片與抽屜） */
+    (function(){
+      const tabs = document.querySelectorAll('.tabs .tab');
+      const body = document.body;
+      const updateMode = (tabName)=>{
+        if (window.innerWidth <= 900) {
+          if (tabName === 'quiz' || tabName === 'vocab') body.classList.add('quiz-mode');
+          else body.classList.remove('quiz-mode');
+        } else {
+          body.classList.remove('quiz-mode'); // 桌機一律關閉
+        }
+      };
+      tabs.forEach(tab=>{
+        tab.addEventListener('click', ()=> updateMode(tab.dataset.tab));
+      });
+      // 初始狀態
+      updateMode(document.querySelector('.tabs .tab.active')?.dataset.tab || 'sub');
+      // 視窗尺寸變化時自動調整
+      window.addEventListener('resize', ()=> updateMode(document.querySelector('.tabs .tab.active')?.dataset.tab || 'sub'));
     })();
 
     // 同步「填滿畫面」按鈕文字
@@ -361,14 +380,3 @@
   </script>
 </body>
 </html>
-
-
-
-
-
-
-
-
-
-
-
