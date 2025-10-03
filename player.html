@@ -7,7 +7,7 @@
   <style>
     :root{
       --bg:#0b1324; --panel:#0f172a; --border:#1f2a44;
-      --ink:#e6efff; --muted:#9fb0c9; --accent:#3c7cff; --ok:#10b981;
+      --ink:#e6efff; --muted:#9fb0c9; --accent:#3c7cff;
     }
     *{box-sizing:border-box}
     html,body{height:100%;margin:0;background:var(--bg);color:var(--ink);font-family:ui-sans-serif,system-ui,"Noto Sans TC"}
@@ -17,7 +17,7 @@
     .muted{color:var(--muted)}
     header{display:flex;align-items:center;justify-content:space-between;padding:14px 20px;background:#0f172a;border-bottom:1px solid #0e203f}
 
-    /* 主容器 */
+    /* 主要容器（桌機） */
     .wrap{padding:16px;height:calc(100vh - 58px);}
     .layout{height:100%;display:flex;gap:16px;overflow:hidden}
     .left,.right{flex:1;min-width:0;background:var(--panel);border:1px solid var(--border);border-radius:12px}
@@ -28,10 +28,8 @@
     /* 影片 */
     .videoWrap{position:relative;width:100%;aspect-ratio:16/9;background:#000;border-radius:10px;overflow:hidden}
     .videoWrap video{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;background:#000}
-    .videoWrap.fill{flex:1;aspect-ratio:auto;height:100%}
-    .videoWrap.fill video{object-fit:cover}
 
-    /* 左側工具列（精簡＋加入跟隨/偏移） */
+    /* 左側工具列（桌機） */
     .controls{margin-top:12px;background:#0e2038;border:1px solid #183459;border-radius:12px;padding:12px}
     .controls .row{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:.25rem 0}
     .speed{display:flex;align-items:center;gap:10px}
@@ -55,14 +53,41 @@
     .q-tabs .qtab{background:#122340;border:1px solid #1f375f;border-radius:10px;padding:6px 12px;color:#e6efff;cursor:pointer}
     .q-tabs .qtab.on{background:#154274}
 
-    /* ===== 手機：字幕堆疊（時間一行、英文上、中文下） ===== */
+    /* ===== 手機行為：影片固定在頂，右邊內容獨立滾動；工具列改底部抽屜 ===== */
     @media (max-width: 900px){
+      .wrap{height:calc(100vh - 58px); padding:12px;}
+      .layout{flex-direction:column; height:100%}
+      .left{position:sticky; top:0; z-index:5; padding:12px}
+      .right{flex:1; min-height:0; display:flex; flex-direction:column}
+      .pane{flex:1; overflow:auto}
+
+      /* 抽屜：預設收合，只露出把手；展開後覆蓋底部 */
+      .controls{
+        position:fixed; left:8px; right:8px; bottom:8px;
+        border-radius:16px 16px 12px 12px;
+        box-shadow:0 10px 30px rgba(0,0,0,.4);
+        transform:translateY(calc(100% - 28px));
+        transition:transform .25s ease;
+        padding:6px 10px 10px;
+        z-index:20;
+      }
+      .controls.open{ transform:translateY(0); }
+      .drawer-grab{ width:100%; text-align:center; cursor:pointer; user-select:none; padding:4px 0 8px; margin-bottom:6px; }
+      .grab-bar{ width:44px; height:4px; border-radius:4px; margin:0 auto 4px; background:#2b4a78; }
+      .drawer-title{font-size:12px; color:#9fb0c9;}
+
+      /* 字幕堆疊（時間一行、英文上、中文下） */
       #pane-sub table thead { display:none; }
       #pane-sub table, #pane-sub tbody, #pane-sub tr, #pane-sub td { display:block; width:100%; }
       #pane-sub tr { border-bottom:1px solid #162a48; padding:8px 0; }
       #pane-sub td:nth-child(1){ font-size:12px; color:var(--muted); margin-bottom:4px; }
       #pane-sub td:nth-child(2){ font-size:16px; line-height:1.5; color:#e6efff; margin-bottom:2px; }
       #pane-sub td:nth-child(3){ font-size:14px; line-height:1.5; color:#9fb0c9; }
+
+      /* 專心模式：測驗/單字時隱藏影片與抽屜（整頁顯示） */
+      body.focus-mode .left{ display:none !important; }
+      body.focus-mode #controlsDrawer{ display:none !important; }
+      body.focus-mode .right{ flex:1 !important; }
     }
 
     /* ===== 列印：只印右側、白底黑字、題目不切半 + 抬頭 ===== */
@@ -117,13 +142,18 @@
   <div class="wrap">
     <div class="layout">
       <!-- 左：影片 -->
-      <section class="left">
+      <section class="left" id="videoContainer">
         <div id="videoWrap" class="videoWrap">
           <video id="player" playsinline controls></video>
         </div>
 
-        <!-- 工具列（精簡＋加入跟隨/偏移） -->
-        <div class="controls">
+        <!-- 工具列：底部抽屜（手機可收合/展開；桌機一般面板） -->
+        <div class="controls" id="controlsDrawer">
+          <div class="drawer-grab" id="drawerGrab">
+            <div class="grab-bar"></div>
+            <div class="drawer-title">播放工具列（點擊展開/收合）</div>
+          </div>
+
           <div class="row">
             <button id="btnPrev" class="btn">⏮ 上一句</button>
             <button id="btnPlay" class="btn">▶️ 播放</button>
@@ -132,7 +162,7 @@
             <button id="btnFill" class="btn">🖼 填滿畫面</button>
           </div>
 
-          <!-- 跟隨／偏移（移到左下工具列） -->
+          <!-- 跟隨 / 偏移 -->
           <div class="row">
             <label class="chip"><input id="chkFollow" type="checkbox" checked/> 跟隨</label>
             <span class="chip">偏移 <span id="offsetVal">0.0s</span></span>
@@ -149,7 +179,7 @@
       </section>
 
       <!-- 右：字幕 / 測驗 / 單字 -->
-      <section class="right">
+      <section class="right" id="studyContainer">
         <div class="tabs">
           <div class="tab active" data-tab="sub">字幕</div>
           <div class="tab" data-tab="quiz">測驗</div>
@@ -207,22 +237,54 @@
   <script src="./player.js"></script>
   <script src="./login.js"></script>
 
-  <!-- 輔助腳本：分頁切換保底 + 交卷後顯示按鈕 + 列印抬頭填入 -->
+  <!-- 行為腳本：抽屜、分頁切換（專心模式）、列印抬頭 -->
   <script>
-    /* 分頁切換保底：確保切換時只顯示對應 pane */
+    /* 分頁切換 + 專心模式（手機：測驗/單字整頁顯示） */
     (function(){
       const tabs = document.querySelectorAll('.tabs .tab');
-      const show = name=>{
-        document.getElementById('pane-sub').style.display  = name==='sub'  ? '' : 'none';
-        document.getElementById('pane-quiz').style.display = name==='quiz' ? '' : 'none';
-        document.getElementById('pane-vocab').style.display= name==='vocab'? '' : 'none';
+      const paneSub   = document.getElementById('pane-sub');
+      const paneQuiz  = document.getElementById('pane-quiz');
+      const paneVocab = document.getElementById('pane-vocab');
+
+      function show(name){
+        paneSub.style.display   = name==='sub'   ? '' : 'none';
+        paneQuiz.style.display  = name==='quiz'  ? '' : 'none';
+        paneVocab.style.display = name==='vocab' ? '' : 'none';
         tabs.forEach(t=>t.classList.toggle('active', t.dataset.tab===name));
-      };
-      tabs.forEach(t=>t.addEventListener('click', ()=>show(t.dataset.tab)));
+
+        // 手機：quiz/vocab 進入專心模式；sub 退出專心模式
+        if (window.innerWidth <= 900) {
+          if (name==='quiz' || name==='vocab') document.body.classList.add('focus-mode');
+          else document.body.classList.remove('focus-mode');
+        }
+      }
+      tabs.forEach(t=> t.addEventListener('click', ()=> show(t.dataset.tab)));
       show(document.querySelector('.tabs .tab.active')?.dataset.tab || 'sub');
+
+      window.addEventListener('resize', ()=>{
+        // 視窗切換大小時，若從手機回桌機，移除 focus-mode
+        if (window.innerWidth > 900) document.body.classList.remove('focus-mode');
+      });
     })();
 
-    /* 交卷後顯示「顯示答案／列印成績單」並支援列印抬頭 */
+    /* 手機：底部抽屜開/關（點把手或上/下滑） */
+    (function(){
+      const drawer = document.getElementById('controlsDrawer');
+      const grab   = document.getElementById('drawerGrab');
+      if(!drawer || !grab) return;
+      const toggle = ()=> drawer.classList.toggle('open');
+      grab.addEventListener('click', toggle);
+      let startY=null;
+      grab.addEventListener('touchstart', e=>{ startY = e.touches[0].clientY; }, {passive:true});
+      grab.addEventListener('touchmove', e=>{
+        if(startY===null) return;
+        const dy = e.touches[0].clientY - startY;
+        if(dy < -10) { drawer.classList.add('open'); startY=null; }
+        else if(dy > 10) { drawer.classList.remove('open'); startY=null; }
+      }, {passive:true});
+    })();
+
+    /* 交卷後顯示「顯示答案／列印成績單」並填寫列印抬頭 */
     (function(){
       const btnSubmit = document.getElementById('btnSubmitQuiz');
       const btnShow   = document.getElementById('btnShowAnswer');
@@ -232,10 +294,7 @@
       if(!btnSubmit || !btnShow || !btnPrint) return;
 
       btnSubmit.addEventListener('click', () => {
-        setTimeout(() => {
-          btnShow.style.display  = '';
-          btnPrint.style.display = '';
-        }, 0);
+        setTimeout(() => { btnShow.style.display=''; btnPrint.style.display=''; }, 0);
       });
 
       function getSlug(){ const u=new URLSearchParams(location.search); return u.get('slug')||''; }
@@ -257,17 +316,15 @@
         const sn = parseInt(scoreNum,10);
         let remark = '';
         if (!isNaN(sn)) {
-          const p = sn;
-          if (p === 100) remark = '滿分！太強了！集滿五張滿分可兌換一組 LINE 表情貼 🎉';
-          else if (p >= 90) remark = '很棒！細節再加強，就更完美。';
-          else if (p >= 80) remark = '不錯的基礎，建議複習錯題字彙與句型。';
-          else if (p >= 70) remark = '有進步空間，回看文本與關鍵字。';
-          else if (p >= 60) remark = '及格！再練閱讀理解與文法點。';
+          if (sn === 100) remark = '滿分！太強了！集滿五張滿分可兌換一組 LINE 表情貼 🎉';
+          else if (sn >= 90) remark = '很棒！細節再加強，就更完美。';
+          else if (sn >= 80) remark = '不錯的基礎，建議複習錯題字彙與句型。';
+          else if (sn >= 70) remark = '有進步空間，回看文本與關鍵字。';
+          else if (sn >= 60) remark = '及格！再練閱讀理解與文法點。';
           else remark = '先別灰心！重作錯題、背關鍵字，再試一次會更好。';
         }
         if (phRemark) phRemark.textContent = remark;
       }
-
       btnPrint.addEventListener('click', () => { fillPrintHeader(); window.print(); });
       window.addEventListener('beforeprint', fillPrintHeader);
     })();
