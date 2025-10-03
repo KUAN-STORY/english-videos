@@ -25,7 +25,7 @@
     .right{display:flex;flex-direction:column}
     .pane{flex:1;overflow:auto}
 
-    /* 影片：預設填滿 */
+    /* 影片（預設 object-fit: cover） */
     .videoWrap{position:relative;width:100%;aspect-ratio:16/9;background:#000;border-radius:10px;overflow:hidden}
     .videoWrap video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;background:#000}
 
@@ -49,10 +49,11 @@
     tr.active{background:#173a6e}
 
     /* 桌機：中英行距 */
-    #pane-sub td:nth-child(2),
-    #pane-sub td:nth-child(3){word-break:break-word;white-space:normal;line-height:1.6}
+    #pane-sub td:nth-child(2), #pane-sub td:nth-child(3){
+      word-break:break-word; white-space:normal; line-height:1.6;
+    }
 
-    /* 測驗上方四分區按鈕 */
+    /* 測驗分區按鈕 */
     .q-tabs{display:flex;gap:8px;flex-wrap:wrap}
     .q-tabs .qtab{background:#122340;border:1px solid #1f375f;border-radius:10px;padding:6px 12px;color:#e6efff;cursor:pointer}
     .q-tabs .qtab.on{background:#154274}
@@ -100,18 +101,14 @@
 
     /* ===== 手機閱讀模式（未勾跟隨且點字幕時） ===== */
     @media (max-width:900px){
+      body.read-mode .left{display:none !important}
+      body.read-mode #controlsDrawer{display:none !important}
       body.read-mode .right{flex:1 !important}
-      body.read-mode #pane-sub table thead{display:none}
-      body.read-mode #pane-sub table,
-      body.read-mode #pane-sub tbody,
-      body.read-mode #pane-sub tr,
-      body.read-mode #pane-sub td{display:block;width:100%;border:none}
-      body.read-mode #pane-sub td:nth-child(1){display:none}
       body.read-mode #pane-sub td:nth-child(2){font-size:18px;line-height:1.7;margin:10px 0 2px;color:#fff}
       body.read-mode #pane-sub td:nth-child(3){font-size:17px;line-height:1.9;margin:0 0 16px;color:#cfe2ff}
     }
 
-    /* ===== 列印 ===== */
+    /* ===== 列印（簡化保留） ===== */
     @media print{
       html, body{ background:#fff !important; color:#000 !important; }
       header, .left, .tabs, .controls{ display:none !important; }
@@ -142,7 +139,7 @@
     </div>
   </header>
 
-  <!-- 列印抬頭 -->
+  <!-- 列印抬頭（簡化） -->
   <div id="printHeader" style="display:none;">
     <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;">
       <div style="display:flex;align-items:center;gap:8px;">
@@ -177,17 +174,18 @@
 
           <div class="row">
             <button id="btnPrev" class="btn">⏮ 上一句</button>
-            <button id="btnPlay" class="btn">▶️ 播放</button>
+            <button id="btnPlay" class="btn">▶️ 播放 / 暫停</button>
             <button id="btnNext" class="btn">⏭ 下一句</button>
             <button id="btnReplay" class="btn">🔁 重複本句</button>
           </div>
 
-          <!-- 跟隨 / 偏移 -->
+          <!-- 跟隨 / 偏移 + 🧭 自動校準 -->
           <div class="row">
-            <label class="chip"><input id="chkFollow" type="checkbox" checked/> 跟隨</label>
+            <label class="chip"><input id="chkFollow" type="checkbox"/> 跟隨</label>
             <span class="chip">偏移 <span id="offsetVal">0.0s</span></span>
             <button id="btnOffsetMinus" class="btn">-0.5s</button>
             <button id="btnOffsetPlus" class="btn">+0.5s</button>
+            <button id="btnAutoSync" class="btn">🧭 自動校準</button>
           </div>
 
           <div class="row speed">
@@ -201,7 +199,7 @@
       <!-- 右：字幕 / 測驗 / 單字 -->
       <section class="right" id="studyContainer">
         <div class="tabs">
-          <div class="tab active" data-tab="sub">字幕</div>
+          <div class="tab active" data-tab="sub" id="tabSub">字幕</div>
           <div class="tab" data-tab="quiz">測驗</div>
           <div class="tab" data-tab="vocab">單字</div>
         </div>
@@ -254,149 +252,426 @@
   </div>
 
   <!-- 程式 -->
-  <script src="./player.js"></script>
-  <script src="./login.js"></script>
-
   <script>
-    /* 分頁切換 + 專心模式（手機：測驗/單字整頁顯示） + 手機閱讀模式觸發條件 */
-    (function(){
-      const tabs = document.querySelectorAll('.tabs .tab');
-      const paneSub   = document.getElementById('pane-sub');
-      const paneQuiz  = document.getElementById('pane-quiz');
-      const paneVocab = document.getElementById('pane-vocab');
-      const chkFollow = document.getElementById('chkFollow');
+  /* ======= player.js（內嵌版，含自動校準） ======= */
+  (() => {
+    const $  = (s, el=document) => el.querySelector(s);
+    const $$ = (s, el=document) => [...el.querySelectorAll(s)];
 
+    // DOM
+    const video      = $('#player');
+    const videoWrap  = $('#videoWrap');
+
+    const btnPrev        = $('#btnPrev');
+    const btnPlay        = $('#btnPlay');
+    const btnNext        = $('#btnNext');
+    const btnReplay      = $('#btnReplay');
+
+    const tabs      = $$('.tab');
+    const paneSub   = $('#pane-sub');
+    const paneQuiz  = $('#pane-quiz');
+    const paneVocab = $('#pane-vocab');
+
+    const cuesBody   = $('#cuesBody');
+    const cuesStatus = $('#cuesStatus');
+    const chkFollow  = $('#chkFollow');
+    const btnOffsetMinus = $('#btnOffsetMinus');
+    const btnOffsetPlus  = $('#btnOffsetPlus');
+    const offsetVal      = $('#offsetVal');
+    const speedRange     = $('#speedRange');
+    const speedVal       = $('#speedVal');
+
+    // URL
+    const params = new URLSearchParams(location.search);
+    const slug   = params.get('slug') || 'mid-autumn';
+
+    // 狀態
+    let cues = [];
+    let offset = 0;
+    let follow = false; // 預設不跟隨
+    let loopSentence = false;
+
+    // utils
+    const toSec = (t) => {
+      if (typeof t === 'number') return t;
+      const p = String(t).split(':').map(Number);
+      if (p.length===3) return p[0]*3600 + p[1]*60 + p[2];
+      if (p.length===2) return p[0]*60 + p[1];
+      return Number(t)||0;
+    };
+    const fmt = (sec) => {
+      sec=Math.max(0, sec|0); const m=(sec/60)|0, s=sec%60;
+      return `${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+    };
+    const esc = (s) => String(s??'')
+      .replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;');
+
+    // 偏移 setter（供 UI/自動校準/還原使用）
+    function setOffset(newOffset){
+      offset = Number(newOffset) || 0;
+      if (offsetVal) offsetVal.textContent = `${offset.toFixed(1)}s`;
+    }
+    // 暴露
+    window.player = window.player || {};
+    window.player.setOffset = setOffset;
+    window.player.clearRepeat = function(){ loopSentence=false; btnReplay?.classList.remove('blue'); };
+
+    // ====== 載入 ======
+    async function loadVideo() {
+      video.crossOrigin = 'anonymous'; // 讓 WebAudio 可讀取音訊
+      video.src = `./videos/${slug}.mp4`;
+      video.addEventListener('error',()=>{ if(cuesStatus) cuesStatus.textContent='⚠️ 無法載入影片';},{once:true});
+    }
+    async function loadCues() {
+      try{
+        const r = await fetch(`./data/cues-${slug}.json?v=${Date.now()}`,{cache:'no-store'});
+        if(!r.ok) throw 0;
+        const json = await r.json();
+        cues = (json||[]).map(x=>({t:toSec(x.time), en:x.en||'', zh:x.zh||''}));
+      }catch{ cues = []; }
+      renderCues();
+    }
+    function renderCues(){
+      cuesBody.innerHTML='';
+      if(!cues.length){ cuesStatus.textContent='⚠️ 查無字幕資料'; return; }
+      cuesStatus.textContent='';
+      cuesBody.innerHTML = cues.map((c,i)=>`
+        <tr data-i="${i}">
+          <td class="muted" style="width:80px">${c.t?fmt(c.t):''}</td>
+          <td>${esc(c.en)}</td>
+          <td style="width:40%">${esc(c.zh)}</td>
+        </tr>
+      `).join('');
+      $$('#cuesBody tr').forEach(tr=> tr.addEventListener('click',()=>{
+        const i=+tr.dataset.i;
+        seekTo(i,true);
+      }));
+    }
+
+    const currentIndex = () => {
+      const t = video.currentTime + offset;
+      let i=0; while(i+1<cues.length && cues[i+1].t <= t+0.0001) i++; return i;
+    };
+    const highlightRow = (idx) => {
+      const trs = $$('#cuesBody tr'); trs.forEach(tr=>tr.classList.remove('active'));
+      const tr = trs[idx]; if(!tr) return; tr.classList.add('active');
+      if (follow) tr.scrollIntoView({block:'center',behavior:'smooth'});
+    };
+    const seekTo = (idx, play=true) => {
+      if(!cues[idx]) return;
+      video.currentTime = Math.max(0,cues[idx].t - offset + 0.0001);
+      highlightRow(idx); if(play) video.play();
+    };
+    const sentenceRange = (idx)=>{
+      if(!cues[idx]) return [0,0];
+      const s=cues[idx].t, e=(idx+1<cues.length?cues[idx+1].t:s+3);
+      return [s,e];
+    };
+
+    // ====== 單字（略：可依需要再載入） ======
+    async function loadVocabUI(){ /* 可與你現有的 vocab 檔結合；此處略 */ }
+
+    // ====== 測驗（四分區） ======
+    async function bootQuizTab(){
+      const pane = paneQuiz;
+      if(!pane){ console.warn('[quiz] #pane-quiz not found'); return; }
+
+      const $q=(s)=>pane.querySelector(s);
+      const listEl=$q('#quizList'), metaEl=$q('#quizMeta');
+      const btnSubmit=$q('#btnSubmitQuiz'), btnPrint=$q('#btnPrintQuiz'), btnShowAns=$q('#btnShowAnswer');
+      const resultEl=$q('#quizResult');
+
+      // load
+      let raw=[];
+      try{
+        const r=await fetch(`./data/quiz-${slug}.json?v=${Date.now()}`,{cache:'no-store'});
+        if(!r.ok) throw new Error(`${r.status}`);
+        raw=await r.json(); if(!Array.isArray(raw)&&!raw.sections) throw 0;
+      }catch(e){
+        metaEl.textContent='⚠️ 題庫載入失敗'; console.error(e); return;
+      }
+
+      let questions=[];
+      if (Array.isArray(raw)){
+        questions = raw.map(q => ({
+          section:(q.section||'Mixed'),
+          type:(String(q.type||'MCQ').toUpperCase()==='SA')?'SA':'MCQ',
+          question:q.question||q.q||'',
+          options:q.options||q.choices||[],
+          answer:q.answer??q.ans??'',
+          explanation:q.explanation||q.ex||''
+        }));
+      }else if (raw.sections){
+        const push=(sec,arr=[])=>arr?.forEach(q=>questions.push({
+          section:sec, type:(String(q.type||'MCQ').toUpperCase()==='SA')?'SA':'MCQ',
+          question:q.question||'', options:q.options||[], answer:q.answer??'',
+          explanation:q.explanation||''
+        }));
+        push('Vocabulary',raw.sections.vocab);
+        push('Grammar',raw.sections.grammar);
+        push('Reading',raw.sections.reading);
+        push('Mixed',raw.sections.mixed);
+      }
+
+      const renderSection=(sec)=>{
+        const data=questions.filter(q=>q.section===sec);
+        if(!data.length){ listEl.innerHTML='<li style="color:#9fb3ff">（此分區無題目）</li>'; metaEl.textContent='0 題'; return; }
+        listEl.innerHTML=data.map((q,i)=>{
+          const idx=i+1;
+          if(q.type==='MCQ'){
+            const opts=q.options.map(opt=>`
+              <label style="display:block;margin:4px 0">
+                <input type="radio" name="q${sec}-${idx}" value="${String(opt)}"> ${String(opt)}
+              </label>`).join('');
+            return `<li data-sec="${sec}" data-idx="${idx}" data-type="MCQ" data-ans="${String(q.answer)}">
+              <div style="font-weight:700;margin:4px 0">${idx}. ${esc(q.question)}</div>
+              <div>${opts}</div>
+              <div class="msg" style="margin-top:4px"></div>
+              <div class="exp" style="margin-top:4px;color:#9fb3ff"></div>
+            </li>`;
+          }else{
+            return `<li data-sec="${sec}" data-idx="${idx}" data-type="SA" data-ans="${String(q.answer)}">
+              <div style="font-weight:700;margin:4px 0">${idx}. ${esc(q.question)}</div>
+              <input type="text" placeholder="輸入答案…" style="padding:6px 8px;border:1px solid #334155;border-radius:6px;background:#0f223b;color:#dbe7ff">
+              <button class="btn btn-check" style="margin-left:6px">檢查</button>
+              <div class="msg" style="margin-top:4px"></div>
+              <div class="exp" style="margin-top:4px;color:#9fb3ff"></div>
+            </li>`;
+          }
+        }).join('');
+        metaEl.textContent=`${sec}：${data.length} 題`;
+
+        listEl.addEventListener('click', e=>{
+          if(!e.target.classList.contains('btn-check')) return;
+          const li=e.target.closest('li'); const ipt=li.querySelector('input[type="text"]');
+          const msg=li.querySelector('.msg'); const exp=li.querySelector('.exp');
+          const user=(ipt.value||'').trim().toLowerCase();
+          const ans=String(li.dataset.ans||'').trim().toLowerCase();
+          const ok=(user===ans);
+          msg.textContent = ok?'✅ 正確':'❌ 錯誤';
+          msg.style.color = ok?'#5bd3c7':'#ff6b6b';
+          exp.textContent = ok?'':`正解：${li.dataset.ans}`;
+        }, { once:true });
+      };
+
+      pane.querySelectorAll('.qtab').forEach(b=>{
+        b.addEventListener('click',()=>{
+          pane.querySelectorAll('.qtab').forEach(x=>x.classList.remove('on'));
+          b.classList.add('on'); renderSection(b.dataset.sec);
+        });
+      });
+
+      const btnSubmit=$q('#btnSubmitQuiz'), btnPrint=$q('#btnPrintQuiz'), btnShowAns=$q('#btnShowAnswer');
+      btnSubmit.onclick=()=>{
+        const items=[...$q('#quizList').querySelectorAll('li')]; if(!items.length) return;
+        let got=0, total=items.length;
+        items.forEach(li=>{
+          const type=li.dataset.type; const ans=String(li.dataset.ans||'').trim();
+          if(type==='MCQ'){
+            const sel=li.querySelector('input[type="radio"]:checked'); const user=sel?sel.value:'';
+            const ok=(user===ans); if(ok) got++;
+            const msg=li.querySelector('.msg'), exp=li.querySelector('.exp');
+            msg.textContent=ok?'✅ 正確':'❌ 錯誤'; msg.style.color=ok?'#5bd3c7':'#ff6b6b';
+            exp.textContent=ok?'':`正解：${ans}`;
+          }else{
+            const ipt=li.querySelector('input[type="text"]'); const user=(ipt.value||'').trim();
+            const ok=(user.toLowerCase()===ans.toLowerCase()); if(ok) got++;
+            const msg=li.querySelector('.msg'), exp=li.querySelector('.exp');
+            msg.textContent=ok?'✅ 正確':'❌ 錯誤'; msg.style.color=ok?'#5bd3c7':'#ff6b6b';
+            exp.textContent=ok?'':`正解：${ans}`;
+          }
+        });
+        const score = got*5; const full = total*5;
+        $('#quizScore').textContent = `本分區分數：${score} / ${full}`;
+        $q('#quizResult').style.display='block';
+        $q('#btnPrintQuiz').style.display='inline-block';
+        $q('#btnShowAnswer').style.display='inline-block';
+      };
+      btnShowAns.onclick=()=>{
+        $q('#quizList').querySelectorAll('li').forEach(li=>{
+          const exp=li.querySelector('.exp'); if(exp && !exp.textContent) exp.textContent=`正解：${li.dataset.ans}`;
+        });
+      };
+      btnPrint.onclick=()=>window.print();
+
+      renderSection('Vocabulary');
+    }
+
+    // ====== 控制列 ======
+    speedRange?.addEventListener('input',()=>{
+      const r=Number(speedRange.value)||1; video.playbackRate=r;
+      if(speedVal) speedVal.textContent=`${r.toFixed(2)}x`;
+    });
+    btnPlay?.addEventListener('click',()=>{ if(video.paused) video.play(); else video.pause(); });
+    btnPrev?.addEventListener('click',()=>seekTo(Math.max(0,currentIndex()-1),true));
+    btnNext?.addEventListener('click',()=>seekTo(Math.min(cues.length-1,currentIndex()+1),true));
+
+    // 重複本句單鍵切換
+    (function(){
+      const btn = btnReplay; if(!btn) return;
+      const on = ()=>{ btn.dataset.active='1'; btn.classList.add('blue'); };
+      const off= ()=>{ btn.dataset.active='0'; btn.classList.remove('blue'); loopSentence=false; };
+      off();
+      btn.addEventListener('click',function(e){
+        const isOn = btn.dataset.active==='1';
+        if(isOn){
+          e.stopImmediatePropagation();
+          window.player?.clearRepeat?.(); off(); return;
+        }
+        loopSentence=true; on(); seekTo(currentIndex(),true);
+      }, true);
+    })();
+
+    btnOffsetMinus?.addEventListener('click',()=>{ setOffset(offset-0.5); saveOffset(); });
+    btnOffsetPlus ?.addEventListener('click',()=>{ setOffset(offset+0.5); saveOffset(); });
+    chkFollow     ?.addEventListener('change',()=> follow=chkFollow.checked);
+
+    // 播放事件
+    video.addEventListener('timeupdate',()=>{
+      if(!cues.length) return;
+      const i=currentIndex(); highlightRow(i);
+      const t=video.currentTime+offset;
+
+      if(loopSentence){
+        const [s,e]=sentenceRange(i);
+        if(t>=e-0.02){ video.currentTime=Math.max(0,s-offset+0.0001); video.play(); }
+      }
+    });
+
+    // 分頁切換 + 手機閱讀模式
+    (function(){
+      function applyReadMode(){
+        if (window.innerWidth <= 900) {
+          const active = document.querySelector('.tabs .tab.active')?.dataset.tab;
+          if (active==='sub' && chkFollow && !chkFollow.checked) document.body.classList.add('read-mode');
+          else document.body.classList.remove('read-mode');
+        } else {
+          document.body.classList.remove('read-mode');
+        }
+      }
       function show(name){
         paneSub.style.display   = name==='sub'   ? '' : 'none';
         paneQuiz.style.display  = name==='quiz'  ? '' : 'none';
         paneVocab.style.display = name==='vocab' ? '' : 'none';
         tabs.forEach(t=>t.classList.toggle('active', t.dataset.tab===name));
-
         if (window.innerWidth <= 900) {
-          if (name==='quiz' || name==='vocab') {
-            document.body.classList.add('focus-mode');
-            document.body.classList.remove('read-mode');
-          } else {
-            document.body.classList.remove('focus-mode');
-            // 未勾跟隨 → 進入閱讀模式；勾選→退出
-            if (chkFollow && !chkFollow.checked) document.body.classList.add('read-mode');
-            else document.body.classList.remove('read-mode');
-          }
+          if (name==='quiz' || name==='vocab') document.body.classList.add('focus-mode');
+          else document.body.classList.remove('focus-mode');
         }
+        applyReadMode();
       }
       tabs.forEach(t=> t.addEventListener('click', ()=> show(t.dataset.tab)));
+      $('#tabSub')?.addEventListener('click', applyReadMode);
+      chkFollow?.addEventListener('change', applyReadMode);
+      window.addEventListener('resize', applyReadMode);
       show(document.querySelector('.tabs .tab.active')?.dataset.tab || 'sub');
-
-      // 手動切換跟隨時，若停在字幕頁，也同步切換閱讀模式
-      chkFollow?.addEventListener('change', ()=>{
-        const active = document.querySelector('.tabs .tab.active')?.dataset.tab;
-        if (window.innerWidth <= 900 && active==='sub') {
-          if (!chkFollow.checked) document.body.classList.add('read-mode');
-          else document.body.classList.remove('read-mode');
-        }
-      });
-
-      window.addEventListener('resize', ()=>{
-        if (window.innerWidth > 900) {
-          document.body.classList.remove('focus-mode','read-mode');
-        }
-      });
     })();
 
-    /* 手機：底部抽屜開/關（點把手或上/下滑） */
-    (function(){
-      const drawer = document.getElementById('controlsDrawer');
-      const grab   = document.getElementById('drawerGrab');
-      if(!drawer || !grab) return;
-      const toggle = ()=> drawer.classList.toggle('open');
-      grab.addEventListener('click', toggle);
-      let startY=null;
-      grab.addEventListener('touchstart', e=>{ startY = e.touches[0].clientY; }, {passive:true});
-      grab.addEventListener('touchmove', e=>{
-        if(startY===null) return;
-        const dy = e.touches[0].clientY - startY;
-        if(dy < -10) { drawer.classList.add('open'); startY=null; }
-        else if(dy > 10) { drawer.classList.remove('open'); startY=null; }
-      }, {passive:true});
-    })();
+    // ===== 自動校準：用前段音訊找語音起點，與第一句字幕比出全片偏移 Δ =====
+    (function autoSyncInit(){
+      const btn = document.getElementById('btnAutoSync');
+      if (!btn || !video) return;
 
-    /* 交卷後顯示列印按鈕並填寫列印抬頭 */
-    (function(){
-      const btnSubmit = document.getElementById('btnSubmitQuiz');
-      const btnShow   = document.getElementById('btnShowAnswer');
-      const btnPrint  = document.getElementById('btnPrintQuiz');
-      const scoreSpan = document.getElementById('quizScore');
+      function saveOffset(){ localStorage.setItem(`offset:${slug}`, String(offset)); }
+      window.saveOffset = saveOffset; // 讓上面按鈕可呼叫
 
-      if(!btnSubmit || !btnShow || !btnPrint) return;
-
-      btnSubmit.addEventListener('click', () => {
-        setTimeout(() => { btnShow.style.display=''; btnPrint.style.display=''; }, 0);
-      });
-
-      function getSlug(){ const u=new URLSearchParams(location.search); return u.get('slug')||''; }
-      function fillPrintHeader(){
-        const qScore = scoreSpan?.textContent || '';
-        const scoreNum = (qScore.match(/\d+/) || ['--'])[0];
-        const sec = document.querySelector('#quizTabs .qtab.on')?.textContent
-                 || document.querySelector('.tabs .tab.active')?.textContent || '';
-        const phScore = document.getElementById('ph-score-num');
-        const phRemark= document.getElementById('ph-remark');
-        const phTitle = document.getElementById('ph-title');
-        const phSec   = document.getElementById('ph-sec');
-        if (phScore) phScore.textContent = scoreNum;
-        if (phTitle) phTitle.textContent = getSlug();
-        if (phSec)   phSec.textContent   = sec || '（當前分區）';
-
-        const sn = parseInt(scoreNum,10);
-        let remark = '';
-        if (!isNaN(sn)) {
-          if (sn === 100) remark = '滿分！太強了！集滿五張滿分可兌換一組 LINE 表情貼 🎉';
-          else if (sn >= 90) remark = '很棒！細節再加強，就更完美。';
-          else if (sn >= 80) remark = '不錯的基礎，建議複習錯題字彙與句型。';
-          else if (sn >= 70) remark = '有進步空間，回看文本與關鍵字。';
-          else if (sn >= 60) remark = '及格！再練閱讀理解與文法點。';
-          else remark = '先別灰心！重作錯題、背關鍵字，再試一次會更好。';
-        }
-        if (phRemark) phRemark.textContent = remark;
+      function getFirstCueStart(){
+        if (cues && cues.length) return cues[0].t || 0;
+        const firstRow = document.querySelector('#cuesBody tr');
+        if (!firstRow) return null;
+        const m = firstRow.querySelector('td')?.textContent?.trim().match(/(\d{2}):(\d{2})/);
+        if (!m) return null;
+        return parseInt(m[1],10)*60 + parseInt(m[2],10);
       }
-      document.getElementById('btnPrintQuiz')?.addEventListener('click', () => { fillPrintHeader(); window.print(); });
-      window.addEventListener('beforeprint', fillPrintHeader);
-    })();
 
-    /* 重複本句：單鍵切換（再按一次取消） */
-    (function(){
-      const btn = document.getElementById('btnReplay');
-      if(!btn) return;
+      async function estimateSpeechStart(){
+        try{
+          const ctx = new (window.AudioContext || window.webkitAudioContext)();
+          if (ctx.state === 'suspended') { try{ await ctx.resume(); }catch{} }
+          const src = ctx.createMediaElementSource(video);
+          const an  = ctx.createAnalyser();
+          an.fftSize = 2048;
+          src.connect(an); an.connect(ctx.destination);
 
-      const setOn  = () => { btn.dataset.active = '1'; btn.classList.add('blue');  };
-      const setOff = () => { btn.dataset.active = '0'; btn.classList.remove('blue'); };
+          const SAMPLE_SECONDS = Math.min(30, Math.max(10, video.duration || 30));
+          const buf = new Float32Array(an.fftSize);
 
-      setOff(); // 初始關閉
+          const wasPaused = video.paused;
+          const oldTime   = video.currentTime;
+          try { video.pause(); } catch {}
+          video.currentTime = 0;
 
-      // 捕獲階段攔截：已開啟時再按會先取消，避免 player.js 又把重複打開
-      btn.addEventListener('click', function(e){
-        const isOn = btn.dataset.active === '1';
+          const ENERGY_TH = 0.03, HOLD_MS = 120;
+          let firstSpeechAt = null, overSince=null;
 
-        if (isOn) {
-          e.stopImmediatePropagation();
-          try{
-            if (window.player?.clearRepeat)      window.player.clearRepeat();
-            else if (window.player?.cancelRepeat)window.player.cancelRepeat();
-            else document.dispatchEvent(new CustomEvent('cancel-repeat'));
-          }catch(err){}
-          setOff();
-          return;
+          await new Promise(resolve=>{
+            function tick(){
+              an.getFloatTimeDomainData(buf);
+              let sum=0; for(let i=0;i<buf.length;i++){ const v=buf[i]; sum+=v*v; }
+              const rms = Math.sqrt(sum/buf.length);
+              const now = performance.now();
+              const t   = video.currentTime;
+
+              if (rms > ENERGY_TH){
+                if (overSince==null) overSince=now;
+                if (now - overSince > HOLD_MS && firstSpeechAt==null) firstSpeechAt=t;
+              } else {
+                overSince=null;
+              }
+              if (t >= SAMPLE_SECONDS || firstSpeechAt!=null) return resolve();
+              requestAnimationFrame(tick);
+            }
+            video.play().then(()=>requestAnimationFrame(tick)).catch(()=>resolve());
+          });
+
+          try { video.pause(); } catch {}
+          video.currentTime = oldTime;
+          if (!wasPaused) { try { await video.play(); } catch {} }
+          await ctx.close();
+
+          return firstSpeechAt;
+        }catch(e){
+          console.warn('AutoSync error:', e);
+          return null;
         }
+      }
 
-        // 開啟：讓原本 player.js 的 handler 正常運作
-        setOn();
-      }, true); // 捕獲階段
+      btn.addEventListener('click', async ()=>{
+        btn.disabled = true;
+        const oldTxt = btn.textContent;
+        btn.textContent = '校準中…';
+
+        const speechAt = await estimateSpeechStart();
+        const cueAt    = getFirstCueStart();
+
+        if (speechAt != null && cueAt != null){
+          const delta = +(speechAt - cueAt).toFixed(1);
+          setOffset(delta);
+          saveOffset();
+          btn.textContent = '🧭 自動校準 ✓';
+          setTimeout(()=> btn.textContent = oldTxt, 1500);
+        }else{
+          alert('前段音訊特徵不明顯，無法自動校準。\n請先播到有聲音的地方再按一次，或用 ±0.5s 手動微調。');
+          btn.textContent = oldTxt;
+        }
+        btn.disabled = false;
+      });
+
+      // 初始化：套用上一回校準值
+      const saved = localStorage.getItem(`offset:${slug}`);
+      if (saved !== null) setOffset(parseFloat(saved));
     })();
+
+    // 啟動
+    (async function init(){
+      const r=Number(speedRange?.value)||1; video.playbackRate=r;
+      if(speedVal) speedVal.textContent=`${r.toFixed(2)}x`;
+      await loadVideo(); await loadCues(); await bootQuizTab();
+    })();
+  })();
   </script>
 </body>
 </html>
-
-
 
 
 
