@@ -50,34 +50,75 @@
     .subToolbar{display:flex;gap:10px;align-items:center;padding:12px;border-bottom:1px solid var(--border)}
     .pane{flex:1;overflow:auto}
 
-    /* 測驗四分區 */
+    table{width:100%;border-collapse:collapse}
+    th,td{padding:10px 12px;border-bottom:1px solid #162a48;vertical-align:top}
+    tbody tr{background:#0f1f34}
+    tbody tr:nth-child(2n){background:#0d1a2b}
+    tbody tr:hover{background:#0f2a4e}
+    tr.active{background:#173a6e}
+
+    /* 測驗上方四分區按鈕 */
     .q-tabs{display:flex;gap:8px;flex-wrap:wrap}
     .q-tabs .qtab{background:#122340;border:1px solid #1f375f;border-radius:10px;padding:6px 12px;color:#e6efff;cursor:pointer}
     .q-tabs .qtab.on{background:#154274}
 
-    /* ===== 列印表頭（BookWide） ===== */
-    #printHeader{ display:none; }
-    @media print {
+    /* ===== 單字詞卡（你要的樣式，不動其它功能） ===== */
+    #pane-vocab { padding: 0 8px 24px; }
+    .voc-row{ display:grid; grid-template-columns:110px 1fr 320px;
+      gap:18px; padding:22px 12px; border-bottom:1px solid #14243b; }
+    .voc-time{ display:flex; align-items:center; gap:10px; color:#9fc1ff; }
+    .voc-time .btn{ width:36px; height:36px; display:inline-flex; align-items:center; justify-content:center;
+      border-radius:999px; background:#0f2a4e; border:1px solid #274a7f; color:#dbe7ff; padding:0; }
+    .voc-time .time-link{ cursor:pointer; text-decoration:underline; color:#9fc1ff; }
+    .voc-core{ min-width:0; }
+    .voc-sent{ font-size:20px; line-height:1.6; }
+    .voc-ipt{ margin-top:8px; display:flex; flex-wrap:wrap; gap:8px; align-items:center; }
+    .voc-ipt input{ height:44px; min-width:220px; padding:10px 12px; border:1px solid #334155; border-radius:12px;
+      background:#0f223b; color:#dbe7ff; }
+    .voc-ipt .btn{ height:40px; border-radius:10px; padding:0 14px; }
+    .voc-ipt .ok{ color:#5bd3c7; } .voc-ipt .ng{ color:#ff6b6b; }
+    .voc-gram{ margin-top:8px; color:#9fb3d9; font-size:13px; }
+    .voc-right{ background:#0f1f2f; border:1px solid #1b2f52; border-radius:14px; padding:14px; }
+    .voc-word{ display:flex; align-items:center; gap:10px; font-size:26px; font-weight:800; letter-spacing:.02em; }
+    .voc-word .btn{ width:36px; height:36px; padding:0; display:inline-flex; align-items:center; justify-content:center;
+      border-radius:10px; background:#102a4a; border:1px solid #23578c; }
+    .voc-pos{ color:#9fb3d9; font-size:13px; }
+    .voc-zh{ margin-top:6px; font-size:18px; }
+    .voc-en{ margin-top:2px; color:#9fb3d9; font-size:14px; }
+    .voc-actions{ margin-top:8px; display:flex; gap:8px; }
+    .voc-actions .btn{ border-radius:10px; padding:6px 10px; }
+    @media (max-width:980px){ .voc-row{ grid-template-columns:1fr } .voc-right{ order:3 } }
+
+    /* ===== 列印：確保 20 題全印出，並顯示 BookWide 表頭 ===== */
+    #printHeader{display:none}
+    @media print{
+      /* 保留深色與按鈕底色 */
       body{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+
+      /* 只印右側；把所有高度/overflow 限制拿掉 */
       header,.left,.tabs,.subToolbar{display:none !important}
-      .right{border:none}
-      .pane,.quiz-shell,#pane-quiz,#quizList{overflow:visible !important;height:auto !important;max-height:none !important}
+      .wrap{padding:0 !important}
+      .layout{display:block !important; height:auto !important; overflow:visible !important}
+      .right{display:block !important; border:none !important; height:auto !important; overflow:visible !important}
+      .pane, #pane-quiz, #pane-sub, #pane-vocab, .quiz-shell, #quizList{
+        height:auto !important; max-height:none !important; overflow:visible !important;
+      }
 
-      /* 保證所有題目都列印出來 */
-      #quizList > li { break-inside: avoid; page-break-inside: avoid; margin-bottom: 10px; }
+      /* 題目不要被切半 */
+      #quizList > li{ break-inside: avoid; page-break-inside: avoid; margin-bottom:10px; }
 
-      /* 表頭區塊 */
-      #printHeader{display:block;padding:6mm 0 2mm 0;border-bottom:1px solid #d0d7e2;margin-bottom:6mm}
-      #ph-row{display:flex;align-items:center;gap:10px}
-      #ph-logo{height:18mm;object-fit:contain}
+      /* 列印表頭 */
+      #printHeader{display:block; padding:6mm 0 2mm 0; border-bottom:1px solid #d0d7e2; margin-bottom:6mm}
+      #ph-row{display:flex; align-items:center; gap:10px}
+      #ph-logo{height:18mm; object-fit:contain}
       #ph-meta{flex:1}
-      #ph-meta h2{margin:0 0 4px 0;color:#0b1324}
+      #ph-meta h2{margin:0 0 4px 0; color:#0b1324}
       #ph-meta .muted{color:#445}
-      #ph-score{min-width:46mm;text-align:right}
-      #ph-score .big{font-size:22px;font-weight:800}
+      #ph-score{min-width:46mm; text-align:right}
+      #ph-score .big{font-size:22px; font-weight:800}
 
       /* 列印時隱藏操作按鈕 */
-      .q-actions button{display:none}
+      .q-actions button{display:none !important}
     }
   </style>
 </head>
@@ -91,28 +132,30 @@
     </div>
   </header>
 
-  <!-- 列印抬頭（列印時才顯示，由 JS 填入分數/評語/影片名） -->
+  <!-- 列印抬頭（只在列印時顯示；JS 會填入分數/評語/片名） -->
   <div id="printHeader">
     <div id="ph-row">
+      <!-- 換成你實際 logo 路徑 -->
       <img id="ph-logo" src="./images/bookwide-logo.png" alt="BookWide Logo"/>
       <div id="ph-meta">
-        <h2>BookWide 學習系統</h2>
-        <div class="muted">英語影片測驗成績單</div>
+        <h2>英語影片測驗成績單</h2>
+        <div class="muted" id="ph-sub">（影片 / 分區 / 題數）</div>
       </div>
       <div id="ph-score">
-        <div class="big">分數：-- / 100</div>
-        <div class="muted">學習評語：--</div>
+        <div class="big" id="ph-score-main">-- / 100</div>
+        <div class="muted" id="ph-score-note">學習評語：—</div>
       </div>
     </div>
   </div>
 
   <div class="wrap">
     <div class="layout">
-      <!-- 左側：影片 + 工具 -->
+      <!-- 左：影片 + 工具 -->
       <section class="left">
         <div id="videoWrap" class="videoWrap">
           <video id="player" playsinline controls></video>
         </div>
+
         <div class="controls">
           <div class="row">
             <button id="btnPrev" class="btn">⏮ 上一句</button>
@@ -136,7 +179,7 @@
         </div>
       </section>
 
-      <!-- 右側：字幕 / 測驗 / 單字 -->
+      <!-- 右：字幕 / 測驗 / 單字 -->
       <section class="right">
         <div class="tabs">
           <div class="tab active" data-tab="sub">字幕</div>
@@ -144,7 +187,7 @@
           <div class="tab" data-tab="vocab">單字</div>
         </div>
 
-        <!-- 字幕 -->
+        <!-- 字幕工具列 -->
         <div id="subToolbar" class="subToolbar">
           <label class="chip"><input id="chkFollow" type="checkbox" checked/> 跟隨</label>
           <span class="chip">偏移 <span id="offsetVal">0.0s</span></span>
@@ -153,8 +196,9 @@
           <span class="muted" style="margin-left:auto">( 尚未載入 )</span>
         </div>
 
+        <!-- 右側內容（可捲動） -->
         <div class="pane">
-          <!-- 字幕區 -->
+          <!-- 字幕 -->
           <div id="pane-sub">
             <table>
               <thead>
@@ -169,7 +213,7 @@
             <div id="cuesStatus" class="muted" style="padding:10px 14px"></div>
           </div>
 
-          <!-- 測驗區 -->
+          <!-- 測驗 -->
           <div id="pane-quiz" style="display:none">
             <div class="quiz-shell">
               <div id="quizTabs" class="q-tabs" style="margin:6px 0 10px 0;">
@@ -193,7 +237,7 @@
             </div>
           </div>
 
-          <!-- 單字區 -->
+          <!-- 單字（詞卡） -->
           <div id="pane-vocab" style="display:none">
             <div id="vocabStatus" class="muted" style="padding:10px 14px">( 尚未載入 )</div>
             <div id="vocabBox" style="padding:0 14px 14px"></div>
@@ -203,10 +247,45 @@
     </div>
   </div>
 
+  <!-- 你的現有程式檔 -->
   <script src="./player.js"></script>
   <script src="./login.js"></script>
+
+  <!-- 填滿畫面按鈕文字同步（不影響既有邏輯） -->
+  <script>
+    (function(){
+      const wrap=document.getElementById('videoWrap');
+      const btn=document.getElementById('btnFill');
+      if(!wrap||!btn) return;
+      const sync=()=>btn.textContent=wrap.classList.contains('fill')?'🖼 還原比例':'🖼 填滿畫面';
+      btn.addEventListener('click',()=>setTimeout(sync,0)); sync();
+    })();
+
+    /* 列印前後：帶入分數/抬頭資訊，只影響列印 */
+    (function(){
+      const ph = document.getElementById('printHeader');
+      const phSub = document.getElementById('ph-sub');
+      const phScore = document.getElementById('ph-score-main');
+      const phNote = document.getElementById('ph-score-note');
+
+      function fillHeader(){
+        const meta = document.getElementById('quizMeta')?.textContent?.trim() || '';
+        const scoreText = document.getElementById('quizScore')?.textContent?.trim() || '-- / 100';
+        phSub.textContent = meta || '（影片 / 分區 / 題數）';
+        phScore.textContent = scoreText;
+        // 有顯示在畫面上的學習評語就帶入（若沒有就維持預設）
+        const res = document.getElementById('quizResult');
+        const note = res && res.style.display!=='none' ? res.innerText.trim() : '';
+        if(note) phNote.textContent = note.replace(/\s+/g,' ');
+      }
+
+      window.addEventListener('beforeprint', fillHeader);
+      // afterprint 不動內容即可
+    })();
+  </script>
 </body>
 </html>
+
 
 
 
