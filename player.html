@@ -27,8 +27,7 @@
 
     /* 影片 */
     .videoWrap{position:relative;width:100%;aspect-ratio:16/9;background:#000;border-radius:10px;overflow:hidden}
-    .videoWrap video{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;background:#000}
-    .videoWrap.fill video{object-fit:cover} /* 填滿模式 */
+    .videoWrap video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;background:#000} /* 一律填滿 */
 
     /* 左側工具列（桌機） */
     .controls{margin-top:12px;background:#0e2038;border:1px solid #183459;border-radius:12px;padding:12px}
@@ -38,7 +37,7 @@
     .chip{display:inline-flex;align-items:center;gap:6px;padding:7px 10px;border:1px solid #23446c;border-radius:10px;background:#10233d}
 
     /* 右：分頁（上移、縮小間距以釋出空間） */
-    .tabs{display:flex;gap:8px;padding:6px 10px;margin-bottom:4px;border-bottom:1px solid var(--border)}
+    .tabs{display:flex;gap:8px;padding:6px 10px;margin:0 0 2px;border-bottom:1px solid var(--border)}
     .tab{cursor:pointer;background:#122340;border:1px solid #1f375f;border-radius:10px;padding:8px 12px}
     .tab.active{background:#154274}
 
@@ -68,7 +67,7 @@
       .layout{flex-direction:column; height:100%}
       .left{position:sticky; top:0; z-index:5; padding:12px}
       .right{flex:1; min-height:0; display:flex; flex-direction:column}
-      .pane{flex:1; overflow:auto}
+      .pane{flex:1; overflow:auto; padding-bottom:96px;} /* 底部安全距，避免被抽屜蓋住 */
 
       /* 抽屜：預設收合，只露出把手；展開後覆蓋底部 */
       .controls{
@@ -85,20 +84,22 @@
       .grab-bar{ width:44px; height:4px; border-radius:4px; margin:0 auto 4px; background:#2b4a78; }
       .drawer-title{font-size:12px; color:#9fb0c9;}
 
-      /* 字幕堆疊（英文上、中文下），中文略大、顏色更亮，避免被擠掉 */
+      /* 字幕堆疊（英文上、中文下），中文長句排版 */
       #pane-sub table thead { display:none; }
       #pane-sub table, #pane-sub tbody, #pane-sub tr, #pane-sub td { display:block; width:100%; }
       #pane-sub tr { border-bottom:1px solid #162a48; padding:10px 0; }
+      #pane-sub td{ padding:6px 12px; }
       #pane-sub td:nth-child(1){ font-size:12px; color:var(--muted); margin-bottom:4px; }
-      #pane-sub td:nth-child(2){ font-size:17px; line-height:1.55; color:#e6efff; margin-bottom:3px; }
+      #pane-sub td:nth-child(2){ font-size:16.5px; line-height:1.55; color:#e6efff; margin-bottom:4px; }
       #pane-sub td:nth-child(3){
         display:block;
-        font-size:15.5px;
-        line-height:1.7;
-        color:#d6e4ff;
-        margin-top:2px;
-        word-break: break-word;
-        white-space: normal;
+        font-size:16px;
+        line-height:1.8;
+        color:#dfe8ff;
+        word-break: keep-all;        /* CJK 盡量不分字斷行 */
+        overflow-wrap: anywhere;     /* 真的寬度不夠時才允許斷行 */
+        line-break: loose;           /* iOS/Safari CJK 斷行較自然 */
+        letter-spacing: 0;
       }
 
       /* 專心模式：測驗/單字時隱藏影片與抽屜（整頁顯示） */
@@ -109,7 +110,7 @@
 
     /* ===== 列印：只印右側、白底黑字、題目不切半 + 抬頭 ===== */
     @media print{
-      html, body{ background:#fff !important; color:#000 !重要; }
+      html, body{ background:#fff !important; color:#000 !important; }
       header, .left, .tabs, .controls{ display:none !important; }
       .wrap{ padding:0 !important; }
       .layout{ display:block !important; height:auto !important; overflow:visible !important; }
@@ -161,12 +162,13 @@
       <!-- 左：影片 -->
       <section class="left" id="videoContainer">
         <!-- 預設填滿 -->
-        <div id="videoWrap" class="videoWrap fill">
+        <div id="videoWrap" class="videoWrap">
           <video id="player" playsinline controls></video>
         </div>
 
         <!-- 工具列：底部抽屜（手機可收合/展開；桌機一般面板） -->
         <div class="controls" id="controlsDrawer">
+          <!-- 抽屜把手（手機可點擊/上滑展開） -->
           <div class="drawer-grab" id="drawerGrab">
             <div class="grab-bar"></div>
             <div class="drawer-title">播放工具列（點擊展開/收合）</div>
@@ -177,7 +179,7 @@
             <button id="btnPlay" class="btn">▶️ 播放</button>
             <button id="btnNext" class="btn">⏭ 下一句</button>
             <button id="btnReplay" class="btn blue">🔁 重複本句</button>
-            <button id="btnFill" class="btn">🖼 還原比例</button>
+            <button id="btnCancelReplay" class="btn">❌ 取消重複本句</button>
           </div>
 
           <!-- 跟隨 / 偏移 -->
@@ -230,13 +232,16 @@
                 <button class="qtab" data-sec="Mixed">綜合</button>
                 <span id="quizMeta" class="muted" style="margin-left:12px"></span>
               </div>
+
               <ol id="quizList" style="line-height:1.6"></ol>
+
               <div class="q-actions" style="margin:14px 0 6px; display:flex; gap:8px; align-items:center;">
                 <button class="btn" id="btnSubmitQuiz">交卷</button>
                 <button class="btn" id="btnShowAnswer" style="display:none">顯示答案</button>
                 <button class="btn" id="btnPrintQuiz" style="display:none">列印成績單</button>
                 <span id="quizScore" style="margin-left:8px"></span>
               </div>
+
               <div id="quizResult" style="display:none;margin-top:10px"></div>
             </div>
           </div>
@@ -255,7 +260,7 @@
   <script src="./player.js"></script>
   <script src="./login.js"></script>
 
-  <!-- 行為腳本：抽屜、分頁切換（專心模式）、列印抬頭、填滿切換 -->
+  <!-- 行為腳本：抽屜、分頁切換（專心模式）、列印抬頭、取消重複 -->
   <script>
     /* 分頁切換 + 專心模式（手機：測驗/單字整頁顯示） */
     (function(){
@@ -345,14 +350,18 @@
       window.addEventListener('beforeprint', fillPrintHeader);
     })();
 
-    /* 填滿畫面：一開始就填滿，按鈕可切換並更新文字 */
+    /* 取消重複本句：優先呼叫 player.clearRepeat()，並提供 fallback */
     (function(){
-      const wrap=document.getElementById('videoWrap');
-      const btn=document.getElementById('btnFill');
-      if(!wrap||!btn) return;
-      const sync=()=>{ btn.textContent = wrap.classList.contains('fill') ? '🖼 還原比例' : '🖼 填滿畫面'; };
-      btn.addEventListener('click', ()=>{ wrap.classList.toggle('fill'); sync(); });
-      sync(); // 初始化按鈕文字
+      const btnCancel = document.getElementById('btnCancelReplay');
+      if(!btnCancel) return;
+      btnCancel.addEventListener('click', ()=>{
+        try{
+          if (window.player?.clearRepeat) { window.player.clearRepeat(); return; }
+          if (window.player?.cancelRepeat) { window.player.cancelRepeat(); return; }
+        }catch(e){}
+        // 發出自定事件，若 player.js 有監聽可一併處理
+        document.dispatchEvent(new CustomEvent('cancel-repeat'));
+      });
     })();
   </script>
 </body>
