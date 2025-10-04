@@ -14,50 +14,88 @@
     html,body{height:100%;margin:0;background:var(--bg);color:var(--ink);font-family:ui-sans-serif,system-ui,"Noto Sans TC"}
     a{color:inherit;text-decoration:none}
     img{max-width:100%;display:block}
-    .wrap{max-width:1200px;margin:0 auto;padding:18px}
-    header{display:flex;align-items:center;justify-content:space-between;padding:14px 0}
-    .brand{display:flex;align-items:center;gap:10px;font-weight:800;font-size:20px}
-    .brand img{height:28px;width:auto}
-    nav{display:flex;gap:8px;flex-wrap:wrap}
+
+    .wrap{max-width:1200px;margin:0 auto;padding:18px 18px 24px}
+    header{display:flex;align-items:center;justify-content:space-between;padding:6px 0 10px}
+    .brand{display:flex;align-items:center;gap:10px;font-weight:800;font-size:22px}
+    .brand img{height:26px;width:auto}
+    .badge{display:inline-block;padding:2px 8px;border-radius:999px;border:1px solid #2d4677;background:#0f223b;color:#dbe7ff;font-size:12px}
+
+    /* 右上登入 */
+    #authArea{display:flex;gap:10px;align-items:center}
+    #userNameBadge{max-width:220px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+
+    /* 按鈕 */
     .btn{background:#13233f;border:1px solid #24446f;border-radius:12px;padding:10px 14px;color:#fff;cursor:pointer}
     .btn.blue{background:#14335f;border-color:#2c5aa3}
     .btn.ghost{background:transparent}
     .btn.pill{border-radius:999px}
-    .muted{color:var(--muted)}
-    .hero{display:grid;grid-template-columns:1.2fr 1fr;gap:18px;margin:10px 0 22px}
-    .card{background:var(--panel);border:1px solid var(--border);border-radius:14px;overflow:hidden}
-    .card .pad{padding:16px}
-    .h1{font-size:28px;line-height:1.25;margin:0 0 10px}
-    .h2{font-size:22px;margin:0 0 6px}
-    .grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+    .btn.big{padding:14px 20px;font-size:18px;line-height:1.1}
+
+    /* 置頂說明區（縮成一條） */
+    .intro{margin:4px 0 12px}
+    .intro h1{font-size:26px;margin:0 0 6px}
+    .intro .desc{color:var(--muted);line-height:1.55}
+
+    /* CTA Bar：兩顆大按鈕，佔小空間 */
+    .cta-bar{
+      display:flex;gap:10px;align-items:center;justify-content:center;
+      background:#0f1f34;border:1px solid #1f2a44;border-radius:14px;padding:10px; margin:8px 0 14px;
+    }
+
+    /* 服務導覽小卡（一列 icons） */
+    .svc-strip{
+      display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin:4px 0 8px;
+    }
     .svc{display:flex;align-items:center;gap:10px;padding:10px;border-radius:10px;border:1px solid #1f375f;background:#122340}
     .svc .tag{font-size:12px;color:#9fb0c9}
-    .toolbar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:10px 0 14px}
+
+    /* 服務導覽後的大列表（像你的附圖2） */
+    .svc-list{display:grid;grid-template-columns:1fr;gap:10px;margin:10px 0 6px}
+    .svc-row{display:flex;align-items:center;gap:12px;padding:14px;border-radius:12px;background:#0e1d33;border:1px solid #1e3359}
+    .svc-icon{font-size:22px;width:28px;text-align:center}
+    .svc-main{display:flex;flex-direction:column;gap:2px}
+    .svc-title{font-weight:700}
+    .svc-sub{color:#9fb0c9;font-size:14px}
+
+    /* 區塊 title */
+    .h2{font-size:22px;margin:10px 0 8px}
+
+    /* 功能亮點 */
+    .features{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin:10px 0 6px}
+    .feat{border:1px solid var(--border);background:#0f1f34;border-radius:14px;padding:14px}
+    .feat .name{font-weight:700;margin-bottom:6px}
+    .muted{color:var(--muted)}
+
+    /* 工具列 + 搜尋 */
+    .toolbar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:8px 0}
     .tabs{display:flex;gap:8px;flex-wrap:wrap}
     .tab{cursor:pointer;background:#122340;border:1px solid #1f375f;border-radius:10px;padding:8px 12px}
     .tab.on{background:#154274}
     .search{display:flex;gap:8px;align-items:center}
     .search input{height:40px;min-width:240px;border:1px solid #2c3e66;background:#0f223b;border-radius:10px;color:#dbe7ff;padding:0 12px}
-    .video-card{border-radius:14px;border:1px solid var(--border);background:var(--panel);overflow:hidden;display:flex;flex-direction:column}
+
+    /* 卡片清單 */
+    .grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+    .video-card{border-radius:14px;border:1px solid var(--border);background:#0f1f34;overflow:hidden;display:flex;flex-direction:column}
     .thumb{aspect-ratio:16/9;background:#000;position:relative;overflow:hidden}
     .thumb img{width:100%;height:100%;object-fit:cover;opacity:.9}
     .pill{position:absolute;left:10px;bottom:10px;background:#0f223b;border:1px solid #2c3e66;color:#dbe7ff;border-radius:999px;padding:4px 8px;font-size:12px}
     .video-card .title{font-weight:700;margin:8px 0 4px}
     .video-card .meta{display:flex;justify-content:space-between;color:#9fb0c9;font-size:12px}
     .video-card .pad{padding:12px 12px 14px}
-    .features{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin:20px 0}
-    .feat{border:1px solid var(--border);background:#0f1f34;border-radius:14px;padding:14px}
-    .feat .name{font-weight:700;margin-bottom:6px}
-    footer{border-top:1px solid var(--border);margin-top:24px;padding:16px 0;color:#9fb0c9;font-size:14px}
-    .badge{display:inline-block;padding:2px 8px;border-radius:999px;border:1px solid #2d4677;background:#0f223b;color:#dbe7ff;font-size:12px}
 
-    /* Auth area */
-    #authArea{display:flex;gap:10px;align-items:center}
-    #userNameBadge{max-width:220px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    footer{border-top:1px solid var(--border);margin-top:18px;padding:16px 0;color:#9fb0c9;font-size:14px}
 
     /* RWD */
-    @media (max-width:1000px){ .hero{grid-template-columns:1fr} .grid{grid-template-columns:repeat(2,1fr)} .features{grid-template-columns:repeat(2,1fr)} }
-    @media (max-width:640px){ .grid{grid-template-columns:1fr} .search input{min-width:0;flex:1} }
+    @media (max-width:1100px){ .grid{grid-template-columns:repeat(2,1fr)} .features{grid-template-columns:repeat(2,1fr)} .svc-strip{grid-template-columns:repeat(3,1fr)} }
+    @media (max-width:720px){
+      .grid{grid-template-columns:1fr}
+      .search input{min-width:0;flex:1}
+      .svc-strip{grid-template-columns:repeat(2,1fr)}
+      .cta-bar{flex-direction:column}
+      .btn.big{width:100%}
+    }
   </style>
 </head>
 <body>
@@ -70,7 +108,7 @@
         <span class="badge">Beta</span>
       </div>
 
-      <!-- 右上登入區（Supabase 連動） -->
+      <!-- 右上登入區（Supabase） -->
       <div id="authArea">
         <button id="btnLogin"  class="btn">登入</button>
         <button id="btnLogout" class="btn" style="display:none">登出</button>
@@ -78,35 +116,67 @@
       </div>
     </header>
 
-    <!-- Hero -->
-    <section class="hero">
-      <div class="card">
-        <div class="pad">
-          <h1 class="h1">看影片、做測驗、背單字 —— 一頁完成</h1>
-          <div class="muted" style="margin-bottom:10px">
-            BookWide 用 <b>故事・音樂・電影・新聞・專業主題</b> 帶你學英文。逐句播放、雙語字幕、單字卡與分區測驗，完整練到聽讀寫。
-          </div>
-          <div style="display:flex;gap:8px;flex-wrap:wrap">
-            <a class="btn blue" href="./player.html?slug=mid-autumn">試看：故事《Mid-Autumn》</a>
-            <a class="btn" href="#catalog">瀏覽教材</a>
-          </div>
-        </div>
+    <!-- 簡短說明 & 兩顆大按鈕（縮版 Hero） -->
+    <section class="intro">
+      <h1>看影片、做測驗、背單字 —— 一頁完成</h1>
+      <div class="desc">
+        BookWide 用 <b>故事・音樂・電影・新聞・專業主題</b> 帶你學英文。逐句播放、雙語字幕、單字卡與分區測驗，完整練到聽讀寫。
       </div>
-      <div class="card">
-        <div class="pad">
-          <div class="h2">服務導覽</div>
-          <div class="grid" style="grid-template-columns:1fr;gap:10px">
-            <div class="svc"><div>🎬</div><div><div>故事 Story</div><div class="tag">情境敘事，最適合漸進式輸入</div></div></div>
-            <div class="svc"><div>🎵</div><div><div>音樂 Music</div><div class="tag">歌詞跟讀、押韻、自然發音</div></div></div>
-            <div class="svc"><div>🎥</div><div><div>電影 Movies</div><div class="tag">地道口語、情緒語氣</div></div></div>
-            <div class="svc"><div>📰</div><div><div>新聞 News</div><div class="tag">時事字彙、長句結構</div></div></div>
-            <div class="svc"><div>💼</div><div><div>專業行業 Pro</div><div class="tag">商務、科技、旅遊…專用語</div></div></div>
+      <div class="cta-bar">
+        <a class="btn blue big pill" href="./player.html?slug=mid-autumn">試看：故事《Mid-Autumn》</a>
+        <a class="btn big pill" href="#catalog">瀏覽教材</a>
+      </div>
+
+      <!-- 服務導覽（縮條） -->
+      <div class="svc-strip">
+        <div class="svc"><div>🎬</div><div><div>故事 Story</div><div class="tag">情境敘事，最適合漸進式輸入</div></div></div>
+        <div class="svc"><div>🎵</div><div><div>音樂 Music</div><div class="tag">歌詞跟讀、押韻、自然發音</div></div></div>
+        <div class="svc"><div>🎥</div><div><div>電影 Movies</div><div class="tag">地道口語、情緒語氣</div></div></div>
+        <div class="svc"><div>📰</div><div><div>新聞 News</div><div class="tag">時事字彙、長句結構</div></div></div>
+        <div class="svc"><div>💼</div><div><div>專業行業 Pro</div><div class="tag">商務、科技、旅遊…專用語</div></div></div>
+      </div>
+
+      <!-- 服務導覽（大列表，預留連結到詳細分頁/案例） -->
+      <div class="svc-list">
+        <a class="svc-row" href="./pages/story.html">
+          <div class="svc-icon">🎬</div>
+          <div class="svc-main">
+            <div class="svc-title">故事 Story</div>
+            <div class="svc-sub">情境敘事，最適合漸進式輸入</div>
           </div>
-        </div>
+        </a>
+        <a class="svc-row" href="./pages/music.html">
+          <div class="svc-icon">🎵</div>
+          <div class="svc-main">
+            <div class="svc-title">音樂 Music</div>
+            <div class="svc-sub">歌詞跟讀、押韻、自然發音</div>
+          </div>
+        </a>
+        <a class="svc-row" href="./pages/movies.html">
+          <div class="svc-icon">🎥</div>
+          <div class="svc-main">
+            <div class="svc-title">電影 Movies</div>
+            <div class="svc-sub">地道口語、情緒語氣</div>
+          </div>
+        </a>
+        <a class="svc-row" href="./pages/news.html">
+          <div class="svc-icon">📰</div>
+          <div class="svc-main">
+            <div class="svc-title">新聞 News</div>
+            <div class="svc-sub">時事字彙、長句結構</div>
+          </div>
+        </a>
+        <a class="svc-row" href="./pages/pro.html">
+          <div class="svc-icon">💼</div>
+          <div class="svc-main">
+            <div class="svc-title">專業行業 Pro</div>
+            <div class="svc-sub">商務、科技、旅遊…專用語</div>
+          </div>
+        </a>
       </div>
     </section>
 
-    <!-- 功能亮點 -->
+    <!-- 學習功能 -->
     <section id="services">
       <div class="h2">學習功能</div>
       <div class="features">
@@ -118,7 +188,7 @@
     </section>
 
     <!-- 教材列表 -->
-    <section id="catalog" style="margin-top:12px">
+    <section id="catalog" style="margin-top:6px">
       <div class="toolbar">
         <div class="tabs" id="tabBar">
           <div class="tab on" data-cat="all">全部</div>
@@ -145,14 +215,11 @@
     </footer>
   </div>
 
-  <!-- Supabase SDK（ESM） -->
+  <!-- Supabase（ESM） -->
   <script type="module">
     import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.48.1/+esm";
-
-    // === 你的專案參數（已修正 URL 前綴）===
     const SUPABASE_URL = 'https://qtgwedankftrqjmzuset.supabase.co';
     const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InF0Z3dlZGFua2Z0cnFqbXp1c2V0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTg4NDYxMDMsImV4cCI6MjA3NDQyMjEwM30.jyETpt09pgm66aCZheMgsjtbKlVmYo-lt-hrrt6BF8g';
-
     const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
     const btnLogin  = document.getElementById('btnLogin');
@@ -174,37 +241,21 @@
         btnLogout.style.display = 'none';
       }
     }
-
     async function refreshSession(){
       const { data } = await supabase.auth.getSession();
       showUser(data.session?.user || null);
     }
-
-    // Google OAuth（預設）
     btnLogin.addEventListener('click', async () => {
-      // 設定回跳到目前頁（請同時在 Supabase 設 Provider Redirect URLs）
       const redirectTo = window.location.origin + window.location.pathname;
-      await supabase.auth.signInWithOAuth({
-        provider: 'google',
-        options: { redirectTo }
-      });
-      // 進入 OAuth 流程後會跳轉，不需要再處理
+      await supabase.auth.signInWithOAuth({ provider:'google', options:{ redirectTo } });
     });
-
-    btnLogout.addEventListener('click', async () => {
-      await supabase.auth.signOut();
-      showUser(null);
-    });
-
-    // 初始化：抓目前 session；並監聽狀態改變（例如 OAuth 回來）
+    btnLogout.addEventListener('click', async () => { await supabase.auth.signOut(); showUser(null); });
     refreshSession();
-    supabase.auth.onAuthStateChange((_event, session) => {
-      showUser(session?.user || null);
-    });
+    supabase.auth.onAuthStateChange((_e, session)=> showUser(session?.user || null));
   </script>
 
+  <!-- 清單/搜尋 -->
   <script>
-    /* ====== 以下為清單/搜尋（維持你現有的 UI）====== */
     const CATALOG = [
       { slug:'mid-autumn', title:'Mid-Autumn Festival', cat:'story', mins:2, level:'A2-B1',
         thumb:'./images/thumb-mid-autumn.jpg', tags:['festival','moon','tradition'] },
@@ -222,12 +273,11 @@
         thumb:'./images/thumb-pro.jpg', tags:['business','email'] },
     ];
 
-    const $ = (s, el=document)=>el.querySelector(s);
-    const $$ = (s, el=document)=>[...el.querySelectorAll(s)];
-    const grid = $('#cardGrid'), hint = $('#emptyHint');
+    const $=(s,el=document)=>el.querySelector(s), $$=(s,el=document)=>[...el.querySelectorAll(s)];
+    const grid=$('#cardGrid'), hint=$('#emptyHint');
 
     function cardHTML(it){
-      const url = `./player.html?slug=${encodeURIComponent(it.slug)}`;
+      const url=`./player.html?slug=${encodeURIComponent(it.slug)}`;
       return `
       <a class="video-card" href="${url}">
         <div class="thumb">
@@ -236,52 +286,32 @@
         </div>
         <div class="pad">
           <div class="title">${it.title}</div>
-          <div class="meta">
-            <span>時長 ${it.mins||'–'} 分</span>
-            <span>程度 ${it.level||'–'}</span>
-          </div>
+          <div class="meta"><span>時長 ${it.mins||'–'} 分</span><span>程度 ${it.level||'–'}</span></div>
         </div>
       </a>`;
     }
+    function render(list){ grid.innerHTML=list.map(cardHTML).join(''); hint.style.display=list.length?'none':'block'; }
 
-    function render(list){
-      grid.innerHTML = list.map(cardHTML).join('');
-      hint.style.display = list.length? 'none':'block';
-    }
-
-    const state = { cat:'all', kw:'' };
-
+    const state={cat:'all',kw:''};
     function apply(){
-      const kw = state.kw.trim().toLowerCase();
-      let list = CATALOG.filter(x => state.cat==='all' ? true : x.cat===state.cat);
-      if(kw){
-        list = list.filter(x =>
-          x.title.toLowerCase().includes(kw) ||
-          (x.tags||[]).some(t=>String(t).toLowerCase().includes(kw))
-        );
-      }
+      const kw=state.kw.trim().toLowerCase();
+      let list=CATALOG.filter(x=> state.cat==='all' ? true : x.cat===state.cat);
+      if(kw){ list=list.filter(x=> x.title.toLowerCase().includes(kw) || (x.tags||[]).some(t=>String(t).toLowerCase().includes(kw))); }
       render(list);
     }
-
     $('#tabBar').addEventListener('click', e=>{
-      const btn = e.target.closest('.tab'); if(!btn) return;
+      const btn=e.target.closest('.tab'); if(!btn) return;
       $$('#tabBar .tab').forEach(t=>t.classList.remove('on'));
-      btn.classList.add('on');
-      state.cat = btn.dataset.cat || 'all';
-      apply();
+      btn.classList.add('on'); state.cat=btn.dataset.cat||'all'; apply();
     });
-
     $('#btnSearch').addEventListener('click', ()=>{ state.kw=$('#kw').value||''; apply(); });
     $('#kw').addEventListener('keydown', e=>{ if(e.key==='Enter'){ state.kw=$('#kw').value||''; apply(); } });
 
     (function init(){
-      apply();
-      $('#y').textContent = new Date().getFullYear();
-      const cat = new URLSearchParams(location.search).get('cat');
-      if(cat){
-        const el = document.querySelector(`#tabBar .tab[data-cat="${cat}"]`);
-        if(el){ $$('#tabBar .tab').forEach(t=>t.classList.remove('on')); el.classList.add('on'); state.cat=cat; apply(); }
-      }
+      apply(); $('#y').textContent=new Date().getFullYear();
+      const cat=new URLSearchParams(location.search).get('cat');
+      if(cat){ const el=document.querySelector(`#tabBar .tab[data-cat="${cat}"]`);
+        if(el){ $$('#tabBar .tab').forEach(t=>t.classList.remove('on')); el.classList.add('on'); state.cat=cat; apply(); } }
     })();
   </script>
 </body>
