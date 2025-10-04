@@ -7,7 +7,7 @@
   <meta name="description" content="BookWide：用故事、音樂、電影、新聞與專業主題，快速學英文。支援逐句播放、雙語字幕、測驗、單字卡。"/>
 
   <style>
-    /* ===== 顏色（維持你原本的風格） ===== */
+    /* ===== 顏色（維持原本風格） ===== */
     :root{
       --nav-bg:#0b1324; --nav-ink:#eaf1ff; --nav-muted:#a8b6d3; --nav-badge:#1a2a4a;
       --bg:#ffffff; --ink:#0a0f1a; --muted:#5b667a; --panel:#f4f7fb; --border:#e4e9f2;
@@ -30,7 +30,7 @@
       border:1px solid rgba(255,255,255,.18);background:transparent;cursor:pointer}
     .nav a.btn:hover,.nav button.btn:hover{background:rgba(255,255,255,.06)}
     .nav a.primary{background:#2a0c3d;border-color:#3b1a59}
-    #userNameBadge{color:var(--nav-muted);max-width:200px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    #userNameBadge{color:var(--nav-muted);max-width:220px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 
     /* ===== 內容：白底黑字 ===== */
     .wrap{max-width:1200px;margin:0 auto;padding:18px 16px;background:var(--bg);color:var(--ink)}
@@ -66,7 +66,7 @@
 
     footer{margin:26px 0 10px;color:#748099;font-size:14px}
 
-    /* ===== Auth Modal（極簡） ===== */
+    /* ===== Auth Modal（極簡，貼近你先前的樣式） ===== */
     .modal{position:fixed;inset:0;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,.5);z-index:60}
     .modal.open{display:flex}
     .modal-card{width:min(92vw,380px);background:#0f172a;color:#eaf1ff;border:1px solid rgba(255,255,255,.12);border-radius:14px;padding:16px}
@@ -92,8 +92,8 @@
       </div>
       <div class="nav-spacer"></div>
 
-      <!-- 範例：僅保留按鈕，不動位置與樣式 -->
-      <a class="btn" href="#servicesMenu" style="display:none" aria-hidden="true">服務導覽 ▾</a>
+      <!-- 右上按鈕（不動位置與樣式） -->
+      <a class="btn" href="#services" style="display:none" aria-hidden="true">服務導覽 ▾</a>
       <a class="btn primary" href="#plans">方案價格</a>
       <span id="userNameBadge"></span>
       <button class="btn" id="btnLogin">登入</button>
@@ -112,7 +112,7 @@
       </div>
     </section>
 
-    <!-- 學習功能（維持原樣） -->
+    <!-- 學習功能（原樣） -->
     <section>
       <div class="features">
         <div class="feat"><div class="name">🧠 逐句播放</div><div class="muted">一鍵回放 / 下一句，跟著文本走，不迷路。</div></div>
@@ -136,7 +136,7 @@
       </div>
     </section>
 
-    <!-- 教材卡片（圖片路徑使用 videos/*.jpg） -->
+    <!-- 教材卡片（圖片改用 videos/*.jpg） -->
     <section id="catalog" class="grid"></section>
 
     <footer>
@@ -144,7 +144,7 @@
     </footer>
   </main>
 
-  <!-- ===== Email 登入/註冊 Modal（新增，但放在文件最後） ===== -->
+  <!-- ===== Email 登入/註冊 Modal（不影響版面） ===== -->
   <div class="modal" id="authModal" aria-hidden="true">
     <div class="modal-card">
       <h3 id="authTitle">登入</h3>
@@ -170,7 +170,7 @@
     </div>
   </div>
 
-  <!-- ===== 你的資料渲染：分類/搜尋/卡片（維持原本寫法） ===== -->
+  <!-- ===== 資料渲染（分類/搜尋/卡片） ===== -->
   <script>
     const CATALOG = [
       { slug:'mid-autumn', title:'Mid-Autumn Festival', cat:'story', mins:2, level:'A2-B1', thumb:'./videos/mid-autumn.jpg', tags:['festival','moon','tradition'] },
@@ -207,253 +207,97 @@
     (function init(){apply();$('#y').textContent=(new Date).getFullYear();})();
   </script>
 
-  <!-- ======（保留你原來的兩支）Supabase 與 Login 腳本 ====== -->
-  <script type="module" src="./supa.js"></script>
-  <script type="module" src="./login.js"></script>
-
-  <!-- ====== 追加：忘記密碼 + Modal 控制（依附現有 supa.js/login.js，不改動它們） ====== -->
+  <!-- ===== 單檔合併：Supabase 初始化 + 登入 / 註冊 / 忘記密碼 ===== -->
   <script type="module">
     import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
 
-    // 若 supa.js 還沒有初始化全域 supa，就在這裡保險建立一次
-    if (!window.supa) {
-      const SUPABASE_URL = 'https://qtgwedankftrqjmzuset.supabase.co';
-      const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InF0Z3dlZGFua2Z0cnFqbXp1c2V0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTg4NDYxMDMsImV4cCI6MjA3NDQyMjEwM30.jyETpt09pgm66aCZheMgsjtbKlVmYo-lt-hrrt6BF8g';
-      window.supa = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    /* 你的 Supabase 專案參數 */
+    const SUPABASE_URL = 'https://qtgwedankftrqjmzuset.supabase.co';
+    const SUPABASE_ANON_KEY =
+      'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InF0Z3dlZGFua2Z0cnFqbXp1c2V0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTg4NDYxMDMsImV4cCI6MjA3NDQyMjEwM30.jyETpt09pgm66aCZheMgsjtbKlVmYo-lt-hrrt6BF8g';
+
+    /* 單例 client（避免「Multiple GoTrueClient instances」） */
+    if (!window.supa) window.supa = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    const supa = window.supa;
+
+    /* ===== 右上狀態列 ===== */
+    const btnLogin = document.getElementById('btnLogin');
+    const btnLogout = document.getElementById('btnLogout');
+    const nameBadge = document.getElementById('userNameBadge');
+    function paintUser(u){
+      if(u){ nameBadge.textContent = u.email || u.user_metadata?.name || '已登入';
+             btnLogin.style.display='none'; btnLogout.style.display=''; }
+      else{ nameBadge.textContent = ''; btnLogin.style.display=''; btnLogout.style.display='none'; }
     }
 
-    const $=(s,e=document)=>e.querySelector(s);
-    const modal=$('#authModal'), title=$('#authTitle'), iptEmail=$('#authEmail'),
-          iptPwd=$('#authPassword'), btnToggle=$('#authToggle'),
-          btnCancel=$('#authCancel'), btnSubmit=$('#authSubmit'),
-          btnLogin=$('#btnLogin'), btnLogout=$('#btnLogout'),
-          badge=$('#userNameBadge'), linkForgot=$('#linkForgot'),
-          errBox=$('#authErr');
-
+    /* ===== Modal 控制 ===== */
+    const modal = document.getElementById('authModal');
+    const title = document.getElementById('authTitle');
+    const iptEmail = document.getElementById('authEmail');
+    const iptPwd   = document.getElementById('authPassword');
+    const btnToggle= document.getElementById('authToggle');
+    const btnCancel= document.getElementById('authCancel');
+    const btnSubmit= document.getElementById('authSubmit');
+    const linkForgot = document.getElementById('linkForgot');
+    const errBox = document.getElementById('authErr');
     let mode='signin';
-    function openModal(m='signin'){mode=m; title.textContent=(mode==='signin')?'登入':'註冊';
-      btnToggle.textContent=(mode==='signin')?'沒有帳號？改為註冊':'已有帳號？改為登入';
-      errBox.textContent=''; iptPwd.value=''; modal.classList.add('open'); iptEmail.focus();}
-    function closeModal(){modal.classList.remove('open');}
-    function paintUser(u){ if(u){ badge.textContent=u.email||'已登入'; btnLogin.style.display='none'; btnLogout.style.display=''; }
-                           else{ badge.textContent='';           btnLogin.style.display='';   btnLogout.style.display='none'; }}
 
-    // 交給 login.js 處理一般登入；這裡只接 Modal、忘記密碼與輕量 fallback
-    btnLogin?.addEventListener('click',()=>openModal('signin'));
-    btnLogout?.addEventListener('click',async()=>{ await window.supa.auth.signOut(); paintUser(null); });
-
+    function openModal(m='signin'){
+      mode=m; title.textContent = (mode==='signin')?'登入':'註冊';
+      btnToggle.textContent     = (mode==='signin')?'沒有帳號？改為註冊':'已有帳號？改為登入';
+      errBox.textContent = ''; iptPwd.value=''; modal.classList.add('open'); iptEmail.focus();
+    }
+    function closeModal(){ modal.classList.remove('open'); }
+    btnLogin.addEventListener('click',()=>openModal('signin'));
+    btnLogout.addEventListener('click',async()=>{ await supa.auth.signOut(); paintUser(null); });
     btnToggle.addEventListener('click',()=>openModal(mode==='signin'?'signup':'signin'));
     btnCancel.addEventListener('click',closeModal);
-    document.addEventListener('keydown',e=>{if(e.key==='Escape')closeModal();});
-    modal.addEventListener('click',e=>{if(e.target===modal)closeModal();});
+    document.addEventListener('keydown',e=>{ if(e.key==='Escape') closeModal(); });
+    modal.addEventListener('click',e=>{ if(e.target===modal) closeModal(); });
 
-    btnSubmit.addEventListener('click',async()=>{
-      errBox.textContent='';
-      const email=iptEmail.value.trim(), pwd=iptPwd.value;
-      if(!email || !pwd){errBox.textContent='請輸入 Email 與密碼';return;}
+    /* ===== 送出：登入 / 註冊 ===== */
+    btnSubmit.addEventListener('click', async () => {
+      errBox.textContent = '';
+      const email=(iptEmail.value||'').trim(), pwd=iptPwd.value||'';
+      if(!email || !pwd){ errBox.textContent='請輸入 Email 與密碼'; return; }
       try{
         if(mode==='signin'){
-          const { error } = await window.supa.auth.signInWithPassword({ email, password:pwd });
+          const { error } = await supa.auth.signInWithPassword({ email, password:pwd, options:{ shouldCreateUser:false }});
           if(error) throw error;
           closeModal();
         }else{
-          const { error } = await window.supa.auth.signUp({ email, password:pwd });
+          const { error } = await supa.auth.signUp({ email, password:pwd });
           if(error) throw error;
           errBox.style.color='#9fe0a8';
           errBox.textContent='註冊成功，請至信箱完成驗證（或已自動登入）。';
           setTimeout(closeModal,900);
         }
-      }catch(e){ errBox.style.color=''; errBox.textContent=e?.message||'操作失敗'; }
+      }catch(e){ errBox.style.color=''; errBox.textContent = e?.message || '操作失敗'; }
     });
 
-    // 忘記密碼：寄出重設連結到 reset.html
+    /* ===== 忘記密碼：寄送 reset.html 連結 ===== */
     linkForgot.addEventListener('click', async ()=>{
       errBox.textContent='';
-      const email = (iptEmail.value||'').trim();
+      const email=(iptEmail.value||'').trim();
       if(!email){ errBox.textContent='請先輸入 Email'; return; }
       try{
         const redirectTo = new URL('./reset.html', location.href).href;
-        const { error } = await window.supa.auth.resetPasswordForEmail(email, { redirectTo });
+        const { error } = await supa.auth.resetPasswordForEmail(email, { redirectTo });
         if(error) throw error;
         errBox.style.color='#9fe0a8';
         errBox.textContent='已寄送重設密碼連結，請至信箱查看。';
       }catch(e){ errBox.style.color=''; errBox.textContent=e?.message||'寄送失敗'; }
     });
 
-    // 初始狀態（自動保持登入）
+    /* ===== 初始狀態：自動保持登入 ===== */
     try{
-      const { data } = await window.supa.auth.getSession();
+      const { data } = await supa.auth.getSession();
       paintUser(data?.session?.user || null);
     }catch{}
-
+    supa.auth.onAuthStateChange((_e, session)=>{ paintUser(session?.user || null); });
   </script>
 </body>
 </html>
-<script type="module">
-/* ========= Supabase 初始化 + 登入/登出/忘記密碼（合併版） ========= */
-import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
-
-/* 你的專案參數 */
-const SUPABASE_URL = 'https://qtgwedankftrqjmzuset.supabase.co';
-const SUPABASE_ANON_KEY =
-  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InF0Z3dlZGFua2Z0cnFqbXp1c2V0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTg4NDYxMDMsImV4cCI6MjA3NDQyMjEwM30.jyETpt09pgm66aCZheMgsjtbKlVmYo-lt-hrrt6BF8g';
-
-const supa = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-window.supa = supa; // 以防其他地方要用
-
-/* ====== 幫助函式：右上角顯示使用者狀態 ====== */
-const $ = (s, el = document) => el.querySelector(s);
-const btnLogin = $('#btnLogin');
-const btnLogout = $('#btnLogout');
-const nameBadge = $('#userNameBadge');
-
-function paintUser(user) {
-  if (user) {
-    const display = user.email || user.user_metadata?.name || '已登入';
-    if (nameBadge) nameBadge.textContent = display;
-    if (btnLogin) btnLogin.style.display = 'none';
-    if (btnLogout) btnLogout.style.display = '';
-  } else {
-    if (nameBadge) nameBadge.textContent = '';
-    if (btnLogin) btnLogin.style.display = '';
-    if (btnLogout) btnLogout.style.display = 'none';
-  }
-}
-
-/* ====== 動態建立登入 Modal（不改動原版面結構）====== */
-(function ensureAuthModal() {
-  if ($('#authModal')) return;
-  const html = `
-  <div id="authModal" aria-hidden="true" style="position:fixed;inset:0;display:none;z-index:9999;">
-    <div data-overlay style="position:absolute;inset:0;background:rgba(0,0,0,.5)"></div>
-    <div role="dialog" aria-modal="true"
-         style="position:relative;margin:80px auto;max-width:360px;background:#0f172a;color:#e6efff;border:1px solid #1f2a44;border-radius:14px;box-shadow:0 20px 60px rgba(0,0,0,.5);">
-      <div style="padding:18px;border-bottom:1px solid #1f2a44;display:flex;justify-content:space-between;align-items:center">
-        <div style="font-weight:700">會員登入</div>
-        <button data-close
-          style="background:transparent;color:#9fb0c9;border:0;font-size:20px;cursor:pointer">×</button>
-      </div>
-
-      <div style="padding:16px">
-        <label style="display:block;font-size:14px;color:#9fb0c9;margin:8px 0 4px">Email</label>
-        <input id="authEmail" type="email" placeholder="you@example.com"
-          style="width:100%;height:40px;border:1px solid #2c3e66;background:#0b1324;color:#e6efff;border-radius:10px;padding:0 10px"/>
-
-        <label style="display:block;font-size:14px;color:#9fb0c9;margin:10px 0 4px">密碼</label>
-        <input id="authPass" type="password" placeholder="••••••••"
-          style="width:100%;height:40px;border:1px solid #2c3e66;background:#0b1324;color:#e6efff;border-radius:10px;padding:0 10px"/>
-
-        <div style="display:flex;justify-content:space-between;align-items:center;margin:10px 0">
-          <label style="display:flex;align-items:center;gap:6px;font-size:14px;color:#9fb0c9">
-            <input id="authRemember" type="checkbox" style="accent-color:#3c7cff"/> 自動保持登入
-          </label>
-          <button id="linkForgot" style="background:transparent;border:0;color:#9fb0c9;cursor:pointer">忘記密碼？</button>
-        </div>
-
-        <button id="btnDoLogin"
-          style="width:100%;height:42px;border-radius:10px;background:#14335f;border:1px solid #2c5aa3;color:#fff;cursor:pointer">登入</button>
-        <button id="btnDoSignup"
-          style="width:100%;height:42px;border-radius:10px;background:transparent;border:1px solid #2c5aa3;color:#e6efff;margin-top:8px;cursor:pointer">註冊新帳號</button>
-
-        <div id="authMsg" style="font-size:14px;color:#9fb0c9;margin-top:10px;min-height:20px"></div>
-
-        <div id="forgotArea" style="display:none;margin-top:12px;border-top:1px dashed #2c3e66;padding-top:12px">
-          <div style="font-weight:600;margin-bottom:8px">重設密碼</div>
-          <div style="font-size:14px;color:#9fb0c9;margin-bottom:6px">我們會寄送密碼重設信到上方 Email。</div>
-          <button id="btnSendReset"
-            style="width:100%;height:40px;border-radius:10px;background:#14335f;border:1px solid #2c5aa3;color:#fff;cursor:pointer">寄送重設密碼信</button>
-        </div>
-      </div>
-    </div>
-  </div>`;
-  document.body.insertAdjacentHTML('beforeend', html);
-})();
-
-/* ====== Modal 開關 ====== */
-const modal = $('#authModal');
-const overlay = modal?.querySelector('[data-overlay]');
-const btnClose = modal?.querySelector('[data-close]');
-function openModal()  { if (modal) modal.style.display = 'block'; }
-function closeModal() { if (modal) modal.style.display = 'none';  }
-overlay?.addEventListener('click', closeModal);
-btnClose?.addEventListener('click', closeModal);
-document.addEventListener('keydown', (e)=>{ if(e.key==='Escape') closeModal(); });
-
-/* ====== 登入 / 註冊 / 重設密碼 ====== */
-const iptEmail   = $('#authEmail');
-const iptPass    = $('#authPass');
-const iptRemember= $('#authRemember');
-const msg        = $('#authMsg');
-const btnDoLogin = $('#btnDoLogin');
-const btnDoSignup= $('#btnDoSignup');
-const linkForgot = $('#linkForgot');
-const areaForgot = $('#forgotArea');
-const btnSendReset = $('#btnSendReset');
-
-function m(s, ok=false){ if(msg){ msg.textContent=s||''; msg.style.color= ok?'#5bd3c7':'#9fb0c9'; } }
-
-btnDoLogin?.addEventListener('click', async () => {
-  const email = (iptEmail?.value||'').trim();
-  const password = iptPass?.value||'';
-  if(!email || !password){ m('請輸入 Email 與密碼'); return; }
-  try{
-    // remember 控制 persistent session
-    const persist = iptRemember?.checked;
-    await supa.auth.setSession({ access_token:null, refresh_token:null }); // 保險清一次
-    const { error } = await supa.auth.signInWithPassword({ email, password, options:{ shouldCreateUser:false } });
-    if(error){ m('登入失敗：'+error.message); return; }
-    m('登入成功！', true);
-    setTimeout(closeModal, 600);
-    const { data } = await supa.auth.getSession();
-    paintUser(data?.session?.user||null);
-  }catch(e){ m('發生錯誤：'+(e?.message||e)); }
-});
-
-btnDoSignup?.addEventListener('click', async () => {
-  const email = (iptEmail?.value||'').trim();
-  const password = iptPass?.value||'';
-  if(!email || !password){ m('請輸入 Email 與密碼'); return; }
-  try{
-    const { error } = await supa.auth.signUp({ email, password });
-    if(error){ m('註冊失敗：'+error.message); return; }
-    m('註冊成功！請收信完成驗證。', true);
-  }catch(e){ m('發生錯誤：'+(e?.message||e)); }
-});
-
-linkForgot?.addEventListener('click', ()=>{
-  areaForgot.style.display = areaForgot.style.display==='none' ? 'block':'none';
-});
-
-btnSendReset?.addEventListener('click', async () => {
-  const email = (iptEmail?.value||'').trim();
-  if(!email){ m('請在上方欄位先輸入 Email'); return; }
-  try{
-    // 可改為你的 reset.html 路徑
-    const resetUrl = `${location.origin}${location.pathname.replace(/index\.html?$/,'')}reset.html`;
-    const { error } = await supa.auth.resetPasswordForEmail(email, { redirectTo: resetUrl });
-    if(error){ m('寄送失敗：'+error.message); return; }
-    m('已寄出重設信，請至信箱收信！', true);
-  }catch(e){ m('發生錯誤：'+(e?.message||e)); }
-});
-
-/* ====== 頂部按鈕事件（保持你現有位置/樣式） ====== */
-btnLogin?.addEventListener('click', openModal);
-btnLogout?.addEventListener('click', async ()=>{
-  await supa.auth.signOut();
-  paintUser(null);
-});
-
-/* ====== 初始同步登入狀態 & 監聽變化 ====== */
-(async () => {
-  try {
-    const { data } = await supa.auth.getSession();
-    paintUser(data?.session?.user || null);
-  } catch {}
-})();
-supa.auth.onAuthStateChange((_e, session) => {
-  paintUser(session?.user || null);
-});
-</script>
 
 
 
