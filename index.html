@@ -353,153 +353,32 @@
     })();
   </script>
 
-  <!-- ===== 掛上你現成的 Supabase 與 Login 腳本 ===== -->
-  <!-- supa.js：建立 window.supa 用的 client（請確認已填入正確 URL / ANON KEY） -->
-  <script type="module" src="./supa.js"></script>
-
-  <!-- login.js：綁定 #btnLogin / #btnLogout / #userNameBadge 與 #authModal（Email/密碼） -->
-  <script type="module" src="./login.js"></script>
-</body>
-</html>
+ <!-- === Supabase 初始化修正補丁 === -->
 <script type="module">
-/* ========= Login hotfix (non-destructive) ========= */
-const $  = (s, el=document)=>el.querySelector(s);
-const $$ = (s, el=document)=>[...el.querySelectorAll(s)];
+  import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm'
 
-if (!window.supa) {
-  console.error('[BookWide] Supabase client (window.supa) not found. Check supa.js URL/KEY.');
-}
+  // 建立全域 Supabase client
+  const  SUPABASE_URL = 'https://https://qtgwedankftrqjmzuset.supabase.co';
+  const  SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InF0Z3dlZGFua2Z0cnFqbXp1c2V0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTg4NDYxMDMsImV4cCI6MjA3NDQyMjEwM30.jyETpt09pgm66aCZheMgsjtbKlVmYo-lt-hrrt6BF8g';
 
-const supa = window.supa;
 
-const btnLogin  = $('#btnLogin');
-const btnLogout = $('#btnLogout');
-const nameBadge = $('#userNameBadge');
-
-/* Modal elements (already in index.html styles) */
-const modal       = $('#authModal');
-const ipEmail     = $('#authEmail');
-const ipPassword  = $('#authPassword');
-const btnSubmit   = $('#authSubmit');
-const btnCancel   = $('#authCancel');
-const lblToggle   = $('#authToggle');
-const boxErr      = $('#authErr');
-const ttl         = $('#authTitle');
-
-let authMode = 'login'; // 'login' | 'signup'
-
-function openModal(mode='login'){
-  authMode = mode;
-  if (ttl) ttl.textContent = (authMode==='login')?'登入':'註冊';
-  if (lblToggle) lblToggle.textContent = (authMode==='login')?'沒有帳號？改為註冊':'已有帳號？改為登入';
-  if (boxErr) boxErr.textContent = '';
-  if (ipEmail) ipEmail.value = '';
-  if (ipPassword) ipPassword.value = '';
-  modal?.classList.add('open');
-}
-function closeModal(){ modal?.classList.remove('open'); }
-
-function showUser(user){
-  if (!nameBadge || !btnLogin || !btnLogout) return;
-  if (user) {
-    const display = user.user_metadata?.name || user.user_metadata?.full_name || user.email || '已登入';
-    nameBadge.textContent = display;
-    btnLogin.style.display  = 'none';
-    btnLogout.style.display = '';
+  // 檢查重複定義
+  if (!window.supa) {
+    window.supa = createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
+    console.log('[BookWide] Supabase client 已初始化')
   } else {
-    nameBadge.textContent = '';
-    btnLogin.style.display  = '';
-    btnLogout.style.display = 'none';
+    console.log('[BookWide] 已存在 supa client，略過重複初始化')
   }
-}
 
-async function refreshSession(){
-  try{
-    const { data } = await supa?.auth.getSession();
-    showUser(data?.session?.user || null);
-  }catch(err){
-    console.warn('[BookWide] getSession failed', err);
+  // 確認連線狀態
+  try {
+    const { data, error } = await window.supa.auth.getSession()
+    if (error) console.warn('[BookWide] Supabase 驗證錯誤', error)
+    else console.log('[BookWide] Supabase session 檢查完成')
+  } catch (e) {
+    console.error('[BookWide] Supabase 初始化失敗', e)
+    alert('尚未初始化 Supabase，請檢查 URL / Key 是否正確')
   }
-}
-
-/* === wire buttons === */
-btnLogin?.addEventListener('click', (e)=>{
-  e.preventDefault();
-  if (!supa) { alert('尚未初始化 Supabase，用戶端不可用。'); return; }
-  // 有 modal → 用 modal；沒有就用 prompt 當備援
-  if (modal) openModal('login');
-  else {
-    const email = prompt('Email');
-    const password = prompt('Password');
-    if (!email || !password) return;
-    supa.auth.signInWithPassword({ email, password })
-      .then(({error})=>{
-        if (error) alert(error.message);
-        else refreshSession();
-      });
-  }
-});
-
-btnLogout?.addEventListener('click', async ()=>{
-  try{ await supa?.auth.signOut(); }catch{}
-  showUser(null);
-});
-
-/* Modal actions */
-lblToggle?.addEventListener('click', ()=>{
-  authMode = (authMode==='login')?'signup':'login';
-  ttl.textContent = (authMode==='login')?'登入':'註冊';
-  lblToggle.textContent = (authMode==='login')?'沒有帳號？改為註冊':'已有帳號？改為登入';
-  boxErr.textContent='';
-});
-
-btnCancel?.addEventListener('click', closeModal);
-
-btnSubmit?.addEventListener('click', async ()=>{
-  if (!supa) return;
-  const email = ipEmail?.value?.trim();
-  const password = ipPassword?.value || '';
-  boxErr.textContent = '';
-  if (!email || !password){
-    boxErr.textContent = '請輸入 Email 與密碼';
-    return;
-  }
-  try{
-    if (authMode==='login'){
-      const { error } = await supa.auth.signInWithPassword({ email, password });
-      if (error) throw error;
-      closeModal(); refreshSession();
-    }else{
-      const { error } = await supa.auth.signUp({ email, password });
-      if (error) throw error;
-      // 若專案開啟 Confirm Email，使用者需去收信；這裡還是關 modal 並顯示提示
-      closeModal(); refreshSession();
-      alert('註冊成功。若有啟用信箱驗證，請至信箱收信完成驗證。');
-    }
-  }catch(err){
-    boxErr.textContent = err?.message || '發生錯誤';
-  }
-});
-
-/* Enter 可送出 */
-[ipEmail, ipPassword].forEach(el=>{
-  el?.addEventListener('keydown', e=>{
-    if (e.key==='Enter') btnSubmit?.click();
-  });
-});
-
-/* 點遮罩關閉（可選） */
-modal?.addEventListener('click', (e)=>{
-  if (e.target === modal) closeModal();
-});
-
-/* Auth state */
-supa?.auth.onAuthStateChange((_evt, session)=>{
-  showUser(session?.user || null);
-});
-
-/* init */
-refreshSession();
 </script>
 
 
