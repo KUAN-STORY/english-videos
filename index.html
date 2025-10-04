@@ -7,209 +7,147 @@
   <meta name="description" content="BookWide：用故事、音樂、電影、新聞與專業主題，快速學英文。支援逐句播放、雙語字幕、測驗、單字卡。"/>
 
   <style>
-    /* ===== 色票 ===== */
     :root{
-      /* Navbar（深色） */
-      --nav-bg:#0b1324;
-      --nav-ink:#eaf1ff;
-      --nav-muted:#a8b6d3;
-      --nav-badge:#1a2a4a;
+      --ink:#0b1324;          /* 主體文字（黑系） */
+      --paper:#ffffff;        /* 主體白底 */
+      --muted:#4b5563;
+      --line:#e5e7eb;
+      --accent:#2563eb;
 
-      /* 內容（淺色） */
-      --bg:#ffffff;
-      --ink:#0a0f1a;
-      --muted:#5b667a;
-      --panel:#f4f7fb;
-      --border:#e4e9f2;
-      --accent:#275cf5;
-      --chip:#eef2fb;
+      --bar-bg:#0b1324;       /* 頂欄黑底 */
+      --bar-ink:#ffffff;      /* 頂欄白字 */
+      --bar-muted:#cbd5e1;
     }
-
     *{box-sizing:border-box}
-    html,body{height:100%;margin:0;font-family:ui-sans-serif,system-ui,"Noto Sans TC",Arial}
+    html,body{margin:0;height:100%}
+    body{background:var(--paper);color:var(--ink);font-family:ui-sans-serif,system-ui,"Noto Sans TC"}
     a{color:inherit;text-decoration:none}
-    img{max-width:100%;display:block}
 
-    /* ===== 頂部工具列：黑底白字 ===== */
-    .nav{
-      position:sticky; top:0; z-index:50;
-      background:var(--nav-bg); color:var(--nav-ink);
-      border-bottom:1px solid rgba(255,255,255,.06);
+    /* ====== 頂部黑底工具列 ====== */
+    .topbar{
+      position:sticky;top:0;z-index:50;
+      background:var(--bar-bg); color:var(--bar-ink);
+      border-bottom:1px solid #0f1b30;
     }
-    .nav .bar{
-      max-width:1200px; margin:0 auto; padding:14px 16px;
-      display:flex; align-items:center; gap:14px;
+    .topbar .inner{
+      max-width:1200px;margin:0 auto;
+      display:flex;align-items:center;justify-content:space-between;
+      padding:12px 16px;
     }
-    .brand{display:flex; align-items:center; gap:10px; font-weight:800; font-size:20px}
-    .badge{font-size:12px; padding:2px 8px; border-radius:999px; background:var(--nav-badge); color:#dfe8ff; border:1px solid rgba(255,255,255,.15)}
+    .brand{display:flex;align-items:center;gap:10px;font-weight:800;font-size:20px}
+    .badge{display:inline-block;padding:2px 8px;border-radius:999px;border:1px solid #2d4677;background:#0f223b;color:#dbe7ff;font-size:12px}
 
-    .nav-spacer{flex:1}
+    .nav-right{display:flex;align-items:center;gap:8px}
+    .btn{
+      background:transparent;border:1px solid #1e2b46;color:var(--bar-ink);
+      padding:8px 12px;border-radius:12px;cursor:pointer;
+    }
+    .btn.primary{background:#2b1842;border-color:#2b1842}
+    .btn.pill{border-radius:999px}
+    .btn.ghost{border-color:#26324d}
+    .user-name{color:var(--bar-muted);max-width:220px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 
-    .nav a.btn{
-      padding:8px 12px; border-radius:10px; color:var(--nav-ink);
-      border:1px solid rgba(255,255,255,.18); background:transparent;
-    }
-    .nav a.btn:hover{background:rgba(255,255,255,.06)}
-    .nav a.primary{
-      background:#2a0c3d; border-color:#3b1a59;
-    }
+    /* ====== 內容（白底黑字） ====== */
+    .wrap{max-width:1200px;margin:0 auto;padding:18px 16px 40px}
+    h1{font-size:32px;margin:10px 0 8px}
+    .lead{color:var(--muted)}
+    .cta-row{display:flex;gap:10px;flex-wrap:wrap;margin:10px 0 18px}
+    .cta{border:1px solid var(--line);padding:10px 14px;border-radius:12px;background:#f8fafc;color:#0b1324}
+    .cta.primary{background:#eef2ff;border-color:#dbe3ff;color:#1e3a8a}
 
-    /* 服務導覽下拉 */
-    .dd{position:relative}
-    .dd-toggle{display:flex; align-items:center; gap:6px}
-    .dd-menu{
-      position:absolute; right:0; top:calc(100% + 8px);
-      background:#0f172a; color:#eaf1ff; border:1px solid rgba(255,255,255,.08);
-      border-radius:12px; min-width:280px; padding:6px; display:none;
-      box-shadow:0 12px 40px rgba(0,0,0,.45);
-    }
-    .dd.open .dd-menu{display:block}
-    .dd-item{
-      display:flex; gap:10px; padding:12px; border-radius:10px;
-      border:1px solid transparent;
-    }
-    .dd-item:hover{background:rgba(255,255,255,.05); border-color:rgba(255,255,255,.08)}
-    .dd-ico{width:28px; text-align:center}
+    /* 功能方塊 */
+    .feat-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-top:18px}
+    .feat{border:1px solid var(--line);border-radius:14px;padding:16px;background:#fff}
+    .feat .title{font-weight:700;margin-bottom:6px}
 
-    /* ===== 內容區：白底黑字 ===== */
-    .wrap{max-width:1200px; margin:0 auto; padding:18px 16px; background:var(--bg); color:var(--ink)}
-    .hero{
-      background:var(--panel); border:1px solid var(--border); border-radius:14px;
-      padding:18px; margin:12px 0 18px;
-    }
-    .h1{font-size:28px; font-weight:800; margin:0 0 8px}
-    .muted{color:var(--muted)}
+    /* 類別與搜尋列 */
+    .toolbar{display:flex;gap:8px;align-items:center;margin:12px 0 10px;flex-wrap:wrap}
+    .tab{cursor:pointer;background:#f3f4f6;border:1px solid var(--line);border-radius:10px;padding:8px 12px}
+    .tab.on{background:#e5edff;border-color:#c7d2fe}
+    .search{margin-left:auto;display:flex;gap:8px;align-items:center}
+    .search input{height:40px;min-width:260px;border:1px solid var(--line);background:#fff;border-radius:10px;color:#111827;padding:0 12px}
 
-    .cta-row{display:flex; flex-wrap:wrap; gap:10px; margin-top:10px}
-    .cta{padding:10px 14px; border-radius:12px; border:1px solid #d8e0f0; background:#0b53ff; color:#fff}
-    .cta.secondary{background:#fff; color:#0b53ff; border-color:#cfe0ff}
+    /* 影片卡 */
+    .grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+    .card{border:1px solid var(--line);border-radius:14px;overflow:hidden;background:#fff;color:#0b1324;display:flex;flex-direction:column}
+    .thumb{aspect-ratio:16/9;position:relative;overflow:hidden;background:#000}
+    .thumb img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+    .pill{position:absolute;left:10px;bottom:10px;background:#111827cc;border:1px solid #374151;color:#fff;border-radius:999px;padding:2px 8px;font-size:12px}
+    .card .pad{padding:12px 12px 14px}
+    .title{font-weight:700;margin:6px 0 4px}
+    .meta{display:flex;justify-content:space-between;color:#6b7280;font-size:12px}
 
-    /* 學習功能 */
-    .features{display:grid; grid-template-columns:repeat(4,1fr); gap:14px; margin:10px 0 6px}
-    .feat{
-      background:#fff; border:1px solid var(--border); border-radius:14px; padding:14px;
-    }
-    .feat .name{font-weight:800; margin-bottom:6px}
-    .tabs{display:flex; gap:10px; flex-wrap:wrap; margin:10px 0 18px}
-    .tab{
-      background:var(--chip); border:1px solid var(--border); color:#111; padding:8px 12px; border-radius:999px; cursor:pointer
-    }
-    .tab.on{background:#0b53ff; color:#fff; border-color:#0b53ff}
-
-    /* 搜尋框 */
-    .searchbar{display:flex; gap:8px; align-items:center; margin:6px 0 12px}
-    .searchbar input{
-      flex:1; height:40px; border-radius:10px; border:1px solid var(--border);
-      padding:0 12px; background:#fff; color:#111;
-    }
-    .btn{cursor:pointer; padding:10px 14px; border-radius:12px; border:1px solid var(--border); background:#fff}
-    .btn:hover{background:#f7faff}
-
-    /* 卡片區 */
-    .grid{display:grid; grid-template-columns:repeat(3,1fr); gap:14px}
-    .card{
-      border:1px solid var(--border); border-radius:14px; overflow:hidden; background:#fff; display:flex; flex-direction:column;
-    }
-    .thumb{aspect-ratio:16/9; background:#000; overflow:hidden}
-    .thumb img{width:100%; height:100%; object-fit:cover}
-    .pill{position:absolute; left:10px; bottom:10px; padding:4px 8px; font-size:12px; border-radius:999px; background:#0f223b; color:#dfe8ff; border:1px solid #2c3e66}
-    .thumb-wrap{position:relative}
-    .pad{padding:12px 12px 14px}
-    .title{font-weight:800; margin-bottom:4px}
-    .meta{display:flex; justify-content:space-between; color:var(--muted); font-size:12px}
-
-    footer{margin:26px 0 10px; color:#748099; font-size:14px}
+    footer{border-top:1px solid var(--line);margin-top:28px;padding-top:14px;color:#6b7280;font-size:14px}
 
     /* RWD */
     @media (max-width:1000px){
-      .features{grid-template-columns:repeat(2,1fr)}
+      .feat-grid{grid-template-columns:repeat(2,1fr)}
       .grid{grid-template-columns:repeat(2,1fr)}
+      .search input{min-width:200px}
     }
     @media (max-width:640px){
       .grid{grid-template-columns:1fr}
-      .h1{font-size:22px}
+      .search{width:100%}
+      .search input{flex:1;min-width:0}
     }
   </style>
 </head>
-<body>
 
-  <!-- ===== 頂部工具列（黑底白字） ===== -->
-  <nav class="nav">
-    <div class="bar">
+<body>
+  <!-- ====== 黑底工具列 ====== -->
+  <div class="topbar">
+    <div class="inner">
       <div class="brand">
         <span>BookWide</span>
         <span class="badge">Beta</span>
       </div>
 
-      <div class="nav-spacer"></div>
+      <div class="nav-right">
+        <a class="btn ghost pill" href="#services">服務導覽 ▾</a>
+        <a class="btn primary pill" href="#plans">方案價格</a>
 
-      <!-- 服務導覽（下拉） -->
-      <div class="dd" id="svcDD">
-        <a href="javascript:void(0)" class="btn dd-toggle" id="svcToggle">服務導覽 ▾</a>
-        <div class="dd-menu">
-          <a class="dd-item" href="#catalog" data-cat="story">
-            <div class="dd-ico">🎬</div>
-            <div><div style="font-weight:700">故事 Story</div><div style="color:var(--nav-muted);font-size:12px">情境敘事，最適合漸進式輸入</div></div>
-          </a>
-          <a class="dd-item" href="#catalog" data-cat="music">
-            <div class="dd-ico">🎵</div>
-            <div><div style="font-weight:700">音樂 Music</div><div style="color:var(--nav-muted);font-size:12px">歌詞跟讀、自然發音</div></div>
-          </a>
-          <a class="dd-item" href="#catalog" data-cat="movie">
-            <div class="dd-ico">🎥</div>
-            <div><div style="font-weight:700">電影 Movies</div><div style="color:var(--nav-muted);font-size:12px">地道口語、情緒語氣</div></div>
-          </a>
-          <a class="dd-item" href="#catalog" data-cat="news">
-            <div class="dd-ico">📰</div>
-            <div><div style="font-weight:700">新聞 News</div><div style="color:var(--nav-muted);font-size:12px">時事字彙、長句結構</div></div>
-          </a>
-          <a class="dd-item" href="#catalog" data-cat="pro">
-            <div class="dd-ico">💼</div>
-            <div><div style="font-weight:700">專業行業 Pro</div><div style="color:var(--nav-muted);font-size:12px">商務/工程/旅遊等專用語</div></div>
-          </a>
-        </div>
+        <!-- 登入區（Supabase 綁定） -->
+        <span id="userNameBadge" class="user-name"></span>
+        <button id="btnLogin"  class="btn pill">登入</button>
+        <button id="btnLogout" class="btn pill" style="display:none">登出</button>
       </div>
-
-      <a class="btn primary" href="#plans">方案價格</a>
-      <a class="btn" href="javascript:;" id="btnLogin">登入</a>
     </div>
-  </nav>
+  </div>
 
-  <!-- ===== 內容（白底黑字） ===== -->
-  <main class="wrap">
-    <!-- Hero -->
-    <section class="hero">
-      <div class="h1">看影片、做測驗、背單字 —— 一頁完成</div>
-      <div class="muted">BookWide 用 <b>故事・音樂・電影・新聞・專業主題</b> 帶你學英文。逐句播放、雙語字幕、單字卡與分區測驗，完整練到聽讀寫。</div>
-      <div class="cta-row">
-        <a class="cta" href="./player.html?slug=mid-autumn">試看：故事《Mid-Autumn》</a>
-        <a class="cta secondary" href="#catalog">瀏覽教材</a>
+  <!-- ====== 白底內容 ====== -->
+  <div class="wrap">
+    <h1>看影片、做測驗、背單字 —— 一頁完成</h1>
+    <div class="lead">
+      BookWide 用 <b>故事・音樂・電影・新聞・專業主題</b> 帶你學英文；逐句播放、雙語字幕、單字卡與分區測驗，完整練到聽讀寫。
+    </div>
+    <div class="cta-row">
+      <a class="cta primary" href="./player.html?slug=mid-autumn">試看：故事《Mid-Autumn》</a>
+      <a class="cta" href="#catalog">瀏覽教材</a>
+    </div>
+
+    <!-- 功能方塊 -->
+    <div class="feat-grid" id="services">
+      <div class="feat">
+        <div class="title">🧠 逐句播放</div>
+        <div class="lead">一鍵回放 / 下一句，跟著文本走，不迷路。</div>
       </div>
-    </section>
-
-    <!-- 學習功能 -->
-    <section>
-      <div class="features">
-        <div class="feat">
-          <div class="name">🧠 逐句播放</div>
-          <div class="muted">一鍵回放 / 下一句，跟著文本走，不迷路。</div>
-        </div>
-        <div class="feat">
-          <div class="name">🌗 雙語字幕</div>
-          <div class="muted">英文在上、中文在下，手機也能長句不斷行。</div>
-        </div>
-        <div class="feat">
-          <div class="name">📝 分區測驗</div>
-          <div class="muted">Vocabulary / Grammar / Reading / Mixed 四分區評量。</div>
-        </div>
-        <div class="feat">
-          <div class="name">📚 單字卡</div>
-          <div class="muted">遮字填空、朗讀、快速跳段，真正用到的字才記得住。</div>
-        </div>
+      <div class="feat">
+        <div class="title">🌗 雙語字幕</div>
+        <div class="lead">英文在上、中文在下，手機也能長句不斷行。</div>
       </div>
+      <div class="feat">
+        <div class="title">📝 分區測驗</div>
+        <div class="lead">Vocabulary / Grammar / Reading / Mixed 四分區評量。</div>
+      </div>
+      <div class="feat">
+        <div class="title">📚 單字卡</div>
+        <div class="lead">遮字填空、朗讀、快速跳段，真正用到的字才記得住。</div>
+      </div>
+    </div>
 
-      <!-- 分類/搜尋 -->
-      <div class="tabs" id="tabBar">
+    <!-- 類別與搜尋 -->
+    <div class="toolbar">
+      <div id="tabBar" style="display:flex;gap:8px">
         <div class="tab on" data-cat="all">全部</div>
         <div class="tab" data-cat="story">故事</div>
         <div class="tab" data-cat="music">音樂</div>
@@ -217,97 +155,79 @@
         <div class="tab" data-cat="news">新聞</div>
         <div class="tab" data-cat="pro">專業行業</div>
       </div>
-      <div class="searchbar">
-        <input id="kw" type="search" placeholder="搜尋標題、關鍵字…">
-        <button class="btn" id="btnSearch">搜尋</button>
+      <div class="search">
+        <input id="kw" type="search" placeholder="搜尋標題、關鍵字…"/>
+        <button class="tab" id="btnSearch">搜尋</button>
       </div>
-    </section>
+    </div>
 
-    <!-- 教材卡片 -->
-    <section id="catalog" class="grid"></section>
+    <!-- 影片卡 -->
+    <div class="grid" id="cardGrid"></div>
+    <div id="emptyHint" style="display:none;color:#6b7280;margin-top:8px">（沒有符合條件的教材）</div>
 
-    <footer>
-      © <span id="y"></span> BookWide · 建議使用最新 Chrome / Edge / Safari。若影片或字幕未載入，請確認 <code>./videos/</code>、<code>./data/</code> 目錄與檔名（slug）一致。
+    <footer id="plans">
+      <div>© <span id="y"></span> BookWide. 由影片 x 語言教育打造。</div>
+      <div>建議使用最新 Chrome / Edge / Safari。若影片或字幕未載入，請確認 <code>./videos/</code>、<code>./data/</code> 目錄與檔名（slug）一致。</div>
     </footer>
-  </main>
+  </div>
+
+  <!-- ========= Supabase：先載 SDK，再載你的 supa.js ⇒ login.js ========= -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="./supa.js"></script>   <!-- 建立全域 supa client（你提供的檔） -->
+  <script src="./login.js"></script>  <!-- 綁定登入/登出/顯示使用者（你提供的檔） -->
 
   <script>
-    // ===== 假資料（可擴充） =====
+    /* ====== 教材清單 / 搜尋（白底版 UI） ====== */
     const CATALOG = [
       { slug:'mid-autumn', title:'Mid-Autumn Festival', cat:'story', mins:2, level:'A2-B1',
         thumb:'./videos/mid-autumn.jpg', tags:['festival','moon','tradition'] },
       { slug:'houyi', title:'Hou Yi and the Ten Suns', cat:'story', mins:3, level:'A2-B1',
         thumb:'./videos/houyi.jpg', tags:['legend','archer'] },
       { slug:'lantern', title:'Lantern Festival', cat:'story', mins:2, level:'A2',
-        thumb:'./videos/lantern.jpg', tags:['lantern','culture'] },
+        thumb:'./videos/lantern.jpg', tags:['lantern','culture'] }
     ];
 
     const $ = (s, el=document)=>el.querySelector(s);
     const $$ = (s, el=document)=>[...el.querySelectorAll(s)];
+    const grid = $('#cardGrid'), hint = $('#emptyHint');
 
-    // 服務導覽下拉
-    const svcDD = $('#svcDD'), svcToggle = $('#svcToggle');
-    svcToggle.addEventListener('click', () => svcDD.classList.toggle('open'));
-    document.addEventListener('click', e=>{
-      if(!svcDD.contains(e.target)) svcDD.classList.remove('open');
-    });
-    // 下拉點分類 → 捲動並套用
-    $$('.dd-menu a').forEach(a=>{
-      a.addEventListener('click',()=>{
-        const cat=a.dataset.cat||'all';
-        const el=$(`#tabBar .tab[data-cat="${cat}"]`);
-        if(el){ $$('#tabBar .tab').forEach(t=>t.classList.remove('on')); el.classList.add('on'); state.cat=cat; apply(); }
-        svcDD.classList.remove('open');
-        document.getElementById('catalog')?.scrollIntoView({behavior:'smooth'});
-      })
-    });
-
-    // 卡片產生
-    const grid = document.getElementById('catalog');
     function cardHTML(it){
       const url = `./player.html?slug=${encodeURIComponent(it.slug)}`;
       return `
-      <a class="card" href="${url}">
-        <div class="thumb-wrap">
-          <div class="thumb"><img src="${it.thumb||''}" alt="${it.title}" onerror="this.style.opacity=.6"></div>
-          <div class="pill">${it.cat==='story'?'故事':it.cat==='music'?'音樂':it.cat==='movie'?'電影':it.cat==='news'?'新聞':'專業'}</div>
-        </div>
-        <div class="pad">
-          <div class="title">${it.title}</div>
-          <div class="meta"><span>時長 ${it.mins||'–'} 分</span><span>程度 ${it.level||'–'}</span></div>
-        </div>
-      </a>`;
+        <a class="card" href="${url}">
+          <div class="thumb">
+            <img src="${it.thumb||''}" alt="${it.title}" onerror="this.style.opacity=.5">
+            <div class="pill">${(it.cat==='story'?'故事':it.cat==='music'?'音樂':it.cat==='movie'?'電影':it.cat==='news'?'新聞':'專業')}</div>
+          </div>
+          <div class="pad">
+            <div class="title">${it.title}</div>
+            <div class="meta"><span>時長 ${it.mins||'–'} 分</span><span>程度 ${it.level||'–'}</span></div>
+          </div>
+        </a>`;
     }
-    function render(list){ grid.innerHTML = list.map(cardHTML).join(''); }
-
-    // 分類 / 搜尋
+    function render(list){ grid.innerHTML = list.map(cardHTML).join(''); hint.style.display = list.length?'none':'block'; }
     const state = { cat:'all', kw:'' };
     function apply(){
       const kw = state.kw.trim().toLowerCase();
       let list = CATALOG.filter(x => state.cat==='all' ? true : x.cat===state.cat);
       if(kw){
-        list = list.filter(x =>
-          x.title.toLowerCase().includes(kw) ||
-          (x.tags||[]).some(t=>String(t).toLowerCase().includes(kw))
-        );
+        list = list.filter(x => x.title.toLowerCase().includes(kw) || (x.tags||[]).some(t=>String(t).toLowerCase().includes(kw)));
       }
       render(list);
     }
     $('#tabBar').addEventListener('click', e=>{
-      const btn=e.target.closest('.tab'); if(!btn) return;
+      const btn = e.target.closest('.tab'); if(!btn) return;
       $$('#tabBar .tab').forEach(t=>t.classList.remove('on'));
-      btn.classList.add('on'); state.cat=btn.dataset.cat||'all'; apply();
+      btn.classList.add('on');
+      state.cat = btn.dataset.cat || 'all'; apply();
     });
     $('#btnSearch').addEventListener('click', ()=>{ state.kw=$('#kw').value||''; apply(); });
     $('#kw').addEventListener('keydown', e=>{ if(e.key==='Enter'){ state.kw=$('#kw').value||''; apply(); } });
 
-    // 啟動
     (function init(){
-      apply();
-      $('#y').textContent = new Date().getFullYear();
+      apply(); $('#y').textContent = new Date().getFullYear();
       const cat = new URLSearchParams(location.search).get('cat');
-      if(cat){
-        const el = document.querySelector(`#tabBar .tab[data-cat="${cat}"]`);
+      if(cat){ const el=document.querySelector(`#tabBar .tab[data-cat="${cat}"]`);
         if(el){ $$('#tabBar .tab').forEach(t=>t.classList.remove('on')); el.classList.add('on'); state.cat=cat; apply(); }
       }
     })();
