@@ -50,9 +50,7 @@
       border:1px solid rgba(255,255,255,.18); background:transparent; cursor:pointer;
     }
     .nav a.btn:hover, .nav button.btn:hover{background:rgba(255,255,255,.06)}
-    .nav a.primary{
-      background:#2a0c3d; border-color:#3b1a59;
-    }
+    .nav a.primary{ background:#2a0c3d; border-color:#3b1a59; }
     #userNameBadge{color:var(--nav-muted); max-width:200px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
 
     /* 服務導覽下拉 */
@@ -87,9 +85,7 @@
 
     /* 學習功能 */
     .features{display:grid; grid-template-columns:repeat(4,1fr); gap:14px; margin:10px 0 6px}
-    .feat{
-      background:#fff; border:1px solid var(--border); border-radius:14px; padding:14px;
-    }
+    .feat{ background:#fff; border:1px solid var(--border); border-radius:14px; padding:14px; }
     .feat .name{font-weight:800; margin-bottom:6px}
     .tabs{display:flex; gap:10px; flex-wrap:wrap; margin:10px 0 18px}
     .tab{
@@ -184,7 +180,7 @@
 
       <a class="btn primary" href="#plans">方案價格</a>
 
-      <!-- 登入區（login.js 會控制顯示/隱藏） -->
+      <!-- 登入區 -->
       <span id="userNameBadge"></span>
       <button class="btn" id="btnLogin">登入</button>
       <button class="btn" id="btnLogout" style="display:none">登出</button>
@@ -247,7 +243,7 @@
     </footer>
   </main>
 
-  <!-- ===== Email 登入 Modal（給 login.js 使用） ===== -->
+  <!-- ===== Email 登入 Modal ===== -->
   <div class="modal" id="authModal" aria-hidden="true">
     <div class="modal-card">
       <h3 id="authTitle">登入</h3>
@@ -353,33 +349,122 @@
     })();
   </script>
 
- <!-- === Supabase 初始化修正補丁 === -->
-<script type="module">
-  import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm'
+  <!-- === Supabase 初始化（修正 & fallback 一次到位） === -->
+  <script type="module">
+    import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm'
 
-  // 建立全域 Supabase client
-  const  SUPABASE_URL = 'https://https://qtgwedankftrqjmzuset.supabase.co';
-  const  SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InF0Z3dlZGFua2Z0cnFqbXp1c2V0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTg4NDYxMDMsImV4cCI6MjA3NDQyMjEwM30.jyETpt09pgm66aCZheMgsjtbKlVmYo-lt-hrrt6BF8g';
+    // ✅ 正確的 URL 與 Key
+    const SUPABASE_URL = 'https://qtgwedankftrqjmzuset.supabase.co';
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InF0Z3dlZGFua2Z0cnFqbXp1c2V0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTg4NDYxMDMsImV4cCI6MjA3NDQyMjEwM30.jyETpt09pgm66aCZheMgsjtbKlVmYo-lt-hrrt6BF8g';
 
+    // 建立全域 Supabase client（若已存在則復用）
+    if (!window.supa) {
+      window.supa = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+      console.log('[BookWide] Supabase client 已初始化');
+    } else {
+      console.log('[BookWide] 已存在 supa client，略過重複初始化');
+    }
 
-  // 檢查重複定義
-  if (!window.supa) {
-    window.supa = createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
-    console.log('[BookWide] Supabase client 已初始化')
-  } else {
-    console.log('[BookWide] 已存在 supa client，略過重複初始化')
-  }
+    // 小工具
+    const $ = (s, el=document)=>el.querySelector(s);
 
-  // 確認連線狀態
-  try {
-    const { data, error } = await window.supa.auth.getSession()
-    if (error) console.warn('[BookWide] Supabase 驗證錯誤', error)
-    else console.log('[BookWide] Supabase session 檢查完成')
-  } catch (e) {
-    console.error('[BookWide] Supabase 初始化失敗', e)
-    alert('尚未初始化 Supabase，請檢查 URL / Key 是否正確')
-  }
-</script>
+    const btnLogin  = $('#btnLogin');
+    const btnLogout = $('#btnLogout');
+    const badge     = $('#userNameBadge');
+
+    const modal     = $('#authModal');
+    const authTitle = $('#authTitle');
+    const iptEmail  = $('#authEmail');
+    const iptPwd    = $('#authPassword');
+    const btnToggle = $('#authToggle');
+    const btnCancel = $('#authCancel');
+    const btnSubmit = $('#authSubmit');
+    const errBox    = $('#authErr');
+
+    let mode = 'signin'; // 或 'signup'
+
+    function openModal(m='signin'){
+      mode = m;
+      authTitle.textContent = (mode==='signin') ? '登入' : '註冊';
+      btnToggle.textContent = (mode==='signin') ? '沒有帳號？改為註冊' : '已有帳號？改為登入';
+      errBox.textContent = '';
+      iptPwd.value = '';
+      modal.classList.add('open');
+      iptEmail.focus();
+    }
+    function closeModal(){ modal.classList.remove('open'); }
+
+    function paintUser(user){
+      if (user) {
+        const name = user.user_metadata?.name || user.email || '已登入';
+        badge.textContent = name;
+        btnLogin.style.display='none';
+        btnLogout.style.display='';
+      }else{
+        badge.textContent = '';
+        btnLogin.style.display='';
+        btnLogout.style.display='none';
+      }
+    }
+
+    // 初始 session
+    try{
+      const { data } = await window.supa.auth.getSession();
+      paintUser(data?.session?.user || null);
+      console.log('[BookWide] Supabase session 檢查完成');
+    }catch(e){
+      console.error('[BookWide] Supabase 初始化失敗', e);
+      alert('尚未初始化 Supabase，請檢查 URL / Key 是否正確');
+    }
+
+    // 監聽狀態
+    window.supa.auth.onAuthStateChange((_evt, session)=>{
+      paintUser(session?.user || null);
+    });
+
+    // 登入 / 登出
+    btnLogin.addEventListener('click', ()=> openModal('signin'));
+    btnLogout.addEventListener('click', async ()=>{
+      await window.supa.auth.signOut();
+      paintUser(null);
+    });
+
+    // modal 內部行為
+    btnToggle.addEventListener('click', ()=> openModal(mode==='signin'?'signup':'signin'));
+    btnCancel.addEventListener('click', closeModal);
+
+    btnSubmit.addEventListener('click', async ()=>{
+      errBox.textContent='';
+      const email = iptEmail.value.trim();
+      const pwd   = iptPwd.value;
+
+      if(!email || !pwd){ errBox.textContent='請輸入 Email 與密碼'; return; }
+
+      try{
+        if(mode==='signin'){
+          const { error } = await window.supa.auth.signInWithPassword({ email, password: pwd });
+          if(error) throw error;
+          closeModal();
+        }else{
+          const { error } = await window.supa.auth.signUp({ email, password: pwd });
+          if(error) throw error;
+          errBox.style.color='#9fe0a8';
+          errBox.textContent='註冊成功，已自動登入或請去收信完成驗證。';
+          setTimeout(closeModal, 800);
+        }
+      }catch(e){
+        errBox.textContent = e?.message || '操作失敗，請稍後再試';
+      }
+    });
+
+    // Esc 關閉
+    document.addEventListener('keydown', e=>{ if(e.key==='Escape') closeModal(); });
+    modal.addEventListener('click', e=>{ if(e.target===modal) closeModal(); });
+  </script>
+
+</body>
+</html>
+
 
 
 
