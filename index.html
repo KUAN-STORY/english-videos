@@ -1,124 +1,406 @@
 <!doctype html>
 <html lang="zh-Hant">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>BookWide · 英語學習入口</title>
-  <meta name="description" content="BookWide：用故事、音樂、電影、新聞與專業主題，快速學英文。支援影片段落、雙語字幕、測驗、單字卡。" />
-  <style>
-    :root{
-      --bg:#0b1324; --panel:#0f172a; --ink:#e6efff; --muted:#9fb0c9;
-      --primary:#3c7cff; --border:#1f2a44;
-    }
-    *{box-sizing:border-box}
-    html,body{height:100%;margin:0;background:var(--bg);color:var(--ink);font-family:ui-sans-serif,system-ui,"Noto Sans TC"}
-    a{color:inherit;text-decoration:none}
-    .btn{background:#13233f;border:1px solid #24446f;border-radius:10px;padding:8px 12px;color:#fff;cursor:pointer}
-    .btn.blue{background:#14335f;border-color:#2c5aa3}
-    .muted{color:var(--muted)}
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>英語影片播放器 · BookWide</title>
+<style>
+  :root{--bg:#0b1324;--panel:#0f172a;--border:#1f2a44;--ink:#e6efff;--muted:#9fb0c9;--accent:#3c7cff;--ok:#10b981}
+  *{box-sizing:border-box}
+  html,body{height:100%;margin:0;background:var(--bg);color:var(--ink);font-family:ui-sans-serif,system-ui,"Noto Sans TC"}
+  h1{font-size:20px;margin:0}
+  .btn{background:#13233f;border:1px solid #24446f;border-radius:10px;padding:8px 12px;color:#fff;cursor:pointer}
+  .btn.blue{background:#14335f;border-color:#2c5aa3}
+  .btn.green{background:#0f3d39;border-color:#1f7a6d}
+  .muted{color:var(--muted)}
+  header{display:flex;align-items:center;justify-content:space-between;padding:14px 20px;background:#0f172a;border-bottom:1px solid #0e203f}
 
-    /* ===== 置頂導覽（右上登入） ===== */
-    .site-header{
-      position:sticky; top:0; z-index:50;
-      display:flex; align-items:center; justify-content:space-between;
-      padding:14px 20px; background:#0f172a; border-bottom:1px solid #0e203f;
-    }
-    .brand{display:flex; align-items:center; gap:10px}
-    .brand h1{font-size:22px; margin:0}
-    .beta{font-size:12px; padding:2px 6px; border:1px solid #27406d; border-radius:999px; color:#9fb0c9}
-    .auth{display:flex; align-items:center; gap:10px; margin-left:auto}
+  .wrap{padding:16px;height:calc(100vh - 58px)}
+  .layout{height:100%;display:flex;gap:16px;overflow:hidden}
+  .left,.right{flex:1;min-width:0;background:var(--panel);border:1px solid var(--border);border-radius:12px}
+  .left{display:flex;flex-direction:column;padding:14px}
+  .right{display:flex;flex-direction:column}
+  .pane{flex:1;overflow:auto}
 
-    /* ===== 主內容 ===== */
-    .wrap{max-width:1100px; margin:0 auto; padding:18px}
-    .section{background:var(--panel); border:1px solid var(--border); border-radius:14px; padding:18px; margin-top:14px}
-    .section h2{margin:0 0 8px 0; font-size:18px}
-    .grid{display:grid; grid-template-columns:repeat(3,1fr); gap:12px}
-    .card{background:#0e1b2e; border:1px solid #1a2b49; border-radius:12px; padding:14px}
-    .card h3{margin:0 0 6px 0; font-size:16px}
-    .card p{margin:0; color:#cfd9ff; font-size:14px}
+  .videoWrap{position:relative;width:100%;aspect-ratio:16/9;background:#000;border-radius:10px;overflow:hidden}
+  .videoWrap video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;background:#000}
 
-    @media (max-width: 840px){
-      .grid{grid-template-columns:repeat(2,1fr)}
-    }
-    @media (max-width: 520px){
-      .brand h1{font-size:18px}
-      .grid{grid-template-columns:1fr}
-      .auth .btn{padding:6px 10px}
-    }
+  .controls{margin-top:12px;background:#0e2038;border:1px solid #183459;border-radius:12px;padding:12px}
+  .controls .row{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:.25rem 0}
+  .chip{display:inline-flex;align-items:center;gap:6px;padding:7px 10px;border:1px solid #23446c;border-radius:10px;background:#10233d}
+  .speed{display:flex;align-items:center;gap:10px}
+  input[type="range"]{width:260px;accent-color:var(--accent)}
 
-    /* 頁尾 */
-    footer{color:#9fb0c9; font-size:12px; padding:20px 18px; text-align:center}
-  </style>
+  .tabs{display:flex;gap:8px;padding:10px;border-bottom:1px solid var(--border)}
+  .tab{cursor:pointer;background:#122340;border:1px solid #1f375f;border-radius:10px;padding:8px 12px}
+  .tab.active{background:#154274}
+
+  table{width:100%;border-collapse:collapse}
+  th,td{padding:10px 12px;border-bottom:1px solid #162a48;vertical-align:top}
+  tbody tr{background:#0f1f34}
+  tbody tr:nth-child(2n){background:#0d1a2b}
+  tbody tr:hover{background:#0f2a4e}
+  tr.active{background:#173a6e}
+
+  /* 桌機字幕行距 */
+  #pane-sub td:nth-child(2),#pane-sub td:nth-child(3){word-break:break-word;white-space:normal;line-height:1.6}
+
+  /* ===== 手機：影片固定於頂、右側滾動、底部抽屜 ===== */
+  @media (max-width:900px){
+    .wrap{height:calc(100vh - 58px);padding:12px}
+    .layout{flex-direction:column;height:100%}
+    .left{position:sticky;top:0;z-index:5;padding:12px}
+    .right{flex:1;min-height:0;display:flex;flex-direction:column}
+    .pane{flex:1;overflow:auto;padding-bottom:92px}
+
+    .controls{position:fixed;left:8px;right:8px;bottom:8px;border-radius:16px 16px 12px 12px;box-shadow:0 10px 30px rgba(0,0,0,.4);transform:translateY(calc(100% - 28px));transition:transform .25s ease;padding:6px 10px 10px;z-index:20}
+    .controls.open{transform:translateY(0)}
+    .drawer-grab{width:100%;text-align:center;cursor:pointer;user-select:none;padding:4px 0 8px;margin-bottom:6px}
+    .grab-bar{width:44px;height:4px;border-radius:4px;margin:0 auto 4px;background:#2b4a78}
+    .drawer-title{font-size:12px;color:#9fb0c9}
+
+    /* 手機字幕：時間→英→中 堆疊；中文字自然換行 */
+    #pane-sub table thead{display:none}
+    #pane-sub table,#pane-sub tbody,#pane-sub tr,#pane-sub td{display:block;width:100%}
+    #pane-sub tr{border-bottom:1px solid #162a48;padding:10px 0}
+    #pane-sub td{padding:6px 12px}
+    #pane-sub td:nth-child(1){font-size:12px;color:var(--muted);margin-bottom:4px}
+    #pane-sub td:nth-child(2){font-size:17px;line-height:1.55;color:#e6efff;margin-bottom:4px}
+    #pane-sub td:nth-child(3){font-size:16px;line-height:1.9;color:#dfe8ff;word-break:keep-all;overflow-wrap:anywhere;line-break:loose;letter-spacing:0}
+
+    /* 測驗/單字專心模式：隱藏影片與抽屜 */
+    body.focus-mode .left{display:none!important}
+    body.focus-mode #controlsDrawer{display:none!important}
+    body.focus-mode .right{flex:1!important}
+  }
+
+  /* 手機閱讀模式（未勾跟隨＋在字幕頁） */
+  @media (max-width:900px){
+    body.read-mode #pane-sub table thead{display:none}
+    body.read-mode #pane-sub td:nth-child(2){font-size:18px;line-height:1.7;margin:10px 0 2px}
+    body.read-mode #pane-sub td:nth-child(3){font-size:17px;line-height:1.9;margin:0 0 16px}
+  }
+</style>
 </head>
 <body>
-  <!-- 置頂：品牌 + 右上登入 -->
-  <header class="site-header">
-    <div class="brand">
-      <h1>BookWide</h1>
-      <span class="beta">Beta</span>
-    </div>
-    <div class="auth" id="authArea">
+  <header>
+    <h1>英語影片播放器</h1>
+    <div id="authArea" style="display:flex;gap:10px;align-items:center">
       <button id="btnLogin" class="btn">登入</button>
       <button id="btnLogout" class="btn" style="display:none">登出</button>
       <span id="userNameBadge" class="muted"></span>
     </div>
   </header>
 
-  <!-- 主內容（可自由替換；目前放基本入口） -->
-  <main class="wrap">
-    <section class="section">
-      <h2>快速開始</h2>
-      <div class="grid">
-        <a class="card" href="./player.html?slug=mid-autumn">
-          <h3>故事 · Mid-Autumn Festival</h3>
-          <p>雙語字幕、單字、測驗與列印成績單</p>
-        </a>
-        <a class="card" href="./player.html?slug=houyi">
-          <h3>故事 · Hou Yi (Ten Suns)</h3>
-          <p>句子點播、重複練習、速度調整</p>
-        </a>
-        <a class="card" href="./player.html?slug=lantern">
-          <h3>故事 · Lantern Festival</h3>
-          <p>中文置於英文下方的閱讀版字幕</p>
-        </a>
-      </div>
-    </section>
+  <div class="wrap">
+    <div class="layout">
+      <!-- 左：影片 + 工具列 -->
+      <section class="left">
+        <div id="videoWrap" class="videoWrap">
+          <video id="player" playsinline controls></video>
+        </div>
 
-    <section class="section">
-      <h2>主題分類</h2>
-      <div class="grid">
-        <div class="card">
-          <h3>故事 Story</h3>
-          <p>已上架 ≈ 50 部，持續更新。</p>
-        </div>
-        <div class="card">
-          <h3>音樂 Music</h3>
-          <p>歌詞對讀、關鍵句型、片段循環（規劃中）。</p>
-        </div>
-        <div class="card">
-          <h3>電影 Movie</h3>
-          <p>名場面語料、角色台詞對練（規劃中）。</p>
-        </div>
-        <div class="card">
-          <h3>新聞 News</h3>
-          <p>每天 5 則要聞＋重點單字（規劃中）。</p>
-        </div>
-        <div class="card">
-          <h3>專業行業 Pro</h3>
-          <p>商務/工程/餐旅等領域英語（規劃中）。</p>
-        </div>
-        <div class="card">
-          <h3>學習曲線</h3>
-          <p>登入後可記錄學習進度與成績（規劃中）。</p>
-        </div>
-      </div>
-    </section>
-  </main>
+        <div class="controls" id="controlsDrawer">
+          <div class="drawer-grab" id="drawerGrab">
+            <div class="grab-bar"></div>
+            <div class="drawer-title">播放工具列（點擊展開/收合）</div>
+          </div>
 
-  <footer>© 2025 BookWide — Practice makes progress.</footer>
+          <div class="row">
+            <button id="btnPrev" class="btn">⏮ 上一句</button>
+            <button id="btnPlay" class="btn">▶️ 播放 / 暫停</button>
+            <button id="btnNext" class="btn">⏭ 下一句</button>
+            <button id="btnReplay" class="btn">🔁 重複本句</button>
+          </div>
 
-  <!-- 登入邏輯（你原本的檔案） -->
-  <script src="./login.js"></script>
+          <div class="row">
+            <label class="chip"><input id="chkFollow" type="checkbox"/> 跟隨</label>
+            <span class="chip">偏移 <span id="offsetVal">0.0s</span></span>
+            <button id="btnOffsetMinus" class="btn">-0.5s</button>
+            <button id="btnOffsetPlus" class="btn">+0.5s</button>
+          </div>
+
+          <div class="row speed">
+            <span class="muted">速度</span>
+            <input id="speedRange" type="range" min="0.5" max="2" step="0.05" value="1"/>
+            <span id="speedVal">1.00x</span>
+          </div>
+        </div>
+      </section>
+
+      <!-- 右：字幕 / 測驗 / 單字 -->
+      <section class="right">
+        <div class="tabs">
+          <div class="tab active" data-tab="sub">字幕</div>
+          <div class="tab" data-tab="quiz">測驗</div>
+          <div class="tab" data-tab="vocab">單字</div>
+        </div>
+
+        <div class="pane">
+          <!-- 字幕 -->
+          <div id="pane-sub">
+            <table>
+              <thead>
+                <tr><th style="width:80px">時間</th><th>英文</th><th style="width:40%">中文</th></tr>
+              </thead>
+              <tbody id="cuesBody"></tbody>
+            </table>
+            <div id="cuesStatus" class="muted" style="padding:10px 14px"></div>
+          </div>
+
+          <!-- 測驗 -->
+          <div id="pane-quiz" style="display:none">
+            <div class="quiz-shell" style="padding:10px 14px">
+              <div id="quizTabs" class="q-tabs" style="margin:6px 0 10px 0;">
+                <button class="qtab on" data-sec="Vocabulary">單字</button>
+                <button class="qtab" data-sec="Grammar">文法</button>
+                <button class="qtab" data-sec="Reading">閱讀</button>
+                <button class="qtab" data-sec="Mixed">綜合</button>
+                <span id="quizMeta" class="muted" style="margin-left:12px"></span>
+              </div>
+              <ol id="quizList" style="line-height:1.6"></ol>
+              <div class="q-actions" style="margin:14px 0 6px; display:flex; gap:8px; align-items:center;">
+                <button class="btn" id="btnSubmitQuiz">交卷</button>
+                <button class="btn" id="btnShowAnswer" style="display:none">顯示答案</button>
+                <button class="btn" id="btnPrintQuiz" style="display:none">列印成績單</button>
+                <span id="quizScore" style="margin-left:8px"></span>
+              </div>
+              <div id="quizResult" style="display:none;margin-top:10px"></div>
+            </div>
+          </div>
+
+          <!-- 單字 -->
+          <div id="pane-vocab" style="display:none;padding:0 14px 14px">
+            <div id="vocabStatus" class="muted">( 單字載入中… )</div>
+            <div id="vocabBox"></div>
+          </div>
+        </div>
+      </section>
+    </div>
+  </div>
+
+  <!-- Supabase SDK -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+
+  <script>
+  /************ 基本工具 ************/
+  const $  = (s, el=document) => el.querySelector(s);
+  const $$ = (s, el=document) => [...el.querySelectorAll(s)];
+  const esc = s => String(s??'').replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;');
+
+  const video = $('#player'), videoWrap = $('#videoWrap');
+  const btnPrev=$('#btnPrev'), btnPlay=$('#btnPlay'), btnNext=$('#btnNext'), btnReplay=$('#btnReplay');
+  const speedRange=$('#speedRange'), speedVal=$('#speedVal');
+  const chkFollow=$('#chkFollow'), btnOffsetMinus=$('#btnOffsetMinus'), btnOffsetPlus=$('#btnOffsetPlus'), offsetVal=$('#offsetVal');
+  const cuesBody=$('#cuesBody'), cuesStatus=$('#cuesStatus');
+
+  const tabs=$$('.tabs .tab'), paneSub=$('#pane-sub'), paneQuiz=$('#pane-quiz'), paneVocab=$('#pane-vocab');
+
+  const params=new URLSearchParams(location.search);
+  const slug=params.get('slug')||'mid-autumn';
+
+  let cues=[], offset=0, follow=false;     // 跟隨預設關閉（你要求）
+  let loopSentence=false;
+
+  const toSec=t=>{
+    if(typeof t==='number') return t;
+    const p=String(t).split(':').map(Number);
+    if(p.length===3) return p[0]*3600+p[1]*60+p[2];
+    if(p.length===2) return p[0]*60+p[1];
+    return Number(t)||0;
+  };
+  const fmt=sec=>{sec=Math.max(0,sec|0);const m=(sec/60)|0,s=sec%60;return `${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;}
+
+  /************ Supabase 登入 ************/
+  // TODO：改成你的專案 URL 與 anon key
+  const SUPABASE_URL = "https://YOUR-PROJECT.supabase.co";
+  const SUPABASE_ANON_KEY = "YOUR-ANON-KEY";
+  const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+  const btnLogin=$('#btnLogin'), btnLogout=$('#btnLogout'), badge=$('#userNameBadge');
+
+  async function refreshAuthUI(){
+    const { data:{ user } } = await supabaseClient.auth.getUser();
+    if(user){ btnLogin.style.display='none'; btnLogout.style.display='inline-block'; badge.textContent=user.email||'已登入'; }
+    else{ btnLogin.style.display='inline-block'; btnLogout.style.display='none'; badge.textContent=''; }
+  }
+  btnLogin.addEventListener('click', async ()=>{
+    const email=prompt('請輸入 Email：'); if(!email) return;
+    const pwd=prompt('請輸入密碼：'); if(!pwd) return;
+    const { error } = await supabaseClient.auth.signInWithPassword({ email, password: pwd });
+    if(error) alert('登入失敗：'+error.message);
+    refreshAuthUI();
+  });
+  btnLogout.addEventListener('click', async ()=>{ await supabaseClient.auth.signOut(); refreshAuthUI(); });
+  refreshAuthUI();
+
+  /************ 載入影片與字幕 ************/
+  (function loadVideo(){ video.src=`./videos/${slug}.mp4`; video.addEventListener('error',()=>{ cuesStatus.textContent='⚠️ 無法載入影片'; },{once:true}); })();
+
+  async function loadCues(){
+    try{
+      const r = await fetch(`./data/cues-${slug}.json?v=${Date.now()}`,{cache:'no-store'});
+      if(!r.ok) throw 0;
+      const json = await r.json();
+      cues = (json||[]).map(x=>({t:toSec(x.time), en:x.en||'', zh:x.zh||''}));
+    }catch{ cues=[]; }
+    renderCues();
+  }
+  function renderCues(){
+    cuesBody.innerHTML='';
+    if(!cues.length){ cuesStatus.textContent='⚠️ 查無字幕資料'; return; }
+    cuesStatus.textContent='';
+    cuesBody.innerHTML = cues.map((c,i)=>`
+      <tr data-i="${i}">
+        <td class="muted" style="width:80px">${c.t?fmt(c.t):''}</td>
+        <td>${esc(c.en)}</td>
+        <td style="width:40%">${esc(c.zh)}</td>
+      </tr>
+    `).join('');
+    $$('#cuesBody tr').forEach(tr=> tr.addEventListener('click',()=>{ const i=+tr.dataset.i; seekTo(i,true); }));
+  }
+
+  const currentIndex=()=>{ const t=video.currentTime+offset; let i=0; while(i+1<cues.length && cues[i+1].t<=t+0.0001) i++; return i; }
+  const highlightRow=idx=>{ const trs=$$('#cuesBody tr'); trs.forEach(tr=>tr.classList.remove('active')); const tr=trs[idx]; if(!tr) return; tr.classList.add('active'); if(follow) tr.scrollIntoView({block:'center',behavior:'smooth'}); }
+  const seekTo=(idx,play)=>{ if(!cues[idx]) return; video.currentTime=Math.max(0,cues[idx].t-offset+0.0001); highlightRow(idx); if(play) video.play(); }
+  const sentenceRange=idx=>{ if(!cues[idx]) return [0,0]; const s=cues[idx].t,e=(idx+1<cues.length?cues[idx+1].t:s+3); return [s,e]; }
+
+  /************ 單字（詞卡） ************/
+  async function loadVocab(){
+    const vStatus=$('#vocabStatus'), vBox=$('#vocabBox'); vStatus.textContent='( 單字載入中… )'; vBox.innerHTML='';
+    let list=null; try{ const r=await fetch(`./data/vocab-${slug}.json?v=${Date.now()}`,{cache:'no-store'}); if(r.ok) list=await r.json(); }catch{}
+    if(!list||!list.length){ vStatus.textContent='⚠️ 查無單字資料'; return; }
+    vStatus.textContent='';
+    const mask=(w,s)=>{ const word=String(w||'').trim(); let txt=String(s||''); if(!word) return txt; const re=new RegExp(`\\b${word.replace(/[.*+?^${}()|[\\]\\\\]/g,'\\$&')}\\b`,'ig'); return txt.replace(re,'_____'); }
+    const go=mmss=>{ const p=toSec(mmss); video.currentTime=Math.max(0,p); video.play(); };
+
+    vBox.innerHTML = '<div id="vocList"></div>'; const listBox=$('#vocList',vBox);
+    list.forEach(v=>{
+      const row=document.createElement('div'); row.className='voc-row'; row.style.display='grid'; row.style.gridTemplateColumns='110px 1fr 320px'; row.style.gap='18px'; row.style.padding='18px 0'; row.style.borderBottom='1px solid #14243b';
+
+      const left=document.createElement('div'); left.innerHTML=`<button class="btn" data-act="jump">▶</button> <span class="time-link" style="cursor:pointer;text-decoration:underline;color:#9fc1ff">${v.time||''}</span>`;
+      const core=document.createElement('div'); const ex=v.example||v.en||''; core.innerHTML=`
+        <div style="font-size:20px;line-height:1.6;margin-bottom:6px">${esc(mask(v.word,ex))}</div>
+        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+          <input type="text" placeholder="輸入這個空格的單字…" style="height:44px;min-width:220px;padding:10px 12px;border:1px solid #334155;border-radius:12px;background:#0f223b;color:#dbe7ff">
+          <button class="btn" data-act="check">檢查</button><span class="msg"></span><button class="btn" data-act="reveal">顯示答案</button>
+        </div>`;
+      const right=document.createElement('div'); right.style.background='#0f1f2f'; right.style.border='1px solid #1b2f52'; right.style.borderRadius='14px'; right.style.padding='14px';
+      right.innerHTML=`
+        <div style="display:flex;align-items:center;gap:10px;font-size:26px;font-weight:800">${esc(v.word||'')} <button class="btn" data-act="speak">🔊</button></div>
+        <div style="color:#9fb3d9;font-size:13px">${esc(v.pos||'')}</div>
+        ${v.zh?`<div style="margin-top:6px;font-size:18px">${esc(v.zh)}</div>`:''}
+        ${v.en?`<div style="margin-top:2px;color:#9fb3d9;font-size:14px">${esc(v.en)}</div>`:''}
+        <div style="margin-top:8px;display:flex;gap:8px"><button class="btn" data-act="jump">跳到片段</button></div>`;
+
+      row.addEventListener('click',e=>{
+        const act=e.target?.dataset?.act; if(!act) return;
+        if(act==='jump') go(v.time||0);
+        if(act==='speak'){ try{ const u=new SpeechSynthesisUtterance(String(v.word||v.en||v.example||v.zh||'')); u.lang='en-US'; speechSynthesis.cancel(); speechSynthesis.speak(u);}catch{} }
+        if(act==='check'){ const ipt=core.querySelector('input'); const msg=core.querySelector('.msg'); const ok=String(ipt.value||'').trim().toLowerCase()===String(v.word||'').trim().toLowerCase(); msg.textContent=ok?'✅ 正確！':'❌ 再試試'; msg.style.color=ok?'#5bd3c7':'#ff6b6b'; }
+        if(act==='reveal'){ const ipt=core.querySelector('input'); ipt.value=v.word||''; const msg=core.querySelector('.msg'); msg.textContent='（已填入答案）'; msg.style.color='#9fb0c9'; }
+      });
+      left.querySelector('.time-link').addEventListener('click',()=>go(v.time||0));
+      row.append(left,core,right); listBox.appendChild(row);
+    });
+  }
+
+  /************ 測驗（四分區） ************/
+  async function bootQuiz(){
+    const pane=paneQuiz, $q=s=>pane.querySelector(s);
+    const listEl=$q('#quizList'), metaEl=$q('#quizMeta');
+    const btnSubmit=$q('#btnSubmitQuiz'), btnPrint=$q('#btnPrintQuiz'), btnShow=$q('#btnShowAnswer'), resultEl=$q('#quizResult');
+
+    let raw=[]; try{ const r=await fetch(`./data/quiz-${slug}.json?v=${Date.now()}`,{cache:'no-store'}); if(!r.ok) throw 0; raw=await r.json(); }catch(e){ metaEl.textContent='⚠️ 題庫載入失敗'; return; }
+
+    let questions=[]; if(Array.isArray(raw)){ questions=raw.map(q=>({section:(q.section||'Mixed'),type:(String(q.type||'MCQ').toUpperCase()==='SA')?'SA':'MCQ',question:q.question||q.q||'',options:q.options||q.choices||[],answer:q.answer??q.ans??'',explanation:q.explanation||q.ex||''})) }
+    else if(raw.sections){ const push=(sec,arr=[])=>arr.forEach(q=>questions.push({section:sec,type:(String(q.type||'MCQ').toUpperCase()==='SA')?'SA':'MCQ',question:q.question||'',options:q.options||[],answer:q.answer??'',explanation:q.explanation||''})); push('Vocabulary',raw.sections.vocab); push('Grammar',raw.sections.grammar); push('Reading',raw.sections.reading); push('Mixed',raw.sections.mixed); }
+
+    const sections=['Vocabulary','Grammar','Reading','Mixed']; let current='Vocabulary';
+
+    function render(sec){
+      current=sec; const data=questions.filter(q=>q.section===sec);
+      if(!data.length){ listEl.innerHTML='<li style="color:#9fb3ff">（此分區無題目）</li>'; metaEl.textContent='0 題'; return; }
+      listEl.innerHTML=data.map((q,i)=>{
+        const idx=i+1;
+        if(q.type==='MCQ'){
+          const opts=q.options.map(opt=>`<label style="display:block;margin:4px 0"><input type="radio" name="q${sec}-${idx}" value="${String(opt)}"> ${String(opt)}</label>`).join('');
+          return `<li data-type="MCQ" data-ans="${String(q.answer)}"><div style="font-weight:700;margin:4px 0">${idx}. ${esc(q.question)}</div><div>${opts}</div><div class="msg" style="margin-top:4px"></div><div class="exp" style="margin-top:4px;color:#9fb3ff"></div></li>`;
+        }else{
+          return `<li data-type="SA" data-ans="${String(q.answer)}"><div style="font-weight:700;margin:4px 0">${idx}. ${esc(q.question)}</div><input type="text" placeholder="輸入答案…" style="padding:6px 8px;border:1px solid #334155;border-radius:6px;background:#0f223b;color:#dbe7ff"><button class="btn btn-check" style="margin-left:6px">檢查</button><div class="msg" style="margin-top:4px"></div><div class="exp" style="margin-top:4px;color:#9fb3ff"></div></li>`;
+        }
+      }).join('');
+      metaEl.textContent=`${sec}：${data.length} 題`;
+
+      listEl.addEventListener('click',e=>{
+        if(!e.target.classList.contains('btn-check')) return;
+        const li=e.target.closest('li'); const ipt=li.querySelector('input[type="text"]');
+        const msg=li.querySelector('.msg'), exp=li.querySelector('.exp');
+        const user=(ipt.value||'').trim().toLowerCase(); const ans=String(li.dataset.ans||'').trim().toLowerCase();
+        const ok=(user===ans); msg.textContent=ok?'✅ 正確':'❌ 錯誤'; msg.style.color=ok?'#5bd3c7':'#ff6b6b'; exp.textContent=ok?'':`正解：${li.dataset.ans}`;
+      }, { once:true });
+    }
+
+    pane.querySelectorAll('.qtab').forEach(b=> b.addEventListener('click',()=>{ pane.querySelectorAll('.qtab').forEach(x=>x.classList.remove('on')); b.classList.add('on'); render(b.dataset.sec); }));
+    btnSubmit.onclick=()=>{ const items=[...listEl.querySelectorAll('li')]; if(!items.length) return; let got=0; items.forEach(li=>{ const ans=String(li.dataset.ans||''); if(li.dataset.type==='MCQ'){ const sel=li.querySelector('input[type="radio"]:checked'); const user=sel?sel.value:''; const ok=(user===ans); if(ok) got++; const msg=li.querySelector('.msg'), exp=li.querySelector('.exp'); msg.textContent=ok?'✅ 正確':'❌ 錯誤'; msg.style.color=ok?'#5bd3c7':'#ff6b6b'; exp.textContent=ok?'':`正解：${ans}`; }else{ const ipt=li.querySelector('input[type="text"]'); const ok=String(ipt.value||'').trim().toLowerCase()===ans.toLowerCase(); if(ok) got++; const msg=li.querySelector('.msg'), exp=li.querySelector('.exp'); msg.textContent=ok?'✅ 正確':'❌ 錯誤'; msg.style.color=ok?'#5bd3c7':'#ff6b6b'; exp.textContent=ok?'':`正解：${ans}`; }}); const score=got*5, full=items.length*5; $('#quizScore').textContent=`本分區分數：${score} / ${full}`; resultEl.style.display='block'; resultEl.innerHTML=`<div style="margin-top:8px;color:#9fb3ff">${score===full?'滿分！太強了！':'加油！重作錯題、背關鍵字會更好。'}</div>`; btnShow.style.display='inline-block'; btnPrint.style.display='inline-block'; };
+    btnShow.onclick=()=>{ listEl.querySelectorAll('li').forEach(li=>{ const exp=li.querySelector('.exp'); if(exp && !exp.textContent) exp.textContent=`正解：${li.dataset.ans}`; }); };
+    btnPrint.onclick=()=>window.print();
+
+    render('Vocabulary');
+  }
+
+  /************ 控制列 & 事件 ************/
+  speedRange.addEventListener('input',()=>{ const r=Number(speedRange.value)||1; video.playbackRate=r; speedVal.textContent=`${r.toFixed(2)}x`; });
+  btnPlay.addEventListener('click',()=>{ if(video.paused) video.play(); else video.pause(); });
+  btnPrev.addEventListener('click',()=>seekTo(Math.max(0,currentIndex()-1),true));
+  btnNext.addEventListener('click',()=>seekTo(Math.min(cues.length-1,currentIndex()+1),true));
+  btnReplay.addEventListener('click',function(e){
+    const on=this.dataset.active==='1';
+    if(on){ e.stopImmediatePropagation(); loopSentence=false; this.dataset.active='0'; this.classList.remove('blue'); }
+    else{ loopSentence=true; this.dataset.active='1'; this.classList.add('blue'); seekTo(currentIndex(),true); }
+  });
+  btnOffsetMinus.addEventListener('click',()=>{ offset-=0.5; offsetVal.textContent=`${offset.toFixed(1)}s`; });
+  btnOffsetPlus .addEventListener('click',()=>{ offset+=0.5; offsetVal.textContent=`${offset.toFixed(1)}s`; });
+  chkFollow.addEventListener('change',()=>{ follow=chkFollow.checked; // 手機：未勾→閱讀模式
+    if(window.innerWidth<=900 && $('.tabs .tab.active')?.dataset.tab==='sub'){
+      if(!follow) document.body.classList.add('read-mode'); else document.body.classList.remove('read-mode');
+    }
+  });
+
+  video.addEventListener('timeupdate',()=>{ if(!cues.length) return; const i=currentIndex(); highlightRow(i); if(loopSentence){ const [s,e]=sentenceRange(i); const t=video.currentTime+offset; if(t>=e-0.02){ video.currentTime=Math.max(0,s-offset+0.0001); video.play(); } } });
+
+  // 抽屜（手機）
+  (function(){
+    const drawer=$('#controlsDrawer'), grab=$('#drawerGrab'); if(!drawer||!grab) return;
+    const toggle=()=>drawer.classList.toggle('open'); grab.addEventListener('click',toggle);
+    let startY=null; grab.addEventListener('touchstart',e=>{startY=e.touches[0].clientY},{passive:true});
+    grab.addEventListener('touchmove',e=>{ if(startY===null) return; const dy=e.touches[0].clientY-startY; if(dy<-10){drawer.classList.add('open');startY=null}else if(dy>10){drawer.classList.remove('open');startY=null}}, {passive:true});
+  })();
+
+  // 分頁 + 手機專心/閱讀模式
+  (function(){
+    function show(name){
+      paneSub.style.display   = name==='sub'? '' : 'none';
+      paneQuiz.style.display  = name==='quiz'? '' : 'none';
+      paneVocab.style.display = name==='vocab'? '' : 'none';
+      tabs.forEach(t=>t.classList.toggle('active',t.dataset.tab===name));
+      if(window.innerWidth<=900){
+        if(name==='quiz'||name==='vocab'){ document.body.classList.add('focus-mode'); document.body.classList.remove('read-mode'); }
+        else{ document.body.classList.remove('focus-mode'); if(!chkFollow.checked) document.body.classList.add('read-mode'); else document.body.classList.remove('read-mode'); }
+      }
+    }
+    tabs.forEach(t=>t.addEventListener('click',()=>show(t.dataset.tab)));
+    show('sub');
+    window.addEventListener('resize',()=>{ if(window.innerWidth>900) document.body.classList.remove('focus-mode','read-mode'); });
+  })();
+
+  // 啟動
+  (async function init(){
+    const r=Number(speedRange.value)||1; video.playbackRate=r; speedVal.textContent=`${r.toFixed(2)}x`;
+    chkFollow.checked=false; follow=false;  // 預設不啟動跟隨
+    await loadCues(); await loadVocab(); await bootQuiz();
+  })();
+  </script>
 </body>
 </html>
 
