@@ -1,96 +1,119 @@
 <!doctype html>
 <html lang="zh-Hant">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Supabase 登入測試</title>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>BookWide · 英語學習入口</title>
+  <meta name="description" content="BookWide：用故事、音樂、電影、新聞與專業主題，快速學英文。支援逐句播放、雙語字幕、測驗、單字卡。">
   <style>
-    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Noto Sans, sans-serif; padding:24px; }
-    h1 { margin: 0 0 16px; }
-    .row { display:flex; gap:10px; margin:12px 0; }
-    button { padding:8px 12px; border:1px solid #ccc; border-radius:8px; cursor:pointer; }
-    #log { white-space: pre-wrap; background:#f7f7f9; border:1px solid #eee; padding:12px; border-radius:8px; }
+    :root{
+      --bg:#0b1324; --panel:#0f172a; --ink:#e6efff; --muted:#9fb0c9;
+      --border:#1f2a44; --accent:#3c7cff; --ok:#10b981; --warn:#f59e0b;
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%;margin:0;background:var(--bg);color:var(--ink);font-family:ui-sans-serif,system-ui,"Noto Sans TC"}
+    a{color:inherit;text-decoration:none}
+    img{max-width:100%;display:block}
+    .wrap{max-width:1200px;margin:0 auto;padding:18px}
+    header{display:flex;align-items:center;justify-content:space-between;padding:14px 0}
+    .brand{display:flex;align-items:center;gap:10px;font-weight:800;font-size:20px}
+    .brand img{height:28px;width:auto}
+    nav{display:flex;gap:8px;flex-wrap:wrap}
+    .btn{background:#13233f;border:1px solid #24446f;border-radius:12px;padding:10px 14px;color:#fff;cursor:pointer}
+    .btn.blue{background:#14335f;border-color:#2c5aa3}
+    .btn.ghost{background:transparent}
+    .btn.pill{border-radius:999px}
+    .muted{color:var(--muted)}
+    .hero{margin:10px 0 22px}
+    .card{background:var(--panel);border:1px solid var(--border);border-radius:14px;overflow:hidden}
+    .card .pad{padding:16px}
+    .h1{font-size:28px;line-height:1.25;margin:0 0 10px}
+    .h2{font-size:22px;margin:0 0 6px}
+    .grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+    .toolbar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:10px 0 14px}
+    .tabs{display:flex;gap:8px;flex-wrap:wrap}
+    .tab{cursor:pointer;background:#122340;border:1px solid #1f375f;border-radius:10px;padding:8px 12px}
+    .tab.on{background:#154274}
+    .search{display:flex;gap:8px;align-items:center}
+    .search input{height:40px;min-width:240px;border:1px solid #2c3e66;background:#0f223b;border-radius:10px;color:#dbe7ff;padding:0 12px}
+    .video-card{border-radius:14px;border:1px solid var(--border);background:var(--panel);overflow:hidden;display:flex;flex-direction:column}
+    .thumb{aspect-ratio:16/9;background:#000;position:relative;overflow:hidden}
+    .thumb img{width:100%;height:100%;object-fit:cover;opacity:.9}
+    .pill{position:absolute;left:10px;bottom:10px;background:#0f223b;border:1px solid #2c3e66;color:#dbe7ff;border-radius:999px;padding:4px 8px;font-size:12px}
+    .video-card .title{font-weight:700;margin:8px 0 4px}
+    .video-card .meta{display:flex;justify-content:space-between;color:#9fb0c9;font-size:12px}
+    .video-card .pad{padding:12px 12px 14px}
+    .features{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin:20px 0}
+    .feat{border:1px solid var(--border);background:#0f1f34;border-radius:14px;padding:14px}
+    .feat .name{font-weight:700;margin-bottom:6px}
+    footer{border-top:1px solid var(--border);margin-top:24px;padding:16px 0;color:var(--muted);font-size:14px}
+    .badge{display:inline-block;padding:2px 8px;border-radius:999px;border:1px solid #2d4677;background:#0f223b;color:#dbe7ff;font-size:12px}
   </style>
 </head>
 <body>
-  <h1>Supabase 登入測試</h1>
+  <div class="wrap">
+    <!-- 頂部 -->
+    <header>
+      <div class="brand">
+        <img src="./images/bookwide-logo.png" alt="BookWide" onerror="this.style.display='none'"/>
+        <span>BookWide</span>
+        <span class="badge">Beta</span>
+      </div>
+      <button class="btn pill blue" id="btnLogin">登入</button>
+    </header>
 
-  <div>狀態：<span id="status">（尚未檢查）</span></div>
+    <!-- Hero (僅保留左側卡片，刪掉服務導覽) -->
+    <section class="hero">
+      <div class="card">
+        <div class="pad">
+          <h1 class="h1">看影片、做測驗、背單字 —— 一頁完成</h1>
+          <div class="muted" style="margin-bottom:10px">
+            BookWide 用 <b>故事・音樂・電影・新聞・專業主題</b> 帶你學英文。逐句播放、雙語字幕、單字卡與分區測驗，完整練到聽讀寫。
+          </div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap">
+            <a class="btn blue" href="./player.html?slug=mid-autumn">試看：故事《Mid-Autumn》</a>
+            <a class="btn" href="#catalog">瀏覽教材</a>
+          </div>
+        </div>
+      </div>
+    </section>
 
-  <div class="row">
-    <button id="btnGoogle">用 Google 登入</button>
-    <button id="btnEmail">用 Email（Magic Link）登入</button>
-    <button id="btnLogout" style="display:none">登出</button>
+    <!-- 功能亮點 -->
+    <section id="services">
+      <div class="h2">學習功能</div>
+      <div class="features">
+        <div class="feat"><div class="name">🧠 逐句播放</div><div class="muted">一鍵回放 / 下一句，跟著文本走，不迷路。</div></div>
+        <div class="feat"><div class="name">🌗 雙語字幕</div><div class="muted">英文在上、中文在下，手機也能長句不斷行。</div></div>
+        <div class="feat"><div class="name">📝 分區測驗</div><div class="muted">Vocabulary / Grammar / Reading / Mixed 四分區評量。</div></div>
+        <div class="feat"><div class="name">📚 單字卡</div><div class="muted">遮字填空、朗讀、快速跳段，真正用到的字才記得住。</div></div>
+      </div>
+    </section>
+
+    <!-- 教材列表 -->
+    <section id="catalog" style="margin-top:12px">
+      <div class="toolbar">
+        <div class="tabs" id="tabBar">
+          <div class="tab on" data-cat="all">全部</div>
+          <div class="tab" data-cat="story">故事</div>
+          <div class="tab" data-cat="music">音樂</div>
+          <div class="tab" data-cat="movie">電影</div>
+          <div class="tab" data-cat="news">新聞</div>
+          <div class="tab" data-cat="pro">專業行業</div>
+        </div>
+        <div style="flex:1"></div>
+        <div class="search">
+          <input id="kw" type="search" placeholder="搜尋標題、關鍵字…"/>
+          <button class="btn" id="btnSearch">搜尋</button>
+        </div>
+      </div>
+      <div class="grid" id="cardGrid"></div>
+      <div id="emptyHint" class="muted" style="display:none;margin-top:12px">（沒有符合條件的教材）</div>
+    </section>
+
+    <footer>
+      <div>© <span id="y"></span> BookWide. 由影片 x 語言教育打造。</div>
+    </footer>
   </div>
-
-  <div id="log"></div>
-
-  <!-- 關鍵：一定要用 ES Module 載入 -->
-  <script type="module">
-    // 1) 依你實際的 supa.js 位置調整這條路徑：
-    //    如果你把 supa.js 放在根目錄：  import { supa, getUser, signOut } from '../supa.js';
-    //    如果在 english-videos/supa.js：就用下行這個相對路徑
-    import { supa, getUser, signOut } from './supa.js';
-
-    const $ = s => document.querySelector(s);
-    const log = (...a) => { $('#log').textContent += a.join(' ') + '\n'; };
-
-    async function render() {
-      const u = await getUser();
-      $('#status').textContent = u ? `已登入：${u.email || u.user_metadata?.name || u.id}` : '未登入';
-      $('#btnLogout').style.display = u ? '' : 'none';
-    }
-
-    // Google 登入
-    $('#btnGoogle').addEventListener('click', async () => {
-      try {
-        // 回來的網址必須列在 Supabase 的 Redirect URLs
-        const redirectTo = location.origin + '/english-videos/index.html';
-        await supa.auth.signInWithOAuth({
-          provider: 'google',
-          options: { redirectTo }
-        });
-        // 這裡會跳轉，回來後 onAuthStateChange 會更新 UI
-      } catch (e) {
-        alert('Google 登入失敗：' + (e?.message || e));
-        log('Google error:', e);
-      }
-    });
-
-    // Email (Magic Link) 登入
-    $('#btnEmail').addEventListener('click', async () => {
-      const email = prompt('請輸入 Email，會寄 Magic Link 過去：');
-      if (!email) return;
-      try {
-        // 你也可以指定 emailRedirectTo，不填則用 Supabase Site URL
-        const { error } = await supa.auth.signInWithOtp({
-          email,
-          options: {
-            // 建議填，回到你的網站頁面之一
-            emailRedirectTo: location.origin + '/english-videos/index.html'
-          }
-        });
-        if (error) throw error;
-        alert('已寄出登入連結，請到信箱點擊「Log In」。');
-      } catch (e) {
-        alert('寄送失敗：' + (e?.message || e));
-        log('OTP error:', e);
-      }
-    });
-
-    // 登出
-    $('#btnLogout').addEventListener('click', async () => {
-      await signOut();
-      await render();
-    });
-
-    supa.auth.onAuthStateChange(async (_evt, _session) => {
-      await render();
-    });
-
-    // 初次渲染
-    render().catch(err => log('init error:', err));
-  </script>
 </body>
 </html>
 
