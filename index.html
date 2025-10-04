@@ -50,6 +50,11 @@
     .feat .name{font-weight:700;margin-bottom:6px}
     footer{border-top:1px solid var(--border);margin-top:24px;padding:16px 0;color:#9fb0c9;font-size:14px}
     .badge{display:inline-block;padding:2px 8px;border-radius:999px;border:1px solid #2d4677;background:#0f223b;color:#dbe7ff;font-size:12px}
+
+    /* Auth area */
+    #authArea{display:flex;gap:10px;align-items:center}
+    #userNameBadge{max-width:220px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+
     /* RWD */
     @media (max-width:1000px){ .hero{grid-template-columns:1fr} .grid{grid-template-columns:repeat(2,1fr)} .features{grid-template-columns:repeat(2,1fr)} }
     @media (max-width:640px){ .grid{grid-template-columns:1fr} .search input{min-width:0;flex:1} }
@@ -64,11 +69,13 @@
         <span>BookWide</span>
         <span class="badge">Beta</span>
       </div>
-      <nav>
-        <a class="btn pill ghost" href="#services">服務內容</a>
-        <a class="btn pill ghost" href="#catalog">教材總覽</a>
-        <a class="btn pill blue" href="./player.html?slug=mid-autumn">立即開始學習</a>
-      </nav>
+
+      <!-- 右上登入區（Supabase 連動） -->
+      <div id="authArea">
+        <button id="btnLogin"  class="btn">登入</button>
+        <button id="btnLogout" class="btn" style="display:none">登出</button>
+        <span id="userNameBadge" class="muted"></span>
+      </div>
     </header>
 
     <!-- Hero -->
@@ -128,10 +135,7 @@
         </div>
       </div>
 
-      <div class="grid" id="cardGrid">
-        <!-- 這裡由 JS 注入卡片 -->
-      </div>
-
+      <div class="grid" id="cardGrid"></div>
       <div id="emptyHint" class="muted" style="display:none;margin-top:12px">（沒有符合條件的教材）</div>
     </section>
 
@@ -141,8 +145,66 @@
     </footer>
   </div>
 
+  <!-- Supabase SDK（ESM） -->
+  <script type="module">
+    import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.48.1/+esm";
+
+    // === 你的專案參數（已修正 URL 前綴）===
+    const SUPABASE_URL = 'https://qtgwedankftrqjmzuset.supabase.co';
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InF0Z3dlZGFua2Z0cnFqbXp1c2V0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTg4NDYxMDMsImV4cCI6MjA3NDQyMjEwM30.jyETpt09pgm66aCZheMgsjtbKlVmYo-lt-hrrt6BF8g';
+
+    const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    const btnLogin  = document.getElementById('btnLogin');
+    const btnLogout = document.getElementById('btnLogout');
+    const nameBadge = document.getElementById('userNameBadge');
+
+    function showUser(user){
+      if (user) {
+        const display =
+          user.user_metadata?.name ||
+          user.user_metadata?.full_name ||
+          user.email || '已登入';
+        nameBadge.textContent = display;
+        btnLogin.style.display  = 'none';
+        btnLogout.style.display = '';
+      } else {
+        nameBadge.textContent = '';
+        btnLogin.style.display  = '';
+        btnLogout.style.display = 'none';
+      }
+    }
+
+    async function refreshSession(){
+      const { data } = await supabase.auth.getSession();
+      showUser(data.session?.user || null);
+    }
+
+    // Google OAuth（預設）
+    btnLogin.addEventListener('click', async () => {
+      // 設定回跳到目前頁（請同時在 Supabase 設 Provider Redirect URLs）
+      const redirectTo = window.location.origin + window.location.pathname;
+      await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: { redirectTo }
+      });
+      // 進入 OAuth 流程後會跳轉，不需要再處理
+    });
+
+    btnLogout.addEventListener('click', async () => {
+      await supabase.auth.signOut();
+      showUser(null);
+    });
+
+    // 初始化：抓目前 session；並監聽狀態改變（例如 OAuth 回來）
+    refreshSession();
+    supabase.auth.onAuthStateChange((_event, session) => {
+      showUser(session?.user || null);
+    });
+  </script>
+
   <script>
-    // 1) 假資料：把你的 50 支故事逐步加到這個陣列即可（或改成 fetch JSON）
+    /* ====== 以下為清單/搜尋（維持你現有的 UI）====== */
     const CATALOG = [
       { slug:'mid-autumn', title:'Mid-Autumn Festival', cat:'story', mins:2, level:'A2-B1',
         thumb:'./images/thumb-mid-autumn.jpg', tags:['festival','moon','tradition'] },
@@ -150,7 +212,6 @@
         thumb:'./images/thumb-houyi.jpg', tags:['legend','archer'] },
       { slug:'lantern', title:'Lantern Festival', cat:'story', mins:2, level:'A2',
         thumb:'./images/thumb-lantern.jpg', tags:['lantern','culture'] },
-      // ==== 範例：其他分類 ====
       { slug:'song-happy', title:'Happy (Pharrell Williams)', cat:'music', mins:4, level:'B1',
         thumb:'./images/thumb-music.jpg', tags:['lyrics','rhythm'] },
       { slug:'movie-trailer-x', title:'Movie Scene – Airport Talk', cat:'movie', mins:2, level:'B1',
@@ -161,7 +222,6 @@
         thumb:'./images/thumb-pro.jpg', tags:['business','email'] },
     ];
 
-    // 2) 產卡片
     const $ = (s, el=document)=>el.querySelector(s);
     const $$ = (s, el=document)=>[...el.querySelectorAll(s)];
     const grid = $('#cardGrid'), hint = $('#emptyHint');
@@ -189,7 +249,6 @@
       hint.style.display = list.length? 'none':'block';
     }
 
-    // 3) 分類 + 搜尋
     const state = { cat:'all', kw:'' };
 
     function apply(){
@@ -212,20 +271,15 @@
       apply();
     });
 
-    $('#btnSearch').addEventListener('click', ()=>{
-      state.kw = $('#kw').value || '';
-      apply();
-    });
-    $('#kw').addEventListener('keydown', e=>{ if(e.key==='Enter') { state.kw=$('#kw').value||''; apply(); } });
+    $('#btnSearch').addEventListener('click', ()=>{ state.kw=$('#kw').value||''; apply(); });
+    $('#kw').addEventListener('keydown', e=>{ if(e.key==='Enter'){ state.kw=$('#kw').value||''; apply(); } });
 
-    // 啟動
     (function init(){
       apply();
       $('#y').textContent = new Date().getFullYear();
-      // 若網址帶 cat，可直接選定分類： /index.html?cat=story
       const cat = new URLSearchParams(location.search).get('cat');
       if(cat){
-        const el = $(`#tabBar .tab[data-cat="${cat}"]`);
+        const el = document.querySelector(`#tabBar .tab[data-cat="${cat}"]`);
         if(el){ $$('#tabBar .tab').forEach(t=>t.classList.remove('on')); el.classList.add('on'); state.cat=cat; apply(); }
       }
     })();
