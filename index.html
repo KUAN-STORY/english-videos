@@ -14,18 +14,18 @@
     html,body{height:100%;margin:0;background:var(--bg);color:var(--ink);font-family:ui-sans-serif,system-ui,"Noto Sans TC"}
     a{color:inherit;text-decoration:none}
     img{max-width:100%;display:block}
-    .wrap{max-width:1200px;margin:0 auto;padding:18px}
 
-    header{display:flex;align-items:center;justify-content:space-between;padding:14px 0}
+    .wrap{max-width:1200px;margin:0 auto;padding:18px;position:relative}
+    header{display:flex;align-items:center;justify-content:space-between;padding:14px 0;position:relative;z-index:5}
     .brand{display:flex;align-items:center;gap:10px;font-weight:800;font-size:20px}
     .brand img{height:28px;width:auto}
+    .badge{display:inline-block;padding:2px 8px;border-radius:999px;border:1px solid #2d4677;background:#0f223b;color:#dbe7ff;font-size:12px}
 
-    .top-right{display:flex;align-items:center;gap:12px}
-    .btn{background:#13233f;border:1px solid #24446f;border-radius:12px;padding:8px 14px;color:#fff;cursor:pointer;font-size:14px}
+    .top-right{display:flex;gap:10px;align-items:center}
+    .btn{background:#13233f;border:1px solid #24446f;border-radius:12px;padding:10px 14px;color:#fff;cursor:pointer}
     .btn.blue{background:#14335f;border-color:#2c5aa3}
     .btn.ghost{background:transparent}
     .btn.pill{border-radius:999px}
-
     .muted{color:var(--muted)}
     #authArea{display:flex;gap:10px;align-items:center}
     #userNameBadge{max-width:220px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -35,8 +35,8 @@
     .card .pad{padding:16px}
     .h1{font-size:28px;line-height:1.25;margin:0 0 10px}
     .h2{font-size:22px;margin:0 0 6px}
-
     .grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+
     .svc{display:flex;align-items:center;gap:10px;padding:10px;border-radius:10px;border:1px solid #1f375f;background:#122340}
     .svc .tag{font-size:12px;color:#9fb0c9}
 
@@ -49,7 +49,7 @@
 
     .video-card{border-radius:14px;border:1px solid var(--border);background:var(--panel);overflow:hidden;display:flex;flex-direction:column}
     .thumb{aspect-ratio:16/9;background:#000;position:relative;overflow:hidden}
-    .thumb img{width:100%;height:100%;object-fit:cover;opacity:.9}
+    .thumb img{width:100%;height:100%;object-fit:cover;opacity:.95}
     .pill{position:absolute;left:10px;bottom:10px;background:#0f223b;border:1px solid #2c3e66;color:#dbe7ff;border-radius:999px;padding:4px 8px;font-size:12px}
     .video-card .title{font-weight:700;margin:8px 0 4px}
     .video-card .meta{display:flex;justify-content:space-between;color:#9fb0c9;font-size:12px}
@@ -60,11 +60,39 @@
     .feat .name{font-weight:700;margin-bottom:6px}
 
     footer{border-top:1px solid var(--border);margin-top:24px;padding:16px 0;color:#9fb0c9;font-size:14px}
-    .badge{display:inline-block;padding:2px 8px;border-radius:999px;border:1px solid #2d4677;background:#0f223b;color:#dbe7ff;font-size:12px}
+
+    /* 服務導覽下拉選單 */
+    .svc-menu{
+      position:absolute;
+      right:18px;
+      top:70px;
+      width:420px;
+      background:#0f172a;
+      border:1px solid var(--border);
+      border-radius:14px;
+      box-shadow:0 18px 44px rgba(0,0,0,.48);
+      padding:8px 0;
+      display:none;
+      z-index:50;
+    }
+    .svc-menu.open{ display:block; }
+    .svc-item{
+      display:flex; gap:12px; align-items:flex-start;
+      padding:12px 14px; border-bottom:1px solid #13233f;
+    }
+    .svc-item:last-child{ border-bottom:none; }
+    .svc-item:hover{ background:#122340; }
+    .svc-ic{ font-size:22px; line-height:1.1; width:26px; text-align:center; }
+    .svc-txt b{ display:block; margin-bottom:2px; }
+    .svc-txt i{ color:var(--muted); font-style:normal; font-size:13px; }
 
     /* RWD */
     @media (max-width:1000px){ .hero{grid-template-columns:1fr} .grid{grid-template-columns:repeat(2,1fr)} .features{grid-template-columns:repeat(2,1fr)} }
-    @media (max-width:640px){ .grid{grid-template-columns:1fr} .search input{min-width:0;flex:1} }
+    @media (max-width:640px){
+      .grid{grid-template-columns:1fr}
+      .search input{min-width:0;flex:1}
+      .svc-menu{ width:min(92vw,420px); right:12px; top:68px; }
+    }
   </style>
 </head>
 <body>
@@ -77,8 +105,9 @@
         <span class="badge">Beta</span>
       </div>
 
+      <!-- 右上：服務導覽 + 方案價格 + 登入 -->
       <div class="top-right">
-        <a class="btn pill ghost" href="#services">服務導覽</a>
+        <button id="btnServices" class="btn pill ghost" aria-haspopup="true" aria-expanded="false">服務導覽 ▾</button>
         <a class="btn pill ghost" href="#pricing">方案價格</a>
         <div id="authArea">
           <button id="btnLogin"  class="btn">登入</button>
@@ -87,6 +116,30 @@
         </div>
       </div>
     </header>
+
+    <!-- 服務導覽：下拉選單 -->
+    <div id="servicesMenu" class="svc-menu" role="menu" aria-hidden="true">
+      <a class="svc-item" href="./index.html?cat=story" role="menuitem">
+        <span class="svc-ic">🎬</span>
+        <span class="svc-txt"><b>故事 Story</b><i>情境敘事，最適合漸進式輸入。</i></span>
+      </a>
+      <a class="svc-item" href="./index.html?cat=music" role="menuitem">
+        <span class="svc-ic">🎵</span>
+        <span class="svc-txt"><b>音樂 Music</b><i>歌詞跟讀、關鍵句型、自然發音。</i></span>
+      </a>
+      <a class="svc-item" href="./index.html?cat=movie" role="menuitem">
+        <span class="svc-ic">🎥</span>
+        <span class="svc-txt"><b>電影 Movies</b><i>地道口語、情緒語氣、經典台詞。</i></span>
+      </a>
+      <a class="svc-item" href="./index.html?cat=news" role="menuitem">
+        <span class="svc-ic">📰</span>
+        <span class="svc-txt"><b>新聞 News</b><i>時事字彙、長句結構、閱讀力。</i></span>
+      </a>
+      <a class="svc-item" href="./index.html?cat=pro" role="menuitem">
+        <span class="svc-ic">💼</span>
+        <span class="svc-txt"><b>專業行業 Pro</b><i>商務 / 工程 / 旅遊等專用語（規劃中）。</i></span>
+      </a>
+    </div>
 
     <!-- Hero -->
     <section class="hero">
@@ -144,6 +197,7 @@
           <button class="btn" id="btnSearch">搜尋</button>
         </div>
       </div>
+
       <div class="grid" id="cardGrid"></div>
       <div id="emptyHint" class="muted" style="display:none;margin-top:12px">（沒有符合條件的教材）</div>
     </section>
@@ -154,47 +208,133 @@
     </footer>
   </div>
 
-  <!-- Supabase 登入 -->
+  <!-- Supabase SDK（ESM） -->
   <script type="module">
     import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.48.1/+esm";
 
-    const SUPABASE_URL = "https://qtgwedankftrqjmzuset.supabase.co";
-    const SUPABASE_ANON_KEY = "你的 anon key"; // 用你的
+    /* 你的 Supabase 專案參數 */
+    const SUPABASE_URL = 'https://qtgwedankftrqjmzuset.supabase.co';
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InF0Z3dlZGFua2Z0cnFqbXp1c2V0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTg4NDYxMDMsImV4cCI6MjA3NDQyMjEwM30.jyETpt09pgm66aCZheMgsjtbKlVmYo-lt-hrrt6BF8g';
 
     const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-    const btnLogin = document.getElementById("btnLogin");
-    const btnLogout = document.getElementById("btnLogout");
-    const nameBadge = document.getElementById("userNameBadge");
+
+    const btnLogin  = document.getElementById('btnLogin');
+    const btnLogout = document.getElementById('btnLogout');
+    const nameBadge = document.getElementById('userNameBadge');
 
     function showUser(user){
-      if(user){
-        nameBadge.textContent = user.email || "已登入";
-        btnLogin.style.display="none"; btnLogout.style.display="";
-      }else{
-        nameBadge.textContent=""; btnLogin.style.display=""; btnLogout.style.display="none";
+      if (user) {
+        const display = user.user_metadata?.name || user.user_metadata?.full_name || user.email || '已登入';
+        nameBadge.textContent = display;
+        btnLogin.style.display  = 'none';
+        btnLogout.style.display = '';
+      } else {
+        nameBadge.textContent = '';
+        btnLogin.style.display  = '';
+        btnLogout.style.display = 'none';
       }
     }
+    async function refreshSession(){ const { data } = await supabase.auth.getSession(); showUser(data.session?.user || null); }
 
-    async function refreshSession(){
-      const { data } = await supabase.auth.getSession();
-      showUser(data.session?.user || null);
-    }
-
-    btnLogin.addEventListener("click", async ()=>{
-      const redirectTo = window.location.origin + window.location.pathname;
-      await supabase.auth.signInWithOAuth({
-        provider:"google", options:{redirectTo}
-      });
+    // Google OAuth 登入
+    btnLogin.addEventListener('click', async () => {
+      const redirectTo = window.location.origin + window.location.pathname; // 需同時在 Supabase Provider Redirect URLs 允許
+      await supabase.auth.signInWithOAuth({ provider:'google', options:{ redirectTo } });
     });
-    btnLogout.addEventListener("click", async ()=>{ await supabase.auth.signOut(); showUser(null); });
+    btnLogout.addEventListener('click', async () => { await supabase.auth.signOut(); showUser(null); });
 
     refreshSession();
-    supabase.auth.onAuthStateChange((_e, session)=>{ showUser(session?.user || null); });
+    supabase.auth.onAuthStateChange((_e, session) => showUser(session?.user || null));
   </script>
 
-  <!-- 教材清單 JS 略 -->
+  <script>
+    /* 服務導覽選單開關 */
+    (function(){
+      const btn = document.getElementById('btnServices');
+      const menu = document.getElementById('servicesMenu');
+      if(!btn || !menu) return;
+      const open = () => { menu.classList.add('open'); btn.setAttribute('aria-expanded','true'); menu.setAttribute('aria-hidden','false'); };
+      const close= () => { menu.classList.remove('open'); btn.setAttribute('aria-expanded','false'); menu.setAttribute('aria-hidden','true'); };
+      btn.addEventListener('click', (e)=>{ e.stopPropagation(); menu.classList.contains('open') ? close() : open(); });
+      document.addEventListener('click', (e)=>{ if(!menu.contains(e.target) && e.target!==btn) close(); });
+      document.addEventListener('keydown', (e)=>{ if(e.key==='Escape') close(); });
+    })();
+
+    /* === 清單 / 搜尋 === */
+    const CATALOG = [
+      { slug:'mid-autumn', title:'Mid-Autumn Festival', cat:'story', mins:2, level:'A2-B1', tags:['festival','moon','tradition'] },
+      { slug:'houyi', title:'Hou Yi and the Ten Suns', cat:'story', mins:3, level:'A2-B1', tags:['legend','archer'] },
+      { slug:'lantern', title:'Lantern Festival', cat:'story', mins:2, level:'A2', tags:['lantern','culture'] },
+      { slug:'song-happy', title:'Happy (Pharrell Williams)', cat:'music', mins:4, level:'B1', tags:['lyrics','rhythm'] },
+      { slug:'movie-trailer-x', title:'Movie Scene – Airport Talk', cat:'movie', mins:2, level:'B1', tags:['dialog','slang'] },
+      { slug:'news-tech-ai', title:'AI Breakthrough in 2025', cat:'news', mins:3, level:'B2', tags:['tech','AI'] },
+      { slug:'pro-business-email', title:'Business Email Basics', cat:'pro', mins:5, level:'B1', tags:['business','email'] },
+    ];
+
+    const $ = (s, el=document)=>el.querySelector(s);
+    const $$ = (s, el=document)=>[...el.querySelectorAll(s)];
+    const grid = $('#cardGrid'), hint = $('#emptyHint');
+
+    function cardHTML(it){
+      const url = `./player.html?slug=${encodeURIComponent(it.slug)}`;
+      /* 縮圖改用 videos/<slug>.jpg */
+      const thumb = `./videos/${it.slug}.jpg`;
+      const catName = it.cat==='story'?'故事':it.cat==='music'?'音樂':it.cat==='movie'?'電影':it.cat==='news'?'新聞':'專業';
+      return `
+      <a class="video-card" href="${url}">
+        <div class="thumb">
+          <img src="${thumb}" alt="${it.title}" onerror="this.style.opacity=.5">
+          <div class="pill">${catName}</div>
+        </div>
+        <div class="pad">
+          <div class="title">${it.title}</div>
+          <div class="meta"><span>時長 ${it.mins||'–'} 分</span><span>程度 ${it.level||'–'}</span></div>
+        </div>
+      </a>`;
+    }
+
+    function render(list){
+      grid.innerHTML = list.map(cardHTML).join('');
+      hint.style.display = list.length? 'none':'block';
+    }
+
+    const state = { cat:'all', kw:'' };
+    function apply(){
+      const kw = state.kw.trim().toLowerCase();
+      let list = CATALOG.filter(x => state.cat==='all' ? true : x.cat===state.cat);
+      if(kw){
+        list = list.filter(x =>
+          x.title.toLowerCase().includes(kw) ||
+          (x.tags||[]).some(t=>String(t).toLowerCase().includes(kw))
+        );
+      }
+      render(list);
+    }
+
+    $('#tabBar').addEventListener('click', e=>{
+      const btn = e.target.closest('.tab'); if(!btn) return;
+      $$('#tabBar .tab').forEach(t=>t.classList.remove('on'));
+      btn.classList.add('on');
+      state.cat = btn.dataset.cat || 'all';
+      apply();
+    });
+
+    $('#btnSearch').addEventListener('click', ()=>{ state.kw=$('#kw').value||''; apply(); });
+    $('#kw').addEventListener('keydown', e=>{ if(e.key==='Enter'){ state.kw=$('#kw').value||''; apply(); } });
+
+    (function init(){
+      apply();
+      $('#y').textContent = new Date().getFullYear();
+      const cat = new URLSearchParams(location.search).get('cat');
+      if(cat){
+        const el = document.querySelector(`#tabBar .tab[data-cat="${cat}"]`);
+        if(el){ $$('#tabBar .tab').forEach(t=>t.classList.remove('on')); el.classList.add('on'); state.cat=cat; apply(); }
+      }
+    })();
+  </script>
 </body>
 </html>
+
 
 
 
