@@ -8,120 +8,285 @@
   <style>
     :root{
       --bg:#0b1324; --panel:#0f172a; --ink:#e6efff; --muted:#9fb0c9;
-      --border:#1f2a44; --accent:#3c7cff;
+      --border:#1f2a44; --accent:#3c7cff; --ok:#10b981; --warn:#f59e0b;
     }
     *{box-sizing:border-box}
     html,body{height:100%;margin:0;background:var(--bg);color:var(--ink);font-family:ui-sans-serif,system-ui,"Noto Sans TC"}
     a{color:inherit;text-decoration:none}
-
-    /* ===== Sticky Header（細條、固定上方）===== */
-    .topbar{
-      position:sticky; top:0; z-index:50;
-      height:56px; display:flex; align-items:center; justify-content:space-between;
-      padding:0 16px; background:#0f172a; border-bottom:1px solid #101e37;
-    }
-    .brand{display:flex; align-items:center; gap:10px; font-weight:800; font-size:20px}
-    .brand img{height:24px}
-    .badge{display:inline-block; margin-left:4px; padding:2px 8px; border-radius:999px;
-      border:1px solid #2d4677; background:#0f223b; color:#dbe7ff; font-size:12px}
-    .auth{display:flex; align-items:center; gap:10px}
-    .btn{background:#13233f; border:1px solid #24446f; border-radius:999px; padding:8px 12px; color:#fff; cursor:pointer}
+    img{max-width:100%;display:block}
+    .wrap{max-width:1200px;margin:0 auto;padding:18px}
+    header{display:flex;align-items:center;justify-content:space-between;padding:14px 0}
+    .brand{display:flex;align-items:center;gap:10px;font-weight:800;font-size:20px}
+    .brand img{height:28px;width:auto}
+    nav{display:flex;gap:8px;flex-wrap:wrap}
+    .btn{background:#13233f;border:1px solid #24446f;border-radius:12px;padding:10px 14px;color:#fff;cursor:pointer}
+    .btn.blue{background:#14335f;border-color:#2c5aa3}
     .btn.ghost{background:transparent}
-    .user-badge{color:#9fb0c9; font-size:14px}
+    .btn.pill{border-radius:999px}
+    .muted{color:var(--muted)}
+    .hero{display:grid;grid-template-columns:1.2fr 1fr;gap:18px;margin:10px 0 22px}
+    .card{background:var(--panel);border:1px solid var(--border);border-radius:14px;overflow:hidden}
+    .card .pad{padding:16px}
+    .h1{font-size:28px;line-height:1.25;margin:0 0 10px}
+    .h2{font-size:22px;margin:0 0 6px}
+    .grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+    .svc{display:flex;align-items:center;gap:10px;padding:10px;border-radius:10px;border:1px solid #1f375f;background:#122340}
+    .svc .tag{font-size:12px;color:#9fb0c9}
+    .toolbar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:10px 0 14px}
+    .tabs{display:flex;gap:8px;flex-wrap:wrap}
+    .tab{cursor:pointer;background:#122340;border:1px solid #1f375f;border-radius:10px;padding:8px 12px}
+    .tab.on{background:#154274}
+    .search{display:flex;gap:8px;align-items:center}
+    .search input{height:40px;min-width:240px;border:1px solid #2c3e66;background:#0f223b;border-radius:10px;color:#dbe7ff;padding:0 12px}
+    .video-card{border-radius:14px;border:1px solid var(--border);background:var(--panel);overflow:hidden;display:flex;flex-direction:column}
+    .thumb{aspect-ratio:16/9;background:#000;position:relative;overflow:hidden}
+    .thumb img{width:100%;height:100%;object-fit:cover;opacity:.9}
+    .pill{position:absolute;left:10px;bottom:10px;background:#0f223b;border:1px solid #2c3e66;color:#dbe7ff;border-radius:999px;padding:4px 8px;font-size:12px}
+    .video-card .title{font-weight:700;margin:8px 0 4px}
+    .video-card .meta{display:flex;justify-content:space-between;color:#9fb0c9;font-size:12px}
+    .video-card .pad{padding:12px 12px 14px}
+    .features{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin:20px 0}
+    .feat{border:1px solid var(--border);background:#0f1f34;border-radius:14px;padding:14px}
+    .feat .name{font-weight:700;margin-bottom:6px}
+    footer{border-top:1px solid var(--border);margin-top:24px;padding:16px 0;color:#9fb0c9;font-size:14px}
+    .badge{display:inline-block;padding:2px 8px;border-radius:999px;border:1px solid #2d4677;background:#0f223b;color:#dbe7ff;font-size:12px}
 
-    /* 主內容 */
-    .wrap{max-width:1200px; margin:0 auto; padding:16px}
-    .hero{display:grid; grid-template-columns:1.2fr 1fr; gap:16px; margin-top:8px}
-    .card{background:var(--panel); border:1px solid var(--border); border-radius:14px}
-    .pad{padding:16px}
-    .h1{font-size:28px; line-height:1.25; margin:0 0 10px}
-    .h2{font-size:22px; margin:0 0 6px}
-    .grid{display:grid; grid-template-columns:repeat(3,1fr); gap:14px}
-    .svc{display:flex; align-items:center; gap:10px; padding:10px; border-radius:10px; border:1px solid #1f375f; background:#122340}
-    .features{display:grid; grid-template-columns:repeat(4,1fr); gap:14px; margin:20px 0}
-    .feat{border:1px solid var(--border); background:#0f1f34; border-radius:14px; padding:14px}
-    footer{border-top:1px solid var(--border); margin-top:24px; padding:16px 0; color:#9fb0c9; font-size:14px}
-    .pill{display:inline-block; padding:2px 8px; border-radius:999px; border:1px solid #2d4677; background:#0f223b; color:#dbe7ff; font-size:12px}
+    /* Auth area */
+    #authArea{display:flex;gap:10px;align-items:center}
+    #userNameBadge{max-width:220px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 
     /* RWD */
-    @media (max-width:1000px){
-      .hero{grid-template-columns:1fr}
-      .grid{grid-template-columns:repeat(2,1fr)}
-      .features{grid-template-columns:repeat(2,1fr)}
-    }
-    @media (max-width:640px){
-      .grid{grid-template-columns:1fr}
-    }
+    @media (max-width:1000px){ .hero{grid-template-columns:1fr} .grid{grid-template-columns:repeat(2,1fr)} .features{grid-template-columns:repeat(2,1fr)} }
+    @media (max-width:640px){ .grid{grid-template-columns:1fr} .search input{min-width:0;flex:1} }
   </style>
 </head>
 <body>
-
-  <!-- 右上登入的小型頂欄 -->
-  <header class="topbar">
-    <div class="brand">
-      <img src="./images/bookwide-logo.png" alt="BookWide" onerror="this.style.display='none'"/>
-      <span>BookWide</span><span class="badge">Beta</span>
-    </div>
-    <div class="auth">
-      <span id="userNameBadge" class="user-badge"></span>
-      <button id="btnLogin"  class="btn">登入</button>
-      <button id="btnLogout" class="btn ghost" style="display:none">登出</button>
-    </div>
-  </header>
-
   <div class="wrap">
-    <!-- Hero（示例，可替換為你的內容） -->
+    <!-- 頂部 -->
+    <header>
+      <div class="brand">
+        <img src="./images/bookwide-logo.png" alt="BookWide" onerror="this.style.display='none'"/>
+        <span>BookWide</span>
+        <span class="badge">Beta</span>
+      </div>
+
+      <!-- 右上登入區（Supabase 連動） -->
+      <div id="authArea">
+        <button id="btnLogin"  class="btn">登入</button>
+        <button id="btnLogout" class="btn" style="display:none">登出</button>
+        <span id="userNameBadge" class="muted"></span>
+      </div>
+    </header>
+
+    <!-- Hero -->
     <section class="hero">
-      <div class="card"><div class="pad">
-        <h1 class="h1">看影片、做測驗、背單字 —— 一頁完成</h1>
-        <div class="pill">故事</div>
-        <div class="pill">音樂</div>
-        <div class="pill">電影</div>
-        <div class="pill">新聞</div>
-        <div class="pill">專業行業</div>
-        <p style="color:#9fb0c9;margin-top:8px">支援逐句播放、雙語字幕、分區測驗與單字卡。</p>
-        <div style="display:flex; gap:8px; flex-wrap:wrap; margin-top:8px">
-          <a class="btn" href="./player.html?slug=mid-autumn">試看：Mid-Autumn</a>
-          <a class="btn ghost" href="#services">學習功能</a>
+      <div class="card">
+        <div class="pad">
+          <h1 class="h1">看影片、做測驗、背單字 —— 一頁完成</h1>
+          <div class="muted" style="margin-bottom:10px">
+            BookWide 用 <b>故事・音樂・電影・新聞・專業主題</b> 帶你學英文。逐句播放、雙語字幕、單字卡與分區測驗，完整練到聽讀寫。
+          </div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap">
+            <a class="btn blue" href="./player.html?slug=mid-autumn">試看：故事《Mid-Autumn》</a>
+            <a class="btn" href="#catalog">瀏覽教材</a>
+          </div>
         </div>
-      </div></div>
-
-      <div class="card"><div class="pad">
-        <div class="h2">服務導覽</div>
-        <div class="grid" style="grid-template-columns:1fr; gap:10px">
-          <div class="svc"><div>🎬</div><div><div>故事 Story</div><div style="color:#9fb0c9">情境敘事、漸進式輸入</div></div></div>
-          <div class="svc"><div>🎵</div><div><div>音樂 Music</div><div style="color:#9fb0c9">歌詞跟讀、自然發音</div></div></div>
-          <div class="svc"><div>🎥</div><div><div>電影 Movies</div><div style="color:#9fb0c9">地道口語、語氣</div></div></div>
-          <div class="svc"><div>📰</div><div><div>新聞 News</div><div style="color:#9fb0c9">時事字彙、長句結構</div></div></div>
-          <div class="svc"><div>💼</div><div><div>專業行業 Pro</div><div style="color:#9fb0c9">商務/科技/旅遊專用語</div></div></div>
+      </div>
+      <div class="card">
+        <div class="pad">
+          <div class="h2">服務導覽</div>
+          <div class="grid" style="grid-template-columns:1fr;gap:10px">
+            <div class="svc"><div>🎬</div><div><div>故事 Story</div><div class="tag">情境敘事，最適合漸進式輸入</div></div></div>
+            <div class="svc"><div>🎵</div><div><div>音樂 Music</div><div class="tag">歌詞跟讀、押韻、自然發音</div></div></div>
+            <div class="svc"><div>🎥</div><div><div>電影 Movies</div><div class="tag">地道口語、情緒語氣</div></div></div>
+            <div class="svc"><div>📰</div><div><div>新聞 News</div><div class="tag">時事字彙、長句結構</div></div></div>
+            <div class="svc"><div>💼</div><div><div>專業行業 Pro</div><div class="tag">商務、科技、旅遊…專用語</div></div></div>
+          </div>
         </div>
-      </div></div>
-    </section>
-
-    <!-- 學習功能（示例） -->
-    <section id="services">
-      <div class="h2">學習功能</div>
-      <div class="features">
-        <div class="feat"><b>🧠 逐句播放</b><div style="color:#9fb0c9">上一句 / 下一句，不迷路。</div></div>
-        <div class="feat"><b>🌗 雙語字幕</b><div style="color:#9fb0c9">英文在上、中文在下，手機也能長句不斷行。</div></div>
-        <div class="feat"><b>📝 分區測驗</b><div style="color:#9fb0c9">Vocabulary / Grammar / Reading / Mixed。</div></div>
-        <div class="feat"><b>📚 單字卡</b><div style="color:#9fb0c9">遮字填空、朗讀、跳段。</div></div>
       </div>
     </section>
 
+    <!-- 功能亮點 -->
+    <section id="services">
+      <div class="h2">學習功能</div>
+      <div class="features">
+        <div class="feat"><div class="name">🧠 逐句播放</div><div class="muted">一鍵回放 / 下一句，跟著文本走，不迷路。</div></div>
+        <div class="feat"><div class="name">🌗 雙語字幕</div><div class="muted">英文在上、中文在下，手機也能長句不斷行。</div></div>
+        <div class="feat"><div class="name">📝 分區測驗</div><div class="muted">Vocabulary / Grammar / Reading / Mixed 四分區評量。</div></div>
+        <div class="feat"><div class="name">📚 單字卡</div><div class="muted">遮字填空、朗讀、快速跳段，真正用到的字才記得住。</div></div>
+      </div>
+    </section>
+
+    <!-- 教材列表 -->
+    <section id="catalog" style="margin-top:12px">
+      <div class="toolbar">
+        <div class="tabs" id="tabBar">
+          <div class="tab on" data-cat="all">全部</div>
+          <div class="tab" data-cat="story">故事</div>
+          <div class="tab" data-cat="music">音樂</div>
+          <div class="tab" data-cat="movie">電影</div>
+          <div class="tab" data-cat="news">新聞</div>
+          <div class="tab" data-cat="pro">專業行業</div>
+        </div>
+        <div style="flex:1"></div>
+        <div class="search">
+          <input id="kw" type="search" placeholder="搜尋標題、關鍵字…"/>
+          <button class="btn" id="btnSearch">搜尋</button>
+        </div>
+      </div>
+
+      <div class="grid" id="cardGrid"></div>
+      <div id="emptyHint" class="muted" style="display:none;margin-top:12px">（沒有符合條件的教材）</div>
+    </section>
+
     <footer>
-      <div>© <span id="y"></span> BookWide — Practice makes progress.</div>
-      <div style="color:#9fb0c9">建議使用最新 Chrome / Edge / Safari。</div>
+      <div>© <span id="y"></span> BookWide. 由影片 x 語言教育打造。</div>
+      <div class="muted">建議使用最新 Chrome / Edge / Safari。若影片或字幕未載入，請確認 <code>./videos/</code>、<code>./data/</code> 目錄與檔名（slug）一致。</div>
     </footer>
   </div>
 
-  <!-- Supabase SDK -> 你的設定 -> 登入邏輯 -->
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="./supa.js"></script>
-  <script src="./login.js"></script>
-  <script>document.getElementById('y').textContent=new Date().getFullYear();</script>
+  <!-- Supabase SDK（ESM） -->
+  <script type="module">
+    import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.48.1/+esm";
+
+    // === 你的專案參數（已修正 URL 前綴）===
+    const SUPABASE_URL = 'https://qtgwedankftrqjmzuset.supabase.co';
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InF0Z3dlZGFua2Z0cnFqbXp1c2V0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTg4NDYxMDMsImV4cCI6MjA3NDQyMjEwM30.jyETpt09pgm66aCZheMgsjtbKlVmYo-lt-hrrt6BF8g';
+
+    const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    const btnLogin  = document.getElementById('btnLogin');
+    const btnLogout = document.getElementById('btnLogout');
+    const nameBadge = document.getElementById('userNameBadge');
+
+    function showUser(user){
+      if (user) {
+        const display =
+          user.user_metadata?.name ||
+          user.user_metadata?.full_name ||
+          user.email || '已登入';
+        nameBadge.textContent = display;
+        btnLogin.style.display  = 'none';
+        btnLogout.style.display = '';
+      } else {
+        nameBadge.textContent = '';
+        btnLogin.style.display  = '';
+        btnLogout.style.display = 'none';
+      }
+    }
+
+    async function refreshSession(){
+      const { data } = await supabase.auth.getSession();
+      showUser(data.session?.user || null);
+    }
+
+    // Google OAuth（預設）
+    btnLogin.addEventListener('click', async () => {
+      // 設定回跳到目前頁（請同時在 Supabase 設 Provider Redirect URLs）
+      const redirectTo = window.location.origin + window.location.pathname;
+      await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: { redirectTo }
+      });
+      // 進入 OAuth 流程後會跳轉，不需要再處理
+    });
+
+    btnLogout.addEventListener('click', async () => {
+      await supabase.auth.signOut();
+      showUser(null);
+    });
+
+    // 初始化：抓目前 session；並監聽狀態改變（例如 OAuth 回來）
+    refreshSession();
+    supabase.auth.onAuthStateChange((_event, session) => {
+      showUser(session?.user || null);
+    });
+  </script>
+
+  <script>
+    /* ====== 以下為清單/搜尋（維持你現有的 UI）====== */
+    const CATALOG = [
+      { slug:'mid-autumn', title:'Mid-Autumn Festival', cat:'story', mins:2, level:'A2-B1',
+        thumb:'./images/thumb-mid-autumn.jpg', tags:['festival','moon','tradition'] },
+      { slug:'houyi', title:'Hou Yi and the Ten Suns', cat:'story', mins:3, level:'A2-B1',
+        thumb:'./images/thumb-houyi.jpg', tags:['legend','archer'] },
+      { slug:'lantern', title:'Lantern Festival', cat:'story', mins:2, level:'A2',
+        thumb:'./images/thumb-lantern.jpg', tags:['lantern','culture'] },
+      { slug:'song-happy', title:'Happy (Pharrell Williams)', cat:'music', mins:4, level:'B1',
+        thumb:'./images/thumb-music.jpg', tags:['lyrics','rhythm'] },
+      { slug:'movie-trailer-x', title:'Movie Scene – Airport Talk', cat:'movie', mins:2, level:'B1',
+        thumb:'./images/thumb-movie.jpg', tags:['dialog','slang'] },
+      { slug:'news-tech-ai', title:'AI Breakthrough in 2025', cat:'news', mins:3, level:'B2',
+        thumb:'./images/thumb-news.jpg', tags:['tech','AI'] },
+      { slug:'pro-business-email', title:'Business Email Basics', cat:'pro', mins:5, level:'B1',
+        thumb:'./images/thumb-pro.jpg', tags:['business','email'] },
+    ];
+
+    const $ = (s, el=document)=>el.querySelector(s);
+    const $$ = (s, el=document)=>[...el.querySelectorAll(s)];
+    const grid = $('#cardGrid'), hint = $('#emptyHint');
+
+    function cardHTML(it){
+      const url = `./player.html?slug=${encodeURIComponent(it.slug)}`;
+      return `
+      <a class="video-card" href="${url}">
+        <div class="thumb">
+          <img src="${it.thumb||''}" alt="${it.title}" onerror="this.style.opacity=.5">
+          <div class="pill">${(it.cat==='story'?'故事':it.cat==='music'?'音樂':it.cat==='movie'?'電影':it.cat==='news'?'新聞':'專業')}</div>
+        </div>
+        <div class="pad">
+          <div class="title">${it.title}</div>
+          <div class="meta">
+            <span>時長 ${it.mins||'–'} 分</span>
+            <span>程度 ${it.level||'–'}</span>
+          </div>
+        </div>
+      </a>`;
+    }
+
+    function render(list){
+      grid.innerHTML = list.map(cardHTML).join('');
+      hint.style.display = list.length? 'none':'block';
+    }
+
+    const state = { cat:'all', kw:'' };
+
+    function apply(){
+      const kw = state.kw.trim().toLowerCase();
+      let list = CATALOG.filter(x => state.cat==='all' ? true : x.cat===state.cat);
+      if(kw){
+        list = list.filter(x =>
+          x.title.toLowerCase().includes(kw) ||
+          (x.tags||[]).some(t=>String(t).toLowerCase().includes(kw))
+        );
+      }
+      render(list);
+    }
+
+    $('#tabBar').addEventListener('click', e=>{
+      const btn = e.target.closest('.tab'); if(!btn) return;
+      $$('#tabBar .tab').forEach(t=>t.classList.remove('on'));
+      btn.classList.add('on');
+      state.cat = btn.dataset.cat || 'all';
+      apply();
+    });
+
+    $('#btnSearch').addEventListener('click', ()=>{ state.kw=$('#kw').value||''; apply(); });
+    $('#kw').addEventListener('keydown', e=>{ if(e.key==='Enter'){ state.kw=$('#kw').value||''; apply(); } });
+
+    (function init(){
+      apply();
+      $('#y').textContent = new Date().getFullYear();
+      const cat = new URLSearchParams(location.search).get('cat');
+      if(cat){
+        const el = document.querySelector(`#tabBar .tab[data-cat="${cat}"]`);
+        if(el){ $$('#tabBar .tab').forEach(t=>t.classList.remove('on')); el.classList.add('on'); state.cat=cat; apply(); }
+      }
+    })();
+  </script>
 </body>
 </html>
+
 
 
 
