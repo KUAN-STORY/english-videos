@@ -1,416 +1,238 @@
 <!doctype html>
 <html lang="zh-Hant">
 <head>
-<meta charset="utf-8"/>
-<meta name="viewport" content="width=device-width,initial-scale=1"/>
-<title>用故事學英文 · Stories</title>
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E📘%3C/text%3E%3C/svg%3E">
-<style>
-  :root{
-    --bg:#0b1324;--panel:#0f1a33;--border:#203057;
-    --text:#e7eaf3;--muted:#a9b3cf;--brand:#3c7cff;--ok:#14b86e;--warn:#f5a524;
-  }
-  *{box-sizing:border-box}
-  html,body{height:100%;margin:0;background:var(--bg);color:var(--text);font-family:system-ui,-apple-system,Segoe UI,Roboto,Noto Sans,sans-serif}
-  a{color:inherit;text-decoration:none}
-  .wrap{max-width:1100px;margin:0 auto;padding:28px 16px 80px}
-
-  header{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:18px}
-  .brand{font-size:22px;font-weight:800;letter-spacing:.02em}
-  .actions{display:flex;gap:10px;align-items:center}
-  .btn{padding:8px 12px;border:1px solid var(--border);background:#132046;border-radius:10px;color:#fff;cursor:pointer}
-  .btn.ghost{background:transparent}
-  .chip{padding:6px 10px;border:1px solid var(--border);border-radius:999px;background:#121d3d;color:#c8d0ea;cursor:pointer}
-  .chip.active{background:#1a2c66;color:#fff;border-color:#2d4ea7}
-  .user{color:#c8d0ea}
-
-  h1{font-size:30px;line-height:1.25;margin:10px 0 6px}
-  .muted{color:var(--muted)}
-  .row{display:flex;gap:10px;align-items:center}
-  .space{flex:1}
-
-  .toolbar{display:flex;gap:10px;align-items:center;margin:18px 0}
-  .search{flex:1;min-width:240px;border:1px solid var(--border);background:#0f1a33;color:#fff;border-radius:12px;padding:10px 12px}
-
-  /* grid */
-  .grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
-  @media(max-width:980px){ .grid{grid-template-columns:repeat(2,1fr)} }
-  @media(max-width:640px){ .grid{grid-template-columns:1fr} }
-
-  /* card */
-  .card{display:block;border:1px solid var(--border);border-radius:14px;background:var(--panel);overflow:hidden;position:relative}
-  .card-cover-wrap{position:relative;overflow:hidden;background:#0b1324;height:200px;cursor:pointer}
-  .card-cover{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block}
-  .badge{position:absolute;left:10px;top:10px;padding:4px 8px;border-radius:999px;font-size:12px}
-  .badge.free{background:rgba(20,184,110,.25);border:1px solid var(--ok)}
-  .badge.lock{background:rgba(245,165,36,.22);border:1px solid var(--warn)}
-  .card-cover-wrap::after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,transparent 60%,rgba(0,0,0,.55))}
-  .body{padding:14px}
-  .title{font-size:18px;font-weight:700;margin:2px 0 4px}
-  .meta{display:flex;gap:8px;align-items:center;color:var(--muted);font-size:14px}
-  .foot{display:flex;gap:8px;align-items:center;margin-top:12px}
-  .btn.sm{padding:6px 10px;border-radius:999px}
-
-  /* dialog */
-  dialog{border:none;border-radius:14px;background:#0f1a33;color:#fff;max-width:460px}
-  dialog::backdrop{background:rgba(0,0,0,.45)}
-  .dlg-head{font-size:18px;font-weight:800;margin:0 0 6px}
-  .dlg-body{color:#cdd5ef;margin-bottom:10px}
-</style>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>BookWide · 英語學習入口</title>
+  <meta name="description" content="BookWide：用故事、音樂、電影、新聞與專業主題，快速學英文。支援逐句播放、雙語字幕、測驗、單字卡。">
+  <style>
+    :root{
+      --bg:#0b1324; --panel:#0f172a; --ink:#e6efff; --muted:#9fb0c9;
+      --border:#1f2a44; --accent:#3c7cff; --ok:#10b981; --warn:#f59e0b;
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%;margin:0;background:var(--bg);color:var(--ink);font-family:ui-sans-serif,system-ui,"Noto Sans TC"}
+    a{color:inherit;text-decoration:none}
+    img{max-width:100%;display:block}
+    .wrap{max-width:1200px;margin:0 auto;padding:18px}
+    header{display:flex;align-items:center;justify-content:space-between;padding:14px 0}
+    .brand{display:flex;align-items:center;gap:10px;font-weight:800;font-size:20px}
+    .brand img{height:28px;width:auto}
+    nav{display:flex;gap:8px;flex-wrap:wrap}
+    .btn{background:#13233f;border:1px solid #24446f;border-radius:12px;padding:10px 14px;color:#fff;cursor:pointer}
+    .btn.blue{background:#14335f;border-color:#2c5aa3}
+    .btn.ghost{background:transparent}
+    .btn.pill{border-radius:999px}
+    .muted{color:var(--muted)}
+    .hero{display:grid;grid-template-columns:1.2fr 1fr;gap:18px;margin:10px 0 22px}
+    .card{background:var(--panel);border:1px solid var(--border);border-radius:14px;overflow:hidden}
+    .card .pad{padding:16px}
+    .h1{font-size:28px;line-height:1.25;margin:0 0 10px}
+    .h2{font-size:22px;margin:0 0 6px}
+    .grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+    .svc{display:flex;align-items:center;gap:10px;padding:10px;border-radius:10px;border:1px solid #1f375f;background:#122340}
+    .svc .tag{font-size:12px;color:#9fb0c9}
+    .toolbar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:10px 0 14px}
+    .tabs{display:flex;gap:8px;flex-wrap:wrap}
+    .tab{cursor:pointer;background:#122340;border:1px solid #1f375f;border-radius:10px;padding:8px 12px}
+    .tab.on{background:#154274}
+    .search{display:flex;gap:8px;align-items:center}
+    .search input{height:40px;min-width:240px;border:1px solid #2c3e66;background:#0f223b;border-radius:10px;color:#dbe7ff;padding:0 12px}
+    .video-card{border-radius:14px;border:1px solid var(--border);background:var(--panel);overflow:hidden;display:flex;flex-direction:column}
+    .thumb{aspect-ratio:16/9;background:#000;position:relative;overflow:hidden}
+    .thumb img{width:100%;height:100%;object-fit:cover;opacity:.9}
+    .pill{position:absolute;left:10px;bottom:10px;background:#0f223b;border:1px solid #2c3e66;color:#dbe7ff;border-radius:999px;padding:4px 8px;font-size:12px}
+    .video-card .title{font-weight:700;margin:8px 0 4px}
+    .video-card .meta{display:flex;justify-content:space-between;color:#9fb0c9;font-size:12px}
+    .video-card .pad{padding:12px 12px 14px}
+    .features{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin:20px 0}
+    .feat{border:1px solid var(--border);background:#0f1f34;border-radius:14px;padding:14px}
+    .feat .name{font-weight:700;margin-bottom:6px}
+    footer{border-top:1px solid var(--border);margin-top:24px;padding:16px 0;color:#9fb0c9;font-size:14px}
+    .badge{display:inline-block;padding:2px 8px;border-radius:999px;border:1px solid #2d4677;background:#0f223b;color:#dbe7ff;font-size:12px}
+    /* RWD */
+    @media (max-width:1000px){ .hero{grid-template-columns:1fr} .grid{grid-template-columns:repeat(2,1fr)} .features{grid-template-columns:repeat(2,1fr)} }
+    @media (max-width:640px){ .grid{grid-template-columns:1fr} .search input{min-width:0;flex:1} }
+  </style>
 </head>
 <body>
-<div class="wrap">
-  <header>
-    <div class="brand">看故事學英文·Stories</div>
-    <div class="actions">
-      <span id="authName" class="user" aria-live="polite"></span>
-      <button class="btn ghost" id="btnLogout" style="display:none">登出</button>
-      <button class="btn" id="btnLogin">登入</button>
-    </div>
-  </header>
+  <div class="wrap">
+    <!-- 頂部 -->
+    <header>
+      <div class="brand">
+        <img src="./images/bookwide-logo.png" alt="BookWide" onerror="this.style.display='none'"/>
+        <span>BookWide</span>
+        <span class="badge">Beta</span>
+      </div>
+      <nav>
+        <a class="btn pill ghost" href="#services">服務內容</a>
+        <a class="btn pill ghost" href="#catalog">教材總覽</a>
+        <a class="btn pill blue" href="./player.html?slug=mid-autumn">立即開始學習</a>
+      </nav>
+    </header>
 
-  <h1>用故事學英文：雙語字幕、測驗與單字</h1>
-  <div class="muted">從下方卡片選擇故事開始。大多數內容需登入後觀看，〈中秋節〉為免費試看。</div>
-
-  <div class="toolbar">
-    <input id="q" class="search" placeholder="輸入關鍵字搜尋（中／英標題／標籤）…"/>
-    <div class="row">
-      <button class="chip active" data-filter="all">全部</button>
-      <button class="chip" data-filter="short">短篇</button>
-      <button class="chip" data-filter="long">長篇</button>
-    </div>
-    <div class="space"></div>
-    <div class="muted" id="stat">已收錄 0 個故事</div>
-  </div>
-
-  <div id="grid" class="grid" aria-live="polite"></div>
-</div>
-
-<!-- 未登入提示 -->
-<dialog id="dlgLogin">
-  <div class="body" style="padding:16px">
-    <p class="dlg-head">請先登入</p>
-    <p class="dlg-body">此內容僅限會員觀看。您可以先逛逛免費影片〈中秋節〉🙂</p>
-    <div class="row" style="justify-content:flex-end">
-      <button class="btn ghost" id="btnDlgClose">取消</button>
-      <button class="btn" id="btnGoLogin">去登入</button>
-    </div>
-  </div>
-</dialog>
-
-<!-- 假登入模組（之後可換成 Supabase Auth） -->
-<script src="login.js"></script>
-
-<script>
-/* ----------------------------------------------------
-   index.html 入口 JS  — 2025-09 V7.2+free-fix
-   - FREE_SLUGS 白名單 + 相容 data.index.json 的 free 欄位
-   - 封面/前往/測驗 點擊行為
----------------------------------------------------- */
-(() => {
-  const $  = (s,r=document)=> r.querySelector(s);
-  const $$ = (s,r=document)=> [...r.querySelectorAll(s)];
-
-  // 未登入也可看白名單（保險，與 data/index.json 的 free 並用）
-  const FREE_SLUGS = ['mid-autumn'];
-
-  const grid = $('#grid');
-  const dlg  = $('#dlgLogin');
-  const stat = $('#stat');
-  const q    = $('#q');
-
-  const authName = $('#authName');
-  const btnLogin = $('#btnLogin');
-  const btnLogout= $('#btnLogout');
-
-  let ALL = [];
-  let filter = 'all';
-  let keyword = '';
-
-  // ---------- 讀清單 ----------
-  async function loadIndex(){
-    const res = await fetch('data/index.json', {cache:'no-store'});
-    if(!res.ok) throw new Error('讀取 data/index.json 失敗');
-    const meta = await res.json();
-    ALL = meta.items || [];
-    stat.textContent = `已收錄 ${ALL.length} 個故事`;
-    render();
-  }
-
-  // ---------- 篩選 ----------
-  function passFilter(x){
-    if(filter !== 'all' && (x.length||'').toLowerCase() !== filter) return false;
-    if(!keyword) return true;
-    const k = keyword.toLowerCase();
-
-    // 同時支援 title/subtitle 舊新欄位
-    const t1 = (x.title||'').toLowerCase();
-    const t2 = (x.subtitle||'').toLowerCase();
-    const te = (x.title_en||'').toLowerCase();
-    const tz = (x.title_zh||'').toLowerCase();
-    const sg = (x.slug||'').toLowerCase();
-
-    return t1.includes(k) || t2.includes(k) || te.includes(k) || tz.includes(k) || sg.includes(k);
-  }
-
-  // 判定是否免費（任一條件為真即視為免費）
-  const isFreeItem = (item) =>
-    item.free === true || item.is_free === true || FREE_SLUGS.includes(item.slug);
-
-  // ---------- 渲染卡片 ----------
-  function render(){
-    grid.innerHTML = '';
-    const list = ALL.filter(passFilter);
-
-    list.forEach(item=>{
-      const free = isFreeItem(item);
-
-      // 顯示用標題（相容舊新）
-      const titleEn = item.title || item.title_en || '';
-      const titleZh = item.subtitle || item.title_zh || '';
-
-      const el = document.createElement('article');
-      el.className = 'card';
-
-      const coverImg = item.cover
-        ? `<img class="card-cover" src="${item.cover}" loading="lazy" onerror="this.style.display='none'">`
-        : '';
-
-      el.innerHTML = `
-        <div class="card-cover-wrap" data-act="go" data-slug="${item.slug}" title="前往">
-          ${coverImg}
-          <span class="badge ${free ? 'free':'lock'}">${free ? '免費試看' : '需登入'}</span>
-        </div>
-        <div class="body">
-          <div class="title">${titleEn}</div>
-          <div class="meta">${titleZh} · ${(item.length||'').toUpperCase()}</div>
-          <div class="foot">
-            <a class="btn sm" data-act="go" data-slug="${item.slug}">前往 ▶</a>
-            <a class="btn sm ghost" data-act="quiz" data-slug="${item.slug}">測驗</a>
+    <!-- Hero -->
+    <section class="hero">
+      <div class="card">
+        <div class="pad">
+          <h1 class="h1">看影片、做測驗、背單字 —— 一頁完成</h1>
+          <div class="muted" style="margin-bottom:10px">
+            BookWide 用 <b>故事・音樂・電影・新聞・專業主題</b> 帶你學英文。逐句播放、雙語字幕、單字卡與分區測驗，完整練到聽讀寫。
+          </div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap">
+            <a class="btn blue" href="./player.html?slug=mid-autumn">試看：故事《Mid-Autumn》</a>
+            <a class="btn" href="#catalog">瀏覽教材</a>
           </div>
         </div>
-      `;
+      </div>
+      <div class="card">
+        <div class="pad">
+          <div class="h2">服務導覽</div>
+          <div class="grid" style="grid-template-columns:1fr;gap:10px">
+            <div class="svc"><div>🎬</div><div><div>故事 Story</div><div class="tag">情境敘事，最適合漸進式輸入</div></div></div>
+            <div class="svc"><div>🎵</div><div><div>音樂 Music</div><div class="tag">歌詞跟讀、押韻、自然發音</div></div></div>
+            <div class="svc"><div>🎥</div><div><div>電影 Movies</div><div class="tag">地道口語、情緒語氣</div></div></div>
+            <div class="svc"><div>📰</div><div><div>新聞 News</div><div class="tag">時事字彙、長句結構</div></div></div>
+            <div class="svc"><div>💼</div><div><div>專業行業 Pro</div><div class="tag">商務、科技、旅遊…專用語</div></div></div>
+          </div>
+        </div>
+      </div>
+    </section>
 
-      el.addEventListener('click', (e)=>{
-        const act  = e.target?.dataset?.act;
-        if(!act) return;
-        const slug = e.target.dataset.slug;
-        const user = window.fakeAuth?.getUser?.();
-        const freeNow = FREE_SLUGS.includes(slug) || item.free === true || item.is_free === true;
+    <!-- 功能亮點 -->
+    <section id="services">
+      <div class="h2">學習功能</div>
+      <div class="features">
+        <div class="feat"><div class="name">🧠 逐句播放</div><div class="muted">一鍵回放 / 下一句，跟著文本走，不迷路。</div></div>
+        <div class="feat"><div class="name">🌗 雙語字幕</div><div class="muted">英文在上、中文在下，手機也能長句不斷行。</div></div>
+        <div class="feat"><div class="name">📝 分區測驗</div><div class="muted">Vocabulary / Grammar / Reading / Mixed 四分區評量。</div></div>
+        <div class="feat"><div class="name">📚 單字卡</div><div class="muted">遮字填空、朗讀、快速跳段，真正用到的字才記得住。</div></div>
+      </div>
+    </section>
 
-        if(act==='go'){
-          if(freeNow || user){
-            location.href = `player.html?slug=${encodeURIComponent(slug)}`;
-          }else{
-            dlg.showModal();
-          }
-        }else if(act==='quiz'){
-          // 如要鎖測驗，改成與 go 一樣的判斷
-          location.href = `player.html?slug=${encodeURIComponent(slug)}&tab=quiz`;
-        }
-        e.preventDefault();
-        e.stopPropagation();
-      });
+    <!-- 教材列表 -->
+    <section id="catalog" style="margin-top:12px">
+      <div class="toolbar">
+        <div class="tabs" id="tabBar">
+          <div class="tab on" data-cat="all">全部</div>
+          <div class="tab" data-cat="story">故事</div>
+          <div class="tab" data-cat="music">音樂</div>
+          <div class="tab" data-cat="movie">電影</div>
+          <div class="tab" data-cat="news">新聞</div>
+          <div class="tab" data-cat="pro">專業行業</div>
+        </div>
+        <div style="flex:1"></div>
+        <div class="search">
+          <input id="kw" type="search" placeholder="搜尋標題、關鍵字…"/>
+          <button class="btn" id="btnSearch">搜尋</button>
+        </div>
+      </div>
 
-      grid.appendChild(el);
-    });
-  }
+      <div class="grid" id="cardGrid">
+        <!-- 這裡由 JS 注入卡片 -->
+      </div>
 
-  // ---------- 搜尋 ----------
-  q.addEventListener('input', ()=>{
-    keyword = q.value.trim();
-    render();
-  });
+      <div id="emptyHint" class="muted" style="display:none;margin-top:12px">（沒有符合條件的教材）</div>
+    </section>
 
-  // ---------- 篩選 chips ----------
-  $$('.chip').forEach(btn=>{
-    btn.addEventListener('click', ()=>{
-      $$('.chip').forEach(x=>x.classList.remove('active'));
-      btn.classList.add('active');
-      filter = btn.dataset.filter;
-      render();
-    });
-  });
+    <footer>
+      <div>© <span id="y"></span> BookWide. 由影片 x 語言教育打造。</div>
+      <div class="muted">建議使用最新 Chrome / Edge / Safari。若影片或字幕未載入，請確認 <code>./videos/</code>、<code>./data/</code> 目錄與檔名（slug）一致。</div>
+    </footer>
+  </div>
 
-  // ---------- 對話框 ----------
-  $('#btnDlgClose').onclick = ()=> dlg.close();
-  $('#btnGoLogin').onclick = ()=>{
-    dlg.close();
-    if (window.fakeAuth?.open) window.fakeAuth.open();
-    else alert('這裡之後接 Supabase/OAuth 登入流程。');
-  };
+  <script>
+    // 1) 假資料：把你的 50 支故事逐步加到這個陣列即可（或改成 fetch JSON）
+    const CATALOG = [
+      { slug:'mid-autumn', title:'Mid-Autumn Festival', cat:'story', mins:2, level:'A2-B1',
+        thumb:'./images/thumb-mid-autumn.jpg', tags:['festival','moon','tradition'] },
+      { slug:'houyi', title:'Hou Yi and the Ten Suns', cat:'story', mins:3, level:'A2-B1',
+        thumb:'./images/thumb-houyi.jpg', tags:['legend','archer'] },
+      { slug:'lantern', title:'Lantern Festival', cat:'story', mins:2, level:'A2',
+        thumb:'./images/thumb-lantern.jpg', tags:['lantern','culture'] },
+      // ==== 範例：其他分類 ====
+      { slug:'song-happy', title:'Happy (Pharrell Williams)', cat:'music', mins:4, level:'B1',
+        thumb:'./images/thumb-music.jpg', tags:['lyrics','rhythm'] },
+      { slug:'movie-trailer-x', title:'Movie Scene – Airport Talk', cat:'movie', mins:2, level:'B1',
+        thumb:'./images/thumb-movie.jpg', tags:['dialog','slang'] },
+      { slug:'news-tech-ai', title:'AI Breakthrough in 2025', cat:'news', mins:3, level:'B2',
+        thumb:'./images/thumb-news.jpg', tags:['tech','AI'] },
+      { slug:'pro-business-email', title:'Business Email Basics', cat:'pro', mins:5, level:'B1',
+        thumb:'./images/thumb-pro.jpg', tags:['business','email'] },
+    ];
 
-  // ---------- 登入列 UI ----------
-  function refreshAuth(){
-    const u = window.fakeAuth?.getUser?.();
-    if(u){
-      authName.textContent = `👤 ${u.name || u.email || '已登入'}`;
-      btnLogout.style.display = 'inline-block';
-      btnLogin.style.display  = 'none';
-    }else{
-      authName.textContent = '';
-      btnLogout.style.display = 'none';
-      btnLogin.style.display  = 'inline-block';
+    // 2) 產卡片
+    const $ = (s, el=document)=>el.querySelector(s);
+    const $$ = (s, el=document)=>[...el.querySelectorAll(s)];
+    const grid = $('#cardGrid'), hint = $('#emptyHint');
+
+    function cardHTML(it){
+      const url = `./player.html?slug=${encodeURIComponent(it.slug)}`;
+      return `
+      <a class="video-card" href="${url}">
+        <div class="thumb">
+          <img src="${it.thumb||''}" alt="${it.title}" onerror="this.style.opacity=.5">
+          <div class="pill">${(it.cat==='story'?'故事':it.cat==='music'?'音樂':it.cat==='movie'?'電影':it.cat==='news'?'新聞':'專業')}</div>
+        </div>
+        <div class="pad">
+          <div class="title">${it.title}</div>
+          <div class="meta">
+            <span>時長 ${it.mins||'–'} 分</span>
+            <span>程度 ${it.level||'–'}</span>
+          </div>
+        </div>
+      </a>`;
     }
-  }
-  btnLogin.onclick  = ()=> window.fakeAuth?.open ? window.fakeAuth.open() : alert('這裡之後接 Supabase/OAuth 登入流程。');
-  btnLogout.onclick = ()=> { window.fakeAuth?.logout?.(); };
 
-  window.addEventListener('fakeauth:change', refreshAuth);
+    function render(list){
+      grid.innerHTML = list.map(cardHTML).join('');
+      hint.style.display = list.length? 'none':'block';
+    }
 
-  // ---------- 啟動 ----------
-  loadIndex().catch(err=>{
-    grid.innerHTML = `<div class="muted" style="grid-column:1/-1;padding:16px;border:1px solid var(--border);border-radius:12px;background:#0f1a33">讀取失敗：${err.message}</div>`;
-  });
-  refreshAuth();
-})();
-</script>
+    // 3) 分類 + 搜尋
+    const state = { cat:'all', kw:'' };
+
+    function apply(){
+      const kw = state.kw.trim().toLowerCase();
+      let list = CATALOG.filter(x => state.cat==='all' ? true : x.cat===state.cat);
+      if(kw){
+        list = list.filter(x =>
+          x.title.toLowerCase().includes(kw) ||
+          (x.tags||[]).some(t=>String(t).toLowerCase().includes(kw))
+        );
+      }
+      render(list);
+    }
+
+    $('#tabBar').addEventListener('click', e=>{
+      const btn = e.target.closest('.tab'); if(!btn) return;
+      $$('#tabBar .tab').forEach(t=>t.classList.remove('on'));
+      btn.classList.add('on');
+      state.cat = btn.dataset.cat || 'all';
+      apply();
+    });
+
+    $('#btnSearch').addEventListener('click', ()=>{
+      state.kw = $('#kw').value || '';
+      apply();
+    });
+    $('#kw').addEventListener('keydown', e=>{ if(e.key==='Enter') { state.kw=$('#kw').value||''; apply(); } });
+
+    // 啟動
+    (function init(){
+      apply();
+      $('#y').textContent = new Date().getFullYear();
+      // 若網址帶 cat，可直接選定分類： /index.html?cat=story
+      const cat = new URLSearchParams(location.search).get('cat');
+      if(cat){
+        const el = $(`#tabBar .tab[data-cat="${cat}"]`);
+        if(el){ $$('#tabBar .tab').forEach(t=>t.classList.remove('on')); el.classList.add('on'); state.cat=cat; apply(); }
+      }
+    })();
+  </script>
 </body>
 </html>
-    <div class="brand">看故事學英文·Stories</div>
-    <div class="actions">
-      <a class="btn ghost" href="https://github.com/" target="_blank" rel="noreferrer">GitHub</a>
-      <button class="btn" id="btnLogin">登入</button>
-    </div>
-  </header>
 
-  <h1>用故事學英文：雙語字幕、測驗與單字</h1>
-  <div class="muted">從下方卡片選擇故事開始。大多數內容需登入後觀看，〈中秋節〉為免費試看。</div>
-
-  <div class="toolbar">
-    <input id="q" class="search" placeholder="輸入關鍵字搜尋（中／英標題／標籤）…"/>
-    <div class="row">
-      <button class="chip active" data-filter="all">全部</button>
-      <button class="chip" data-filter="short">短篇</button>
-      <button class="chip" data-filter="long">長篇</button>
-    </div>
-    <div class="space"></div>
-    <div class="muted" id="stat">已收錄 0 個故事</div>
-  </div>
-
-  <div id="grid" class="grid" aria-live="polite"></div>
-</div>
-
-<!-- Login notice -->
-<dialog id="dlgLogin">
-  <div class="body" style="padding:16px">
-    <p class="dlg-head">請先登入</p>
-    <p class="dlg-body">此內容僅限會員觀看。您可以先逛逛免費影片〈中秋節〉🙂</p>
-    <div class="row" style="justify-content:flex-end">
-      <button class="btn ghost" id="btnDlgClose">取消</button>
-      <button class="btn" id="btnGoLogin">去登入</button>
-    </div>
-  </div>
-</dialog>
-
-<script>
-(() => {
-  const $ = (s,r=document)=> r.querySelector(s);
-  const $$ = (s,r=document)=> [...r.querySelectorAll(s)];
-  const grid = $('#grid');
-  const dlg = $('#dlgLogin');
-  const stat = $('#stat');
-  const q = $('#q');
-
-  let ALL = [];
-  let filter = 'all';
-  let keyword = '';
-
-  async function loadIndex(){
-    const res = await fetch('data/index.json', {cache:'no-store'});
-    if(!res.ok) throw new Error('讀取 data/index.json 失敗');
-    const meta = await res.json();
-    ALL = meta.items || [];
-    stat.textContent = `已收錄 ${ALL.length} 個故事`;
-    render();
-  }
-
-  function passFilter(x){
-    if(filter !== 'all' && (x.length||'').toLowerCase() !== filter) return false;
-    if(!keyword) return true;
-    const k = keyword.toLowerCase();
-    return (x.title_en||'').toLowerCase().includes(k)
-        || (x.title_zh||'').toLowerCase().includes(k)
-        || (x.slug||'').toLowerCase().includes(k);
-  }
-
-  function render(){
-    grid.innerHTML = '';
-    const list = ALL.filter(passFilter);
-    list.forEach(item=>{
-      const el = document.createElement('article');
-      el.className = 'card';
-
-      const coverImg = item.cover ? `<img class="card-cover" src="${item.cover}" loading="lazy" onerror="this.style.display='none'">` : '';
-
-      el.innerHTML = `
-        <div class="card-cover-wrap">
-          ${coverImg}
-          <span class="badge ${item.is_free ? 'free':'lock'}">${item.is_free?'免費試看':'需登入'}</span>
-        </div>
-        <div class="body">
-          <div class="title">${item.title_en||''}</div>
-          <div class="meta">${item.title_zh||''} · ${(item.length||'').toUpperCase()}</div>
-          <div class="foot">
-            <a class="btn sm" data-act="go" data-slug="${item.slug}">前往 ▶</a>
-            <a class="btn sm ghost" data-act="quiz" data-slug="${item.slug}">測驗</a>
-          </div>
-        </div>
-      `;
-
-      el.addEventListener('click',e=>{
-        const act = e.target?.dataset?.act;
-        if(!act) return;
-        const slug = e.target.dataset.slug;
-        if(act==='go'){
-          if(item.is_free){
-            location.href = `player.html?slug=${encodeURIComponent(slug)}`;
-          }else{
-            dlg.showModal();
-          }
-        }else if(act==='quiz'){
-          location.href = `player.html?slug=${encodeURIComponent(slug)}&tab=quiz`;
-        }
-        e.preventDefault();
-        e.stopPropagation();
-      });
-
-      grid.appendChild(el);
-    });
-  }
-
-  // 搜尋
-  q.addEventListener('input', ()=>{
-    keyword = q.value.trim();
-    render();
-  });
-
-  // 篩選
-  $$('.chip').forEach(btn=>{
-    btn.addEventListener('click', ()=>{
-      $$('.chip').forEach(x=>x.classList.remove('active'));
-      btn.classList.add('active');
-      filter = btn.dataset.filter;
-      render();
-    });
-  });
-
-  // 對話框控制
-  $('#btnDlgClose').onclick = ()=> dlg.close();
-  $('#btnGoLogin').onclick = ()=>{
-    dlg.close();
-    alert('這裡之後接 Supabase/OAuth 登入流程。');
-  };
-  $('#btnLogin').onclick = ()=> alert('這裡之後接 Supabase/OAuth 登入流程。');
-
-  // 啟動
-  loadIndex().catch(err=>{
-    grid.innerHTML = `<div class="muted" style="grid-column:1/-1;padding:16px;border:1px solid var(--border);border-radius:12px;background:#0f1a33">讀取失敗：${err.message}</div>`;
-  });
-})();
-</script>
-</body>
-</html>
 
 
 
