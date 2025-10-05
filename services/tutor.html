@@ -1,112 +1,53 @@
 <!doctype html>
 <html lang="zh-Hant">
 <head>
-<meta charset="utf-8"/>
-<meta name="viewport" content="width=device-width,initial-scale=1"/>
-<title>真人對話討論｜BookWide 服務</title>
+<meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>真人對話討論｜BookWide</title>
 <meta name="description" content="與真人家教一對一練習口說，真正活用對話。"/>
 <style>
-:root{{--bg:#0b1324;--panel:#0f172a;--ink:#0b1324;--muted:#5b667a;--accent:#3c7cff;--border:#e8edf7;}}
-*{{box-sizing:border-box}} html,body{{height:100%;margin:0;font-family:ui-sans-serif,system-ui,'Noto Sans TC';}}
-a{{color:inherit;text-decoration:none}}
-.wrap{{max-width:1200px;margin:0 auto;padding:18px}}
-/* Top bar (黑底工具列) */
-.topbar{{position:sticky;top:0;z-index:50;background:#0b1324;color:#e6efff;border-bottom:1px solid rgba(255,255,255,.06)}}
-.topbar .row{{display:flex;align-items:center;justify-content:space-between;padding:12px 12px}}
-.brand{{display:flex;align-items:center;gap:10px;font-weight:800;font-size:20px}}
-.badge{{display:inline-block;padding:2px 8px;border-radius:999px;border:1px solid rgba(255,255,255,.15);background:rgba(255,255,255,.05);font-size:12px;color:#d9e7ff}}
-.actions{{display:flex;gap:10px;align-items:center}}
-.btn{{border-radius:12px;padding:8px 12px;border:1px solid rgba(255,255,255,.18);background:rgba(255,255,255,.06);color:#fff;cursor:pointer}}
-.btn.primary{{background:#311a5f;border-color:#553399}}
-/* Body (白底區) */
-.hero{{background:#fff;color:#0b1324;border-bottom:1px solid var(--border)}}
-.hero .wrap{{padding:28px 18px}}
-.h1{{font-size:28px;line-height:1.25;margin:0 0 8px}}
-.h2{{font-size:20px;margin:22px 0 8px}}
-.p{{color:#384155}}
-.grid{{display:grid;grid-template-columns:repeat(2,1fr);gap:14px}}
-.card{{background:#fff;border:1px solid var(--border);border-radius:14px;padding:14px}}
-.cta{{display:flex;gap:10px;margin-top:14px}}
-.cta .btn{{border:1px solid #2d4677;background:#0f223b;color:#dbe7ff}}
-.kv{{border-radius:14px;border:1px solid var(--border);overflow:hidden;background:#f7f9ff}}
-.kv img{{width:100%;height:240px;object-fit:cover;display:block}}
-footer{{border-top:1px solid var(--border);color:#5b667a;padding:18px 0;background:#fff}}
-/* Login modal */
-#authModal{{position:fixed;inset:0;background:rgba(0,0,0,.5);display:none;align-items:center;justify-content:center;padding:16px}}
-#authModal .panel{{width:100%;max-width:420px;background:#0f172a;color:#e6efff;border:1px solid #1f2a44;border-radius:16px;padding:16px}}
-.field{{display:flex;flex-direction:column;margin:10px 0}}
-.field input{{height:42px;border:1px solid #1f2a44;background:#0b1324;border-radius:10px;color:#fff;padding:0 12px}}
-.row-gap{{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end;margin-top:8px}}
-.link{{color:#8fb3ff;cursor:pointer}}
-/* Mobile */
-@media (max-width:800px){{ .grid{{grid-template-columns:1fr}} .kv img{{height:180px}} }}
+:root{--bg:#0b1324;--panel:#0f172a;--ink:#0b1324;--ink2:#334155;--link:#145ef6;--muted:#64748b;--border:#e5e7eb}
+*{box-sizing:border-box}html,body{margin:0;padding:0}
+body{background:#fff;color:var(--ink);font:16px/1.6 ui-sans-serif,system-ui,"Noto Sans TC",Helvetica,Arial}
+.wrap{max-width:960px;margin:0 auto;padding:20px}
+.topbar{position:sticky;top:0;z-index:10;background:#0b1324;color:#e6efff;border-bottom:1px solid #0a1222}
+.topbar-inner{display:flex;align-items:center;justify-content:space-between;gap:10px;max-width:1200px;margin:0 auto;padding:14px 16px}
+.brand{display:flex;align-items:center;gap:10px;font-weight:800;font-size:20px}
+.badge{display:inline-block;font-size:12px;border:1px solid #2d4677;border-radius:999px;padding:2px 8px;background:#0f223b;color:#dbe7ff}
+.top-actions{display:flex;gap:10px;align-items:center}
+.top-actions a{display:inline-block;padding:10px 14px;border:1px solid #213a6b;background:#13233f;color:#fff;border-radius:12px;text-decoration:none}
+.hero{background:#f8fafc;border-bottom:1px solid var(--border)}
+.hero .wrap{padding:34px 20px}
+.h1{font-size:28px;margin:0 0 10px}
+.muted{color:var(--muted)}
+.grid{display:grid;grid-template-columns:repeat(2,1fr);gap:14px}
+.card{border:1px solid var(--border);border-radius:14px;padding:16px;background:#fff}
+.card h3{margin:0 0 6px;font-size:18px}
+.card p{margin:0;color:var(--ink2)}
+ul.tick{padding-left:22px;margin:10px 0 0}
+ul.tick li{margin:6px 0}
+footer{border-top:1px solid var(--border);margin-top:28px;color:#6b7280}
+footer .wrap{padding:16px 20px}
+@media (max-width:720px){.grid{grid-template-columns:1fr}}
 </style>
 </head>
 <body>
-<!-- top bar -->
-<div class="topbar">
-  <div class="row wrap">
-    <div class="brand"><span>BookWide</span><span class="badge">Beta</span></div>
-    <div class="actions">
-      <a class="btn" href="../index.html#catalog">回教材</a>
-      <button id="btnOpenLogin" class="btn">登入</button>
-      <button id="btnLogout" class="btn" style="display:none">登出</button>
-      <span id="userNameBadge" style="color:#9fb0c9"></span>
-    </div>
-  </div>
-</div>
-<!-- hero -->
-<section class="hero">
-  <div class="wrap">
-    <div class="grid">
-      <div>
-        <h1 class="h1">真人對話討論</h1>
-        <div class="p">情境式對話與主題討論，強化即時表達力與臨場反應。</div>
-        <div class="h2">你將獲得</div>
-        <div class="card">
-          <ul style="margin:0;padding-left:18px;line-height:1.9">
-            <li>單元主題對談</li><li>錯誤即時更正</li><li>課後要點摘要</li>
-          </ul>
-        </div>
-        <div class="cta">
-          <a class="btn" href="../index.html">返回首頁</a>
-          <a class="btn" href="../player.html?slug=mid-autumn">立即試看</a>
-        </div>
-      </div>
-      <div class="kv"><img src="https://images.unsplash.com/photo-1551836022-d5d88e9218df?q=80&w=1200&auto=format&fit=crop" alt="真人對話討論"/></div>
-    </div>
-  </div>
-</section>
-<!-- footer -->
-<footer>
-  <div class="wrap">© <span id="y"></span> BookWide — Practice makes progress.</div>
-</footer>
+<div class="topbar"><div class="topbar-inner">
+  <div class="brand">BookWide <span class="badge">Beta</span></div>
+  <div class="top-actions"><a href="../index.html#catalog">回教材</a></div>
+</div></div>
 
-<!-- Login modal -->
-<div id="authModal">
-  <div class="panel">
-    <h3 style="margin:0 0 8px">登入</h3>
-    <div class="field"><label>Email</label><input id="email" type="email" placeholder="you@example.com"/></div>
-    <div class="field"><label>密碼</label><input id="password" type="password" placeholder="••••••••"/></div>
-    <div class="row-gap" style="justify-content:space-between">
-      <span class="link" id="linkReset">忘記密碼？</span>
-      <div>
-        <button class="btn" id="btnClose">取消</button>
-        <button class="btn primary" id="btnLogin">登入</button>
-      </div>
-    </div>
-  </div>
-</div>
+<section class="hero"><div class="wrap">
+  <h1 class="h1">真人對話討論</h1>
+  <div class="muted">與真人家教一對一練習口說，真正活用對話。</div>
+</div></section>
 
-<!-- 掛載 Supabase 與 Login（使用現有 supa.js + login.js） -->
-<script type="module" src="../supa.js"></script>
-<script type="module" src="../login.js"></script>
-<script>
-document.getElementById('y').textContent = new Date().getFullYear();
-const m = document.getElementById('authModal');
-document.getElementById('btnOpenLogin').onclick = ()=> m.style.display = 'flex';
-document.getElementById('btnClose').onclick = ()=> m.style.display = 'none';
-document.getElementById('linkReset').onclick = ()=> location.href = '../reset.html';
-</script>
-</body>
-</html>
+<main class="wrap"><div class="grid">
+<div class="card"><h3>教材銜接</h3><p>直接沿用你在 BookWide 的單元。</p></div>
+<div class="card"><h3>任務式討論</h3><p>不背稿，實境解決問題。</p></div>
+<div class="card"><h3>回饋單</h3><p>重點錯誤與替代表達一次整理。</p></div>
+<div class="card"><h3>預約與紀錄</h3><p>線上預約、堂數記錄與影片回看。</p></div>
+</div></main>
+
+<footer><div class="wrap">© <span id="y"></span> BookWide</div></footer>
+<script>document.getElementById('y').textContent=new Date().getFullYear()</script>
+</body></html>
