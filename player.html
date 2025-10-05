@@ -207,6 +207,24 @@
     video.src=src(primarySlug);
     video.addEventListener('error',()=>{ video.src=src('mid-autumn'); },{once:true});
   }
+<script type="module">
+  import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm";
+
+  const supabaseUrl = "https://你的專案.supabase.co";
+  const supabaseKey = "你的anon-key";
+  const supabase = createClient(supabaseUrl, supabaseKey);
+
+  // 🧱 登入防護：若未登入則導回首頁
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) {
+    alert("請先登入後再觀看影片。");
+    location.href = "index.html";
+  }
+</script>
+
+<script>
+  const $=(s,e=document)=>e.querySelector(s);
+  ...
 
   async function loadCues(){
     cuesStatus.textContent='（字幕載入中…）';
