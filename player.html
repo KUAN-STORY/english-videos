@@ -54,19 +54,28 @@
   .voc-en{color:#9fb0c9}
   .voc-actions{display:flex;gap:8px;margin-top:8px}
 
-  /* ===== 列印樣式 ===== */
+  /* ===== 列印樣式（關鍵補強） ===== */
   @media print{
-    body{background:#fff;color:#000}
-    header,.tabs,.controls,.q-actions .btn,#authArea,.drawer-grab{display:none !important}
-    .layout{display:block}
-    .left{display:none !important}
-    .right{border:none;background:#fff}
-    .pane{overflow:visible}
-    #pane-quiz{display:block !important}
-    /* 列印頁首 */
-    #printHeader{display:flex !important}
+    html,body{ background:#fff !important; color:#000 !important; height:auto !important; }
+    header,.tabs,.controls,#authArea,.drawer-grab{ display:none !important; }
+    .wrap{ padding:0 !important; }
+    .layout{ display:block !important; height:auto !important; overflow:visible !important; }
+    .left{ display:none !important; }
+    .right{ border:none !important; background:#fff !important; display:block !important; height:auto !important; }
+    .pane, #pane-quiz, .quiz-shell, #quizList{
+      height:auto !important; max-height:none !important; overflow:visible !important;
+    }
+    #pane-quiz{ display:block !important; }        /* 只印測驗 */
+    #quizList{ font-size:12.5pt; line-height:1.25; }
+    #quizList > li{
+      break-inside:avoid; page-break-inside:avoid;     /* 題目不被切半 */
+      padding:6px 0; margin:0 0 6px 0; border-bottom:1px dotted #ccc;
+    }
+    @page { margin:10mm 10mm 12mm 10mm; }           /* 版邊 */
+    #printHeader{ display:flex !important; }         /* 顯示列印頁首 */
+    #phScore{ font-size:22px; font-weight:900; }
   }
-  /* 列印頁首區塊（平常隱藏，列印時顯示） */
+  /* 列印頁首（平常隱藏、列印顯示） */
   #printHeader{display:none; align-items:center; justify-content:space-between; padding:12px 8px 16px; margin:0 8px 8px; border-bottom:1px solid #ddd; color:#111; background:#fff;}
   #phLeft{display:flex;align-items:center;gap:10px}
   #phLogo{width:26px;height:26px}
@@ -307,17 +316,33 @@ async function loadQuiz(){
   };
   $('#btnShowAnswer').onclick=()=>{ $('#quizList').querySelectorAll('li').forEach(li=>{ const exp=li.querySelector('.exp'); if(exp&&!exp.textContent) exp.textContent=`正解：${li.dataset.ans}`; }); };
 
-  // 列印按鈕
-  btnPrint.onclick=()=>{ prepareForPrint(); window.print(); setTimeout(resetAfterPrint, 200); };
-
-  // 讓 20 題完整顯示：列印前把每題展開（這裡題目本來就全部在 DOM，確保不被隱藏）
-  function prepareForPrint(){
-    // 指明目前分區名稱
-    const onTab = $('#quizTabs .qtab.on')?.textContent?.trim() || 'Vocabulary';
-    $('#phSection').textContent = onTab;
-    // 題號樣式確保清晰（已用 <ol>）
+  /* ===== 列印（使用強化過的 CSS；這裡只負責補上頁首資訊） ===== */
+  function updatePrintHeader(score, full){
+    const pct = full ? Math.round((score/full)*100) : 0;
+    const words = pct>=90 ? '太強了！' : pct>=75 ? '很棒，繼續加油！' : pct>=60 ? '還可以，再練練會更好。' : '先別灰心！重作錯題、背關鍵字再試一次會更好。';
+    $('#phSlug').textContent = slug;
+    $('#phSection').textContent = $('#quizTabs .qtab.on')?.textContent?.trim() || 'Vocabulary';
+    $('#phTime').textContent = new Date().toLocaleString('zh-TW', { hour12:false });
+    $('#phScore').textContent = `${score} / ${full}`;
+    $('#phFeedback').textContent = `（${pct}%）${words}`;
   }
-  function resetAfterPrint(){ /* 若需要列印後復位邏輯，可寫在這裡 */ }
+  // 讓 20 題完整顯示：其實題目本來就都在 DOM，中途不再動 display，交給 @media print 負責高度/分頁
+
+  // 列印按鈕：開印前再保險抓一次分數（避免沒交卷也能印）
+  btnPrint.onclick=()=>{
+    let s=0,f=0;
+    const m=($('#quizScore').textContent||'').match(/(\d+)\s*\/\s*(\d+)/);
+    if(m){ s=+m[1]; f=+m[2]; }
+    updatePrintHeader(s,f||100);
+    window.print();
+  };
+  // 使用者直接 Ctrl+P 時也補頁首
+  window.addEventListener('beforeprint',()=>{
+    let s=0,f=100;
+    const m=($('#quizScore').textContent||'').match(/(\d+)\s*\/\s*(\d+)/);
+    if(m){ s=+m[1]; f=+m[2]; }
+    updatePrintHeader(s,f);
+  });
 }
 
 /* ---------- 字彙卡 ---------- */
@@ -355,17 +380,6 @@ function showTab(name){
   $$('.tabs .tab').forEach(t=>t.classList.toggle('active',t.dataset.tab===name));
 }
 $$('.tabs .tab').forEach(t=>t.addEventListener('click',()=>showTab(t.dataset.tab)));
-
-/* ---------- 列印頁首更新 ---------- */
-function updatePrintHeader(score, full){
-  const pct = full ? Math.round((score/full)*100) : 0;
-  const words = pct>=90 ? '太強了！' : pct>=75 ? '很棒，繼續加油！' : pct>=60 ? '還可以，再練練會更好。' : '先別灰心！重作錯題、背關鍵字再試一次會更好。';
-  $('#phSlug').textContent = slug;
-  $('#phSection').textContent = $('#quizTabs .qtab.on')?.textContent?.trim() || 'Vocabulary';
-  $('#phTime').textContent = new Date().toLocaleString('zh-TW');
-  $('#phScore').textContent = `${score} / ${full}`;
-  $('#phFeedback').textContent = `（${pct}%）${words}`;
-}
 
 /* ---------- 初始化 ---------- */
 (async function init(){
