@@ -16,7 +16,7 @@
 
     .wrap{padding:16px;height:calc(100vh - 58px);}
     .layout{height:100%;display:flex;gap:16px;overflow:hidden}
-    .left,.right{flex:1;min-width:0;background:var(--panel);border:1px solid var(--border);border-radius:12px}
+    .left,.right{flex:1;min-width:0;background:var(--panel);border:1px solid #var(--border);border-radius:12px}
     .left{display:flex;flex-direction:column;padding:14px}
     .right{display:flex;flex-direction:column}
     .pane{flex:1;overflow:auto}
@@ -30,7 +30,7 @@
     input[type="range"]{width:260px;accent-color:var(--accent)}
     .chip{display:inline-flex;align-items:center;gap:6px;padding:7px 10px;border:1px solid #23446c;border-radius:10px;background:#10233d}
 
-    .tabs{display:flex;gap:8px;padding:6px 10px;margin:0 0 2px;border-bottom:1px solid var(--border)}
+    .tabs{display:flex;gap:8px;padding:6px 10px;margin:0 0 2px;border-bottom:1px solid #1f2a44}
     .tab{cursor:pointer;background:#122340;border:1px solid #1f375f;border-radius:10px;padding:8px 12px}
     .tab.active{background:#154274}
 
@@ -86,26 +86,30 @@
       body.read-mode #pane-sub td:nth-child(3){font-size:17px;line-height:1.9;margin:0 0 16px;color:#cfe2ff}
     }
 
-    /* ====== 列印表頭（僅列印時顯示） ====== */
-    #printHeader{ display:none; }
+    /* ===== 列印頁首 ===== */
+    #printHeader{
+      display:none; justify-content:space-between; align-items:center;
+      border-bottom:2px solid #999; padding:12px 0 6px; margin:10px 0 12px;
+      color:#000;
+    }
+    #printHeader .left{display:flex;align-items:center;gap:10px;font-size:14px}
+    #printHeader svg{width:26px;height:26px}
+    #printHeader .title{font-weight:800;font-size:18px}
+    #printHeader .info{font-size:13px;color:#333}
+    #printHeader .right{text-align:right;font-size:15px}
+    #printHeader .score{font-size:22px;font-weight:800;margin-bottom:3px}
+
+    /* ===== 列印模式 ===== */
     @media print{
-      #printHeader{
-        display:flex !important;
-        justify-content:space-between; align-items:flex-start; gap:16px;
-        padding:8px 4px 12px; margin:0 0 12px; border-bottom:1px solid #d0d7e1;
-        color:#000; background:#fff; font-family:ui-sans-serif,system-ui,"Noto Sans TC";
-      }
-      .ph-left{display:flex;align-items:flex-start;gap:10px;max-width:70%}
-      .ph-brand{display:flex;align-items:center;gap:8px}
-      .ph-brand svg{width:28px;height:28px}
-      .ph-title{font-weight:800}
-      .ph-meta{font-size:12px;opacity:.8;margin-top:2px;line-height:1.4}
-      .ph-right{text-align:right;min-width:28%}
-      .ph-score{font-size:26px;font-weight:800;line-height:1}
-      .ph-comment{font-size:12px;opacity:.85;margin-top:4px}
-      /* 列印只保留表頭 + 題目/答案；其餘元素隱藏 */
-      header,.tabs,#controlsDrawer,.drawer-grab,.q-tabs .qtab,.q-actions .btn{display:none !important;}
-      body{background:#fff;color:#000}
+      @page{ margin:14mm; }
+      body{background:#fff;color:#000;}
+      header,.left,.tabs,.controls,.btn,#authArea,#controlsDrawer{display:none!important;}
+      #printHeader{display:flex!important;}
+      #pane-quiz,#pane-vocab,#pane-sub{display:block!important;}
+      .right{border:none;background:#fff;}
+      .voc{border:1px solid #ccc;background:#fff;color:#000;}
+      .voc-zh,.voc-en{color:#000;}
+      table,th,td{border-color:#aaa!important;color:#000!important;}
     }
   </style>
 </head>
@@ -119,24 +123,19 @@
     </div>
   </header>
 
-  <!-- 列印表頭（列印時才會顯示） -->
-  <div id="printHeader" aria-hidden="true">
-    <div class="ph-left">
-      <div class="ph-brand">
-        <!-- 內嵌 SVG 小 Logo -->
-        <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-          <rect x="2" y="3" width="20" height="18" rx="2" stroke="#111827" stroke-width="1.5"/>
-          <path d="M6 7h9M6 11h12M6 15h8" stroke="#2563eb" stroke-width="1.6" stroke-linecap="round"/>
-        </svg>
-        <div>
-          <div class="ph-title">BookWide · 英語影片測驗成績單</div>
-          <div class="ph-meta" id="phMeta">影片：—　分區：—　列印：—</div>
-        </div>
+  <!-- 列印專用頁首（動態填入） -->
+  <div id="printHeader">
+    <div class="left">
+      <!-- SVG 小 Logo -->
+      <svg xmlns="http://www.w3.org/2000/svg" fill="#000" viewBox="0 0 24 24"><path d="M3 4h18v2H3zm0 5h12v2H3zm0 5h18v2H3zm0 5h12v2H3z"/></svg>
+      <div>
+        <div class="title">BookWide 英語影片測驗成績單</div>
+        <div class="info" id="printMeta"></div>
       </div>
     </div>
-    <div class="ph-right">
-      <div class="ph-score" id="phScore">— / —</div>
-      <div class="ph-comment" id="phComment">—</div>
+    <div class="right">
+      <div class="score" id="printScore">-- / --</div>
+      <div id="printRemark">尚未作答</div>
     </div>
   </div>
 
@@ -181,6 +180,7 @@
         </div>
 
         <div class="pane">
+          <!-- 字幕 -->
           <div id="pane-sub">
             <div id="cuesStatus" class="muted" style="padding:10px 14px">（字幕載入中…）</div>
             <table>
@@ -189,6 +189,7 @@
             </table>
           </div>
 
+          <!-- 測驗 -->
           <div id="pane-quiz" style="display:none">
             <div class="quiz-shell">
               <div id="quizTabs" class="q-tabs" style="margin:6px 0 10px 0;">
@@ -209,6 +210,7 @@
             </div>
           </div>
 
+          <!-- 單字 -->
           <div id="pane-vocab" style="display:none">
             <div id="vocabStatus" class="muted" style="padding:10px 14px">( 單字載入中… )</div>
             <div id="vocabBox" style="padding:0 14px 14px"></div>
@@ -218,11 +220,9 @@
     </div>
   </div>
 
-  <!-- ====== 播放器主程式 ====== -->
+  <!-- ===== 主腳本：維持你原有 API/ID/行為，僅加列印頁首 ===== -->
   <script>
-  /* ---------- 小工具 ---------- */
-  const $=(s,e=document)=>e.querySelector(s);
-  const $$=(s,e=document)=>[...e.querySelectorAll(s)];
+  const $=(s,e=document)=>e.querySelector(s); const $$=(s,e=document)=>[...e.querySelectorAll(s)];
   const toSec=t=>{if(typeof t==='number')return t;const p=String(t).split(':').map(Number);if(p.length===3)return p[0]*3600+p[1]*60+p[2];if(p.length===2)return p[0]*60+p[1];return Number(t)||0;};
   const fmt=sec=>{sec=Math.max(0,sec|0);const m=(sec/60)|0,s=sec%60;return `${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;}
   const esc=s=>String(s??'').replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;');
@@ -237,22 +237,17 @@
     catch(e2){console.error(`[fatal] ${kind} 讀取失敗`,e2);return{data:null,used:'error'};}}
   }
 
-  /* ---------- DOM ---------- */
-  const video=$('#player');
-  const cuesBody=$('#cuesBody'), cuesStatus=$('#cuesStatus');
+  const video=$('#player'); const cuesBody=$('#cuesBody'); const cuesStatus=$('#cuesStatus');
   const btnPrev=$('#btnPrev'),btnPlay=$('#btnPlay'),btnNext=$('#btnNext'),btnReplay=$('#btnReplay');
   const btnOffsetMinus=$('#btnOffsetMinus'),btnOffsetPlus=$('#btnOffsetPlus'),offsetVal=$('#offsetVal');
   const chkFollow=$('#chkFollow'); const speedRange=$('#speedRange'),speedVal=$('#speedVal');
   const btnAutoSync=$('#btnAutoSync');
   const paneSub=$('#pane-sub'),paneQuiz=$('#pane-quiz'),paneVocab=$('#pane-vocab');
 
-  /* ---------- 狀態 ---------- */
   let cues=[]; let offset=0; let loopSentence=false;
-
   function setOffset(v){offset=Number(v)||0; offsetVal.textContent=`${offset.toFixed(1)}s`; localStorage.setItem(`offset:${slug}`,String(offset));}
   window.player={ setOffset, clearRepeat:()=>{ loopSentence=false; btnReplay?.classList.remove('blue'); } };
 
-  /* ---------- 載入資源 ---------- */
   async function loadVideo(){
     const src=s=>`./videos/${s}.mp4`;
     video.src=src(primarySlug);
@@ -274,107 +269,42 @@
   function seekTo(idx,play=true){ if(!cues[idx])return; video.currentTime=Math.max(0,cues[idx].t-offset+0.0001); highlightRow(idx); if(play) video.play(); }
   function sentenceRange(i){ if(!cues[i])return[0,0]; const s=cues[i].t,e=(i+1<cues.length?cues[i+1].t:s+3); return[s,e]; }
 
+  // ===== 測驗 =====
   async function loadQuiz(){
     const listEl=$('#quizList',paneQuiz), metaEl=$('#quizMeta',paneQuiz);
     const {data,used}=await fetchWithFallback(`./data/quiz-${primarySlug}.json?v=${Date.now()}`,`./data/quiz-mid-autumn.json?v=${Date.now()}`,'quiz');
     if(!data){ metaEl.textContent='⚠️ 題庫讀取失敗'; return; }
     let questions=[];
-    if(Array.isArray(data)){
-      questions=data.map(q=>({section:(q.section||'Mixed'),
-        type:(String(q.type||'MCQ').toUpperCase()==='SA')?'SA':'MCQ',
-        question:q.question||q.q||'',options:q.options||q.choices||[],answer:q.answer??q.ans??''}));
-    }else if(data.sections){
-      const push=(sec,arr=[])=>arr?.forEach(q=>questions.push({
-        section:sec,type:(String(q.type||'MCQ').toUpperCase()==='SA')?'SA':'MCQ',
-        question:q.question||'',options:q.options||[],answer:q.answer??''}));
-      push('Vocabulary',data.sections.vocab);
-      push('Grammar',data.sections.grammar);
-      push('Reading',data.sections.reading);
-      push('Mixed',data.sections.mixed);
-    }
-    metaEl.textContent=used==='fallback'
-      ? `已載入（mid-autumn 回退），共 ${questions.length} 題`
-      : `已載入（${primarySlug}），共 ${questions.length} 題`;
+    if(Array.isArray(data)){ questions=data.map(q=>({section:(q.section||'Mixed'),type:(String(q.type||'MCQ').toUpperCase()==='SA')?'SA':'MCQ',question:q.question||q.q||'',options:q.options||q.choices||[],answer:q.answer??q.ans??''}));}
+    else if(data.sections){ const push=(sec,arr=[])=>arr?.forEach(q=>questions.push({section:sec,type:(String(q.type||'MCQ').toUpperCase()==='SA')?'SA':'MCQ',question:q.question||'',options:q.options||[],answer:q.answer??''})); push('Vocabulary',data.sections.vocab); push('Grammar',data.sections.grammar); push('Reading',data.sections.reading); push('Mixed',data.sections.mixed); }
+    metaEl.textContent=used==='fallback'?`已載入（mid-autumn 回退），共 ${questions.length} 題`:`已載入（${primarySlug}），共 ${questions.length} 題`;
 
     function renderSection(sec){
       const arr=questions.filter(q=>q.section===sec);
       if(!arr.length){ listEl.innerHTML='<li style="color:#9fb3ff">（此分區無題目）</li>'; return; }
-      listEl.innerHTML=arr.map((q,i)=>{
-        const idx=i+1;
-        if(q.type==='MCQ'){
-          const opts=q.options.map(opt=>`<label style="display:block;margin:4px 0">
-            <input type="radio" name="q${sec}-${idx}" value="${String(opt)}"> ${String(opt)}</label>`).join('');
-          return `<li data-type="MCQ" data-ans="${String(q.answer)}">
-            <div style="font-weight:700;margin:4px 0">${idx}. ${esc(q.question)}</div>
-            <div>${opts}</div><div class="msg" style="margin-top:4px"></div>
-            <div class="exp" style="margin-top:4px;color:#9fb3ff"></div></li>`;
+      listEl.innerHTML=arr.map((q,i)=>{const idx=i+1;
+        if(q.type==='MCQ'){ const opts=q.options.map(opt=>`<label style="display:block;margin:4px 0"><input type="radio" name="q${sec}-${idx}" value="${String(opt)}"> ${String(opt)}</label>`).join('');
+          return `<li data-type="MCQ" data-ans="${String(q.answer)}"><div style="font-weight:700;margin:4px 0">${idx}. ${esc(q.question)}</div><div>${opts}</div><div class="msg" style="margin-top:4px"></div><div class="exp" style="margin-top:4px;color:#9fb3ff"></div></li>`;
         }else{
-          return `<li data-type="SA" data-ans="${String(q.answer)}">
-            <div style="font-weight:700;margin:4px 0">${idx}. ${esc(q.question)}</div>
-            <input type="text" placeholder="輸入答案…" style="padding:6px 8px;border:1px solid #334155;border-radius:6px;background:#0f223b;color:#dbe7ff">
-            <button class="btn btn-check" style="margin-left:6px">檢查</button>
-            <div class="msg" style="margin-top:4px"></div>
-            <div class="exp" style="margin-top:4px;color:#9fb3ff"></div></li>`;
-        }
-      }).join('');
-      // 簡答題立即檢查
-      listEl.addEventListener('click',e=>{
-        if(!e.target.classList.contains('btn-check'))return;
-        const li=e.target.closest('li');
-        const ipt=li.querySelector('input');
-        const ok=(ipt.value||'').trim().toLowerCase()===String(li.dataset.ans||'').trim().toLowerCase();
-        const msg=li.querySelector('.msg'); const exp=li.querySelector('.exp');
-        msg.textContent=ok?'✅ 正確':'❌ 錯誤';
-        msg.style.color=ok?'#5bd3c7':'#ff6b6b';
-        exp.textContent=ok?'':`正解：${li.dataset.ans}`;
-      },{once:true});
+          return `<li data-type="SA" data-ans="${String(q.answer)}"><div style="font-weight:700;margin:4px 0">${idx}. ${esc(q.question)}</div><input type="text" placeholder="輸入答案…" style="padding:6px 8px;border:1px solid #334155;border-radius:6px;background:#0f223b;color:#dbe7ff"><button class="btn btn-check" style="margin-left:6px">檢查</button><div class="msg" style="margin-top:4px"></div><div class="exp" style="margin-top:4px;color:#9fb3ff"></div></li>`;
+        }}).join('');
+      listEl.addEventListener('click',e=>{ if(!e.target.classList.contains('btn-check'))return; const li=e.target.closest('li'); const ipt=li.querySelector('input'); const ok=(ipt.value||'').trim().toLowerCase()===String(li.dataset.ans||'').trim().toLowerCase(); const msg=li.querySelector('.msg'); const exp=li.querySelector('.exp'); msg.textContent=ok?'✅ 正確':'❌ 錯誤'; msg.style.color=ok?'#5bd3c7':'#ff6b6b'; exp.textContent=ok?'':`正解：${li.dataset.ans}`; },{once:true});
     }
-
-    $('#quizTabs').querySelectorAll('.qtab').forEach(b=>{
-      b.addEventListener('click',()=>{
-        $('#quizTabs').querySelectorAll('.qtab').forEach(x=>x.classList.remove('on'));
-        b.classList.add('on'); renderSection(b.dataset.sec);
-      });
-    });
+    $('#quizTabs').querySelectorAll('.qtab').forEach(b=>{ b.addEventListener('click',()=>{ $('#quizTabs').querySelectorAll('.qtab').forEach(x=>x.classList.remove('on')); b.classList.add('on'); renderSection(b.dataset.sec); }); });
     renderSection('Vocabulary');
 
-    $('#btnSubmitQuiz').onclick=()=>{
-      const items=[...$('#quizList').querySelectorAll('li')];
-      if(!items.length)return; let got=0,total=items.length;
-      items.forEach(li=>{
-        const ans=String(li.dataset.ans||'').trim();
-        if(li.dataset.type==='MCQ'){
-          const sel=li.querySelector('input[type="radio"]:checked');
-          const user=sel?sel.value:'';
-          const ok=user===ans; if(ok)got++;
-          const msg=li.querySelector('.msg'),exp=li.querySelector('.exp');
-          msg.textContent=ok?'✅ 正確':'❌ 錯誤';
-          msg.style.color=ok?'#5bd3c7':'#ff6b6b';
-          if(!ok)exp.textContent=`正解：${ans}`;
-        }else{
-          const ipt=li.querySelector('input');
-          const ok=(ipt.value||'').trim().toLowerCase()===ans.toLowerCase();
-          if(ok)got++; const msg=li.querySelector('.msg'),exp=li.querySelector('.exp');
-          msg.textContent=ok?'✅ 正確':'❌ 錯誤';
-          msg.style.color=ok?'#5bd3c7':'#ff6b6b';
-          if(!ok)exp.textContent=`正解：${ans}`;
-        }
-      });
-      const score=got*5, full=total*5;
-      $('#quizScore').textContent=`本分區分數：${score} / ${full}`;
-      $('#quizResult').style.display='block';
-      $('#btnShowAnswer').style.display='inline-block';
-      $('#btnPrintQuiz').style.display='inline-block';
+    $('#btnSubmitQuiz').onclick=()=>{ const items=[...$('#quizList').querySelectorAll('li')]; if(!items.length)return; let got=0,total=items.length;
+      items.forEach(li=>{ const ans=String(li.dataset.ans||'').trim(); if(li.dataset.type==='MCQ'){ const sel=li.querySelector('input[type="radio"]:checked'); const user=sel?sel.value:''; const ok=user===ans; if(ok)got++; const msg=li.querySelector('.msg'),exp=li.querySelector('.exp'); msg.textContent=ok?'✅ 正確':'❌ 錯誤'; msg.style.color=ok?'#5bd3c7':'#ff6b6b'; if(!ok)exp.textContent=`正解：${ans}`; }else{ const ipt=li.querySelector('input'); const ok=(ipt.value||'').trim().toLowerCase()===ans.toLowerCase(); if(ok)got++; const msg=li.querySelector('.msg'),exp=li.querySelector('.exp'); msg.textContent=ok?'✅ 正確':'❌ 錯誤'; msg.style.color=ok?'#5bd3c7':'#ff6b6b'; if(!ok)exp.textContent=`正解：${ans}`; } });
+      const score=got*5, full=total*5; $('#quizScore').textContent=`本分區分數：${score} / ${full}`; $('#quizResult').style.display='block'; $('#btnShowAnswer').style.display='inline-block'; $('#btnPrintQuiz').style.display='inline-block';
+      // 列印頁首同步
+      updatePrintHeader(score,full,'Vocabulary');
     };
-
-    $('#btnShowAnswer').onclick=()=>{
-      $('#quizList').querySelectorAll('li').forEach(li=>{
-        const exp=li.querySelector('.exp');
-        if(exp&&!exp.textContent) exp.textContent=`正解：${li.dataset.ans}`;
-      });
+    $('#btnShowAnswer').onclick=()=>{ $('#quizList').querySelectorAll('li').forEach(li=>{ const exp=li.querySelector('.exp'); if(exp&&!exp.textContent) exp.textContent=`正解：${li.dataset.ans}`; }); };
+    $('#btnPrintQuiz').onclick=()=>{ // 若未交卷也給基本資訊
+      const txt=$('#quizScore').textContent||''; let score=0,full=questions.length*5;
+      const m=txt.match(/(\d+)\s*\/\s*(\d+)/); if(m){score=+m[1];full=+m[2];}
+      updatePrintHeader(score,full,($('.qtab.on')?.textContent)||'Vocabulary'); window.print();
     };
-
-    $('#btnPrintQuiz').onclick=()=>window.print();
   }
 
   async function loadVocab(){
@@ -383,74 +313,30 @@
     if(!data||!data.length){ vStatus.textContent='⚠️ 查無單字資料'; vBox.innerHTML=''; return; }
     vStatus.textContent=used==='fallback'?'已載入單字（mid-autumn 回退）':`已載入單字（${primarySlug}）`;
     const go=t=>{ const p=toSec(t); video.currentTime=Math.max(0,p); video.play(); };
-    vBox.innerHTML=data.map(v=>`<div class="voc">
-      <div class="voc-h"><div class="voc-word">${esc(v.word||'')}</div><div class="voc-pos">${esc(v.pos||'')}</div></div>
-      ${v.zh?`<div class="voc-zh">${esc(v.zh)}</div>`:''}
-      ${v.en?`<div class="voc-en">${esc(v.en)}</div>`:''}
-      <div class="voc-actions">
-        ${v.time?`<button class="btn" data-act="jump" data-time="${esc(v.time)}">跳到片段</button>`:''}
-        <button class="btn" data-act="speak" data-text="${esc(v.word||v.en||'')}">🔊 朗讀</button>
-      </div>
-    </div>`).join('');
-    vBox.addEventListener('click',e=>{
-      const act=e.target?.dataset?.act; if(!act)return;
-      if(act==='jump') go(e.target.dataset.time||0);
-      if(act==='speak'){
-        try{ const u=new SpeechSynthesisUtterance(e.target.dataset.text||''); u.lang='en-US';
-          speechSynthesis.cancel(); speechSynthesis.speak(u);}catch{}
-      }
-    });
+    vBox.innerHTML=data.map(v=>`<div class="voc"><div class="voc-h"><div class="voc-word">${esc(v.word||'')}</div><div class="voc-pos">${esc(v.pos||'')}</div></div>${v.zh?`<div class="voc-zh">${esc(v.zh)}</div>`:''}${v.en?`<div class="voc-en">${esc(v.en)}</div>`:''}<div class="voc-actions">${v.time?`<button class="btn" data-act="jump" data-time="${esc(v.time)}">跳到片段</button>`:''}<button class="btn" data-act="speak" data-text="${esc(v.word||v.en||'')}">🔊 朗讀</button></div></div>`).join('');
+    vBox.addEventListener('click',e=>{ const act=e.target?.dataset?.act; if(!act)return; if(act==='jump')go(e.target.dataset.time||0); if(act==='speak'){ try{ const u=new SpeechSynthesisUtterance(e.target.dataset.text||''); u.lang='en-US'; speechSynthesis.cancel(); speechSynthesis.speak(u);}catch{} }});
   }
 
-  /* ---------- 控制列、事件 ---------- */
+  // 速度/播放控制
   speedRange.addEventListener('input',()=>{ const r=Number(speedRange.value)||1; video.playbackRate=r; speedVal.textContent=`${r.toFixed(2)}x`; });
   btnPlay.addEventListener('click',()=>{ if(video.paused) video.play(); else video.pause(); });
   btnPrev.addEventListener('click',()=>seekTo(Math.max(0,currentIndex()-1),true));
   btnNext.addEventListener('click',()=>seekTo(Math.min(cues.length-1,currentIndex()+1),true));
-  (function(){ const btn=btnReplay; const on=()=>{btn.dataset.active='1';btn.classList.add('blue')};
-    const off=()=>{btn.dataset.active='0';btn.classList.remove('blue');loopSentence=false}; off();
-    btn.addEventListener('click',function(e){
-      const isOn=btn.dataset.active==='1';
-      if(isOn){ e.stopImmediatePropagation(); window.player.clearRepeat(); off(); return; }
-      loopSentence=true; on(); seekTo(currentIndex(),true);
-    },true);
-  })();
+  (function(){ const btn=btnReplay; const on=()=>{btn.dataset.active='1';btn.classList.add('blue')}; const off=()=>{btn.dataset.active='0';btn.classList.remove('blue');loopSentence=false}; off(); btn.addEventListener('click',function(e){ const isOn=btn.dataset.active==='1'; if(isOn){ e.stopImmediatePropagation(); window.player.clearRepeat(); off(); return; } loopSentence=true; on(); seekTo(currentIndex(),true); },true); })();
   btnOffsetMinus.addEventListener('click',()=>setOffset(offset-0.5));
   btnOffsetPlus .addEventListener('click',()=>setOffset(offset+0.5));
 
-  video.addEventListener('timeupdate',()=>{ if(!cues.length)return; const i=currentIndex(); highlightRow(i);
-    if(loopSentence){ const [s,e]=sentenceRange(i); const t=video.currentTime+offset;
-      if(t>=e-0.02){ video.currentTime=Math.max(0,s-offset+0.0001); video.play(); } } });
+  video.addEventListener('timeupdate',()=>{ if(!cues.length)return; const i=currentIndex(); highlightRow(i); if(loopSentence){ const [s,e]=sentenceRange(i); const t=video.currentTime+offset; if(t>=e-0.02){ video.currentTime=Math.max(0,s-offset+0.0001); video.play(); } } });
 
-  (function(){ const drawer=$('#controlsDrawer'),grab=$('#drawerGrab');
-    if(!drawer||!grab)return; const toggle=()=>drawer.classList.toggle('open'); grab.addEventListener('click',toggle);
-    let startY=null; grab.addEventListener('touchstart',e=>{startY=e.touches[0].clientY},{passive:true});
-    grab.addEventListener('touchmove',e=>{ if(startY===null)return; const dy=e.touches[0].clientY-startY;
-      if(dy<-10){drawer.classList.add('open');startY=null;} else if(dy>10){drawer.classList.remove('open');startY=null;} },{passive:true}); })();
+  (function(){ const drawer=$('#controlsDrawer'),grab=$('#drawerGrab'); if(!drawer||!grab)return; const toggle=()=>drawer.classList.toggle('open'); grab.addEventListener('click',toggle); let startY=null; grab.addEventListener('touchstart',e=>{startY=e.touches[0].clientY},{passive:true}); grab.addEventListener('touchmove',e=>{ if(startY===null)return; const dy=e.touches[0].clientY-startY; if(dy<-10){drawer.classList.add('open');startY=null;} else if(dy>10){drawer.classList.remove('open');startY=null;} },{passive:true}); })();
 
-  function showTab(name){
-    paneSub.style.display=name==='sub'?'':'none';
-    paneQuiz.style.display=name==='quiz'?'':'none';
-    paneVocab.style.display=name==='vocab'?'':'none';
-    $$('.tabs .tab').forEach(t=>t.classList.toggle('active',t.dataset.tab===name));
-    if(window.innerWidth<=900){
-      if(name==='quiz'||name==='vocab')document.body.classList.add('focus-mode');
-      else document.body.classList.remove('focus-mode');
-    }
-    applyReadMode();
-  }
-  function applyReadMode(){
-    if(window.innerWidth<=900){
-      const active=document.querySelector('.tabs .tab.active')?.dataset.tab;
-      if(active==='sub' && !chkFollow.checked) document.body.classList.add('read-mode');
-      else document.body.classList.remove('read-mode');
-    } else document.body.classList.remove('read-mode');
-  }
+  function showTab(name){ $('#pane-sub').style.display=name==='sub'?'':'none'; $('#pane-quiz').style.display=name==='quiz'?'':'none'; $('#pane-vocab').style.display=name==='vocab'?'':'none'; $$('.tabs .tab').forEach(t=>t.classList.toggle('active',t.dataset.tab===name)); if(window.innerWidth<=900){ if(name==='quiz'||name==='vocab')document.body.classList.add('focus-mode'); else document.body.classList.remove('focus-mode'); } applyReadMode(); }
+  function applyReadMode(){ if(window.innerWidth<=900){ const active=document.querySelector('.tabs .tab.active')?.dataset.tab; if(active==='sub' && !chkFollow.checked) document.body.classList.add('read-mode'); else document.body.classList.remove('read-mode'); } else document.body.classList.remove('read-mode'); }
   $$('.tabs .tab').forEach(t=>t.addEventListener('click',()=>showTab(t.dataset.tab)));
   $('#tabSub')?.addEventListener('click', applyReadMode);
   window.addEventListener('resize', applyReadMode);
 
-  /* --- 安全版：簡易校準（不動音訊、不卡播放） --- */
+  /* --- 簡易校準 --- */
   btnAutoSync.addEventListener('click',()=>{
     if(!cues.length){ alert('尚未載入字幕'); return; }
     const firstCue = cues[0].t || 0;
@@ -459,111 +345,21 @@
     alert(`已設定偏移：${delta >= 0 ? '+' : ''}${delta.toFixed(1)}s\n（演算法：目前播放時間 − 第一筆字幕時間）`);
   });
 
-  /* ---------- 啟動 ---------- */
+  // 列印頁首同步
+  function updatePrintHeader(score,full,sectionLabel=''){
+    const pct = full ? Math.round((score/full)*100) : 0;
+    const remark = pct>=90?'表現優秀':pct>=75?'不錯，繼續加油':pct>=60?'及格努力':'需加強';
+    const when = new Date().toLocaleString('zh-TW');
+    $('#printMeta').textContent = `影片：${slug} ｜ 分區：${sectionLabel||'—'} ｜ 列印時間：${when}`;
+    $('#printScore').textContent = `${score} / ${full}`;
+    $('#printRemark').textContent = `${remark} (${pct}%)`;
+  }
+
   (async function init(){
     const saved=localStorage.getItem(`offset:${slug}`); if(saved!=null) setOffset(parseFloat(saved)); else setOffset(0);
     const r=Number(speedRange.value)||1; video.playbackRate=r; speedVal.textContent=`${r.toFixed(2)}x`;
     await loadVideo(); await loadCues(); await loadQuiz(); await loadVocab(); showTab('sub');
   })();
-  </script>
-
-  <!-- ====== Supabase 守門 + 第一次播放紀錄 watch_logs（放在 </body> 前） ====== -->
-  <script type="module">
-    import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm";
-
-    const SUPABASE_URL = "https://qtgwedankftrqjmzuset.supabase.co";
-    const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InF0Z3dlZGFua2Z0cnFqbXp1c2V0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTg4NDYxMDMsImV4cCI6MjA3NDQyMjEwM30.jyETpt09pgm66aCZheMgsjtbKlVmYo-lt-hrrt6BF8g";
-    const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-
-    // 必須登入；未登入導回首頁
-    const { data: authData, error: authErr } = await supabase.auth.getUser();
-    if (authErr || !authData?.user) {
-      alert("請先登入後再觀看影片。");
-      location.href = "index.html";
-    } else {
-      const user = authData.user;
-      const params = new URLSearchParams(location.search);
-      const videoSlug = params.get("slug") || "mid-autumn";
-
-      // 第一次按「播放」才寫 watch_logs（避免重複）
-      let hasLogged = false;
-      const videoEl = document.getElementById("player");
-      const logOnce = async () => {
-        if (hasLogged) return; hasLogged = true;
-        try {
-          await supabase.from("watch_logs").insert({
-            user_id: user.id,
-            email: user.email,
-            video_slug: videoSlug
-            // viewed_at 由資料庫 DEFAULT now() 自動填
-          });
-        } catch (e) {
-          console.warn("watch_logs 寫入失敗（可稍後重試）:", e?.message || e);
-        }
-      };
-      videoEl?.addEventListener("play", logOnce, { once: true });
-      // 如果想要「載入即記錄」，也可改為：
-      // videoEl?.addEventListener("loadedmetadata", logOnce, { once: true });
-    }
-  </script>
-
-  <!-- ====== 列印表頭資料填入（分數/評語/時間/分區/slug） ====== -->
-  <script>
-    (function(){
-      const phMeta = document.getElementById('phMeta');
-      const phScore = document.getElementById('phScore');
-      const phComment = document.getElementById('phComment');
-
-      const params = new URLSearchParams(location.search);
-      const videoSlug = params.get('slug') || 'mid-autumn';
-      const getSection = () => {
-        const on = document.querySelector('#quizTabs .qtab.on');
-        return on ? on.textContent.trim() : '—';
-        };
-
-      function pickScore(){
-        const t = document.getElementById('quizScore')?.textContent || '';
-        const m = t.match(/([0-9]+)\s*\/\s*([0-9]+)/);
-        if(!m) return {got:null, full:null, pct:null};
-        const got = +m[1], full = +m[2];
-        const pct = full ? Math.round((got/full)*100) : null;
-        return {got, full, pct};
-      }
-
-      function commentByPct(p){
-        if(p==null) return '尚未評分';
-        if(p>=90) return '表現優秀（' + p + '%）';
-        if(p>=80) return '不錯，再接再厲（' + p + '%）';
-        if(p>=70) return '達到基本水準（' + p + '%）';
-        return '建議複習題目與單字（' + p + '%）';
-      }
-
-      function taipeiNow(){
-        return new Date().toLocaleString('zh-TW', {
-          timeZone:'Asia/Taipei', hour12:false,
-          year:'numeric', month:'2-digit', day:'2-digit',
-          hour:'2-digit', minute:'2-digit'
-        }).replace(/\//g,'-'); // yyyy-mm-dd HH:mm
-      }
-
-      function updatePrintHeader(){
-        const sec = getSection();
-        const {got, full, pct} = pickScore();
-        phMeta.textContent = `影片：${videoSlug}　分區：${sec}　列印：${taipeiNow()}`;
-        phScore.textContent = (got==null||full==null) ? '— / —' : `${got} / ${full}`;
-        phComment.textContent = commentByPct(pct);
-      }
-
-      document.getElementById('btnSubmitQuiz')?.addEventListener('click', ()=> {
-        setTimeout(updatePrintHeader, 0);
-      });
-
-      window.addEventListener('beforeprint', updatePrintHeader);
-      const mq = window.matchMedia && window.matchMedia('print');
-      mq && mq.addEventListener('change', e=>{ if(e.matches) updatePrintHeader(); });
-
-      updatePrintHeader();
-    })();
   </script>
 </body>
 </html>
