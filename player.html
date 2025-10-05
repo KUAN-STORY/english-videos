@@ -212,7 +212,7 @@ async function fetchWithFallback(p,f,kind){
 /* ---------- DOM ---------- */
 const video=$('#player'); const cuesBody=$('#cuesBody'); const cuesStatus=$('#cuesStatus');
 const btnPrev=$('#btnPrev'),btnPlay=$('#btnPlay'),btnNext=$('#btnNext'),btnReplay=$('#btnReplay');
-const btnOffsetMinus=$('#btnOffsetMinus'),btnOffsetPlus=$('#btnOffsetPlus'),offsetVal=$('#offsetVal']);
+const btnOffsetMinus=$('#btnOffsetMinus'),btnOffsetPlus=$('#btnOffsetPlus'),offsetVal=$('#offsetVal');
 const chkFollow=$('#chkFollow'); const speedRange=$('#speedRange'),speedVal=$('#speedVal']);
 const btnAutoSync=$('#btnAutoSync'); const btnPrint=$('#btnPrint');
 const paneSub=$('#pane-sub'),paneQuiz=$('#pane-quiz'),paneVocab=$('#pane-vocab');
@@ -312,55 +312,36 @@ async function loadQuiz(){
 
   // === 20 題完整列印 + 自動表頭生成 ===
   function prepareForPrint() {
-    // 1. 取得目前分區名稱
+    // 1) 目前分區名稱
     const onTab = $('#quizTabs .qtab.on')?.textContent?.trim() || 'Vocabulary';
     $('#phSection').textContent = onTab;
 
-    // 2. 顯示所有題目（避免只列印部分）
-    const items = $('#quizList').querySelectorAll('li');
-    items.forEach(li => {
+    // 2) 題目全部顯示
+    $('#quizList')?.querySelectorAll('li')?.forEach(li => {
       li.style.display = 'block';
       li.style.pageBreakInside = 'avoid';
     });
 
-    // 3. 若表頭節點不存在（正常應已存在），可建立一次
-    let ph = document.getElementById('printHeader');
-    if (!ph) {
-      ph = document.createElement('div');
-      ph.id = 'printHeader';
-      ph.innerHTML = `
-        <div class="left">
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="#000"><path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20zm-1 5h2v6h-2V7zm0 8h2v2h-2v-2z"/></svg>
-          <div>
-            <h2>BookWide．英語影片測驗成績單</h2>
-            <div>影片：<span id="phSlug"></span>　分區：<span id="phSection"></span>　列印：<span id="phTime"></span></div>
-          </div>
-        </div>
-        <div class="right">
-          <div class="score" id="phScore"></div>
-          <div class="comment" id="phComment"></div>
-        </div>`;
-      document.body.prepend(ph);
-    }
+    // 3) 表頭資訊
+    const slugNow = new URLSearchParams(location.search).get('slug') || 'mid-autumn';
+    $('#phSlug').textContent = slugNow;
+    $('#phTime').textContent = new Date().toLocaleString('zh-TW', { hour12: false });
 
-    // 4. 更新表頭內容
-    const slugQ = new URLSearchParams(location.search).get('slug') || 'mid-autumn';
-    $('#phSlug').textContent = slugQ;
-    const now = new Date();
-    $('#phTime').textContent = now.toLocaleString('zh-TW', { hour12: false });
     const scoreText = $('#quizScore')?.textContent || '0 / 100';
     $('#phScore').textContent = scoreText;
-    const [got, full] = scoreText.match(/\d+/g) || [0, 100];
-    const percent = Math.round((got / full) * 100);
-    let comment = percent >= 90 ? '💯 太棒了！' :
-                  percent >= 75 ? '👍 很不錯，加油！' :
-                  percent >= 50 ? '🙂 繼續努力～' : '🩵 再試一次會更好！';
-    // 如果外層表頭已有 #phFeedback 也會由 updatePrintHeader 更新；這裡提供給 fallback 版本
-    const cmt = document.getElementById('phComment');
-    if (cmt) cmt.textContent = `${percent}% ${comment}`;
-  }
-}  // ← 正確：關閉 loadQuiz()，只保留一個大括號
 
+    const nums = scoreText.match(/\d+/g) || [0, 100];
+    const got = Number(nums[0]) || 0;
+    const full = Number(nums[1]) || 100;
+    const percent = Math.round((got / full) * 100);
+
+    let comment = percent >= 90 ? '💯 太棒了！'
+                : percent >= 75 ? '👍 很不錯，加油！'
+                : percent >= 50 ? '🙂 繼續努力～'
+                : '🩵 再試一次會更好！';
+    $('#phFeedback').textContent = `（${percent}%）${comment}`;
+  }
+} // ← 結束 loadQuiz()
 /* ---------- 字彙卡 ---------- */
 async function loadVocab(){
   const vStatus=$('#vocabStatus'), vBox=$('#vocabBox');
@@ -415,12 +396,12 @@ function updatePrintHeader(score, full){
 
 /* 列印後還原 */
 function resetAfterPrint(){
-  // 還原題目 li 的 inline style
+  // 把題目 li 的 inline style 還原
   $('#quizList')?.querySelectorAll('li')?.forEach(li=>{
     li.style.removeProperty('display');
     li.style.removeProperty('page-break-inside');
   });
-  // 還原表頭顯示（交回給 CSS 控制：螢幕隱藏、列印顯示）
+  // 表頭交回 CSS 控制
   const ph = document.getElementById('printHeader');
   if (ph) ph.style.removeProperty('display');
 }
@@ -475,6 +456,7 @@ function resetAfterPrint(){
 </script>
 </body>
 </html>
+
 
 
 
