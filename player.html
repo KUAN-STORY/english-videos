@@ -175,6 +175,7 @@
     </div>
   </div>
 
+  <!-- ====== 播放器主程式（保持你現有結構與行為） ====== -->
   <script>
   const $=(s,e=document)=>e.querySelector(s); const $$=(s,e=document)=>[...e.querySelectorAll(s)];
   const toSec=t=>{if(typeof t==='number')return t;const p=String(t).split(':').map(Number);if(p.length===3)return p[0]*3600+p[1]*60+p[2];if(p.length===2)return p[0]*60+p[1];return Number(t)||0;};
@@ -207,24 +208,6 @@
     video.src=src(primarySlug);
     video.addEventListener('error',()=>{ video.src=src('mid-autumn'); },{once:true});
   }
-<script type="module">
-  import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm";
-
-  const supabaseUrl = "https://你的專案.supabase.co";
-  const supabaseKey = "你的anon-key";
-  const supabase = createClient(supabaseUrl, supabaseKey);
-
-  // 🧱 登入防護：若未登入則導回首頁
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) {
-    alert("請先登入後再觀看影片。");
-    location.href = "index.html";
-  }
-</script>
-
-<script>
-  const $=(s,e=document)=>e.querySelector(s);
-  ...
 
   async function loadCues(){
     cuesStatus.textContent='（字幕載入中…）';
@@ -303,7 +286,7 @@
   btnAutoSync.addEventListener('click',()=>{
     if(!cues.length){ alert('尚未載入字幕'); return; }
     const firstCue = cues[0].t || 0;
-    const delta = +(video.currentTime - firstCue).toFixed(1); // 取到 0.1s
+    const delta = +(video.currentTime - firstCue).toFixed(1);
     setOffset(delta);
     alert(`已設定偏移：${delta >= 0 ? '+' : ''}${delta.toFixed(1)}s\n（演算法：目前播放時間 − 第一筆字幕時間）`);
   });
@@ -314,8 +297,44 @@
     await loadVideo(); await loadCues(); await loadQuiz(); await loadVocab(); showTab('sub');
   })();
   </script>
+
+  <!-- ====== Supabase 登入防護 + 觀看紀錄（與首頁同專案；無需其他檔案） ====== -->
+  <script type="module">
+    import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm";
+
+    // 你的專案憑證（與首頁一致）
+    const SUPABASE_URL = "https://qtgwedankftrqjmzuset.supabase.co";
+    const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InF0Z3dlZGFua2Z0cnFqbXp1c2V0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTg4NDYxMDMsImV4cCI6MjA3NDQyMjEwM30.jyETpt09pgm66aCZheMgsjtbKlVmYo-lt-hrrt6BF8g";
+
+    const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    // 播放頁必須登入
+    (async () => {
+      const { data, error } = await supabase.auth.getUser();
+      if (error || !data?.user) {
+        alert("請先登入後再觀看影片。");
+        location.href = "index.html";
+        return;
+      }
+
+      // 紀錄觀看
+      const user = data.user;
+      const slug = new URLSearchParams(location.search).get("slug") || "mid-autumn";
+      try {
+        await supabase.from("watch_logs").insert({
+          user_id: user.id,
+          email: user.email,
+          video_slug: slug,
+          viewed_at: new Date().toISOString()
+        });
+      } catch (e) {
+        console.warn("watch_logs 寫入失敗（可稍後重試）:", e?.message || e);
+      }
+    })();
+  </script>
 </body>
 </html>
+
 
 
 
