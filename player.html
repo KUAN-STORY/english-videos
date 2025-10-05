@@ -213,7 +213,7 @@ async function fetchWithFallback(p,f,kind){
 const video=$('#player'); const cuesBody=$('#cuesBody'); const cuesStatus=$('#cuesStatus');
 const btnPrev=$('#btnPrev'),btnPlay=$('#btnPlay'),btnNext=$('#btnNext'),btnReplay=$('#btnReplay');
 const btnOffsetMinus=$('#btnOffsetMinus'),btnOffsetPlus=$('#btnOffsetPlus'),offsetVal=$('#offsetVal');
-const chkFollow=$('#chkFollow'); const speedRange=$('#speedRange'),speedVal=$('#speedVal']);
+const chkFollow=$('#chkFollow'); const speedRange=$('#speedRange'),speedVal=$('#speedVal');
 const btnAutoSync=$('#btnAutoSync'); const btnPrint=$('#btnPrint');
 const paneSub=$('#pane-sub'),paneQuiz=$('#pane-quiz'),paneVocab=$('#pane-vocab');
 
@@ -310,38 +310,16 @@ async function loadQuiz(){
   // 列印按鈕
   btnPrint.onclick=()=>{ prepareForPrint(); window.print(); setTimeout(resetAfterPrint, 200); };
 
-  // === 20 題完整列印 + 自動表頭生成 ===
-  function prepareForPrint() {
-    // 1) 目前分區名稱
+  // 讓 20 題完整顯示：列印前把每題展開（這裡題目本來就全部在 DOM，確保不被隱藏）
+  function prepareForPrint(){
+    // 指明目前分區名稱
     const onTab = $('#quizTabs .qtab.on')?.textContent?.trim() || 'Vocabulary';
     $('#phSection').textContent = onTab;
-
-    // 2) 題目全部顯示
-    $('#quizList')?.querySelectorAll('li')?.forEach(li => {
-      li.style.display = 'block';
-      li.style.pageBreakInside = 'avoid';
-    });
-
-    // 3) 表頭資訊
-    const slugNow = new URLSearchParams(location.search).get('slug') || 'mid-autumn';
-    $('#phSlug').textContent = slugNow;
-    $('#phTime').textContent = new Date().toLocaleString('zh-TW', { hour12: false });
-
-    const scoreText = $('#quizScore')?.textContent || '0 / 100';
-    $('#phScore').textContent = scoreText;
-
-    const nums = scoreText.match(/\d+/g) || [0, 100];
-    const got = Number(nums[0]) || 0;
-    const full = Number(nums[1]) || 100;
-    const percent = Math.round((got / full) * 100);
-
-    let comment = percent >= 90 ? '💯 太棒了！'
-                : percent >= 75 ? '👍 很不錯，加油！'
-                : percent >= 50 ? '🙂 繼續努力～'
-                : '🩵 再試一次會更好！';
-    $('#phFeedback').textContent = `（${percent}%）${comment}`;
+    // 題號樣式確保清晰（已用 <ol>）
   }
-} // ← 結束 loadQuiz()
+  function resetAfterPrint(){ /* 若需要列印後復位邏輯，可寫在這裡 */ }
+}
+
 /* ---------- 字彙卡 ---------- */
 async function loadVocab(){
   const vStatus=$('#vocabStatus'), vBox=$('#vocabBox');
@@ -381,29 +359,12 @@ $$('.tabs .tab').forEach(t=>t.addEventListener('click',()=>showTab(t.dataset.tab
 /* ---------- 列印頁首更新 ---------- */
 function updatePrintHeader(score, full){
   const pct = full ? Math.round((score/full)*100) : 0;
-  const words =
-    pct>=90 ? '太強了！' :
-    pct>=75 ? '很棒，繼續加油！' :
-    pct>=60 ? '還可以，再練練會更好。' :
-              '先別灰心！重作錯題、背關鍵字再試一次會更好。';
-
+  const words = pct>=90 ? '太強了！' : pct>=75 ? '很棒，繼續加油！' : pct>=60 ? '還可以，再練練會更好。' : '先別灰心！重作錯題、背關鍵字再試一次會更好。';
   $('#phSlug').textContent = slug;
   $('#phSection').textContent = $('#quizTabs .qtab.on')?.textContent?.trim() || 'Vocabulary';
   $('#phTime').textContent = new Date().toLocaleString('zh-TW');
   $('#phScore').textContent = `${score} / ${full}`;
   $('#phFeedback').textContent = `（${pct}%）${words}`;
-}
-
-/* 列印後還原 */
-function resetAfterPrint(){
-  // 把題目 li 的 inline style 還原
-  $('#quizList')?.querySelectorAll('li')?.forEach(li=>{
-    li.style.removeProperty('display');
-    li.style.removeProperty('page-break-inside');
-  });
-  // 表頭交回 CSS 控制
-  const ph = document.getElementById('printHeader');
-  if (ph) ph.style.removeProperty('display');
 }
 
 /* ---------- 初始化 ---------- */
@@ -456,6 +417,15 @@ function resetAfterPrint(){
 </script>
 </body>
 </html>
+
+
+
+
+
+
+
+
+
 
 
 
