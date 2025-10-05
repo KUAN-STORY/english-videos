@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>影片學習｜BookWide 服務</title>
+<meta name="description" content="生活化時事影片，樂趣中學英文，拓展新知。"/>
+<style>
+:root{{--bg:#0b1324;--panel:#0f172a;--ink:#0b1324;--muted:#5b667a;--accent:#3c7cff;--border:#e8edf7;}}
+*{{box-sizing:border-box}} html,body{{height:100%;margin:0;font-family:ui-sans-serif,system-ui,'Noto Sans TC';}}
+a{{color:inherit;text-decoration:none}}
+.wrap{{max-width:1200px;margin:0 auto;padding:18px}}
+/* Top bar (黑底工具列) */
+.topbar{{position:sticky;top:0;z-index:50;background:#0b1324;color:#e6efff;border-bottom:1px solid rgba(255,255,255,.06)}}
+.topbar .row{{display:flex;align-items:center;justify-content:space-between;padding:12px 12px}}
+.brand{{display:flex;align-items:center;gap:10px;font-weight:800;font-size:20px}}
+.badge{{display:inline-block;padding:2px 8px;border-radius:999px;border:1px solid rgba(255,255,255,.15);background:rgba(255,255,255,.05);font-size:12px;color:#d9e7ff}}
+.actions{{display:flex;gap:10px;align-items:center}}
+.btn{{border-radius:12px;padding:8px 12px;border:1px solid rgba(255,255,255,.18);background:rgba(255,255,255,.06);color:#fff;cursor:pointer}}
+.btn.primary{{background:#311a5f;border-color:#553399}}
+/* Body (白底區) */
+.hero{{background:#fff;color:#0b1324;border-bottom:1px solid var(--border)}}
+.hero .wrap{{padding:28px 18px}}
+.h1{{font-size:28px;line-height:1.25;margin:0 0 8px}}
+.h2{{font-size:20px;margin:22px 0 8px}}
+.p{{color:#384155}}
+.grid{{display:grid;grid-template-columns:repeat(2,1fr);gap:14px}}
+.card{{background:#fff;border:1px solid var(--border);border-radius:14px;padding:14px}}
+.cta{{display:flex;gap:10px;margin-top:14px}}
+.cta .btn{{border:1px solid #2d4677;background:#0f223b;color:#dbe7ff}}
+.kv{{border-radius:14px;border:1px solid var(--border);overflow:hidden;background:#f7f9ff}}
+.kv img{{width:100%;height:240px;object-fit:cover;display:block}}
+footer{{border-top:1px solid var(--border);color:#5b667a;padding:18px 0;background:#fff}}
+/* Login modal */
+#authModal{{position:fixed;inset:0;background:rgba(0,0,0,.5);display:none;align-items:center;justify-content:center;padding:16px}}
+#authModal .panel{{width:100%;max-width:420px;background:#0f172a;color:#e6efff;border:1px solid #1f2a44;border-radius:16px;padding:16px}}
+.field{{display:flex;flex-direction:column;margin:10px 0}}
+.field input{{height:42px;border:1px solid #1f2a44;background:#0b1324;border-radius:10px;color:#fff;padding:0 12px}}
+.row-gap{{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end;margin-top:8px}}
+.link{{color:#8fb3ff;cursor:pointer}}
+/* Mobile */
+@media (max-width:800px){{ .grid{{grid-template-columns:1fr}} .kv img{{height:180px}} }}
+</style>
+</head>
+<body>
+<!-- top bar -->
+<div class="topbar">
+  <div class="row wrap">
+    <div class="brand"><span>BookWide</span><span class="badge">Beta</span></div>
+    <div class="actions">
+      <a class="btn" href="../index.html#catalog">回教材</a>
+      <button id="btnOpenLogin" class="btn">登入</button>
+      <button id="btnLogout" class="btn" style="display:none">登出</button>
+      <span id="userNameBadge" style="color:#9fb0c9"></span>
+    </div>
+  </div>
+</div>
+<!-- hero -->
+<section class="hero">
+  <div class="wrap">
+    <div class="grid">
+      <div>
+        <h1 class="h1">影片學習</h1>
+        <div class="p">生活化時事影片、文化主題短片，邊看邊學英文，吸收知識與語料。</div>
+        <div class="h2">你將獲得</div>
+        <div class="card">
+          <ul style="margin:0;padding-left:18px;line-height:1.9">
+            <li>逐句播放：一鍵回放 / 下一句，不迷路</li><li>雙語字幕：手機也能長句不斷行</li><li>單字卡：真正用到的字才記得住</li>
+          </ul>
+        </div>
+        <div class="cta">
+          <a class="btn" href="../index.html">返回首頁</a>
+          <a class="btn" href="../player.html?slug=mid-autumn">立即試看</a>
+        </div>
+      </div>
+      <div class="kv"><img src="https://images.unsplash.com/photo-1512427691650-1f7ed837bb2d?q=80&w=1200&auto=format&fit=crop" alt="影片學習"/></div>
+    </div>
+  </div>
+</section>
+<!-- footer -->
+<footer>
+  <div class="wrap">© <span id="y"></span> BookWide — Practice makes progress.</div>
+</footer>
+
+<!-- Login modal -->
+<div id="authModal">
+  <div class="panel">
+    <h3 style="margin:0 0 8px">登入</h3>
+    <div class="field"><label>Email</label><input id="email" type="email" placeholder="you@example.com"/></div>
+    <div class="field"><label>密碼</label><input id="password" type="password" placeholder="••••••••"/></div>
+    <div class="row-gap" style="justify-content:space-between">
+      <span class="link" id="linkReset">忘記密碼？</span>
+      <div>
+        <button class="btn" id="btnClose">取消</button>
+        <button class="btn primary" id="btnLogin">登入</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 掛載 Supabase 與 Login（使用現有 supa.js + login.js） -->
+<script type="module" src="../supa.js"></script>
+<script type="module" src="../login.js"></script>
+<script>
+document.getElementById('y').textContent = new Date().getFullYear();
+const m = document.getElementById('authModal');
+document.getElementById('btnOpenLogin').onclick = ()=> m.style.display = 'flex';
+document.getElementById('btnClose').onclick = ()=> m.style.display = 'none';
+document.getElementById('linkReset').onclick = ()=> location.href = '../reset.html';
+</script>
+</body>
+</html>
