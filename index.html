@@ -296,7 +296,7 @@
     }catch{}
     supa.auth.onAuthStateChange((_e, session)=>{ paintUser(session?.user || null); });
   </script>
-  <!-- ===== 服務導覽：動態插入到右上工具列（不改動原結構） ===== -->
+ <!-- ===== 服務導覽：插入到右上工具列（不改動原結構） ===== -->
 <style>
   .svc-dropdown-wrap{ position:relative; display:inline-block; }
   .svc-trigger{
@@ -315,8 +315,8 @@
     display:flex; align-items:center; gap:10px; padding:10px 12px; border-radius:10px;
     color:#e6efff; text-decoration:none; white-space:nowrap;
   }
-  .svc-item:hover{ background:#13233f; }
-  .svc-ico{ width:22px; height:22px; display:inline-grid; place-items:center;
+  .svc-item:hover{ background:#12333f; }
+  .svc-icof{ width:22px; height:22px; display:inline-grid; place-items:center;
     border-radius:6px; background:#122340; font-size:14px; }
   /* 小螢幕避免被擠壓：改為 fixed 靠右 */
   @media (max-width:720px){
@@ -325,55 +325,77 @@
 </style>
 
 <script>
-(function(){
-  // 要插入在哪？— 找到「方案價格」按鈕（文字包含『方案價格』），放在它左邊
-  const plansBtn = [...document.querySelectorAll('header a, header button, header .btn')]
-    .find(el => el && el.textContent && el.textContent.includes('方案價格'));
+/* 動態把「服務導覽」加到右上列（保持現有結構不變） */
+document.addEventListener("DOMContentLoaded", () => {
+  // 嘗試找到右上工具列容器（依你的版面順序由精確到模糊）
+  const targets = [
+    document.querySelector('header nav'),
+    document.querySelector('header .right'),
+    document.querySelector('header'),
+    document.querySelector('.wrap > header'),
+    document.querySelector('.wrap header'),
+    document.querySelector('nav'),
+    document.querySelector('.topbar')
+  ];
+  const host = targets.find(Boolean) || document.body;
 
-  // 找不到就不做，避免影響其它頁
-  if(!plansBtn || !plansBtn.parentElement) return;
+  // 已建立就不重複
+  if (host.querySelector('.svc-dropdown-wrap')) return;
 
-  // 建立包裹與觸發按鈕
-  const wrap = document.createElement('span');
-  wrap.className = 'svc-dropdown-wrap';
-  wrap.innerHTML = `
-    <button class="svc-trigger" type="button" aria-haspopup="true" aria-expanded="false">服務導覽</button>
-    <div class="svc-menu" role="menu" aria-label="服務導覽">
-      <a class="svc-item" role="menuitem" href="./index.html?cat=story#catalog">
-        <span class="svc-ico">🎬</span><span>故事 Story</span>
-      </a>
-      <a class="svc-item" role="menuitem" href="./index.html?cat=music#catalog">
-        <span class="svc-ico">🎵</span><span>音樂 Music</span>
-      </a>
-      <a class="svc-item" role="menuitem" href="./index.html?cat=movie#catalog">
-        <span class="svc-ico">🎥</span><span>電影 Movies</span>
-      </a>
-      <a class="svc-item" role="menuitem" href="./index.html?cat=news#catalog">
-        <span class="svc-ico">📰</span><span>新聞 News</span>
-      </a>
-      <a class="svc-item" role="menuitem" href="./index.html?cat=pro#catalog">
-        <span class="svc-ico">💼</span><span>專業行業 Pro</span>
-      </a>
+  // 建立 DOM
+  const svc = document.createElement('div');
+  svc.className = 'svc-dropdown-wrap';
+  svc.innerHTML = `
+    <button class="svc-trigger" type="button" aria-haspopup="menu" aria-expanded="false">服務導覽</button>
+    <div class="svc-menu" role="menu">
+      <a class="svc-item" href="#services" role="menuitem"><span class="svc-icof">🎯</span> 功能亮點</a>
+      <a class="svc-item" href="#catalog" role="menuitem"><span class="svc-icof">🗂</span> 教材總覽</a>
+      <a class="svc-item" href="./player.html?slug=mid-autumn" role="menuitem"><span class="svc-icof">▶️</span> 立即試看：Mid-Autumn</a>
+      <a class="svc-item" href="mailto:bookwide.service@gmail.com" role="menuitem"><span class="svc-icof">📬</span> 聯絡我們</a>
     </div>
   `;
 
-  // 插在「方案價格」的前面，對齊在同一列
-  plansBtn.parentElement.insertBefore(wrap, plansBtn);
+  // 依你現在的右上按鈕（服務導覽 / 方案價格 / 登入）常見結構：先插到最後，讓它靠近登入按鈕
+  host.appendChild(svc);
 
-  // 開關控制與可及性
-  const trigger = wrap.querySelector('.svc-trigger');
-  const menu = wrap.querySelector('.svc-menu');
-  const open = (v) => {
-    if(v){ wrap.classList.add('open'); trigger.setAttribute('aria-expanded','true'); }
-    else { wrap.classList.remove('open'); trigger.setAttribute('aria-expanded','false'); }
+  // 開關與可達性
+  const trigger = svc.querySelector('.svc-trigger');
+  const menu = svc.querySelector('.svc-menu');
+
+  const close = () => {
+    svc.classList.remove('open');
+    trigger.setAttribute('aria-expanded', 'false');
   };
-  trigger.addEventListener('click', e => { e.stopPropagation(); open(!wrap.classList.contains('open')); });
-  document.addEventListener('click', e => { if(!wrap.contains(e.target)) open(false); });
-  document.addEventListener('keydown', e => { if(e.key === 'Escape') open(false); });
-})();
+  const open = () => {
+    svc.classList.add('open');
+    trigger.setAttribute('aria-expanded', 'true');
+  };
+
+  trigger.addEventListener('click', (e) => {
+    e.stopPropagation();
+    svc.classList.toggle('open');
+    const expanded = svc.classList.contains('open');
+    trigger.setAttribute('aria-expanded', expanded ? 'true' : 'false');
+  });
+
+  // 點外面收合
+  document.addEventListener('click', close);
+  // ESC 收合
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') close();
+  });
+
+  // 如果下拉往外捲動也收合（避免固定列上被覆蓋太久）
+  window.addEventListener('scroll', close, { passive: true });
+
+  // 小優化：當 menu 中的連結被點擊後自動收合
+  menu.addEventListener('click', (e) => {
+    const a = e.target.closest('a');
+    if (a) close();
+  });
+});
 </script>
 <!-- ===== /服務導覽 ===== -->
-
 </body>
 </html>
 
