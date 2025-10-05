@@ -298,40 +298,53 @@
   })();
   </script>
 
-  <!-- ====== Supabase 登入防護 + 觀看紀錄（與首頁同專案；無需其他檔案） ====== -->
-  <script type="module">
-    import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm";
+  <!-- ====== Supabase 守門 + 第一次播放紀錄 watch_logs（放在 </body> 前） ====== -->
+<script type="module">
+  import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm";
 
-    // 你的專案憑證（與首頁一致）
-    const SUPABASE_URL = "https://qtgwedankftrqjmzuset.supabase.co";
-    const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InF0Z3dlZGFua2Z0cnFqbXp1c2V0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTg4NDYxMDMsImV4cCI6MjA3NDQyMjEwM30.jyETpt09pgm66aCZheMgsjtbKlVmYo-lt-hrrt6BF8g";
+  // 與首頁相同的專案憑證
+  const SUPABASE_URL = "https://qtgwedankftrqjmzuset.supabase.co";
+  const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InF0Z3dlZGFua2Z0cnFqbXp1c2V0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTg4NDYxMDMsImV4cCI6MjA3NDQyMjEwM30.jyETpt09pgm66aCZheMgsjtbKlVmYo-lt-hrrt6BF8g";
 
-    const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+  const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-    // 播放頁必須登入
-    (async () => {
-      const { data, error } = await supabase.auth.getUser();
-      if (error || !data?.user) {
-        alert("請先登入後再觀看影片。");
-        location.href = "index.html";
-        return;
-      }
+  // 1) 播放頁必須登入，否則導回首頁
+  const { data: authData, error: authErr } = await supabase.auth.getUser();
+  if (authErr || !authData?.user) {
+    alert("請先登入後再觀看影片。");
+    location.href = "index.html";
+  } else {
+    // 2) 準備紀錄資料
+    const user = authData.user;
+    const params = new URLSearchParams(location.search);
+    const videoSlug = params.get("slug") || "mid-autumn";
 
-      // 紀錄觀看
-      const user = data.user;
-      const slug = new URLSearchParams(location.search).get("slug") || "mid-autumn";
+    // 3) 第一次「播放」才寫入 watch_logs（避免重複紀錄）
+    let hasLogged = false;
+    const videoEl = document.getElementById("player");
+
+    const logOnce = async () => {
+      if (hasLogged) return;
+      hasLogged = true;
       try {
         await supabase.from("watch_logs").insert({
           user_id: user.id,
           email: user.email,
-          video_slug: slug,
-          viewed_at: new Date().toISOString()
+          video_slug: videoSlug,
+          // viewed_at 由資料庫 DEFAULT now() 自動填
         });
+        // console.log("watch_logs inserted:", videoSlug);
       } catch (e) {
         console.warn("watch_logs 寫入失敗（可稍後重試）:", e?.message || e);
       }
-    })();
-  </script>
+    };
+
+    // 建議在「第一次播放」時記錄，有實際觀看意義
+    videoEl?.addEventListener("play", logOnce, { once: true });
+    // 如果你希望「載入後就記錄」也可以改用：
+    // videoEl?.addEventListener("loadedmetadata", logOnce, { once: true });
+  }
+</script>
 </body>
 </html>
 
