@@ -1,9 +1,11 @@
-<!doctype html>
+!doctype html>
 <html lang="zh-Hant">
 <head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1"/>
 <title>英語影片播放器</title>
+<!-- player.html 版本：2025.10.13 V3.3-restore | 自動翻譯/泡泡回復版 -->
+
 <style>
   :root{ --bg:#0b1324; --panel:#0f172a; --border:#1f2a44; --ink:#e6efff; --muted:#9fb0c9; --accent:#3c7cff; }
   *{box-sizing:border-box}
@@ -84,6 +86,14 @@
   #phRight{text-align:right}
   #phScore{font-size:24px;font-weight:900}
   #phFeedback{font-size:12px;color:#444}
+</style>
+
+<style>
+/* === V3.3-restore additions (auto-translate bubble) === */
+.wtoken{border-bottom:1.5px dotted #0b3b6f;cursor:help;text-underline-offset:2px}
+#wordTip{position:fixed;z-index:99999;display:none;background:#fff;color:#111;
+  border:1px solid #cbd5e1;border-radius:10px;padding:6px 10px;box-shadow:0 10px 24px rgba(0,0,0,.15);
+  font-size:14px;line-height:1.2;max-width:80vw}
 </style>
 </head>
 <body>
@@ -428,63 +438,107 @@ $$('.tabs .tab').forEach(t=>t.addEventListener('click',()=>showTab(t.dataset.tab
     };
     document.getElementById("player")?.addEventListener("play", logOnce, { once: true });
   }
-  /* ======= Mobile layout tune (不改結構) ======= */
-@media (max-width: 768px){
-  .wrap{ padding:10px; height:auto; }
-  .layout{ display:block; }
-  .left, .right{ border-radius:12px; }
+</script>
 
-  /* 影片區 */
-  .left{ padding:10px; }
-  .videoWrap{ border-radius:12px; aspect-ratio:16/9; }
-  #player{ width:100%; height:100%; }
+<script>
+// === V3.3-restore: auto word-translate tooltip (desktop hover 0.3s / mobile long-press) ===
+(function(){
+  const $ = (s, r=document)=>r.querySelector(s);
+  const $$ = (s, r=document)=>Array.from(r.querySelectorAll(s));
+  const vocabMap = window.vocabMap || (window.vocabMap = Object.create(null));
+  const builtIn = Object.assign(Object.create(null), {
+    festival:'節日', moon:'月亮', sun:'太陽', legend:'傳說', story:'故事', shoot:'射擊',
+    earth:'地球', people:'人們', special:'特別的', look:'看', big:'大', round:'圓的'
+  });
+  let tip, showTimer, longTimer;
 
-  /* 工具列：底部貼齊、可收合 */
-  .controls{
-    position: sticky; bottom: 0; z-index: 50;
-    margin:10px -10px -10px; padding:10px 12px;
-    border-radius:14px 14px 0 0;
+  function ensureTip(){
+    if (tip) return tip;
+    tip = document.createElement('div'); tip.id='wordTip'; document.body.appendChild(tip);
+    return tip;
   }
-  .controls .row{ gap:6px; }
-  .btn{ padding:9px 12px; font-size:14px; border-radius:10px; touch-action:manipulation; }
-  .chip{ padding:6px 8px; font-size:13px; border-radius:10px; }
-  input[type="range"]{ width:100%; }
-
-  /* 右側學習區 */
-  .tabs{
-    position: sticky; top: 0; z-index: 40;
-    background: var(--panel); padding:8px; margin-bottom:6px;
-    border-bottom:1px solid var(--border);
-  }
-  .tab{ padding:7px 10px; font-size:14px; }
-
-  /* 字幕表格：表頭與閱讀性 */
-  #pane-sub thead th{
-    position: sticky; top: 48px; /* 讓表頭在分頁籤下方吸頂 */
-    background:#0f172a; z-index: 30;
-  }
-  #pane-sub td, #pane-sub th{ padding:10px 8px; }
-  #pane-sub td:nth-child(2), #pane-sub td:nth-child(3){
-    white-space: normal; word-break: break-word; line-height:1.7;
+  function hideTip(){ if(tip) tip.style.display='none'; }
+  function showTipAt(x,y,word){
+    const el = ensureTip();
+    const w = word.toLowerCase();
+    const zh = vocabMap[w] || builtIn[w] || '（暫無翻譯）';
+    el.innerHTML = `<b>${word}</b>：${zh}`;
+    el.style.display='block';
+    const pad=10, vw=Math.max(document.documentElement.clientWidth, innerWidth||0), vh=Math.max(document.documentElement.clientHeight, innerHeight||0);
+    const wmax = Math.min(vw*0.8, el.offsetWidth||260);
+    el.style.left = Math.min(vw - wmax - pad, Math.max(pad, x+8)) + 'px';
+    el.style.top  = Math.min(vh - 60, Math.max(pad, y+8)) + 'px';
   }
 
-  /* 測驗頁面：按鈕與清單間距 */
-  .q-tabs .qtab{ padding:6px 10px; font-size:14px; }
-  #quizList{ padding:0 8px; }
-  #quizList li{ margin-bottom:12px; }
+  function englishColIndex(table){
+    const ths = $$('thead th', table).map(th=>th.textContent.trim());
+    let idx = ths.findIndex(t=>/英/.test(t)); if (idx === -1 && ths.length>=2) idx = 1;
+    return idx;
+  }
 
-  /* 單字卡 */
-  .voc{ margin:8px; padding:12px; border-radius:12px; }
-  .voc-word{ font-size:18px; }
-}
+  function tokenizeOnce(){
+    const table = $('#pane-sub table') || $('table'); if(!table) return false;
+    if (table.dataset.v33tk === '1') return true;
+    const idx = englishColIndex(table); if (idx<0) return false;
+    const rows = $$('tbody tr', table); const re=/[A-Za-z]+(?:'[A-Za-z]+)?/g;
+    rows.forEach(tr=>{
+      const tds = $$('td', tr); const td = tds[idx]; if(!td) return;
+      const raw = td.textContent; let out='', last=0; for(const m of raw.matchAll(re)){
+        const w = m[0], i = m.index;
+        if (i>last) out += raw.slice(last,i);
+        out += `<span class="wtoken" data-w="${w.toLowerCase()}">${w}</span>`;
+        last = i + w.length;
+      }
+      out += raw.slice(last);
+      td.innerHTML = out;
+    });
+    bindEvents(table);
+    table.dataset.v33tk = '1';
+    console.log('[V3.3-restore] tokenized.');
+    return true;
+  }
 
-@media (max-width: 420px){
-  header h1{ font-size:18px; }
-  .btn{ font-size:13px; }
-  .tab{ font-size:13px; }
-  #printHeader{ padding:8px; margin:0; }
-}
+  function bindEvents(root){
+    const onEnter = (e)=>{
+      const el = e.target.closest('.wtoken'); if(!el) return;
+      clearTimeout(showTimer);
+      const {clientX:x, clientY:y} = e;
+      showTimer = setTimeout(()=> showTipAt(x,y, el.textContent.trim()), 300);
+    };
+    const onMove = (e)=>{
+      if(!e.target.closest('.wtoken')) return;
+      const {clientX:x, clientY:y} = e;
+      if (tip && tip.style.display==='block') showTipAt(x,y, e.target.textContent.trim());
+    };
+    $$('.wtoken', root).forEach(el=>{
+      el.addEventListener('mouseenter', onEnter);
+      el.addEventListener('mousemove', onMove);
+      el.addEventListener('mouseleave', ()=>{ clearTimeout(showTimer); hideTip(); });
+      // Mobile long-press
+      el.addEventListener('touchstart', (ev)=>{
+        clearTimeout(longTimer);
+        const t = ev.touches[0];
+        longTimer = setTimeout(()=> showTipAt(t.clientX,t.clientY, el.textContent.trim()), 420);
+      }, {passive:true});
+      el.addEventListener('touchend', ()=>{ clearTimeout(longTimer); hideTip(); }, {passive:true});
+      el.addEventListener('touchmove', ()=>{ clearTimeout(longTimer); hideTip(); }, {passive:true});
+    });
+    $('#pane-sub')?.addEventListener('scroll', hideTip, {passive:true});
+  }
 
+  function buildVocab(){
+    $$('#vocabBox .voc').forEach(card=>{
+      const w = (card.querySelector('.voc-word')?.textContent||'').trim().toLowerCase();
+      const zh = (card.querySelector('.voc-zh')?.textContent||'').trim();
+      if(w) vocabMap[w] = zh || vocabMap[w];
+    });
+  }
+
+  const tryInit = ()=> tokenizeOnce();
+  document.addEventListener('DOMContentLoaded', ()=>{ buildVocab(); tryInit(); });
+  const mo = new MutationObserver(()=>{ buildVocab(); tryInit(); });
+  mo.observe(document.body, {subtree:true, childList:true});
+})();
 </script>
 </body>
 </html>
