@@ -1,5 +1,5 @@
 <!--
-  player.html 版本：2025.10.13V3.3
+  player.html 版本：2025.10.13V3.4
   更新：
   - 翻譯泡泡改為「全域啟用」：不侷限閱讀模式。
   - 桌機：滑鼠懸停 0.3s 顯示翻譯；滑出/捲動關閉。
@@ -409,6 +409,24 @@ tbody tr:nth-child(odd){ background:#fff !important; }
   background:#fff !important; color:#111827 !important; border:1px solid #d1d5db !important;
 }
 #pane-vocab .btn:hover, [data-pane="vocab"] .btn:hover, .tab-content.vocab .btn:hover { background:#f1f5f9 !important; }
+</style>
+
+<style>
+/* ===== V3.4: vocab cards → white theme (override .voc) ===== */
+#pane-vocab .voc{
+  background:#ffffff !important;
+  border:1px solid #d1d5db !important;
+  color:#111827 !important;
+  box-shadow:0 4px 10px rgba(0,0,0,.06) !important;
+  border-radius:14px !important;
+}
+#pane-vocab .voc-word{ color:#0b3b6f !important; font-weight:800 !important; }
+#pane-vocab .voc-pos{ color:#334155 !important; }
+#pane-vocab .voc-zh, #pane-vocab .voc-en{ color:#111827 !important; }
+#pane-vocab .voc-actions .btn{
+  background:#fff !important; color:#111827 !important; border:1px solid #d1d5db !important;
+}
+#pane-vocab .voc-actions .btn:hover{ background:#f1f5f9 !important; }
 </style>
 </head>
 <body>
@@ -1451,6 +1469,7 @@ $$('.tabs .tab').forEach(t=>t.addEventListener('click',()=>showTab(t.dataset.tab
         info.textContent = `（已載入 ${Array.isArray(cues)?cues.length:Object.keys(cues||{}).length} 筆字幕）`;
         host.prepend(info);
       }
+      try{ window.__onLocalSubtitlesOK(Array.isArray(cues)?cues.length:Object.keys(cues||{}).length); }catch(_){}
       console.log("[subtitle] loaded from local JSON:", url);
     }catch(err){
       console.error("Subtitle load error:", err);
@@ -1484,9 +1503,40 @@ window.loadFromSupabase = async function(){ throw new Error('Supabase loader dis
   }
 })();
 </script>
+
+<script>
+// ===== V3.4: hide legacy 'SUBTITLE_LOAD_FAILED' panel after local JSON success =====
+(function(){
+  function removeOldErrorPanels(){
+    // remove any element that contains '字幕載入失敗' or the legacy error box
+    const nodes = Array.from(document.querySelectorAll('body *'));
+    nodes.forEach(el=>{
+      const t = (el.textContent||'').trim();
+      if (!t) return;
+      if (t.includes('字幕載入失敗') || t.includes('SUBTITLE_LOAD_FAILED')){
+        // keep the container for #pane-sub if needed
+        if (el.id === 'pane-sub') return;
+        if (el.classList && el.classList.contains('keep-error')) return;
+        // remove small error boxes
+        if (el.tagName !== 'BODY' && el.tagName !== 'HTML'){
+          try{ el.remove(); }catch(_){}
+        }
+      }
+    });
+  }
+  window.__onLocalSubtitlesOK = function(count){
+    // Called by local JSON loader when it succeeds
+    removeOldErrorPanels();
+    const host = document.querySelector('#pane-sub') || document.body;
+    const ok = document.createElement('div');
+    ok.style.cssText = 'padding:6px 8px;margin:6px 0;color:#065f46;background:#ecfdf5;border:1px solid #99f6e4;border-radius:8px;font-size:12px';
+    ok.textContent = '（已載入 ' + count + ' 筆字幕）';
+    host.prepend(ok);
+  };
+})();
+</script>
 </body>
 </html>
-
 
 
 
