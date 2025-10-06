@@ -1,4 +1,10 @@
 <!--
+  PRINT GUARD: The code between the markers below is locked.
+  Any future automated mobile/feature updates must NOT modify content
+  between:  ===== PRINT SECTION START / END =====
+  This keeps the print layout (20 題成績單/雙語表) stable and recoverable.
+-->
+<!--
   player.html 版本：2015.10.06V2.0
   功能摘要：
   - 桌機版：保留 Supabase 登入、題庫、列印與左右排版。
@@ -13,6 +19,8 @@
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1"/>
 <title>英語影片播放器</title>
+
+<!-- ===== PRINT SECTION START (Do Not Modify) ===== -->
 <style>
   :root{ --bg:#0b1324; --panel:#0f172a; --border:#1f2a44; --ink:#e6efff; --muted:#9fb0c9; --accent:#3c7cff; }
   *{box-sizing:border-box}
@@ -94,6 +102,8 @@
   #phScore{font-size:24px;font-weight:900}
   #phFeedback{font-size:12px;color:#444}
 </style>
+<!-- ===== PRINT SECTION END ===== -->
+
 
 <style>
 @media (max-width: 768px){
@@ -176,7 +186,9 @@
       </div>
 
       <!-- 列印頁首（列印時顯示） -->
-      <div id="printHeader" aria-hidden="true">
+      
+<!-- ===== PRINT SECTION START (Do Not Modify) ===== -->
+<div id="printHeader" aria-hidden="true">
         <div id="phLeft">
           <!-- 內嵌 SVG Logo -->
           <svg id="phLogo" viewBox="0 0 24 24" fill="none" aria-hidden="true">
@@ -185,6 +197,8 @@
           </svg>
           <div>
             <div id="phTitle">BookWide · 英語影片測驗成績單</div>
+<!-- ===== PRINT SECTION END ===== -->
+
             <div id="phMeta">
               影片：<span id="phSlug">-</span>　分區：<span id="phSection">-</span>　列印：<span id="phTime">-</span>
             </div>
@@ -236,6 +250,8 @@
 </div>
 
 <!-- ===== 播放器主程式 ===== -->
+
+<!-- ===== PRINT SECTION START (Do Not Modify) ===== -->
 <script>
 /* ---------- 小工具 ---------- */
 const $=(s,e=document)=>e.querySelector(s);
@@ -430,6 +446,8 @@ $$('.tabs .tab').forEach(t=>t.addEventListener('click',()=>showTab(t.dataset.tab
   showTab('sub');
 })();
 </script>
+<!-- ===== PRINT SECTION END ===== -->
+
 
 <!-- ===== Supabase 守門 & 觀看紀錄 ===== -->
 <script type="module">
