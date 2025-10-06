@@ -5,7 +5,7 @@
   This keeps the print layout (20 題成績單/雙語表) stable and recoverable.
 -->
 <!--
-  player.html 版本：2015.10.06V2.0
+  P25.10.07V2.1
   功能摘要：
   - 桌機版：保留 Supabase 登入、題庫、列印與左右排版。
   - 手機版：影片上方、控制列可收合、分頁切換進專注模式。
@@ -132,6 +132,14 @@
     background:#122340; color:#e6efff; display:none;
   }
   body.focus-mode #focusBack{ display:inline-block; }
+}
+</style>
+
+<style>
+/* ===== Print add-on (non-invasive): quiz copy page break ===== */
+@media print{
+  #quizPrintCopy{ page-break-before: always; }
+  #quizPrintCopy button, #quizPrintCopy input, #quizPrintCopy .no-print{ display:none !important; }
 }
 </style>
 </head>
@@ -601,6 +609,76 @@ $$('.tabs .tab').forEach(t=>t.addEventListener('click',()=>showTab(t.dataset.tab
       hideTip();
     }
   });
+})();
+</script>
+
+<script>
+// ===== Print augmentation: attach quiz section to printout safely (runtime only) =====
+(function(){
+  function $(s, r){ return (r||document).querySelector(s); }
+  function $all(s, r){ return Array.from((r||document).querySelectorAll(s)); }
+
+  function getReportContainer(){
+    return $("#print-area") || $("#reportContainer") || $("#report") || document.body;
+  }
+  function getQuizSection(){
+    // Prefer explicit quiz pane if exists
+    return $("#pane-quiz") || $(".quiz-section") || $(".pane-quiz");
+  }
+
+  function sanitizeForPrint(root){
+    // remove interactive controls
+    $all("button, input, .no-print, [contenteditable]", root).forEach(el=>{
+      el.remove();
+    });
+    // expand details/accordions if any
+    $all("details", root).forEach(d=>{ d.open = true; });
+  }
+
+  function buildQuizHeading(){
+    const h = document.createElement("h3");
+    h.textContent = "📘 測驗題目（共 20 題）";
+    h.style.margin = "10px 0 12px";
+    h.style.fontWeight = "600";
+    return h;
+  }
+
+  function handleBeforePrint(){
+    const report = getReportContainer();
+    const quiz = getQuizSection();
+    if (!report || !quiz) return;
+    if (document.getElementById("quizPrintCopy")) return;
+
+    // Deep clone to avoid mutating live UI
+    const copy = quiz.cloneNode(true);
+    copy.id = "quizPrintCopy";
+
+    // If the quiz content is virtualized or needs activation, try to reveal hidden panes
+    // Show quiz pane content blocks if they use hidden/display:none attributes
+    $all("[hidden]", copy).forEach(n => n.hidden = false);
+    $all('[style*="display:none"]', copy).forEach(n => n.style.display = "block");
+
+    // Sanitize
+    sanitizeForPrint(copy);
+    copy.prepend(buildQuizHeading());
+
+    // Append to the end of the report for printing
+    report.appendChild(copy);
+  }
+
+  function handleAfterPrint(){
+    const copy = document.getElementById("quizPrintCopy");
+    if (copy) copy.remove();
+  }
+
+  if (window.matchMedia){
+    const mql = window.matchMedia("print");
+    if (mql.addListener){ // older browsers
+      mql.addListener(function(e){ if (e.matches) handleBeforePrint(); else handleAfterPrint(); });
+    }
+  }
+  window.addEventListener("beforeprint", handleBeforePrint);
+  window.addEventListener("afterprint", handleAfterPrint);
 })();
 </script>
 </body>
