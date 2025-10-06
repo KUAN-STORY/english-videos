@@ -1,4 +1,13 @@
-<!doctype html>
+<!--
+  player.html 版本：2015.10.06V2.0
+  功能摘要：
+  - 桌機版：保留 Supabase 登入、題庫、列印與左右排版。
+  - 手機版：影片上方、控制列可收合、分頁切換進專注模式。
+  - 閱讀模式：支援單字即時翻譯泡泡（內建小字典）。
+  - 未啟用 AI 翻譯 API（預留接口）。
+-->
+
+!doctype html>
 <html lang="zh-Hant">
 <head>
 <meta charset="utf-8"/>
@@ -84,6 +93,36 @@
   #phRight{text-align:right}
   #phScore{font-size:24px;font-weight:900}
   #phFeedback{font-size:12px;color:#444}
+</style>
+
+<style>
+@media (max-width: 768px){
+  .layout{ display:block !important; }
+  .left,.right{ width:100% !important; max-width:100% !important; }
+  #videoWrap,.videoWrap,.left video{ width:100% !important; }
+  video,#player,#video{ width:100% !important; height:auto !important; object-fit:contain !important; background:#000; }
+  .right{ display:block !important; min-height:40vh; }
+  .tabs{ display:flex !important; position:sticky; top:0; z-index:40; background:#0f172a; padding:8px 10px; }
+  #pane-sub{ display:block !important; }
+  #pane-quiz,#pane-vocab{ display:none !important; }
+  #controlsDrawer{
+    position:sticky; bottom:0; z-index:50;
+    margin:10px -10px -10px; padding:10px 12px; border-radius:14px 14px 0 0;
+    background:#0e2038; border:1px solid #183459;
+    transform:translateY(calc(100% - 24px));
+    transition:transform .24s ease;
+  }
+  #controlsDrawer.open{ transform:translateY(0); }
+  #drawerGrab,.drawer-grab{ display:block !important; cursor:pointer; }
+  body.focus-mode .left{ display:none !important; }
+  body.focus-mode .right{ display:block !important; width:100% !important; }
+  #focusBack{
+    position:fixed; right:12px; bottom:14px; z-index:9999;
+    padding:10px 12px; border-radius:12px; border:1px solid #1f375f;
+    background:#122340; color:#e6efff; display:none;
+  }
+  body.focus-mode #focusBack{ display:inline-block; }
+}
 </style>
 </head>
 <body>
@@ -428,67 +467,126 @@ $$('.tabs .tab').forEach(t=>t.addEventListener('click',()=>showTab(t.dataset.tab
     };
     document.getElementById("player")?.addEventListener("play", logOnce, { once: true });
   }
-  /* ======= Mobile layout tune (不改結構) ======= */
-@media (max-width: 768px){
-  .wrap{ padding:10px; height:auto; }
-  .layout{ display:block; }
-  .left, .right{ border-radius:12px; }
+</script>
 
-  /* 影片區 */
-  .left{ padding:10px; }
-  .videoWrap{ border-radius:12px; aspect-ratio:16/9; }
-  #player{ width:100%; height:100%; }
+<button id="focusBack" type="button" aria-label="返回">返回</button>
 
-  /* 工具列：底部貼齊、可收合 */
-  .controls{
-    position: sticky; bottom: 0; z-index: 50;
-    margin:10px -10px -10px; padding:10px 12px;
-    border-radius:14px 14px 0 0;
-  }
-  .controls .row{ gap:6px; }
-  .btn{ padding:9px 12px; font-size:14px; border-radius:10px; touch-action:manipulation; }
-  .chip{ padding:6px 8px; font-size:13px; border-radius:10px; }
-  input[type="range"]{ width:100%; }
 
-  /* 右側學習區 */
-  .tabs{
-    position: sticky; top: 0; z-index: 40;
-    background: var(--panel); padding:8px; margin-bottom:6px;
-    border-bottom:1px solid var(--border);
-  }
-  .tab{ padding:7px 10px; font-size:14px; }
+<script>
+(() => {
+  const urlp = new URLSearchParams(location.search);
+  const forceMobile = urlp.get('m') === '1';
+  const isMobile = forceMobile || window.matchMedia('(max-width: 768px)').matches;
+  const $ = (s, r=document)=>r.querySelector(s);
+  const on = (el, ev, fn, opt)=>el && el.addEventListener(ev, fn, opt);
 
-  /* 字幕表格：表頭與閱讀性 */
-  #pane-sub thead th{
-    position: sticky; top: 48px; /* 讓表頭在分頁籤下方吸頂 */
-    background:#0f172a; z-index: 30;
-  }
-  #pane-sub td, #pane-sub th{ padding:10px 8px; }
-  #pane-sub td:nth-child(2), #pane-sub td:nth-child(3){
-    white-space: normal; word-break: break-word; line-height:1.7;
+  function enterFocus(){ if(!isMobile) return; document.body.classList.add('focus-mode'); }
+  function exitFocus(){ document.body.classList.remove('focus-mode'); }
+
+  function initMobileDefault(){
+    if (!isMobile) return;
+    const drawer = $('#controlsDrawer');
+    const grab = $('#drawerGrab') || document.querySelector('.drawer-grab');
+    if (drawer){ drawer.classList.remove('open'); }
+    if (grab){ on(grab, 'click', () => drawer.classList.toggle('open'), {passive:true}); }
+
+    if (typeof showTab === 'function') showTab('sub');
+    else {
+      const sub=$('#pane-sub'), q=$('#pane-quiz'), v=$('#pane-vocab');
+      if(sub){ sub.hidden=false; sub.style.display='block'; }
+      if(q){ q.hidden=true; q.style.display='none'; }
+      if(v){ v.hidden=true; v.style.display='none'; }
+    }
+
+    document.body.classList.remove('focus-mode');
+
+    const chk = $('#chkFollow');
+    if (chk){ chk.checked = false; chk.disabled = true; chk.closest('label')?.setAttribute('title','手機版暫不提供此功能'); }
   }
 
-  /* 測驗頁面：按鈕與清單間距 */
-  .q-tabs .qtab{ padding:6px 10px; font-size:14px; }
-  #quizList{ padding:0 8px; }
-  #quizList li{ margin-bottom:12px; }
+  function bindTabsToFocus(){
+    on($('#tabSub'),  'click', ()=>enterFocus());
+    on($('#tabQuiz'), 'click', ()=>enterFocus());
+    on($('#tabVocab'),'click', ()=>enterFocus());
+  }
 
-  /* 單字卡 */
-  .voc{ margin:8px; padding:12px; border-radius:12px; }
-  .voc-word{ font-size:18px; }
+  function bindBack(){
+    on($('#focusBack'), 'click', ()=>exitFocus());
+  }
+
+  document.addEventListener('DOMContentLoaded', () => {
+    initMobileDefault();
+    bindTabsToFocus();
+    bindBack();
+  });
+})();
+</script>
+
+<style>
+#wordTip {
+  position: absolute;
+  background: rgba(15,23,42,0.95);
+  color: #fff;
+  border: 1px solid #1f375f;
+  border-radius: 8px;
+  padding: 6px 10px;
+  font-size: 14px;
+  z-index: 9999;
+  display: none;
+  max-width: 80%;
+  line-height: 1.4;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.4);
 }
+</style>
+<div id="wordTip"></div>
 
-@media (max-width: 420px){
-  header h1{ font-size:18px; }
-  .btn{ font-size:13px; }
-  .tab{ font-size:13px; }
-  #printHeader{ padding:8px; margin:0; }
-}
 
+<script>
+(()=>{
+  const tip = document.getElementById('wordTip');
+  const isMobile = window.matchMedia('(max-width: 768px)').matches;
+
+  async function translateWord(word){
+    const dict = { love:'愛', dream:'夢想', moon:'月亮', blood:'血液', hope:'希望', life:'生命', happy:'快樂', sad:'悲傷', sun:'太陽', world:'世界' };
+    return dict[word.toLowerCase()] || '(暫無翻譯)';
+  }
+
+  function showTip(x, y, text){
+    tip.textContent = text;
+    tip.style.left = `${x}px`;
+    tip.style.top = `${y-40}px`;
+    tip.style.display = 'block';
+  }
+
+  function hideTip(){ tip.style.display = 'none'; }
+
+  document.addEventListener('click', async (e)=>{
+    if (!document.body.classList.contains('focus-mode')) return; // only in reading mode
+    const sel = window.getSelection();
+    const word = sel.toString().trim();
+    if (word && word.split(/\s+/).length === 1 && /^[a-zA-Z'-]+$/.test(word)){
+      const meaning = await translateWord(word);
+      showTip(e.pageX, e.pageY, `${word}：${meaning}`);
+    } else {
+      hideTip();
+    }
+  });
+
+  document.addEventListener('scroll', hideTip);
+  document.addEventListener('touchstart', (e)=>{
+    if (!document.body.classList.contains('focus-mode')) return;
+    const sel = window.getSelection();
+    const word = sel.toString().trim();
+    if (word && word.split(/\s+/).length === 1 && /^[a-zA-Z'-]+$/.test(word)){
+      translateWord(word).then((meaning)=>showTip(e.touches[0].pageX, e.touches[0].pageY, `${word}：${meaning}`));
+    } else {
+      hideTip();
+    }
+  });
+})();
 </script>
 </body>
 </html>
-
 
 
 
