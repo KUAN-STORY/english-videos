@@ -1,5 +1,5 @@
 <!--
-  player.html 版本：2025.10.09V2.4
+  player.html 版本：2025.10.10V2.5
   更新：
   - 翻譯泡泡改為「全域啟用」：不侷限閱讀模式。
   - 桌機：滑鼠懸停 0.3s 顯示翻譯；滑出/捲動關閉。
@@ -170,6 +170,77 @@
 @supports not (text-decoration-style: dotted){
   .dict-hint{ border-bottom:1px dotted #7cf !important; }
 }
+</style>
+
+<style>
+/* ===== V2.5 Light Theme Overrides (safe, layered on top) ===== */
+:root{
+  --bg: #ffffff;
+  --bg-soft: #f8fafc;
+  --bg-elev: #f1f5f9;
+  --text: #111827;
+  --muted: #475569;
+  --line: #d1d5db;
+  --primary: #0f4c81;
+  --primary-weak: #e6f0f8;
+  --chip: #eef2ff;
+}
+html, body{ background: var(--bg) !important; color: var(--text) !important; }
+.app, .layout, .left, .right, .pane, .panel, .card, .card-like{ background: var(--bg) !important; color: var(--text) !important; }
+.container, .wrap, .content, .main{ background: var(--bg) !important; }
+
+/* header / title bar */
+.header, .topbar, #topbar, .navbar{ background: var(--bg-soft) !important; border-bottom:1px solid var(--line) !important; }
+
+/* tabs */
+.tabs{ background: var(--bg-soft) !important; border-bottom: 1px solid var(--line) !important; }
+.tabs button, .tabs .tab{
+  color: var(--text) !important; background: var(--chip) !important; border:1px solid var(--line) !important;
+}
+.tabs .active, .tabs [aria-selected="true"]{ background: #fff !important; border-bottom-color: var(--bg) !important; box-shadow: 0 0 0 1px var(--line) inset; }
+
+/* tables */
+table{ background:#fff !important; color:var(--text) !important; border-color: var(--line) !important; }
+th, td{ border-color: var(--line) !important; }
+thead th{ background: var(--bg-elev) !important; }
+tbody tr:nth-child(even){ background: var(--bg-soft) !important; }
+tbody tr:nth-child(odd){ background: #fff !important; }
+
+/* controls drawer */
+#controlsDrawer{
+  background: var(--bg-soft) !important; color: var(--text) !important; border:1px solid var(--line) !important;
+  box-shadow: 0 6px 14px rgba(0,0,0,.08) !important;
+}
+#drawerGrab, .drawer-grab{ background: var(--bg-elev) !important; border:1px solid var(--line) !important; }
+
+/* buttons / chips */
+button, .btn{ background:#fff; color:var(--text); border:1px solid var(--line); }
+button:hover{ background: var(--bg-elev); }
+.primary, .btn-primary{ background: var(--primary); color:#fff; border-color: var(--primary); }
+.badge, .chip{ background: var(--chip); color: var(--text); border:1px solid var(--line); }
+
+/* links */
+a{ color: var(--primary); }
+a:hover{ text-decoration: underline; }
+
+/* tooltip for translation bubble */
+#wordTip{
+  background: #1f2937 !important;  /* dark bubble for contrast */
+  color: #f8fafc !important;
+  border: 1px solid #0b2947 !important;
+}
+
+/* dictionary hint underline on light background */
+.dict-hint{
+  text-decoration: underline dotted #0b3b6f 2px !important;
+  text-underline-offset: 2px;
+}
+
+/* remove dark-only embellishments */
+.hr, hr{ border-color: var(--line) !important; }
+
+/* login button remains hidden */
+#btnLogin, .btn-login, [data-role="login"]{ display:none !important; }
 </style>
 </head>
 <body>
