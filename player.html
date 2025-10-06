@@ -1,5 +1,6 @@
 !doctype html>
 <html lang="zh-Hant">
+  
 <head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1"/>
@@ -7,6 +8,17 @@
 <!-- player.html 版本：2025.10.13 V3.3-restore | 自動翻譯/泡泡回復版 -->
 
 <style>
+  /* ===== 手機直式自動上下堆疊 ===== */
+@media (max-width: 768px) and (orientation: portrait) {
+  #mainWrap {
+    flex-direction: column !important;
+  }
+  #leftPanel, #rightPanel {
+    width: 100% !important;
+    flex: none !important;
+  }
+}
+
   :root{ --bg:#0b1324; --panel:#0f172a; --border:#1f2a44; --ink:#e6efff; --muted:#9fb0c9; --accent:#3c7cff; }
   *{box-sizing:border-box}
   html,body{height:100%;margin:0;background:var(--bg);color:var(--ink);font-family:ui-sans-serif,system-ui,"Noto Sans TC"}
