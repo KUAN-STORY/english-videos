@@ -1,5 +1,5 @@
 <!--
-  player.html 版本：2025.10.13V3.2
+  player.html 版本：2025.10.13V3.3
   更新：
   - 翻譯泡泡改為「全域啟用」：不侷限閱讀模式。
   - 桌機：滑鼠懸停 0.3s 顯示翻譯；滑出/捲動關閉。
@@ -24,6 +24,13 @@
 !doctype html>
 <html lang="zh-Hant">
 <head>
+
+<script>
+// ===== V3.3: Force local JSON subtitles; disable any Supabase loader before it runs =====
+window.__ONLY_LOCAL_SUBS = true;
+window.loadFromSupabase = async function(){ throw new Error('Supabase loader disabled (V3.3 local-only).'); };
+</script>
+
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1"/>
 <title>英語影片播放器</title>
@@ -383,6 +390,25 @@ tbody tr:nth-child(odd){ background:#fff !important; }
   text-underline-offset:2px; text-decoration-skip-ink:none;
   padding-bottom:1px;
 }
+</style>
+
+<style>
+/* ===== V3.3: Stronger white theme for vocab cards (more selectors, higher specificity) ===== */
+#pane-vocab, [data-pane="vocab"], .tab-content.vocab { background:#fff !important; color:#111827 !important; }
+#pane-vocab .card, #pane-vocab .panel, #pane-vocab .entry, #pane-vocab .item,
+[data-pane="vocab"] .card, [data-pane="vocab"] .panel, [data-pane="vocab"] .entry, [data-pane="vocab"] .item,
+.tab-content.vocab .card, .tab-content.vocab .panel, .tab-content.vocab .entry, .tab-content.vocab .item {
+  background:#fff !important; color:#111827 !important; border:1px solid #d1d5db !important; box-shadow:0 4px 10px rgba(0,0,0,.06) !important; border-radius:14px !important;
+}
+#pane-vocab .word, #pane-vocab h2, #pane-vocab h3, #pane-vocab h4,
+[data-pane="vocab"] .word, [data-pane="vocab"] h2, [data-pane="vocab"] h3, [data-pane="vocab"] h4,
+.tab-content.vocab .word, .tab-content.vocab h2, .tab-content.vocab h3, .tab-content.vocab h4 {
+  color:#0b3b6f !important; font-weight:700 !important;
+}
+#pane-vocab .btn, #pane-vocab button, [data-pane="vocab"] .btn, [data-pane="vocab"] button, .tab-content.vocab .btn, .tab-content.vocab button {
+  background:#fff !important; color:#111827 !important; border:1px solid #d1d5db !important;
+}
+#pane-vocab .btn:hover, [data-pane="vocab"] .btn:hover, .tab-content.vocab .btn:hover { background:#f1f5f9 !important; }
 </style>
 </head>
 <body>
@@ -1439,6 +1465,24 @@ $$('.tabs .tab').forEach(t=>t.addEventListener('click',()=>showTab(t.dataset.tab
 <script>
 /* ===== V3.2: Safety — disable legacy Supabase subtitle loader if present ===== */
 window.loadFromSupabase = async function(){ throw new Error('Supabase loader disabled in V3.2 (local JSON only).'); };
+</script>
+
+<script>
+// Extra guard: if any legacy tryLoadSubtitles attempts to call Supabase, short-circuit it.
+(function(){
+  const origTry = window.tryLoadSubtitles;
+  if (typeof origTry === 'function'){
+    window.tryLoadSubtitles = async function(){
+      if (window.__ONLY_LOCAL_SUBS){
+        // Prefer local JSON path; if an implementation exists that accepts the flag, call it.
+        if (typeof window.tryLoadSubtitlesLocal === 'function'){
+          return await window.tryLoadSubtitlesLocal();
+        }
+      }
+      return await origTry.apply(this, arguments);
+    }
+  }
+})();
 </script>
 </body>
 </html>
