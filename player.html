@@ -84,6 +84,37 @@
   #phRight{text-align:right}
   #phScore{font-size:24px;font-weight:900}
   #phFeedback{font-size:12px;color:#444}
+
+/* ===== 手機版覆寫：自動收合工具列、底部常駐、全域細調 ===== */
+@media (max-width: 768px){
+  .layout{ flex-direction:column; }
+  .left, .right{ width:100% !important; }
+  .left{ order:1; }
+  .right{ order:2; }
+  /* 工具列：底部貼齊、預設收合（顯示抓把），展開時占螢幕 70% 高度 */
+  .controls{
+    position: sticky; bottom: 0; z-index: 50;
+    margin: 8px -16px -16px; padding: 0;
+    border-radius: 14px 14px 0 0; background:#0e2038; border:1px solid #183459;
+    max-height: 52px; overflow: hidden; transition: max-height .25s ease;
+  }
+  .controls.open{ max-height: 70vh; }
+  .controls .row{ padding: 10px 12px; }
+  .drawer-grab{
+    display:block; padding:10px 12px; border-bottom:1px solid #183459;
+    font-size:12px; color:#9fb0c9; cursor:pointer; user-select:none;
+  }
+  .drawer-title{ pointer-events:none; }
+  /* 讓滑桿與按鈕在窄螢幕更好點 */
+  .btn{ padding:10px 12px; font-size:14px; border-radius:10px; }
+  input[type="range"]{ width: 100%; max-width: 340px; }
+}
+/* 更窄（手機小螢幕） */
+@media (max-width: 420px){
+  .controls{ max-height: 48px; }
+  .controls.open{ max-height: 75vh; }
+}
+
 </style>
 </head>
 <body>
@@ -200,6 +231,10 @@
 <script>
 /* ---------- 小工具 ---------- */
 const $=(s,e=document)=>e.querySelector(s);
+
+// 裝置偵測：?m=1 可強制手機模式預覽
+const __forceMobile = new URLSearchParams(location.search).get('m') === '1';
+const __isMobile = __forceMobile || window.matchMedia('(max-width: 768px)').matches;
 const $$=(s,e=document)=>[...e.querySelectorAll(s)];
 const toSec=t=>{ if(typeof t==='number')return t; const p=String(t).split(':').map(Number);
   if(p.length===3)return p[0]*3600+p[1]*60+p[2]; if(p.length===2)return p[0]*60+p[1]; return Number(t)||0; };
@@ -371,7 +406,21 @@ btnOffsetPlus .addEventListener('click',()=>setOffset(offset+0.5));
 
 video.addEventListener('timeupdate',()=>{ if(!cues.length)return; const i=currentIndex(); highlightRow(i); if(loopSentence){ const [s,e]=sentenceRange(i); const t=video.currentTime+offset; if(t>=e-0.02){ video.currentTime=Math.max(0,s-offset+0.0001); video.play(); } } });
 
-(function(){ const drawer=$('#controlsDrawer'),grab=$('#drawerGrab'); if(!drawer||!grab)return; const toggle=()=>drawer.classList.toggle('open'); grab.addEventListener('click',toggle); })();
+(function(){
+  const drawer=$('#controlsDrawer'), grab=$('#drawerGrab');
+  if(!drawer||!grab) return;
+  if (__isMobile) {
+    // 手機：預設收合，點抓把開合
+    drawer.classList.remove('open');
+    const toggle=()=>drawer.classList.toggle('open');
+    grab.addEventListener('click', toggle, {passive:true});
+  } else {
+    // 桌機：固定展開，不綁定任何開合
+    drawer.classList.add('open');
+    // 可選：隱藏抓把避免誤觸
+    if (grab) grab.style.display='none';
+  }
+})();
 
 function showTab(name){
   paneSub.style.display=name==='sub'?'':'none';
@@ -488,6 +537,10 @@ $$('.tabs .tab').forEach(t=>t.addEventListener('click',()=>showTab(t.dataset.tab
 </script>
 </body>
 </html>
+
+
+
+
 
 
 
