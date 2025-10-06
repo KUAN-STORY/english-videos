@@ -1,5 +1,5 @@
 <!--
-  player.html 版本：2025.10.13V3.0
+  player.html 版本：2025.10.13V3.1
   更新：
   - 翻譯泡泡改為「全域啟用」：不侷限閱讀模式。
   - 桌機：滑鼠懸停 0.3s 顯示翻譯；滑出/捲動關閉。
@@ -319,6 +319,16 @@ tbody tr:nth-child(odd){ background:#fff !important; }
   border-bottom:1.5px dotted #0b3b6f !important;
   text-decoration:none !important;
   text-underline-offset:2px; text-decoration-skip-ink:none; padding-bottom:1px;
+}
+</style>
+
+<style>
+/* ===== V3.1: Word tooltip to white background / black text ===== */
+#wordTip{
+  background:#ffffff !important;
+  color:#111827 !important;
+  border:1px solid #cbd5e1 !important;
+  box-shadow:0 8px 24px rgba(0,0,0,.12) !important;
 }
 </style>
 </head>
@@ -1306,270 +1316,75 @@ $$('.tabs .tab').forEach(t=>t.addEventListener('click',()=>showTab(t.dataset.tab
   document.addEventListener('DOMContentLoaded', start);
 })();
 </script>
-</body>
-</html>
-
 
 <script>
-// ===== V2.4: Robust dictionary hint marker with global observer & debouncing =====
-(()=>{
-  const DICT = { 
-    love:'愛', dream:'夢想', moon:'月亮', sun:'太陽', world:'世界',
-    festival:'節日', round:'圓形的', brave:'勇敢的', mountain:'山', arrow:'箭',
-    day:'天', people:'人們', happy:'快樂的', hot:'炎熱的', help:'幫助'
-  };
-  const WORDS = Object.keys(DICT).sort((a,b)=>b.length-a.length);
-  if (!WORDS.length) return;
-
-  const ESC = s => s.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&');
-  const WORD_RE = new RegExp("\\\\b(" + WORDS.map(ESC).join("|") + ")\\\\b", "gi");
-
-  const TARGET_SELECTORS = [
-    "#pane-sub", "#pane-quiz", "#pane-vocab",
-    ".subtitle-table", ".subs", ".right", "table"
-  ];
-
-  function shouldSkipNode(n){
-    if (!n || n.nodeType !== 3) return true;
-    if (!n.nodeValue || !n.nodeValue.trim()) return true;
-    const p = n.parentElement;
-    if (!p) return true;
-    const tn = p.tagName;
-    if (/^(SCRIPT|STYLE|CODE|PRE)$/i.test(tn)) return true;
-    if (p.closest('.dict-hint')) return true; // already wrapped
-    return false;
-  }
-
-  function wrapHintsInTextNode(node){
-    if (shouldSkipNode(node)) return;
-    const txt = node.nodeValue;
-    if (!WORD_RE.test(txt)){ WORD_RE.lastIndex = 0; return; }
-    WORD_RE.lastIndex = 0;
-    const fragHTML = txt.replace(WORD_RE, (m)=>`<span class="dict-hint" data-w="${m}">${m}</span>`);
-    const span = document.createElement('span');
-    span.innerHTML = fragHTML;
-    node.parentNode.replaceChild(span, node);
-  }
-
-  function walkAndWrap(root){
-    const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
-    const list = [];
-    while (walker.nextNode()) list.push(walker.currentNode);
-    list.forEach(wrapHintsInTextNode);
-  }
-
-  function applyHints(){
-    const roots = new Set();
-    TARGET_SELECTORS.forEach(sel => document.querySelectorAll(sel).forEach(el => roots.add(el)));
-    if (roots.size === 0) return;
-    roots.forEach(walkAndWrap);
-  }
-
-  // Debounce helper
-  let timer = null;
-  function scheduleApply(){ if (timer) cancelAnimationFrame(timer); timer = requestAnimationFrame(applyHints); }
-
-  // Initial
-  document.addEventListener('DOMContentLoaded', ()=>{
-    setTimeout(applyHints, 150);
-    // Global observer to catch late content
-    const mo = new MutationObserver(()=>scheduleApply());
-    mo.observe(document.body, {childList:true, subtree:true});
-  });
-})();
-</script>
-
-<script>
-// ===== V2.7 全字幕單字可翻譯：英欄位逐字標記 + 懸停/長按顯示翻譯 =====
-(()=>{
-  const $=(s,r=document)=>r.querySelector(s);
-  const $$=(s,r=document)=>Array.from(r.querySelectorAll(s));
-  const tip = document.getElementById('wordTip');
-  if (!tip) return;
-
-  function translateWordLocal(w){
-    const dict = { love:'愛', dream:'夢想', moon:'月亮', sun:'太陽', world:'世界', festival:'節日', round:'圓形的', brave:'勇敢的', mountain:'山', arrow:'箭' };
-    return dict[w.toLowerCase()] || '(暫無翻譯)';
-  }
-
-  function showTipNear(el, word, meaning){
-    tip.innerHTML = `<span class="w">${word}</span><span class="p">：${meaning}</span>`;
-    tip.style.display = 'block';
-    const r = el.getBoundingClientRect();
-    const x = r.left + window.scrollX;
-    const y = r.top + window.scrollY - tip.offsetHeight - 8;
-    tip.style.left = Math.max(8, Math.min(x, window.scrollX + document.documentElement.clientWidth - tip.offsetWidth - 8)) + 'px';
-    tip.style.top  = (y < window.scrollY ? (r.bottom + window.scrollY + 8) : y) + 'px';
-  }
-  function hideTip(){ tip.style.display='none'; }
-
-  // 1) 將字幕表中的「英文欄」逐字包裝成 .wtoken
-  function wrapSubtitleEnglishWords(){
-    const sub = $('#pane-sub');
-    if (!sub) return;
-    const table = sub.querySelector('table');
-    if (!table) return;
-    const ths = $$('thead th', table);
-    let enIdx = -1;
-    ths.forEach((th,i)=>{
-      const t = (th.textContent||'').trim().toLowerCase();
-      if (t.includes('英文') || t.includes('english')) enIdx = i;
-    });
-    if (enIdx === -1) return;
-    $$('tbody tr', table).forEach(tr=>{
-      const tds = $$('td', tr);
-      if (!tds[enIdx]) return;
-      tokenizeCell(tds[enIdx]);
-    });
-  }
-
-  function tokenizeCell(cell){
-    const walker = document.createTreeWalker(cell, NodeFilter.SHOW_TEXT);
-    const nodes = [];
-    while (walker.nextNode()) nodes.push(walker.currentNode);
-    nodes.forEach(n=>{
-      const text = n.nodeValue;
-      if (!text || !text.trim()) return;
-      const parts = text.split(/(\b[A-Za-z][A-Za-z'-]*\b)/g);
-      if (parts.length<=1) return;
-      const frag = document.createDocumentFragment();
-      parts.forEach(p=>{
-        if (/^\b[A-Za-z][A-Za-z'-]*\b$/.test(p)){
-          const span = document.createElement('span');
-          span.className = 'wtoken';
-          span.textContent = p;
-          frag.appendChild(span);
-        }else{
-          frag.appendChild(document.createTextNode(p));
-        }
-      });
-      n.parentNode.replaceChild(frag, n);
-    });
-  }
-
-  // 2) 懸停/長按事件（覆用本地小字典；後續可接 AI）
-  function bindHoverAndTouch(){
-    document.addEventListener('mouseover', (e)=>{
-      const t = e.target.closest('.wtoken');
-      if (!t){ hideTip(); return; }
-      const w = t.textContent.trim();
-      const m = translateWordLocal(w);
-      showTipNear(t, w, m);
-    });
-    document.addEventListener('mouseout', (e)=>{
-      if (e.relatedTarget && e.relatedTarget.closest && e.relatedTarget.closest('#wordTip')) return;
-      const t = e.target.closest('.wtoken');
-      if (t) hideTip();
-    });
-    let pressTimer=null, touchTarget=null;
-    document.addEventListener('touchstart', (e)=>{
-      const t = e.target.closest('.wtoken'); if (!t) return;
-      touchTarget = t;
-      pressTimer = setTimeout(()=>{
-        const w = t.textContent.trim();
-        const m = translateWordLocal(w);
-        showTipNear(t, w, m);
-      }, 400);
-    }, {passive:true});
-    document.addEventListener('touchend', ()=>{ if (pressTimer){ clearTimeout(pressTimer); pressTimer=null; } });
-    document.addEventListener('touchmove', ()=>{ if (pressTimer){ clearTimeout(pressTimer); pressTimer=null; hideTip(); } }, {passive:true});
-    document.addEventListener('scroll', hideTip, {passive:true});
-  }
-
-  document.addEventListener('DOMContentLoaded', ()=>{
-    // 初次標記
-    wrapSubtitleEnglishWords();
-    // 監聽字幕表變動（例如載入其他字幕）
-    const sub = $('#pane-sub');
-    if (sub){
-      const mo = new MutationObserver(()=>wrapSubtitleEnglishWords());
-      mo.observe(sub, {childList:true, subtree:true});
-    }
-    bindHoverAndTouch();
-  });
-})();
-</script>
-
-<script>
-/* ===== V2.9: 字幕載入增強（preview=1 走公開檔、失敗退回 Supabase、具備 timeout／重試） ===== */
-(() => {
+/* ===== V3.1: Load subtitles from local JSON data/cues-<slug>.json ===== */
+(function(){
   const urlp = new URLSearchParams(location.search);
   const slug = urlp.get('slug') || 'mid-autumn';
-  const isPreview = urlp.get('preview') === '1';
 
-  const PUBLIC_SUB_URLS = [
-    `/english-videos/subs/${slug}.vtt`,
-    `/english-videos/subs/${slug}.srt`,
-    `/english-videos/subs/${slug}.json`
-  ];
+  // helpers
+  const $ = (s, r=document)=>r.querySelector(s);
 
-  async function loadFromSupabase(slug) {
-    throw new Error('SUPABASE_LOADER_NOT_WIRED');
-  }
-
-  function withTimeout(promise, ms = 6000) {
-    return Promise.race([promise, new Promise((_, rej)=>setTimeout(()=>rej(new Error('TIMEOUT')), ms))]);
-  }
-  async function fetchText(url){
-    const res = await fetch(url, { cache: 'no-store' });
-    if(!res.ok) throw new Error(`HTTP ${res.status} for ${url}`);
-    return res.text();
-  }
-
-  async function tryLoadSubtitles(){
-    const tried=[];
-    if(isPreview){
-      for(const u of PUBLIC_SUB_URLS){
-        try{ const txt = await withTimeout(fetchText(u)); return {kind:'public', data:txt, url:u}; }
-        catch(e){ tried.push(`${u} -> ${e.message}`); }
-      }
-    }
+  async function fetchJSON(url, timeoutMs=6000){
+    const ctrl = new AbortController();
+    const t = setTimeout(()=>ctrl.abort(), timeoutMs);
     try{
-      const txt = await withTimeout(loadFromSupabase(slug));
-      if (txt) return {kind:'supabase', data:txt, url:'supabase'};
-    }catch(e){ tried.push(`supabase -> ${e.message}`); }
-    throw new Error('SUBTITLE_LOAD_FAILED\\n' + tried.join('\\n'));
+      const res = await fetch(url, {signal: ctrl.signal, cache:'no-store'});
+      if(!res.ok) throw new Error(`HTTP ${res.status}`);
+      return await res.json();
+    } finally { clearTimeout(t); }
   }
 
-  async function bootstrapSubtitles(){
-    const hintEl = document.querySelector('#pane-sub .loading-hint') ||
-                   document.querySelector('#pane-sub') || document.body;
-    const showError = (msg)=>{
-      hintEl.innerHTML = `
-        <div style="padding:12px;border:1px solid #e2e8f0;background:#fff7f7;color:#b91c1c;border-radius:8px">
-          <div style="font-weight:600;margin-bottom:6px">字幕載入失敗</div>
-          <div style="white-space:pre-line;font-size:12px">${msg}</div>
-          <button id="retryLoad" style="margin-top:8px;padding:6px 10px;border:1px solid #94a3b8;border-radius:8px;background:#fff">重試</button>
-        </div>`;
-      document.getElementById('retryLoad')?.addEventListener('click', ()=>{
-        hintEl.textContent = '（字幕載入中…）'; start();
-      });
-    };
+  function showError(msg){
+    const host = $("#pane-sub") || document.body;
+    const box = document.createElement("div");
+    box.style.cssText = "padding:12px;margin:8px;border:1px solid #fecaca;background:#fff7f7;color:#991b1b;border-radius:10px";
+    box.innerHTML = `<div style="font-weight:700;margin-bottom:6px">字幕載入失敗</div>
+    <div style="white-space:pre-line;font-size:12px">${msg}</div>
+    <button id="retryLocal" style="margin-top:8px;padding:6px 10px;border:1px solid #94a3b8;border-radius:8px;background:#fff">重試</button>`;
+    host.innerHTML = "";
+    host.appendChild(box);
+    $("#retryLocal")?.addEventListener("click", ()=>{
+      host.innerHTML = "（字幕載入中…）";
+      start();
+    });
+  }
 
+  async function start(){
+    const basePath = "./data/"; // relative to player.html
+    const url = `${basePath}cues-${slug}.json`;
     try{
-      const res = await tryLoadSubtitles();
-      console.log('[subtitle] loaded from', res.kind, res.url);
-      // TODO: 將 res.data 丟進你的 parse/render 流程
-      // e.g., if(res.data.trim().startsWith('WEBVTT')) cues=parseVTT(res.data); else if(res.data.includes('-->')) cues=parseSRT(res.data); else cues=JSON.parse(res.data);
-      // renderSubtitleTable(cues);
-      if (hintEl && hintEl === document.querySelector('#pane-sub')){
-        const ok = document.createElement('div');
-        ok.style.padding='8px'; ok.style.fontSize='12px'; ok.style.color='#047857';
-        ok.textContent='（字幕已載入，等待渲染…）';
-        hintEl.prepend(ok);
+      const cues = await fetchJSON(url);
+      // ---- Hook into your existing render pipeline ----
+      // If you already have a function like renderSubtitleTable(cues),
+      // call it here. Otherwise, put the cues in a known global.
+      window.cues = cues;
+      // Try typical hooks:
+      const render = window.renderSubtitleTable || window.renderSubtitles || null;
+      if (typeof render === "function"){
+        render(cues);
+      } else {
+        // Minimal fallback UI to prove loaded
+        const host = $("#pane-sub") || document.body;
+        const info = document.createElement("div");
+        info.style.cssText="padding:8px;color:#065f46;font-size:12px";
+        info.textContent = `（已載入 ${Array.isArray(cues)?cues.length:Object.keys(cues||{}).length} 筆字幕）`;
+        host.prepend(info);
       }
+      console.log("[subtitle] loaded from local JSON:", url);
     }catch(err){
-      console.error(err);
-      showError(String(err.message||err));
+      console.error("Subtitle load error:", err);
+      showError(`無法讀取 ${url}\n${String(err.message||err)}`);
     }
   }
 
-  function start(){ bootstrapSubtitles(); }
-  document.addEventListener('DOMContentLoaded', start);
+  document.addEventListener("DOMContentLoaded", start);
 })();
 </script>
 </body>
 </html>
+
 
 
 
