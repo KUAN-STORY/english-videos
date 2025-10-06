@@ -1,5 +1,5 @@
 <!--
-  player.html 版本：2025.10.10V2.5
+  player.html 版本：2025.10.11V2.6
   更新：
   - 翻譯泡泡改為「全域啟用」：不侷限閱讀模式。
   - 桌機：滑鼠懸停 0.3s 顯示翻譯；滑出/捲動關閉。
@@ -241,6 +241,23 @@ a:hover{ text-decoration: underline; }
 
 /* login button remains hidden */
 #btnLogin, .btn-login, [data-role="login"]{ display:none !important; }
+</style>
+
+<style>
+/* ===== V2.6: 強化虛線底線標示 ===== */
+.dict-hint {
+  position: relative;
+  text-decoration: none !important;
+  border-bottom: 1.5px dotted #0b3b6f;
+  text-underline-offset: 2px;
+  text-decoration-skip-ink: none;
+  padding-bottom: 2px;
+  cursor: help;
+  transition: border-color 0.2s ease;
+}
+.dict-hint:hover {
+  border-bottom-color: #2563eb; /* hover 時變亮藍 */
+}
 </style>
 </head>
 <body>
