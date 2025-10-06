@@ -4,7 +4,7 @@
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1"/>
 <title>英語影片播放器</title>
-<!-- player.html 版本：2025.10.13 V4.1 -->
+<!-- player.html 版本：2025.10.13 V4.2 -->
 <style>
   :root{ --bg:#0b1324; --panel:#0f172a; --border:#1f2a44; --ink:#e6efff; --muted:#9fb0c9; --accent:#3c7cff; }
   *{box-sizing:border-box}
@@ -88,7 +88,7 @@
 </style>
 
 <style>
-/* === V4.1 additions === */
+/* === V4.2 additions === */
 /* word tooltip */
 #wordTip{position:fixed;z-index:9999;pointer-events:none;
   background:#ffffff;color:#111;border:1px solid #cbd5e1;border-radius:10px;
@@ -104,13 +104,26 @@
 </style>
 
 <style>
-/* === V4.1 portrait-first on small screens; keep print section untouched === */
+/* === V4.2 portrait-first on small screens; keep print section untouched === */
 body.mobile-portrait .left, body.mobile-portrait .right { width: 100% !important; max-width: 100% !important; }
 body.mobile-portrait .right { margin-top: 12px !important; }
 body.mobile-portrait .split, body.mobile-portrait .cols, body.mobile-portrait .row { flex-direction: column !important; display:flex !important; gap:12px; }
 body.mobile-portrait #rotateHint{ display:none !important; } /* no need now */
 /* prevent tooltips being clipped */
 #wordTip{ position: fixed; z-index: 99999; }
+</style>
+
+<style>
+/* === V4.2: portrait-first stack by width, no JS dependency === */
+@media (max-width: 860px) {
+  .split, .cols, .row { display:flex !important; flex-direction: column !important; gap:12px; }
+  .left, .right { width:100% !important; max-width:100% !important; }
+  .right { margin-top: 12px !important; }
+}
+/* token style always visible */
+.wtoken{ border-bottom:1.5px dotted #0b3b6f; cursor:help; text-underline-offset:2px; }
+#wordTip{ position:fixed; z-index:99999; display:none; background:#fff; color:#111; border:1px solid #cbd5e1; 
+  border-radius:10px; padding:6px 10px; box-shadow:0 10px 24px rgba(0,0,0,.15); font-size:14px; line-height:1.2; max-width:80vw; }
 </style>
 </head>
 <body>
@@ -458,7 +471,7 @@ $$('.tabs .tab').forEach(t=>t.addEventListener('click',()=>showTab(t.dataset.tab
 </script>
 
 <script>
-/* === V4.1: word-only hover translate, and rotate hint === */
+/* === V4.2: word-only hover translate, and rotate hint === */
 (() => {
   const $ = (s, r=document) => r.querySelector(s);
   const $$ = (s, r=document) => Array.from(r.querySelectorAll(s));
@@ -577,7 +590,7 @@ $$('.tabs .tab').forEach(t=>t.addEventListener('click',()=>showTab(t.dataset.tab
 <div id="rotateHint">為獲得最佳閱讀體驗，建議將手機橫向放置（本頁已維持左右排版）。</div>
 
 <script>
-/* === V4.1: robust word-only tokenizer & ensure it runs after cues render === */
+/* === V4.2: robust word-only tokenizer & ensure it runs after cues render === */
 (() => {
   const $ = (s, r=document)=>r.querySelector(s);
   const $$ = (s, r=document)=>Array.from(r.querySelectorAll(s));
@@ -709,8 +722,116 @@ $$('.tabs .tab').forEach(t=>t.addEventListener('click',()=>showTab(t.dataset.tab
   document.addEventListener('DOMContentLoaded', applyPortraitIfNeeded);
 })();
 </script>
+
+<script>
+/* === V4.2: MutationObserver tokenizer + guaranteed tooltip === */
+(() => {
+  const $ = (s, r=document)=>r.querySelector(s);
+  const $$ = (s, r=document)=>Array.from(r.querySelectorAll(s));
+  const vocabMap = window.vocabMap || (window.vocabMap = Object.create(null));
+  let tip, longTimer;
+
+  function ensureTip(){
+    if (tip) return tip;
+    tip = document.createElement('div'); tip.id='wordTip'; document.body.appendChild(tip);
+    return tip;
+  }
+  function showTipAt(x,y,word,meaning){
+    const el = ensureTip();
+    el.innerHTML = `<b>${word}</b>：${meaning || '（暫無翻譯）'}`;
+    el.style.display='block';
+    const pad=10, vw=Math.max(document.documentElement.clientWidth, innerWidth||0), vh=Math.max(document.documentElement.clientHeight, innerHeight||0);
+    const w=Math.min(vw*0.8, el.offsetWidth||260);
+    el.style.left = Math.min(vw - w - pad, Math.max(pad, x+8)) + 'px';
+    el.style.top  = Math.min(vh - 60, Math.max(pad, y+8)) + 'px';
+  }
+  function hideTip(){ if(ensureTip()) tip.style.display='none'; }
+
+  function englishColIndex(table){
+    const ths = $$('thead th', table).map(th=>th.textContent.trim());
+    let idx = ths.findIndex(t => /英/.test(t));
+    if (idx === -1 && ths.length >= 2) idx = 1;
+    return idx;
+  }
+
+  function tokenizeTable(table){
+    if (table.dataset.tokenized === '1') return;
+    const enIdx = englishColIndex(table);
+    if (enIdx < 0) return;
+    const rows = $$('tbody tr', table);
+    const wordRe = /[A-Za-z]+(?:'[A-Za-z]+)?/g;
+    rows.forEach(tr => {
+      const tds = $$('td', tr);
+      const td = tds[enIdx]; if (!td) return;
+      const text = td.textContent;
+      const parts = []; let last=0;
+      for (const m of text.matchAll(wordRe)){
+        const w=m[0]; const i=m.index;
+        if (i>last) parts.push(text.slice(last,i));
+        parts.push(`<span class="wtoken" data-w="${w.toLowerCase()}">${w}</span>`);
+        last = i + w.length;
+      }
+      parts.push(text.slice(last));
+      td.innerHTML = parts.join('');
+    });
+    bindWordEvents(table);
+    table.dataset.tokenized = '1';
+  }
+
+  function bindWordEvents(root){
+    const onHover = (e)=>{
+      const el = e.target.closest('.wtoken'); if(!el) return;
+      const w = el.dataset.w || el.textContent.trim().toLowerCase();
+      const zh = vocabMap[w];
+      showTipAt(e.clientX, e.clientY, el.textContent.trim(), zh);
+    };
+    $$('.wtoken', root).forEach(el => {
+      el.addEventListener('mouseenter', onHover);
+      el.addEventListener('mousemove', onHover);
+      el.addEventListener('mouseleave', hideTip);
+      el.addEventListener('touchstart', (ev)=>{
+        clearTimeout(longTimer);
+        const t = ev.touches[0];
+        longTimer = setTimeout(()=>{
+          const w = el.dataset.w || el.textContent.trim().toLowerCase();
+          const zh = vocabMap[w];
+          showTipAt(t.clientX, t.clientY, el.textContent.trim(), zh);
+        }, 420);
+      }, {passive:true});
+      el.addEventListener('touchend', ()=>{ clearTimeout(longTimer); hideTip(); }, {passive:true});
+      el.addEventListener('touchmove', ()=>{ clearTimeout(longTimer); hideTip(); }, {passive:true});
+    });
+    $('#pane-sub')?.addEventListener('scroll', hideTip, {passive:true});
+  }
+
+  // Build vocabMap after vocab render（若有單字卡）
+  const buildMap = () => {
+    $$('#vocabBox .voc').forEach(card => {
+      const w = (card.querySelector('.voc-word')?.textContent||'').trim().toLowerCase();
+      const zh = (card.querySelector('.voc-zh')?.textContent||'').trim();
+      if (w) vocabMap[w] = zh || vocabMap[w];
+    });
+  };
+  document.addEventListener('DOMContentLoaded', buildMap);
+
+  // Observe subtitle pane for table changes → tokenize
+  const subHost = $('#pane-sub') || document.body;
+  const mo = new MutationObserver(() => {
+    const table = $('#pane-sub table') || $('table');
+    if (table) tokenizeTable(table);
+  });
+  mo.observe(subHost, {subtree:true, childList:true});
+
+  // Also try once after load
+  document.addEventListener('DOMContentLoaded', () => {
+    const table = $('#pane-sub table') || $('table');
+    if (table) tokenizeTable(table);
+  });
+})();
+</script>
 </body>
 </html>
+
 
 
 
