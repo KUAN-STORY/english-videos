@@ -1,5 +1,5 @@
 <!--
-  player.html 版本：2025.10.09V2.3
+  player.html 版本：2025.10.09V2.4
   更新：
   - 翻譯泡泡改為「全域啟用」：不侷限閱讀模式。
   - 桌機：滑鼠懸停 0.3s 顯示翻譯；滑出/捲動關閉。
@@ -156,6 +156,20 @@
 .dict-hint{ border-bottom:1px dotted #7cf; cursor:help; }
 /* Safer hide for login button (multiple possible selectors) */
 #btnLogin, .btn-login, [data-role="login"]{ display:none !important; }
+</style>
+
+<style>
+/* ===== V2.4: More visible dotted underline for dictionary words ===== */
+.dict-hint{
+  text-decoration: underline dotted #7cf 2px;
+  text-underline-offset: 2px;
+  border-bottom: none !important;
+  cursor: help;
+}
+/* high-contrast fallback for browsers without dotted support */
+@supports not (text-decoration-style: dotted){
+  .dict-hint{ border-bottom:1px dotted #7cf !important; }
+}
 </style>
 </head>
 <body>
@@ -881,6 +895,75 @@ $$('.tabs .tab').forEach(t=>t.addEventListener('click',()=>showTab(t.dataset.tab
   document.addEventListener("DOMContentLoaded", hideLoginByText);
 
   // Tooltip behavior already exists from previous version; no change needed.
+})();
+</script>
+
+<script>
+// ===== V2.4: Robust dictionary hint marker with global observer & debouncing =====
+(()=>{
+  const DICT = { 
+    love:'愛', dream:'夢想', moon:'月亮', sun:'太陽', world:'世界',
+    festival:'節日', round:'圓形的', brave:'勇敢的', mountain:'山', arrow:'箭',
+    day:'天', people:'人們', happy:'快樂的', hot:'炎熱的', help:'幫助'
+  };
+  const WORDS = Object.keys(DICT).sort((a,b)=>b.length-a.length);
+  if (!WORDS.length) return;
+
+  const ESC = s => s.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&');
+  const WORD_RE = new RegExp("\\\\b(" + WORDS.map(ESC).join("|") + ")\\\\b", "gi");
+
+  const TARGET_SELECTORS = [
+    "#pane-sub", "#pane-quiz", "#pane-vocab",
+    ".subtitle-table", ".subs", ".right", "table"
+  ];
+
+  function shouldSkipNode(n){
+    if (!n || n.nodeType !== 3) return true;
+    if (!n.nodeValue || !n.nodeValue.trim()) return true;
+    const p = n.parentElement;
+    if (!p) return true;
+    const tn = p.tagName;
+    if (/^(SCRIPT|STYLE|CODE|PRE)$/i.test(tn)) return true;
+    if (p.closest('.dict-hint')) return true; // already wrapped
+    return false;
+  }
+
+  function wrapHintsInTextNode(node){
+    if (shouldSkipNode(node)) return;
+    const txt = node.nodeValue;
+    if (!WORD_RE.test(txt)){ WORD_RE.lastIndex = 0; return; }
+    WORD_RE.lastIndex = 0;
+    const fragHTML = txt.replace(WORD_RE, (m)=>`<span class="dict-hint" data-w="${m}">${m}</span>`);
+    const span = document.createElement('span');
+    span.innerHTML = fragHTML;
+    node.parentNode.replaceChild(span, node);
+  }
+
+  function walkAndWrap(root){
+    const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
+    const list = [];
+    while (walker.nextNode()) list.push(walker.currentNode);
+    list.forEach(wrapHintsInTextNode);
+  }
+
+  function applyHints(){
+    const roots = new Set();
+    TARGET_SELECTORS.forEach(sel => document.querySelectorAll(sel).forEach(el => roots.add(el)));
+    if (roots.size === 0) return;
+    roots.forEach(walkAndWrap);
+  }
+
+  // Debounce helper
+  let timer = null;
+  function scheduleApply(){ if (timer) cancelAnimationFrame(timer); timer = requestAnimationFrame(applyHints); }
+
+  // Initial
+  document.addEventListener('DOMContentLoaded', ()=>{
+    setTimeout(applyHints, 150);
+    // Global observer to catch late content
+    const mo = new MutationObserver(()=>scheduleApply());
+    mo.observe(document.body, {childList:true, subtree:true});
+  });
 })();
 </script>
 </body>
