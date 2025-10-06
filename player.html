@@ -1,4 +1,12 @@
 <!--
+  player.html 版本：2025.10.08V2.2
+  更新：
+  - 翻譯泡泡改為「全域啟用」：不侷限閱讀模式。
+  - 桌機：滑鼠懸停 0.3s 顯示翻譯；滑出/捲動關閉。
+  - 手機：長按顯示翻譯；放開/捲動關閉。
+  - 保留列印保護區、Supabase 與桌機/手機既有邏輯。
+-->
+<!--
   PRINT GUARD: The code between the markers below is locked.
   Any future automated mobile/feature updates must NOT modify content
   between:  ===== PRINT SECTION START / END =====
@@ -679,6 +687,110 @@ $$('.tabs .tab').forEach(t=>t.addEventListener('click',()=>showTab(t.dataset.tab
   }
   window.addEventListener("beforeprint", handleBeforePrint);
   window.addEventListener("afterprint", handleAfterPrint);
+})();
+</script>
+
+<script>
+(()=>{
+  const tip = document.getElementById('wordTip');
+  if (!tip) return;
+
+  // ===== Utilities =====
+  const delay = (ms)=>new Promise(r=>setTimeout(r, ms));
+  const isWord = (s)=>/^[A-Za-z][A-Za-z'\-]*$/.test(s||"");
+  const clamp = (n,min,max)=>Math.max(min, Math.min(max,n));
+
+  function atViewportWord(x, y){
+    const d = document;
+    const caret = (d.caretPositionFromPoint && d.caretPositionFromPoint(x,y)) ||
+                  (d.caretRangeFromPoint && d.caretRangeFromPoint(x,y));
+    let node, offset;
+    if (!caret) return null;
+    if (caret.offsetNode) { node = caret.offsetNode; offset = caret.offset; }
+    else { node = caret.getClientRects ? caret.startContainer : null; offset = caret.startOffset; }
+    if (!node) return null;
+    if (node.nodeType !== 3){ // not text node -> try child text
+      node = node.childNodes && node.childNodes[0];
+      if (!node || node.nodeType !== 3) return null;
+      offset = 0;
+    }
+    const text = node.textContent || "";
+    if (!text.trim()) return null;
+    // expand around offset to word boundaries
+    let i = offset, L = text.length;
+    let s = i, e = i;
+    const isLetter = c => /[A-Za-z'\-]/.test(c);
+    while (s>0 && isLetter(text[s-1])) s--;
+    while (e<L && isLetter(text[e])) e++;
+    const word = text.slice(s,e).trim();
+    if (!isWord(word)) return null;
+    // compute position near selection
+    const range = document.createRange();
+    range.setStart(node, s);
+    range.setEnd(node, e);
+    const rect = range.getBoundingClientRect();
+    return {word, rect};
+  }
+
+  function placeTipNearRect(rect){
+    const pad = 8;
+    const top = rect.top + window.scrollY - tip.offsetHeight - 10;
+    const left = clamp(rect.left + window.scrollX, 8, window.scrollX + document.documentElement.clientWidth - tip.offsetWidth - 8);
+    tip.style.top = (top<window.scrollY ? (rect.bottom + window.scrollY + 10) : top) + "px";
+    tip.style.left = left + "px";
+  }
+
+  async function translateWord(word){
+    // Local fallback dictionary; can be replaced with AI call later
+    const dict = { love:'愛', dream:'夢想', moon:'月亮', sun:'太陽', world:'世界', festival:'節日', round:'圓形的', brave:'勇敢的', mountain:'山', arrow:'箭' };
+    return dict[word.toLowerCase()] || '(暫無翻譯)';
+  }
+
+  function showTip(rect, word, meaning){
+    tip.innerHTML = `<span class="w">${word}</span><span class="p">：${meaning}</span>`;
+    tip.style.display = 'block';
+    // need size to place precisely
+    requestAnimationFrame(()=>placeTipNearRect(rect));
+  }
+
+  function hideTip(){ tip.style.display='none'; }
+
+  // ===== Hover (desktop) with small delay =====
+  let hoverTimer = null, lastWord=null;
+  document.addEventListener('mousemove', (e)=>{
+    if (hoverTimer) clearTimeout(hoverTimer);
+    hoverTimer = setTimeout(async ()=>{
+      const hit = atViewportWord(e.clientX, e.clientY);
+      if (!hit){ hideTip(); return; }
+      if (lastWord === hit.word && tip.style.display==='block') return;
+      lastWord = hit.word;
+      const meaning = await translateWord(hit.word);
+      showTip(hit.rect, hit.word, meaning);
+    }, 300);
+  });
+
+  document.addEventListener('mouseout', (e)=>{
+    // if leaving the document/body
+    if (!e.relatedTarget) hideTip();
+  });
+
+  // ===== Touch long-press (mobile) =====
+  let pressTimer=null, startXY=null;
+  document.addEventListener('touchstart', (e)=>{
+    startXY = {x:e.touches[0].clientX, y:e.touches[0].clientY};
+    pressTimer = setTimeout(async ()=>{
+      const hit = atViewportWord(startXY.x, startXY.y);
+      if (!hit){ hideTip(); return; }
+      const meaning = await translateWord(hit.word);
+      showTip(hit.rect, hit.word, meaning);
+    }, 400);
+  }, {passive:true});
+  document.addEventListener('touchmove', ()=>{ if (pressTimer){ clearTimeout(pressTimer); pressTimer=null; } hideTip(); }, {passive:true});
+  document.addEventListener('touchend',  ()=>{ if (pressTimer){ clearTimeout(pressTimer); pressTimer=null; } });
+  document.addEventListener('scroll', hideTip, {passive:true});
+
+  // Also hide on print
+  window.addEventListener('beforeprint', hideTip);
 })();
 </script>
 </body>
