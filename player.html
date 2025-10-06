@@ -1,5 +1,5 @@
 <!--
-  player.html 版本：2025.10.11V2.6
+  player.html 版本：2025.10.12V2.7
   更新：
   - 翻譯泡泡改為「全域啟用」：不侷限閱讀模式。
   - 桌機：滑鼠懸停 0.3s 顯示翻譯；滑出/捲動關閉。
@@ -258,6 +258,20 @@ a:hover{ text-decoration: underline; }
 .dict-hint:hover {
   border-bottom-color: #2563eb; /* hover 時變亮藍 */
 }
+</style>
+
+<style>
+/* ===== V2.7: 全字幕單字可翻譯（英欄位逐字包裝） ===== */
+.wtoken{
+  text-decoration: none !important;
+  border-bottom: 1px dotted #0b3b6f;
+  text-underline-offset: 2px;
+  text-decoration-skip-ink: none;
+  padding-bottom: 1px;
+  cursor: help;
+  transition: border-color .15s ease;
+}
+.wtoken:hover{ border-bottom-color:#2563eb; }
 </style>
 </head>
 <body>
@@ -1051,6 +1065,117 @@ $$('.tabs .tab').forEach(t=>t.addEventListener('click',()=>showTab(t.dataset.tab
     // Global observer to catch late content
     const mo = new MutationObserver(()=>scheduleApply());
     mo.observe(document.body, {childList:true, subtree:true});
+  });
+})();
+</script>
+
+<script>
+// ===== V2.7 全字幕單字可翻譯：英欄位逐字標記 + 懸停/長按顯示翻譯 =====
+(()=>{
+  const $=(s,r=document)=>r.querySelector(s);
+  const $$=(s,r=document)=>Array.from(r.querySelectorAll(s));
+  const tip = document.getElementById('wordTip');
+  if (!tip) return;
+
+  function translateWordLocal(w){
+    const dict = { love:'愛', dream:'夢想', moon:'月亮', sun:'太陽', world:'世界', festival:'節日', round:'圓形的', brave:'勇敢的', mountain:'山', arrow:'箭' };
+    return dict[w.toLowerCase()] || '(暫無翻譯)';
+  }
+
+  function showTipNear(el, word, meaning){
+    tip.innerHTML = `<span class="w">${word}</span><span class="p">：${meaning}</span>`;
+    tip.style.display = 'block';
+    const r = el.getBoundingClientRect();
+    const x = r.left + window.scrollX;
+    const y = r.top + window.scrollY - tip.offsetHeight - 8;
+    tip.style.left = Math.max(8, Math.min(x, window.scrollX + document.documentElement.clientWidth - tip.offsetWidth - 8)) + 'px';
+    tip.style.top  = (y < window.scrollY ? (r.bottom + window.scrollY + 8) : y) + 'px';
+  }
+  function hideTip(){ tip.style.display='none'; }
+
+  // 1) 將字幕表中的「英文欄」逐字包裝成 .wtoken
+  function wrapSubtitleEnglishWords(){
+    const sub = $('#pane-sub');
+    if (!sub) return;
+    const table = sub.querySelector('table');
+    if (!table) return;
+    const ths = $$('thead th', table);
+    let enIdx = -1;
+    ths.forEach((th,i)=>{
+      const t = (th.textContent||'').trim().toLowerCase();
+      if (t.includes('英文') || t.includes('english')) enIdx = i;
+    });
+    if (enIdx === -1) return;
+    $$('tbody tr', table).forEach(tr=>{
+      const tds = $$('td', tr);
+      if (!tds[enIdx]) return;
+      tokenizeCell(tds[enIdx]);
+    });
+  }
+
+  function tokenizeCell(cell){
+    const walker = document.createTreeWalker(cell, NodeFilter.SHOW_TEXT);
+    const nodes = [];
+    while (walker.nextNode()) nodes.push(walker.currentNode);
+    nodes.forEach(n=>{
+      const text = n.nodeValue;
+      if (!text || !text.trim()) return;
+      const parts = text.split(/(\b[A-Za-z][A-Za-z'-]*\b)/g);
+      if (parts.length<=1) return;
+      const frag = document.createDocumentFragment();
+      parts.forEach(p=>{
+        if (/^\b[A-Za-z][A-Za-z'-]*\b$/.test(p)){
+          const span = document.createElement('span');
+          span.className = 'wtoken';
+          span.textContent = p;
+          frag.appendChild(span);
+        }else{
+          frag.appendChild(document.createTextNode(p));
+        }
+      });
+      n.parentNode.replaceChild(frag, n);
+    });
+  }
+
+  // 2) 懸停/長按事件（覆用本地小字典；後續可接 AI）
+  function bindHoverAndTouch(){
+    document.addEventListener('mouseover', (e)=>{
+      const t = e.target.closest('.wtoken');
+      if (!t){ hideTip(); return; }
+      const w = t.textContent.trim();
+      const m = translateWordLocal(w);
+      showTipNear(t, w, m);
+    });
+    document.addEventListener('mouseout', (e)=>{
+      if (e.relatedTarget && e.relatedTarget.closest && e.relatedTarget.closest('#wordTip')) return;
+      const t = e.target.closest('.wtoken');
+      if (t) hideTip();
+    });
+    let pressTimer=null, touchTarget=null;
+    document.addEventListener('touchstart', (e)=>{
+      const t = e.target.closest('.wtoken'); if (!t) return;
+      touchTarget = t;
+      pressTimer = setTimeout(()=>{
+        const w = t.textContent.trim();
+        const m = translateWordLocal(w);
+        showTipNear(t, w, m);
+      }, 400);
+    }, {passive:true});
+    document.addEventListener('touchend', ()=>{ if (pressTimer){ clearTimeout(pressTimer); pressTimer=null; } });
+    document.addEventListener('touchmove', ()=>{ if (pressTimer){ clearTimeout(pressTimer); pressTimer=null; hideTip(); } }, {passive:true});
+    document.addEventListener('scroll', hideTip, {passive:true});
+  }
+
+  document.addEventListener('DOMContentLoaded', ()=>{
+    // 初次標記
+    wrapSubtitleEnglishWords();
+    // 監聽字幕表變動（例如載入其他字幕）
+    const sub = $('#pane-sub');
+    if (sub){
+      const mo = new MutationObserver(()=>wrapSubtitleEnglishWords());
+      mo.observe(sub, {childList:true, subtree:true});
+    }
+    bindHoverAndTouch();
   });
 })();
 </script>
