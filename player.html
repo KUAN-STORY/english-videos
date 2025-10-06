@@ -1,5 +1,5 @@
 <!--
-  player.html 版本：2025.10.08V2.2
+  player.html 版本：2025.10.09V2.3
   更新：
   - 翻譯泡泡改為「全域啟用」：不侷限閱讀模式。
   - 桌機：滑鼠懸停 0.3s 顯示翻譯；滑出/捲動關閉。
@@ -149,6 +149,13 @@
   #quizPrintCopy{ page-break-before: always; }
   #quizPrintCopy button, #quizPrintCopy input, #quizPrintCopy .no-print{ display:none !important; }
 }
+</style>
+
+<style>
+/* ===== Dictionary hint underline ===== */
+.dict-hint{ border-bottom:1px dotted #7cf; cursor:help; }
+/* Safer hide for login button (multiple possible selectors) */
+#btnLogin, .btn-login, [data-role="login"]{ display:none !important; }
 </style>
 </head>
 <body>
@@ -793,9 +800,91 @@ $$('.tabs .tab').forEach(t=>t.addEventListener('click',()=>showTab(t.dataset.tab
   window.addEventListener('beforeprint', hideTip);
 })();
 </script>
+
+<script>
+(()=>{
+  // ===== Dotted underline for words we have translations for =====
+  const DICT = { 
+    love:'愛', dream:'夢想', moon:'月亮', sun:'太陽', world:'世界',
+    festival:'節日', round:'圓形的', brave:'勇敢的', mountain:'山', arrow:'箭',
+    day:'天', people:'人們', happy:'快樂的', hot:'炎熱的', help:'幫助'
+  };
+
+  const WORDS = Object.keys(DICT).sort((a,b)=>b.length-a.length); // long first
+  const WORD_RE = new RegExp("\\\\b(" + WORDS.map(w=>w.replace(/[-/\\\\^$*+?.()|[\\]{}]/g,"\\\\$&")).join("|") + ")\\\\b", "gi");
+
+  // Containers likely holding English text (subtitles table, quiz, etc.)
+  const TARGET_SELECTORS = [
+    "#pane-sub", "#pane-quiz", "#pane-vocab", ".right", ".subs", ".subtitle-table", "table"
+  ];
+
+  function wrapHintsInNode(node){
+    if (!node || node.nodeType !== 3) return;
+    const txt = node.nodeValue;
+    if (!txt || !WORD_RE.test(txt)) { WORD_RE.lastIndex = 0; return; }
+    WORD_RE.lastIndex = 0;
+    const htmlFrag = txt.replace(WORD_RE, (m)=>`<span class="dict-hint" data-w="${m}">${m}</span>`);
+    const span = document.createElement("span");
+    span.innerHTML = htmlFrag;
+    node.parentNode.replaceChild(span, node);
+  }
+
+  function walkAndWrap(root){
+    const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, {
+      acceptNode(n){
+        if (!n.nodeValue || !n.nodeValue.trim()) return NodeFilter.FILTER_REJECT;
+        // skip inside scripts/styles
+        const p = n.parentElement; 
+        if (!p) return NodeFilter.FILTER_REJECT;
+        const tn = p.tagName;
+        if (tn === "SCRIPT" || tn === "STYLE" || tn === "BUTTON" || tn === "A") return NodeFilter.FILTER_REJECT;
+        return NodeFilter.FILTER_ACCEPT;
+      }
+    });
+    const nodes = [];
+    while (walker.nextNode()) nodes.push(walker.currentNode);
+    nodes.forEach(wrapHintsInNode);
+  }
+
+  function applyHints(){
+    TARGET_SELECTORS.forEach(sel=>{
+      document.querySelectorAll(sel).forEach(el=>walkAndWrap(el));
+    });
+  }
+
+  // Initial apply after DOM ready (delay to allow content rendering)
+  document.addEventListener("DOMContentLoaded", ()=>{
+    setTimeout(applyHints, 150);
+    // Observe dynamic subtitle updates
+    const obsTargets = new Set();
+    TARGET_SELECTORS.forEach(sel=>document.querySelectorAll(sel).forEach(el=>obsTargets.add(el)));
+    obsTargets.forEach(el=>{
+      const mo = new MutationObserver((muts)=>{
+        let need=false;
+        for (const m of muts){ if (m.addedNodes && m.addedNodes.length){ need=true; break; } }
+        if (need) setTimeout(applyHints, 50);
+      });
+      mo.observe(el, {childList:true, subtree:true});
+    });
+  });
+
+  // ===== Hide login button by text as well (fallback) =====
+  function hideLoginByText(){
+    Array.from(document.querySelectorAll("button, a")).forEach(el=>{
+      const t = (el.textContent||"").trim();
+      if (t === "登入" || t.toLowerCase() === "login"){
+        el.style.display = "none";
+        el.classList.add("no-print");
+      }
+    });
+  }
+  document.addEventListener("DOMContentLoaded", hideLoginByText);
+
+  // Tooltip behavior already exists from previous version; no change needed.
+})();
+</script>
 </body>
 </html>
-
 
 
 
