@@ -1,5 +1,5 @@
 <!--
-  player.html 版本：2025.10.13V3.1
+  player.html 版本：2025.10.13V3.2
   更新：
   - 翻譯泡泡改為「全域啟用」：不侷限閱讀模式。
   - 桌機：滑鼠懸停 0.3s 顯示翻譯；滑出/捲動關閉。
@@ -329,6 +329,59 @@ tbody tr:nth-child(odd){ background:#fff !important; }
   color:#111827 !important;
   border:1px solid #cbd5e1 !important;
   box-shadow:0 8px 24px rgba(0,0,0,.12) !important;
+}
+</style>
+
+<style>
+/* ===== V3.2: Force vocab cards to white theme, black titles ===== */
+#pane-vocab, #pane-vocab * { color: #111827; }
+#pane-vocab, #pane-vocab .list, #pane-vocab .grid { background: #ffffff !important; }
+#pane-vocab .card, 
+#pane-vocab .word-card, 
+#pane-vocab .vocab-card, 
+#pane-vocab .panel, 
+#pane-vocab .entry, 
+#pane-vocab .item {
+  background: #ffffff !important;
+  color: #111827 !important;
+  border: 1px solid #d1d5db !important;
+  box-shadow: 0 4px 10px rgba(0,0,0,.05) !important;
+  border-radius: 14px !important;
+}
+#pane-vocab .word, 
+#pane-vocab .title, 
+#pane-vocab h2, 
+#pane-vocab h3, 
+#pane-vocab h4 {
+  color: #0b3b6f !important;
+  font-weight: 700 !important;
+}
+#pane-vocab .pos, 
+#pane-vocab .tag, 
+#pane-vocab .badge {
+  color: #334155 !important;
+  background: #eef2ff !important;
+  border: 1px solid #d1d5db !important;
+}
+#pane-vocab p, 
+#pane-vocab .meaning, 
+#pane-vocab .desc, 
+#pane-vocab .example {
+  color: #111827 !important;
+}
+#pane-vocab .btn, #pane-vocab button {
+  background: #ffffff !important;
+  color: #111827 !important;
+  border: 1px solid #d1d5db !important;
+}
+#pane-vocab .btn:hover, #pane-vocab button:hover { background: #f1f5f9 !important; }
+
+/* Keep underline hints readable on white */
+.dict-hint, .wtoken{
+  border-bottom:1.5px dotted #0b3b6f !important;
+  text-decoration:none !important;
+  text-underline-offset:2px; text-decoration-skip-ink:none;
+  padding-bottom:1px;
 }
 </style>
 </head>
@@ -1381,6 +1434,11 @@ $$('.tabs .tab').forEach(t=>t.addEventListener('click',()=>showTab(t.dataset.tab
 
   document.addEventListener("DOMContentLoaded", start);
 })();
+</script>
+
+<script>
+/* ===== V3.2: Safety — disable legacy Supabase subtitle loader if present ===== */
+window.loadFromSupabase = async function(){ throw new Error('Supabase loader disabled in V3.2 (local JSON only).'); };
 </script>
 </body>
 </html>
