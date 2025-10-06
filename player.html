@@ -1,5 +1,5 @@
 <!--
-  player.html 版本：2025.10.12V2.7
+  player.html 版本：2025.10.12V2.9
   更新：
   - 翻譯泡泡改為「全域啟用」：不侷限閱讀模式。
   - 桌機：滑鼠懸停 0.3s 顯示翻譯；滑出/捲動關閉。
@@ -1177,6 +1177,85 @@ $$('.tabs .tab').forEach(t=>t.addEventListener('click',()=>showTab(t.dataset.tab
     }
     bindHoverAndTouch();
   });
+})();
+</script>
+
+<script>
+/* ===== V2.9: 字幕載入增強（preview=1 走公開檔、失敗退回 Supabase、具備 timeout／重試） ===== */
+(() => {
+  const urlp = new URLSearchParams(location.search);
+  const slug = urlp.get('slug') || 'mid-autumn';
+  const isPreview = urlp.get('preview') === '1';
+
+  const PUBLIC_SUB_URLS = [
+    `/english-videos/subs/${slug}.vtt`,
+    `/english-videos/subs/${slug}.srt`,
+    `/english-videos/subs/${slug}.json`
+  ];
+
+  async function loadFromSupabase(slug) {
+    throw new Error('SUPABASE_LOADER_NOT_WIRED');
+  }
+
+  function withTimeout(promise, ms = 6000) {
+    return Promise.race([promise, new Promise((_, rej)=>setTimeout(()=>rej(new Error('TIMEOUT')), ms))]);
+  }
+  async function fetchText(url){
+    const res = await fetch(url, { cache: 'no-store' });
+    if(!res.ok) throw new Error(`HTTP ${res.status} for ${url}`);
+    return res.text();
+  }
+
+  async function tryLoadSubtitles(){
+    const tried=[];
+    if(isPreview){
+      for(const u of PUBLIC_SUB_URLS){
+        try{ const txt = await withTimeout(fetchText(u)); return {kind:'public', data:txt, url:u}; }
+        catch(e){ tried.push(`${u} -> ${e.message}`); }
+      }
+    }
+    try{
+      const txt = await withTimeout(loadFromSupabase(slug));
+      if (txt) return {kind:'supabase', data:txt, url:'supabase'};
+    }catch(e){ tried.push(`supabase -> ${e.message}`); }
+    throw new Error('SUBTITLE_LOAD_FAILED\\n' + tried.join('\\n'));
+  }
+
+  async function bootstrapSubtitles(){
+    const hintEl = document.querySelector('#pane-sub .loading-hint') ||
+                   document.querySelector('#pane-sub') || document.body;
+    const showError = (msg)=>{
+      hintEl.innerHTML = `
+        <div style="padding:12px;border:1px solid #e2e8f0;background:#fff7f7;color:#b91c1c;border-radius:8px">
+          <div style="font-weight:600;margin-bottom:6px">字幕載入失敗</div>
+          <div style="white-space:pre-line;font-size:12px">${msg}</div>
+          <button id="retryLoad" style="margin-top:8px;padding:6px 10px;border:1px solid #94a3b8;border-radius:8px;background:#fff">重試</button>
+        </div>`;
+      document.getElementById('retryLoad')?.addEventListener('click', ()=>{
+        hintEl.textContent = '（字幕載入中…）'; start();
+      });
+    };
+
+    try{
+      const res = await tryLoadSubtitles();
+      console.log('[subtitle] loaded from', res.kind, res.url);
+      // TODO: 將 res.data 丟進你的 parse/render 流程
+      // e.g., if(res.data.trim().startsWith('WEBVTT')) cues=parseVTT(res.data); else if(res.data.includes('-->')) cues=parseSRT(res.data); else cues=JSON.parse(res.data);
+      // renderSubtitleTable(cues);
+      if (hintEl && hintEl === document.querySelector('#pane-sub')){
+        const ok = document.createElement('div');
+        ok.style.padding='8px'; ok.style.fontSize='12px'; ok.style.color='#047857';
+        ok.textContent='（字幕已載入，等待渲染…）';
+        hintEl.prepend(ok);
+      }
+    }catch(err){
+      console.error(err);
+      showError(String(err.message||err));
+    }
+  }
+
+  function start(){ bootstrapSubtitles(); }
+  document.addEventListener('DOMContentLoaded', start);
 })();
 </script>
 </body>
