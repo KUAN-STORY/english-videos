@@ -4,7 +4,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1"/>
-<!-- player.html 版本：2025.10.13 MobilePortraitFix v1 -->
+<!-- player.html 版本：2025.10.13 FocusMobile v1 -->
 <title>英語影片播放器</title>
 <!-- player.html 版本：2025.10.13 V3.3-restore | 自動翻譯/泡泡回復版 -->
 
@@ -110,27 +110,18 @@
 </style>
 
 <style>
-/* ===== 2025-10-13 Mobile Portrait Fix v1 =====
-   只在手機直向生效：.layout 直向堆疊；.left/.right 滿版；允許欄位縮小 (min-width:0)；
-   字幕表格允許正常換行，避免英文字一字一行。 */
+/* ===== 2025-10-13 FocusMobile v1 ===== */
 @media (max-width: 860px) and (orientation: portrait) {
-  .layout{
-    display:flex;
-    flex-direction:column !important;
-    gap:12px;
-  }
-  .left,.right{
-    width:100% !important;
-    max-width:100% !important;
-    flex:none !important;
-    min-width:0 !important;
-  }
+  .layout { display:flex; flex-direction:column !important; gap:12px; }
+  .left, .right { width:100% !important; max-width:100% !important; flex:none !important; min-width:0 !important; }
   #pane-sub table{ table-layout:auto !important; width:100%; }
-  #pane-sub table td, #pane-sub table th{
-    white-space:normal !important;
-    word-break:break-word;
-    line-height:1.6;
-  }
+  #pane-sub table td, #pane-sub table th{ white-space:normal !important; word-break:break-word; line-height:1.6; }
+  body.focus-mode .left { display:none !important; }
+  body.focus-mode .right { width:100% !important; max-width:100% !important; }
+  .tools-collapsed{ max-height:0 !important; overflow:hidden !important; padding-top:0 !important; padding-bottom:0 !important; opacity:0; transition:max-height .25s ease, opacity .2s ease; }
+  .tools-toggle{ display:inline-flex; align-items:center; gap:.5rem; padding:.45rem .8rem; border:1px solid var(--border, #2c3e50); background:var(--panel1, #0f172a); color:var(--ink, #e6efff); border-radius:10px; font-size:.95rem; }
+  #btnExitFocus{ position:fixed; right:14px; bottom:18px; z-index:99999; padding:.6rem .9rem; border-radius:12px; background:#2563eb; color:#fff; border:0; box-shadow:0 10px 24px rgba(0,0,0,.18); display:none; }
+  body.focus-mode #btnExitFocus{ display:inline-block; }
 }
 </style>
 </head>
@@ -578,8 +569,145 @@ $$('.tabs .tab').forEach(t=>t.addEventListener('click',()=>showTab(t.dataset.tab
   mo.observe(document.body, {subtree:true, childList:true});
 })();
 </script>
+
+<script>
+(function(){
+  const isMobilePortrait = () => matchMedia('(max-width: 860px) and (orientation: portrait)').matches;
+  const $ = (s, r=document)=>r.querySelector(s);
+  const tools = $('#playTools') || $('#toolbar') || document.querySelector('.play-tools');
+  const chkFollow = $('#chkFollow');
+
+  let btnExit = $('#btnExitFocus');
+  if (!btnExit) {
+    btnExit = document.createElement('button');
+    btnExit.id = 'btnExitFocus';
+    btnExit.textContent = '返回';
+    document.body.appendChild(btnExit);
+  }
+  btnExit.addEventListener('click', ()=> document.body.classList.remove('focus-mode'));
+
+  function ensureToolsCollapsed(){
+    if (!isMobilePortrait() || !tools) return;
+    if (!tools.classList.contains('tools-collapsed')) tools.classList.add('tools-collapsed');
+    if (!document.querySelector('#toolsToggle')){
+      const h = document.createElement('button');
+      h.id = 'toolsToggle';
+      h.className = 'tools-toggle';
+      h.type = 'button';
+      h.textContent = '播放工具列 ▾';
+      tools.parentNode.insertBefore(h, tools);
+      h.addEventListener('click', ()=>{
+        tools.classList.toggle('tools-collapsed');
+        h.textContent = tools.classList.contains('tools-collapsed') ? '播放工具列 ▾' : '播放工具列 ▴';
+      });
+    }
+  }
+
+  function bindFocusModeOnTabs(){
+    if (!isMobilePortrait()) return;
+    const labels = new Set(['字幕','測驗','單字']);
+    const candidates = Array.from(document.querySelectorAll('button, a, [role="tab"]'));
+    candidates.forEach(btn=>{
+      const t = (btn.textContent||'').trim();
+      if (labels.has(t)) {
+        if (!btn.dataset.fmBound){
+          btn.dataset.fmBound = '1';
+          btn.addEventListener('click', ()=> document.body.classList.add('focus-mode'), {passive:true});
+        }
+      }
+    });
+  }
+
+  function keepFollowOffByDefault(){
+    if (!isMobilePortrait() || !chkFollow) return;
+    chkFollow.checked = false;
+  }
+
+  function init(){
+    if (isMobilePortrait()){
+      ensureToolsCollapsed();
+      bindFocusModeOnTabs();
+      keepFollowOffByDefault();
+    } else {
+      document.body.classList.remove('focus-mode');
+    }
+  }
+
+  window.addEventListener('resize', init, {passive:true});
+  window.addEventListener('orientationchange', init, {passive:true});
+  document.addEventListener('DOMContentLoaded', init);
+  const mo = new MutationObserver(()=>{ if(isMobilePortrait()){ bindFocusModeOnTabs(); }});
+  mo.observe(document.body, {subtree:true, childList:true});
+})();
+</script>
 </body>
 </html>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
