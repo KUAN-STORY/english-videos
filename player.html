@@ -130,6 +130,25 @@
 .follow-line.zh{ opacity:.95; margin-top:4px; }
 
 </style>
+
+<style>
+
+/* === Mobile default layout: STACK (video TOP, content BELOW) === */
+@media (max-width: 768px){
+  /* 基本佈局改為直向排列，避免左右擠壓 */
+  .layout{ display:block !important; }
+  .left, .right{ width:100% !important; max-width:100% !important; }
+  /* 視訊容器與影片等比縮放，避免被擠扁 */
+  #videoWrap, .video-wrap, .left video{ width:100% !important; }
+  video, #video{ width:100% !important; height:auto !important; object-fit:contain !important; max-height:48vh; background:#000; }
+
+  /* 分頁列固定在內容頂端，避免被影片推擠 */
+  .right .tabs{ position:sticky; top:0; z-index:1000; background:#0f172a; }
+
+  /* 保留先前 drawer 的手機預設收合行為（若已存在相依樣式，不衝突） */
+}
+
+</style>
 </head>
 <body>
 <header>
