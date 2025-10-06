@@ -1,4 +1,4 @@
-<!doctype html>
+!doctype html>
 <html lang="zh-Hant">
 <head>
 <meta charset="utf-8"/>
@@ -84,36 +84,50 @@
   #phRight{text-align:right}
   #phScore{font-size:24px;font-weight:900}
   #phFeedback{font-size:12px;color:#444}
+</style>
 
-/* ===== 手機版覆寫：自動收合工具列、底部常駐、全域細調 ===== */
+<style>
+
+/* ===== Mobile-only UX: Focus (full-screen reading) & Follow (video top + 2 lines) ===== */
 @media (max-width: 768px){
-  .layout{ flex-direction:column; }
-  .left, .right{ width:100% !important; }
-  .left{ order:1; }
-  .right{ order:2; }
-  /* 工具列：底部貼齊、預設收合（顯示抓把），展開時占螢幕 70% 高度 */
-  .controls{
-    position: sticky; bottom: 0; z-index: 50;
-    margin: 8px -16px -16px; padding: 0;
-    border-radius: 14px 14px 0 0; background:#0e2038; border:1px solid #183459;
-    max-height: 52px; overflow: hidden; transition: max-height .25s ease;
-  }
-  .controls.open{ max-height: 70vh; }
-  .controls .row{ padding: 10px 12px; }
-  .drawer-grab{
-    display:block; padding:10px 12px; border-bottom:1px solid #183459;
-    font-size:12px; color:#9fb0c9; cursor:pointer; user-select:none;
-  }
-  .drawer-title{ pointer-events:none; }
-  /* 讓滑桿與按鈕在窄螢幕更好點 */
-  .btn{ padding:10px 12px; font-size:14px; border-radius:10px; }
-  input[type="range"]{ width: 100%; max-width: 340px; }
+  /* Focus mode: hide left video area, expand right panel */
+  body.focus-mode .layout{ display:block !important; }
+  body.focus-mode .left{ display:none !important; }
+  body.focus-mode .right{ display:block !important; width:100% !important; }
+  body.focus-mode .tabs{ position:sticky; top:0; z-index:1000; background:#0f172a; }
+
+  /* Follow mode: video pinned on top, below shows 1 EN + 1 ZH line */
+  body.follow-mode .layout{ display:block !important; }
+  body.follow-mode .left{ display:block !important; width:100% !important; }
+  body.follow-mode .right{ display:block !important; width:100% !important; }
+  body.follow-mode #videoWrap{ width:100% !important; }
+  body.follow-mode .tabs{ display:none !important; }
+  body.follow-mode #pane-sub,
+  body.follow-mode #pane-quiz,
+  body.follow-mode #pane-vocab{ display:none !important; }
+  body.follow-mode #mobileFollowWrap{ display:block !important; }
+
+  /* Bottom drawer: default collapsed on mobile; grab visible */
+  #controlsDrawer{ transition:transform .24s ease; transform:translateY(100%); }
+  #controlsDrawer.open{ transform:translateY(0); }
+  .drawer-grab{ display:block; cursor:pointer; }
 }
-/* 更窄（手機小螢幕） */
-@media (max-width: 420px){
-  .controls{ max-height: 48px; }
-  .controls.open{ max-height: 75vh; }
+
+/* Follow UI container (hidden by default) */
+#mobileFollowWrap{ display:none; }
+#mobileFollowBar{
+  position:sticky; top:0; z-index:1000;
+  display:flex; align-items:center; gap:8px;
+  padding:8px 12px; background:#0e2038; border-bottom:1px solid #1f2a44;
 }
+#mobileExitFollow, #mobileExitFocus{
+  padding:6px 10px; border-radius:10px;
+  border:1px solid #1f375f; background:#122340; color:#e6efff;
+}
+#followLines{ padding:10px 12px 14px; }
+.follow-line{ display:block; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; line-height:1.6; }
+.follow-line.en{ opacity:.95; }
+.follow-line.zh{ opacity:.95; margin-top:4px; }
 
 </style>
 </head>
@@ -231,10 +245,6 @@
 <script>
 /* ---------- 小工具 ---------- */
 const $=(s,e=document)=>e.querySelector(s);
-
-// 裝置偵測：?m=1 可強制手機模式預覽
-const __forceMobile = new URLSearchParams(location.search).get('m') === '1';
-const __isMobile = __forceMobile || window.matchMedia('(max-width: 768px)').matches;
 const $$=(s,e=document)=>[...e.querySelectorAll(s)];
 const toSec=t=>{ if(typeof t==='number')return t; const p=String(t).split(':').map(Number);
   if(p.length===3)return p[0]*3600+p[1]*60+p[2]; if(p.length===2)return p[0]*60+p[1]; return Number(t)||0; };
@@ -406,21 +416,7 @@ btnOffsetPlus .addEventListener('click',()=>setOffset(offset+0.5));
 
 video.addEventListener('timeupdate',()=>{ if(!cues.length)return; const i=currentIndex(); highlightRow(i); if(loopSentence){ const [s,e]=sentenceRange(i); const t=video.currentTime+offset; if(t>=e-0.02){ video.currentTime=Math.max(0,s-offset+0.0001); video.play(); } } });
 
-(function(){
-  const drawer=$('#controlsDrawer'), grab=$('#drawerGrab');
-  if(!drawer||!grab) return;
-  if (__isMobile) {
-    // 手機：預設收合，點抓把開合
-    drawer.classList.remove('open');
-    const toggle=()=>drawer.classList.toggle('open');
-    grab.addEventListener('click', toggle, {passive:true});
-  } else {
-    // 桌機：固定展開，不綁定任何開合
-    drawer.classList.add('open');
-    // 可選：隱藏抓把避免誤觸
-    if (grab) grab.style.display='none';
-  }
-})();
+(function(){ const drawer=$('#controlsDrawer'),grab=$('#drawerGrab'); if(!drawer||!grab)return; const toggle=()=>drawer.classList.toggle('open'); grab.addEventListener('click',toggle); })();
 
 function showTab(name){
   paneSub.style.display=name==='sub'?'':'none';
@@ -477,64 +473,104 @@ $$('.tabs .tab').forEach(t=>t.addEventListener('click',()=>showTab(t.dataset.tab
     };
     document.getElementById("player")?.addEventListener("play", logOnce, { once: true });
   }
-  /* ======= Mobile layout tune (不改結構) ======= */
-@media (max-width: 768px){
-  .wrap{ padding:10px; height:auto; }
-  .layout{ display:block; }
-  .left, .right{ border-radius:12px; }
-
-  /* 影片區 */
-  .left{ padding:10px; }
-  .videoWrap{ border-radius:12px; aspect-ratio:16/9; }
-  #player{ width:100%; height:100%; }
-
-  /* 工具列：底部貼齊、可收合 */
-  .controls{
-    position: sticky; bottom: 0; z-index: 50;
-    margin:10px -10px -10px; padding:10px 12px;
-    border-radius:14px 14px 0 0;
-  }
-  .controls .row{ gap:6px; }
-  .btn{ padding:9px 12px; font-size:14px; border-radius:10px; touch-action:manipulation; }
-  .chip{ padding:6px 8px; font-size:13px; border-radius:10px; }
-  input[type="range"]{ width:100%; }
-
-  /* 右側學習區 */
-  .tabs{
-    position: sticky; top: 0; z-index: 40;
-    background: var(--panel); padding:8px; margin-bottom:6px;
-    border-bottom:1px solid var(--border);
-  }
-  .tab{ padding:7px 10px; font-size:14px; }
-
-  /* 字幕表格：表頭與閱讀性 */
-  #pane-sub thead th{
-    position: sticky; top: 48px; /* 讓表頭在分頁籤下方吸頂 */
-    background:#0f172a; z-index: 30;
-  }
-  #pane-sub td, #pane-sub th{ padding:10px 8px; }
-  #pane-sub td:nth-child(2), #pane-sub td:nth-child(3){
-    white-space: normal; word-break: break-word; line-height:1.7;
-  }
-
-  /* 測驗頁面：按鈕與清單間距 */
-  .q-tabs .qtab{ padding:6px 10px; font-size:14px; }
-  #quizList{ padding:0 8px; }
-  #quizList li{ margin-bottom:12px; }
-
-  /* 單字卡 */
-  .voc{ margin:8px; padding:12px; border-radius:12px; }
-  .voc-word{ font-size:18px; }
-}
-
-@media (max-width: 420px){
-  header h1{ font-size:18px; }
-  .btn{ font-size:13px; }
-  .tab{ font-size:13px; }
-  #printHeader{ padding:8px; margin:0; }
-}
-
 </script>
+
+
+<!-- Mobile Follow container (video top + 2 lines) -->
+<div id="mobileFollowWrap" aria-hidden="true">
+  <div id="mobileFollowBar">
+    <button id="mobileExitFollow" type="button">退出跟隨</button>
+    <button id="mobileExitFocus"  type="button">返回</button>
+    <span style="margin-left:auto;opacity:.7">跟隨模式（影片上 / 雙語單行在下）</span>
+  </div>
+  <div id="followLines">
+    <span class="follow-line en" id="followEn">—</span>
+    <span class="follow-line zh" id="followZh">—</span>
+  </div>
+</div>
+
+
+<script>
+(() => {
+  const urlp = new URLSearchParams(location.search);
+  const __forceMobile = urlp.get('m') === '1';
+  const __isMobile    = __forceMobile || window.matchMedia('(max-width: 768px)').matches;
+
+  const $ = (s, r=document)=>r.querySelector(s);
+  const on = (el, ev, fn, opt)=>el && el.addEventListener(ev, fn, opt);
+
+  // Desktop must remain unchanged: ensure drawer is open and non-toggle on desktop
+  function hardenDesktopDrawer(){
+    const drawer = document.getElementById('controlsDrawer');
+    const grab   = document.getElementById('drawerGrab') || document.querySelector('.drawer-grab');
+    if (!drawer) return;
+    if (!__isMobile){
+      drawer.classList.add('open');
+      if (grab){
+        // remove any previous listeners by replacing node
+        const clone = grab.cloneNode(true);
+        clone.style.display = 'none';
+        grab.parentNode.replaceChild(clone, grab);
+      }
+    }else{
+      // mobile default collapsed; bind toggle to grab
+      const grab2 = document.getElementById('drawerGrab') || document.querySelector('.drawer-grab');
+      if (grab2){
+        drawer.classList.remove('open');
+        on(grab2, 'click', ()=>drawer.classList.toggle('open'), {passive:true});
+      }
+    }
+  }
+
+  // Focus mode: enter when tapping any tab on mobile
+  function enterFocus(){ if (!__isMobile) return; document.body.classList.add('focus-mode'); }
+  function exitFocus(){  document.body.classList.remove('focus-mode'); }
+
+  // Follow mode: video top + 2 lines
+  function enterFollow(){ if (!__isMobile) return; document.body.classList.add('follow-mode'); $('#mobileFollowWrap').style.display='block'; }
+  function exitFollow(){  document.body.classList.remove('follow-mode'); const w=$('#mobileFollowWrap'); if(w) w.style.display='none'; }
+
+  // Hook tab clicks to focus mode (without changing existing showTab binding)
+  on($('#tabSub'),  'click', ()=>enterFocus());
+  on($('#tabQuiz'), 'click', ()=>enterFocus());
+  on($('#tabVocab'),'click', ()=>enterFocus());
+
+  // Exit buttons
+  on($('#mobileExitFollow'), 'click', ()=>exitFollow());
+  on($('#mobileExitFocus'),  'click', ()=>exitFocus());
+
+  // Bind existing follow control: checkbox #chkFollow (do not auto-check; respect current default = unchecked)
+  const chkFollow = document.getElementById('chkFollow');
+  if (chkFollow){
+    on(chkFollow, 'change', ()=>{ chkFollow.checked ? enterFollow() : exitFollow(); });
+  }
+
+  // 2-line live projection from cues/currentIndex if available (non-invasive)
+  // We try to reuse globals defined in the main script: `cues`, `video`, `offset`, `currentIndex`
+  const followEn = document.getElementById('followEn');
+  const followZh = document.getElementById('followZh');
+  function tickFollow(){
+    if (!document.body.classList.contains('follow-mode')) return;
+    try{
+      const i = (typeof currentIndex==='function') ? currentIndex() : -1;
+      if (i>=0 && window.cues && window.cues[i]){
+        const c = window.cues[i];
+        if (followEn && c.en) followEn.textContent = String(c.en);
+        if (followZh && c.zh) followZh.textContent = String(c.zh);
+      }
+    }catch(e){ /* silent */ }
+  }
+  setInterval(tickFollow, 350);
+
+  // Initialize drawer state per device after DOM ready
+  if (document.readyState === 'loading'){
+    document.addEventListener('DOMContentLoaded', hardenDesktopDrawer);
+  }else{
+    hardenDesktopDrawer();
+  }
+})();
+</script>
+
 </body>
 </html>
 
