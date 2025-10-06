@@ -250,6 +250,30 @@
   a::after { content: ""; }
 }
 </style>
+
+<style>
+/* ===== 2025.10.13 FocusMobile v2.7 — Mobile horizontal swipe pager ===== */
+@media (max-width: 860px) and (orientation: portrait){
+  /* Use the existing .layout as the pager track */
+  .layout{
+    flex-direction: row !important;
+    overflow-x: auto;
+    overflow-y: hidden;
+    scroll-snap-type: x mandatory;
+    -webkit-overflow-scrolling: touch;
+  }
+  .left, .right{
+    flex: 0 0 100% !important;
+    max-width: 100% !important;
+    scroll-snap-align: start;
+  }
+  /* Neutralize old focus-mode (we will slide instead of hiding the video) */
+  body.focus-mode .left{ display:block !important; }
+  body.focus-mode .right{ width:100% !important; max-width:100% !important; }
+  #btnExitFocus{ position: fixed; right: 14px; bottom: 18px; z-index: 100001; }
+}
+</style>
+
 </head>
 <body>
 <header>
@@ -1134,8 +1158,394 @@ $$('.tabs .tab').forEach(t=>t.addEventListener('click',()=>showTab(t.dataset.tab
   document.addEventListener('DOMContentLoaded', init);
 })();
 </script>
+
+<script>
+// ===== 2025.10.13 FocusMobile v2.7 — swipe pager logic =====
+(function(){
+  const isMP = () => matchMedia('(max-width: 860px) and (orientation: portrait)').matches;
+  function $$(s, r=document){ return Array.from(r.querySelectorAll(s)); }
+  function $(s, r=document){ return r.querySelector(s); }
+
+  function setPage(idx){
+    const track = $('.layout');
+    if (!track) return;
+    const w = track.clientWidth;
+    track.scrollTo({ left: idx * w, behavior: 'smooth' });
+  }
+
+  function bindTopTabs(){
+    if (!isMP()) return;
+    const TOP = new Set(['字幕','測驗','單字']);
+    const all = $$('button,a,[role="tab"]');
+    all.forEach(el=>{
+      const t = (el.textContent||'').trim();
+      if (TOP.has(t) && !el.dataset.pagerBound){
+        el.dataset.pagerBound = '1';
+        el.addEventListener('click', ()=> setPage(1), { passive:true });
+      }
+    });
+  }
+
+  function bindBack(){
+    const back = document.getElementById('btnExitFocus');
+    if (back && !back.dataset.pagerBound){
+      back.dataset.pagerBound = '1';
+      back.onclick = () => setPage(0);
+    }
+  }
+
+  function init(){
+    if (!isMP()) return;
+    // ensure smooth scroll behaviour
+    const track = document.querySelector('.layout');
+    if (track) track.style.scrollBehavior = 'smooth';
+    bindTopTabs();
+    bindBack();
+  }
+
+  window.addEventListener('resize', init, { passive:true });
+  window.addEventListener('orientationchange', init, { passive:true });
+  document.addEventListener('DOMContentLoaded', init);
+  // Observe for late-rendered tabs
+  const mo = new MutationObserver(()=> init());
+  mo.observe(document.body, { subtree:true, childList:true });
+})();
+</script>
+
 </body>
 </html>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
