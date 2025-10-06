@@ -1,41 +1,10 @@
-<!--
-  player.html 版本：2025.10.13V3.4
-  更新：
-  - 翻譯泡泡改為「全域啟用」：不侷限閱讀模式。
-  - 桌機：滑鼠懸停 0.3s 顯示翻譯；滑出/捲動關閉。
-  - 手機：長按顯示翻譯；放開/捲動關閉。
-  - 保留列印保護區、Supabase 與桌機/手機既有邏輯。
--->
-<!--
-  PRINT GUARD: The code between the markers below is locked.
-  Any future automated mobile/feature updates must NOT modify content
-  between:  ===== PRINT SECTION START / END =====
-  This keeps the print layout (20 題成績單/雙語表) stable and recoverable.
--->
-<!--
-  P25.10.07V2.1
-  功能摘要：
-  - 桌機版：保留 Supabase 登入、題庫、列印與左右排版。
-  - 手機版：影片上方、控制列可收合、分頁切換進專注模式。
-  - 閱讀模式：支援單字即時翻譯泡泡（內建小字典）。
-  - 未啟用 AI 翻譯 API（預留接口）。
--->
-
 !doctype html>
 <html lang="zh-Hant">
 <head>
-
-<script>
-// ===== V3.3: Force local JSON subtitles; disable any Supabase loader before it runs =====
-window.__ONLY_LOCAL_SUBS = true;
-window.loadFromSupabase = async function(){ throw new Error('Supabase loader disabled (V3.3 local-only).'); };
-</script>
-
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1"/>
 <title>英語影片播放器</title>
-
-<!-- ===== PRINT SECTION START (Do Not Modify) ===== -->
+<!-- player.html 版本：2025.10.13 V4.0 -->
 <style>
   :root{ --bg:#0b1324; --panel:#0f172a; --border:#1f2a44; --ink:#e6efff; --muted:#9fb0c9; --accent:#3c7cff; }
   *{box-sizing:border-box}
@@ -117,316 +86,21 @@ window.loadFromSupabase = async function(){ throw new Error('Supabase loader dis
   #phScore{font-size:24px;font-weight:900}
   #phFeedback{font-size:12px;color:#444}
 </style>
-<!-- ===== PRINT SECTION END ===== -->
-
 
 <style>
-@media (max-width: 768px){
-  .layout{ display:block !important; }
-  .left,.right{ width:100% !important; max-width:100% !important; }
-  #videoWrap,.videoWrap,.left video{ width:100% !important; }
-  video,#player,#video{ width:100% !important; height:auto !important; object-fit:contain !important; background:#000; }
-  .right{ display:block !important; min-height:40vh; }
-  .tabs{ display:flex !important; position:sticky; top:0; z-index:40; background:#0f172a; padding:8px 10px; }
-  #pane-sub{ display:block !important; }
-  #pane-quiz,#pane-vocab{ display:none !important; }
-  #controlsDrawer{
-    position:sticky; bottom:0; z-index:50;
-    margin:10px -10px -10px; padding:10px 12px; border-radius:14px 14px 0 0;
-    background:#0e2038; border:1px solid #183459;
-    transform:translateY(calc(100% - 24px));
-    transition:transform .24s ease;
-  }
-  #controlsDrawer.open{ transform:translateY(0); }
-  #drawerGrab,.drawer-grab{ display:block !important; cursor:pointer; }
-  body.focus-mode .left{ display:none !important; }
-  body.focus-mode .right{ display:block !important; width:100% !important; }
-  #focusBack{
-    position:fixed; right:12px; bottom:14px; z-index:9999;
-    padding:10px 12px; border-radius:12px; border:1px solid #1f375f;
-    background:#122340; color:#e6efff; display:none;
-  }
-  body.focus-mode #focusBack{ display:inline-block; }
+/* === V4.0 additions === */
+/* word tooltip */
+#wordTip{position:fixed;z-index:9999;pointer-events:none;
+  background:#ffffff;color:#111;border:1px solid #cbd5e1;border-radius:10px;
+  padding:6px 10px;box-shadow:0 10px 24px rgba(0,0,0,.15);font-size:14px;line-height:1.2;max-width:80vw}
+.wtoken{border-bottom:1.5px dotted #0b3b6f;text-underline-offset:2px;cursor:help}
+/* orientation hint (only when portrait & narrow) */
+#rotateHint{position:fixed;inset:auto 10px 12px 10px;background:#0f172a;color:#e6efff;
+  border:1px solid #1f2a44;border-radius:12px;padding:10px 12px;display:none;z-index:9998}
+#rotateHint.show{display:block}
+@media (max-width:860px){
+  /* 仍維持左右排版，不做改動；僅提示使用者旋轉 */
 }
-</style>
-
-<style>
-/* ===== Print add-on (non-invasive): quiz copy page break ===== */
-@media print{
-  #quizPrintCopy{ page-break-before: always; }
-  #quizPrintCopy button, #quizPrintCopy input, #quizPrintCopy .no-print{ display:none !important; }
-}
-</style>
-
-<style>
-/* ===== Dictionary hint underline ===== */
-.dict-hint{ border-bottom:1px dotted #7cf; cursor:help; }
-/* Safer hide for login button (multiple possible selectors) */
-#btnLogin, .btn-login, [data-role="login"]{ display:none !important; }
-</style>
-
-<style>
-/* ===== V2.4: More visible dotted underline for dictionary words ===== */
-.dict-hint{
-  text-decoration: underline dotted #7cf 2px;
-  text-underline-offset: 2px;
-  border-bottom: none !important;
-  cursor: help;
-}
-/* high-contrast fallback for browsers without dotted support */
-@supports not (text-decoration-style: dotted){
-  .dict-hint{ border-bottom:1px dotted #7cf !important; }
-}
-</style>
-
-<style>
-/* ===== V2.5 Light Theme Overrides (safe, layered on top) ===== */
-:root{
-  --bg: #ffffff;
-  --bg-soft: #f8fafc;
-  --bg-elev: #f1f5f9;
-  --text: #111827;
-  --muted: #475569;
-  --line: #d1d5db;
-  --primary: #0f4c81;
-  --primary-weak: #e6f0f8;
-  --chip: #eef2ff;
-}
-html, body{ background: var(--bg) !important; color: var(--text) !important; }
-.app, .layout, .left, .right, .pane, .panel, .card, .card-like{ background: var(--bg) !important; color: var(--text) !important; }
-.container, .wrap, .content, .main{ background: var(--bg) !important; }
-
-/* header / title bar */
-.header, .topbar, #topbar, .navbar{ background: var(--bg-soft) !important; border-bottom:1px solid var(--line) !important; }
-
-/* tabs */
-.tabs{ background: var(--bg-soft) !important; border-bottom: 1px solid var(--line) !important; }
-.tabs button, .tabs .tab{
-  color: var(--text) !important; background: var(--chip) !important; border:1px solid var(--line) !important;
-}
-.tabs .active, .tabs [aria-selected="true"]{ background: #fff !important; border-bottom-color: var(--bg) !important; box-shadow: 0 0 0 1px var(--line) inset; }
-
-/* tables */
-table{ background:#fff !important; color:var(--text) !important; border-color: var(--line) !important; }
-th, td{ border-color: var(--line) !important; }
-thead th{ background: var(--bg-elev) !important; }
-tbody tr:nth-child(even){ background: var(--bg-soft) !important; }
-tbody tr:nth-child(odd){ background: #fff !important; }
-
-/* controls drawer */
-#controlsDrawer{
-  background: var(--bg-soft) !important; color: var(--text) !important; border:1px solid var(--line) !important;
-  box-shadow: 0 6px 14px rgba(0,0,0,.08) !important;
-}
-#drawerGrab, .drawer-grab{ background: var(--bg-elev) !important; border:1px solid var(--line) !important; }
-
-/* buttons / chips */
-button, .btn{ background:#fff; color:var(--text); border:1px solid var(--line); }
-button:hover{ background: var(--bg-elev); }
-.primary, .btn-primary{ background: var(--primary); color:#fff; border-color: var(--primary); }
-.badge, .chip{ background: var(--chip); color: var(--text); border:1px solid var(--line); }
-
-/* links */
-a{ color: var(--primary); }
-a:hover{ text-decoration: underline; }
-
-/* tooltip for translation bubble */
-#wordTip{
-  background: #1f2937 !important;  /* dark bubble for contrast */
-  color: #f8fafc !important;
-  border: 1px solid #0b2947 !important;
-}
-
-/* dictionary hint underline on light background */
-.dict-hint{
-  text-decoration: underline dotted #0b3b6f 2px !important;
-  text-underline-offset: 2px;
-}
-
-/* remove dark-only embellishments */
-.hr, hr{ border-color: var(--line) !important; }
-
-/* login button remains hidden */
-#btnLogin, .btn-login, [data-role="login"]{ display:none !important; }
-</style>
-
-<style>
-/* ===== V2.6: 強化虛線底線標示 ===== */
-.dict-hint {
-  position: relative;
-  text-decoration: none !important;
-  border-bottom: 1.5px dotted #0b3b6f;
-  text-underline-offset: 2px;
-  text-decoration-skip-ink: none;
-  padding-bottom: 2px;
-  cursor: help;
-  transition: border-color 0.2s ease;
-}
-.dict-hint:hover {
-  border-bottom-color: #2563eb; /* hover 時變亮藍 */
-}
-</style>
-
-<style>
-/* ===== V2.7: 全字幕單字可翻譯（英欄位逐字包裝） ===== */
-.wtoken{
-  text-decoration: none !important;
-  border-bottom: 1px dotted #0b3b6f;
-  text-underline-offset: 2px;
-  text-decoration-skip-ink: none;
-  padding-bottom: 1px;
-  cursor: help;
-  transition: border-color .15s ease;
-}
-.wtoken:hover{ border-bottom-color:#2563eb; }
-</style>
-
-<style>
-/* ===== V3.0 Light Theme Reinforce (cards/panels/vocab) ===== */
-:root{
-  --bg:#ffffff; --text:#111827; --line:#d1d5db;
-  --soft:#f8fafc; --elev:#f1f5f9; --muted:#374151; --chip:#eef2ff;
-  --primary:#0f4c81;
-}
-/* generic containers */
-.pane, .panel, .card, .card-like, .box, .section, .sheet{
-  background:#fff !important; color:var(--text) !important; border:1px solid var(--line) !important;
-}
-/* vocabulary pane */
-#pane-vocab, .vocab-pane{ background:#fff !important; color:var(--text) !important; }
-#pane-vocab .card, #pane-vocab .word-card, #pane-vocab .vocab-card, 
-#pane-vocab .panel, #pane-vocab .item, #pane-vocab .entry{
-  background:#fff !important; color:var(--text) !important; border:1px solid var(--line) !important;
-  box-shadow: 0 4px 10px rgba(0,0,0,.05) !important; border-radius: 12px !important;
-}
-#pane-vocab .word, #pane-vocab .head, #pane-vocab h3, #pane-vocab h4{ color:#0b3b6f !important; }
-#pane-vocab .pos, #pane-vocab .tag, #pane-vocab .badge{ color:#374151 !important; background:#eef2ff !important; border:1px solid var(--line) !important; }
-#pane-vocab .meaning, #pane-vocab .desc, #pane-vocab p{ color:var(--text) !important; }
-#pane-vocab .btn, #pane-vocab button{
-  background:#fff !important; color:var(--text) !important; border:1px solid var(--line) !important;
-}
-#pane-vocab .btn:hover, #pane-vocab button:hover{ background:var(--elev) !important; }
-
-/* tabs/header */
-.tabs, .header, .topbar{ background:var(--soft) !important; border-bottom:1px solid var(--line) !important; }
-.tabs .tab, .tabs button{ background:#fff !important; color:var(--text) !important; border:1px solid var(--line) !important; }
-.tabs .active, .tabs [aria-selected="true"]{ box-shadow: 0 0 0 1px var(--line) inset; background:#fff !important; }
-
-/* subtitle table keep light */
-table{ background:#fff !important; color:var(--text) !important; }
-thead th{ background:var(--elev) !important; }
-tbody tr:nth-child(even){ background:var(--soft) !important; }
-tbody tr:nth-child(odd){ background:#fff !important; }
-
-/* translation bubble contrast */
-#wordTip{ background:#1f2937 !important; color:#f8fafc !important; border:1px solid #0b2947 !important; }
-
-/* keep dictionary underline visible */
-.dict-hint, .wtoken{
-  border-bottom:1.5px dotted #0b3b6f !important;
-  text-decoration:none !important;
-  text-underline-offset:2px; text-decoration-skip-ink:none; padding-bottom:1px;
-}
-</style>
-
-<style>
-/* ===== V3.1: Word tooltip to white background / black text ===== */
-#wordTip{
-  background:#ffffff !important;
-  color:#111827 !important;
-  border:1px solid #cbd5e1 !important;
-  box-shadow:0 8px 24px rgba(0,0,0,.12) !important;
-}
-</style>
-
-<style>
-/* ===== V3.2: Force vocab cards to white theme, black titles ===== */
-#pane-vocab, #pane-vocab * { color: #111827; }
-#pane-vocab, #pane-vocab .list, #pane-vocab .grid { background: #ffffff !important; }
-#pane-vocab .card, 
-#pane-vocab .word-card, 
-#pane-vocab .vocab-card, 
-#pane-vocab .panel, 
-#pane-vocab .entry, 
-#pane-vocab .item {
-  background: #ffffff !important;
-  color: #111827 !important;
-  border: 1px solid #d1d5db !important;
-  box-shadow: 0 4px 10px rgba(0,0,0,.05) !important;
-  border-radius: 14px !important;
-}
-#pane-vocab .word, 
-#pane-vocab .title, 
-#pane-vocab h2, 
-#pane-vocab h3, 
-#pane-vocab h4 {
-  color: #0b3b6f !important;
-  font-weight: 700 !important;
-}
-#pane-vocab .pos, 
-#pane-vocab .tag, 
-#pane-vocab .badge {
-  color: #334155 !important;
-  background: #eef2ff !important;
-  border: 1px solid #d1d5db !important;
-}
-#pane-vocab p, 
-#pane-vocab .meaning, 
-#pane-vocab .desc, 
-#pane-vocab .example {
-  color: #111827 !important;
-}
-#pane-vocab .btn, #pane-vocab button {
-  background: #ffffff !important;
-  color: #111827 !important;
-  border: 1px solid #d1d5db !important;
-}
-#pane-vocab .btn:hover, #pane-vocab button:hover { background: #f1f5f9 !important; }
-
-/* Keep underline hints readable on white */
-.dict-hint, .wtoken{
-  border-bottom:1.5px dotted #0b3b6f !important;
-  text-decoration:none !important;
-  text-underline-offset:2px; text-decoration-skip-ink:none;
-  padding-bottom:1px;
-}
-</style>
-
-<style>
-/* ===== V3.3: Stronger white theme for vocab cards (more selectors, higher specificity) ===== */
-#pane-vocab, [data-pane="vocab"], .tab-content.vocab { background:#fff !important; color:#111827 !important; }
-#pane-vocab .card, #pane-vocab .panel, #pane-vocab .entry, #pane-vocab .item,
-[data-pane="vocab"] .card, [data-pane="vocab"] .panel, [data-pane="vocab"] .entry, [data-pane="vocab"] .item,
-.tab-content.vocab .card, .tab-content.vocab .panel, .tab-content.vocab .entry, .tab-content.vocab .item {
-  background:#fff !important; color:#111827 !important; border:1px solid #d1d5db !important; box-shadow:0 4px 10px rgba(0,0,0,.06) !important; border-radius:14px !important;
-}
-#pane-vocab .word, #pane-vocab h2, #pane-vocab h3, #pane-vocab h4,
-[data-pane="vocab"] .word, [data-pane="vocab"] h2, [data-pane="vocab"] h3, [data-pane="vocab"] h4,
-.tab-content.vocab .word, .tab-content.vocab h2, .tab-content.vocab h3, .tab-content.vocab h4 {
-  color:#0b3b6f !important; font-weight:700 !important;
-}
-#pane-vocab .btn, #pane-vocab button, [data-pane="vocab"] .btn, [data-pane="vocab"] button, .tab-content.vocab .btn, .tab-content.vocab button {
-  background:#fff !important; color:#111827 !important; border:1px solid #d1d5db !important;
-}
-#pane-vocab .btn:hover, [data-pane="vocab"] .btn:hover, .tab-content.vocab .btn:hover { background:#f1f5f9 !important; }
-</style>
-
-<style>
-/* ===== V3.4: vocab cards → white theme (override .voc) ===== */
-#pane-vocab .voc{
-  background:#ffffff !important;
-  border:1px solid #d1d5db !important;
-  color:#111827 !important;
-  box-shadow:0 4px 10px rgba(0,0,0,.06) !important;
-  border-radius:14px !important;
-}
-#pane-vocab .voc-word{ color:#0b3b6f !important; font-weight:800 !important; }
-#pane-vocab .voc-pos{ color:#334155 !important; }
-#pane-vocab .voc-zh, #pane-vocab .voc-en{ color:#111827 !important; }
-#pane-vocab .voc-actions .btn{
-  background:#fff !important; color:#111827 !important; border:1px solid #d1d5db !important;
-}
-#pane-vocab .voc-actions .btn:hover{ background:#f1f5f9 !important; }
 </style>
 </head>
 <body>
@@ -480,9 +154,7 @@ tbody tr:nth-child(odd){ background:#fff !important; }
       </div>
 
       <!-- 列印頁首（列印時顯示） -->
-      
-<!-- ===== PRINT SECTION START (Do Not Modify) ===== -->
-<div id="printHeader" aria-hidden="true">
+      <div id="printHeader" aria-hidden="true">
         <div id="phLeft">
           <!-- 內嵌 SVG Logo -->
           <svg id="phLogo" viewBox="0 0 24 24" fill="none" aria-hidden="true">
@@ -491,8 +163,6 @@ tbody tr:nth-child(odd){ background:#fff !important; }
           </svg>
           <div>
             <div id="phTitle">BookWide · 英語影片測驗成績單</div>
-<!-- ===== PRINT SECTION END ===== -->
-
             <div id="phMeta">
               影片：<span id="phSlug">-</span>　分區：<span id="phSection">-</span>　列印：<span id="phTime">-</span>
             </div>
@@ -544,8 +214,6 @@ tbody tr:nth-child(odd){ background:#fff !important; }
 </div>
 
 <!-- ===== 播放器主程式 ===== -->
-
-<!-- ===== PRINT SECTION START (Do Not Modify) ===== -->
 <script>
 /* ---------- 小工具 ---------- */
 const $=(s,e=document)=>e.querySelector(s);
@@ -740,8 +408,6 @@ $$('.tabs .tab').forEach(t=>t.addEventListener('click',()=>showTab(t.dataset.tab
   showTab('sub');
 })();
 </script>
-<!-- ===== PRINT SECTION END ===== -->
-
 
 <!-- ===== Supabase 守門 & 觀看紀錄 ===== -->
 <script type="module">
@@ -781,762 +447,127 @@ $$('.tabs .tab').forEach(t=>t.addEventListener('click',()=>showTab(t.dataset.tab
   }
 </script>
 
-<button id="focusBack" type="button" aria-label="返回">返回</button>
-
-
 <script>
+/* === V4.0: word-only hover translate, and rotate hint === */
 (() => {
-  const urlp = new URLSearchParams(location.search);
-  const forceMobile = urlp.get('m') === '1';
-  const isMobile = forceMobile || window.matchMedia('(max-width: 768px)').matches;
-  const $ = (s, r=document)=>r.querySelector(s);
-  const on = (el, ev, fn, opt)=>el && el.addEventListener(ev, fn, opt);
+  const $ = (s, r=document) => r.querySelector(s);
+  const $$ = (s, r=document) => Array.from(r.querySelectorAll(s));
+  const vocabMap = Object.create(null);   // word(lower) -> zh / meaning
+  let tip, tipTimer, longTimer;
 
-  function enterFocus(){ if(!isMobile) return; document.body.classList.add('focus-mode'); }
-  function exitFocus(){ document.body.classList.remove('focus-mode'); }
-
-  function initMobileDefault(){
-    if (!isMobile) return;
-    const drawer = $('#controlsDrawer');
-    const grab = $('#drawerGrab') || document.querySelector('.drawer-grab');
-    if (drawer){ drawer.classList.remove('open'); }
-    if (grab){ on(grab, 'click', () => drawer.classList.toggle('open'), {passive:true}); }
-
-    if (typeof showTab === 'function') showTab('sub');
-    else {
-      const sub=$('#pane-sub'), q=$('#pane-quiz'), v=$('#pane-vocab');
-      if(sub){ sub.hidden=false; sub.style.display='block'; }
-      if(q){ q.hidden=true; q.style.display='none'; }
-      if(v){ v.hidden=true; v.style.display='none'; }
-    }
-
-    document.body.classList.remove('focus-mode');
-
-    const chk = $('#chkFollow');
-    if (chk){ chk.checked = false; chk.disabled = true; chk.closest('label')?.setAttribute('title','手機版暫不提供此功能'); }
+  function ensureTip(){
+    if(tip) return tip;
+    tip = document.createElement('div');
+    tip.id = 'wordTip';
+    document.body.appendChild(tip);
+    return tip;
   }
-
-  function bindTabsToFocus(){
-    on($('#tabSub'),  'click', ()=>enterFocus());
-    on($('#tabQuiz'), 'click', ()=>enterFocus());
-    on($('#tabVocab'),'click', ()=>enterFocus());
-  }
-
-  function bindBack(){
-    on($('#focusBack'), 'click', ()=>exitFocus());
-  }
-
-  document.addEventListener('DOMContentLoaded', () => {
-    initMobileDefault();
-    bindTabsToFocus();
-    bindBack();
-  });
-})();
-</script>
-
-<style>
-#wordTip {
-  position: absolute;
-  background: rgba(15,23,42,0.95);
-  color: #fff;
-  border: 1px solid #1f375f;
-  border-radius: 8px;
-  padding: 6px 10px;
-  font-size: 14px;
-  z-index: 9999;
-  display: none;
-  max-width: 80%;
-  line-height: 1.4;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.4);
-}
-</style>
-<div id="wordTip"></div>
-
-
-<script>
-(()=>{
-  const tip = document.getElementById('wordTip');
-  const isMobile = window.matchMedia('(max-width: 768px)').matches;
-
-  async function translateWord(word){
-    const dict = { love:'愛', dream:'夢想', moon:'月亮', blood:'血液', hope:'希望', life:'生命', happy:'快樂', sad:'悲傷', sun:'太陽', world:'世界' };
-    return dict[word.toLowerCase()] || '(暫無翻譯)';
-  }
-
-  function showTip(x, y, text){
-    tip.textContent = text;
-    tip.style.left = `${x}px`;
-    tip.style.top = `${y-40}px`;
+  function hideTip(){ if(tip){ tip.style.display='none'; } }
+  function showTip(x,y,word,meaning){
+    ensureTip();
+    tip.innerHTML = `<b>${word}</b>：${meaning || '（暫無翻譯）'}`;
     tip.style.display = 'block';
+    const pad = 10;
+    const vw = Math.max(document.documentElement.clientWidth, window.innerWidth || 0);
+    const vh = Math.max(document.documentElement.clientHeight, window.innerHeight || 0);
+    const rectW = Math.min(vw*0.8, tip.offsetWidth || 260);
+    tip.style.maxWidth = '80vw';
+    tip.style.left = Math.min(vw - rectW - pad, Math.max(pad, x + 8)) + 'px';
+    tip.style.top  = Math.min(vh - 60, Math.max(pad, y + 8)) + 'px';
   }
 
-  function hideTip(){ tip.style.display = 'none'; }
-
-  document.addEventListener('click', async (e)=>{
-    if (!document.body.classList.contains('focus-mode')) return; // only in reading mode
-    const sel = window.getSelection();
-    const word = sel.toString().trim();
-    if (word && word.split(/\s+/).length === 1 && /^[a-zA-Z'-]+$/.test(word)){
-      const meaning = await translateWord(word);
-      showTip(e.pageX, e.pageY, `${word}：${meaning}`);
-    } else {
-      hideTip();
-    }
-  });
-
-  document.addEventListener('scroll', hideTip);
-  document.addEventListener('touchstart', (e)=>{
-    if (!document.body.classList.contains('focus-mode')) return;
-    const sel = window.getSelection();
-    const word = sel.toString().trim();
-    if (word && word.split(/\s+/).length === 1 && /^[a-zA-Z'-]+$/.test(word)){
-      translateWord(word).then((meaning)=>showTip(e.touches[0].pageX, e.touches[0].pageY, `${word}：${meaning}`));
-    } else {
-      hideTip();
-    }
-  });
-})();
-</script>
-
-<script>
-// ===== Print augmentation: attach quiz section to printout safely (runtime only) =====
-(function(){
-  function $(s, r){ return (r||document).querySelector(s); }
-  function $all(s, r){ return Array.from((r||document).querySelectorAll(s)); }
-
-  function getReportContainer(){
-    return $("#print-area") || $("#reportContainer") || $("#report") || document.body;
-  }
-  function getQuizSection(){
-    // Prefer explicit quiz pane if exists
-    return $("#pane-quiz") || $(".quiz-section") || $(".pane-quiz");
-  }
-
-  function sanitizeForPrint(root){
-    // remove interactive controls
-    $all("button, input, .no-print, [contenteditable]", root).forEach(el=>{
-      el.remove();
-    });
-    // expand details/accordions if any
-    $all("details", root).forEach(d=>{ d.open = true; });
-  }
-
-  function buildQuizHeading(){
-    const h = document.createElement("h3");
-    h.textContent = "📘 測驗題目（共 20 題）";
-    h.style.margin = "10px 0 12px";
-    h.style.fontWeight = "600";
-    return h;
-  }
-
-  function handleBeforePrint(){
-    const report = getReportContainer();
-    const quiz = getQuizSection();
-    if (!report || !quiz) return;
-    if (document.getElementById("quizPrintCopy")) return;
-
-    // Deep clone to avoid mutating live UI
-    const copy = quiz.cloneNode(true);
-    copy.id = "quizPrintCopy";
-
-    // If the quiz content is virtualized or needs activation, try to reveal hidden panes
-    // Show quiz pane content blocks if they use hidden/display:none attributes
-    $all("[hidden]", copy).forEach(n => n.hidden = false);
-    $all('[style*="display:none"]', copy).forEach(n => n.style.display = "block");
-
-    // Sanitize
-    sanitizeForPrint(copy);
-    copy.prepend(buildQuizHeading());
-
-    // Append to the end of the report for printing
-    report.appendChild(copy);
-  }
-
-  function handleAfterPrint(){
-    const copy = document.getElementById("quizPrintCopy");
-    if (copy) copy.remove();
-  }
-
-  if (window.matchMedia){
-    const mql = window.matchMedia("print");
-    if (mql.addListener){ // older browsers
-      mql.addListener(function(e){ if (e.matches) handleBeforePrint(); else handleAfterPrint(); });
-    }
-  }
-  window.addEventListener("beforeprint", handleBeforePrint);
-  window.addEventListener("afterprint", handleAfterPrint);
-})();
-</script>
-
-<script>
-(()=>{
-  const tip = document.getElementById('wordTip');
-  if (!tip) return;
-
-  // ===== Utilities =====
-  const delay = (ms)=>new Promise(r=>setTimeout(r, ms));
-  const isWord = (s)=>/^[A-Za-z][A-Za-z'\-]*$/.test(s||"");
-  const clamp = (n,min,max)=>Math.max(min, Math.min(max,n));
-
-  function atViewportWord(x, y){
-    const d = document;
-    const caret = (d.caretPositionFromPoint && d.caretPositionFromPoint(x,y)) ||
-                  (d.caretRangeFromPoint && d.caretRangeFromPoint(x,y));
-    let node, offset;
-    if (!caret) return null;
-    if (caret.offsetNode) { node = caret.offsetNode; offset = caret.offset; }
-    else { node = caret.getClientRects ? caret.startContainer : null; offset = caret.startOffset; }
-    if (!node) return null;
-    if (node.nodeType !== 3){ // not text node -> try child text
-      node = node.childNodes && node.childNodes[0];
-      if (!node || node.nodeType !== 3) return null;
-      offset = 0;
-    }
-    const text = node.textContent || "";
-    if (!text.trim()) return null;
-    // expand around offset to word boundaries
-    let i = offset, L = text.length;
-    let s = i, e = i;
-    const isLetter = c => /[A-Za-z'\-]/.test(c);
-    while (s>0 && isLetter(text[s-1])) s--;
-    while (e<L && isLetter(text[e])) e++;
-    const word = text.slice(s,e).trim();
-    if (!isWord(word)) return null;
-    // compute position near selection
-    const range = document.createRange();
-    range.setStart(node, s);
-    range.setEnd(node, e);
-    const rect = range.getBoundingClientRect();
-    return {word, rect};
-  }
-
-  function placeTipNearRect(rect){
-    const pad = 8;
-    const top = rect.top + window.scrollY - tip.offsetHeight - 10;
-    const left = clamp(rect.left + window.scrollX, 8, window.scrollX + document.documentElement.clientWidth - tip.offsetWidth - 8);
-    tip.style.top = (top<window.scrollY ? (rect.bottom + window.scrollY + 10) : top) + "px";
-    tip.style.left = left + "px";
-  }
-
-  async function translateWord(word){
-    // Local fallback dictionary; can be replaced with AI call later
-    const dict = { love:'愛', dream:'夢想', moon:'月亮', sun:'太陽', world:'世界', festival:'節日', round:'圓形的', brave:'勇敢的', mountain:'山', arrow:'箭' };
-    return dict[word.toLowerCase()] || '(暫無翻譯)';
-  }
-
-  function showTip(rect, word, meaning){
-    tip.innerHTML = `<span class="w">${word}</span><span class="p">：${meaning}</span>`;
-    tip.style.display = 'block';
-    // need size to place precisely
-    requestAnimationFrame(()=>placeTipNearRect(rect));
-  }
-
-  function hideTip(){ tip.style.display='none'; }
-
-  // ===== Hover (desktop) with small delay =====
-  let hoverTimer = null, lastWord=null;
-  document.addEventListener('mousemove', (e)=>{
-    if (hoverTimer) clearTimeout(hoverTimer);
-    hoverTimer = setTimeout(async ()=>{
-      const hit = atViewportWord(e.clientX, e.clientY);
-      if (!hit){ hideTip(); return; }
-      if (lastWord === hit.word && tip.style.display==='block') return;
-      lastWord = hit.word;
-      const meaning = await translateWord(hit.word);
-      showTip(hit.rect, hit.word, meaning);
-    }, 300);
-  });
-
-  document.addEventListener('mouseout', (e)=>{
-    // if leaving the document/body
-    if (!e.relatedTarget) hideTip();
-  });
-
-  // ===== Touch long-press (mobile) =====
-  let pressTimer=null, startXY=null;
-  document.addEventListener('touchstart', (e)=>{
-    startXY = {x:e.touches[0].clientX, y:e.touches[0].clientY};
-    pressTimer = setTimeout(async ()=>{
-      const hit = atViewportWord(startXY.x, startXY.y);
-      if (!hit){ hideTip(); return; }
-      const meaning = await translateWord(hit.word);
-      showTip(hit.rect, hit.word, meaning);
-    }, 400);
-  }, {passive:true});
-  document.addEventListener('touchmove', ()=>{ if (pressTimer){ clearTimeout(pressTimer); pressTimer=null; } hideTip(); }, {passive:true});
-  document.addEventListener('touchend',  ()=>{ if (pressTimer){ clearTimeout(pressTimer); pressTimer=null; } });
-  document.addEventListener('scroll', hideTip, {passive:true});
-
-  // Also hide on print
-  window.addEventListener('beforeprint', hideTip);
-})();
-</script>
-
-<script>
-(()=>{
-  // ===== Dotted underline for words we have translations for =====
-  const DICT = { 
-    love:'愛', dream:'夢想', moon:'月亮', sun:'太陽', world:'世界',
-    festival:'節日', round:'圓形的', brave:'勇敢的', mountain:'山', arrow:'箭',
-    day:'天', people:'人們', happy:'快樂的', hot:'炎熱的', help:'幫助'
-  };
-
-  const WORDS = Object.keys(DICT).sort((a,b)=>b.length-a.length); // long first
-  const WORD_RE = new RegExp("\\\\b(" + WORDS.map(w=>w.replace(/[-/\\\\^$*+?.()|[\\]{}]/g,"\\\\$&")).join("|") + ")\\\\b", "gi");
-
-  // Containers likely holding English text (subtitles table, quiz, etc.)
-  const TARGET_SELECTORS = [
-    "#pane-sub", "#pane-quiz", "#pane-vocab", ".right", ".subs", ".subtitle-table", "table"
-  ];
-
-  function wrapHintsInNode(node){
-    if (!node || node.nodeType !== 3) return;
-    const txt = node.nodeValue;
-    if (!txt || !WORD_RE.test(txt)) { WORD_RE.lastIndex = 0; return; }
-    WORD_RE.lastIndex = 0;
-    const htmlFrag = txt.replace(WORD_RE, (m)=>`<span class="dict-hint" data-w="${m}">${m}</span>`);
-    const span = document.createElement("span");
-    span.innerHTML = htmlFrag;
-    node.parentNode.replaceChild(span, node);
-  }
-
-  function walkAndWrap(root){
-    const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, {
-      acceptNode(n){
-        if (!n.nodeValue || !n.nodeValue.trim()) return NodeFilter.FILTER_REJECT;
-        // skip inside scripts/styles
-        const p = n.parentElement; 
-        if (!p) return NodeFilter.FILTER_REJECT;
-        const tn = p.tagName;
-        if (tn === "SCRIPT" || tn === "STYLE" || tn === "BUTTON" || tn === "A") return NodeFilter.FILTER_REJECT;
-        return NodeFilter.FILTER_ACCEPT;
+  // Tokenize only English words and wrap with span.wtoken
+  function tokenizeEnglishCells(){
+    const cells = $$('#cuesBody td:nth-child(2)'); // English column
+    const wordRe = /[A-Za-z]+(?:'[A-Za-z]+)?/g;    // single words, no phrases
+    cells.forEach(td => {
+      const raw = td.textContent;
+      const parts = [];
+      let m, last = 0;
+      while ((m = wordRe.exec(raw))){
+        const w = m[0];
+        if (m.index > last) parts.push( raw.slice(last, m.index) );
+        parts.push(`<span class="wtoken" data-w="${w.toLowerCase()}">${w}</span>`);
+        last = m.index + w.length;
       }
+      parts.push(raw.slice(last));
+      td.innerHTML = parts.join('');
     });
-    const nodes = [];
-    while (walker.nextNode()) nodes.push(walker.currentNode);
-    nodes.forEach(wrapHintsInNode);
+    bindWordEvents();
   }
 
-  function applyHints(){
-    TARGET_SELECTORS.forEach(sel=>{
-      document.querySelectorAll(sel).forEach(el=>walkAndWrap(el));
-    });
-  }
-
-  // Initial apply after DOM ready (delay to allow content rendering)
-  document.addEventListener("DOMContentLoaded", ()=>{
-    setTimeout(applyHints, 150);
-    // Observe dynamic subtitle updates
-    const obsTargets = new Set();
-    TARGET_SELECTORS.forEach(sel=>document.querySelectorAll(sel).forEach(el=>obsTargets.add(el)));
-    obsTargets.forEach(el=>{
-      const mo = new MutationObserver((muts)=>{
-        let need=false;
-        for (const m of muts){ if (m.addedNodes && m.addedNodes.length){ need=true; break; } }
-        if (need) setTimeout(applyHints, 50);
-      });
-      mo.observe(el, {childList:true, subtree:true});
-    });
-  });
-
-  // ===== Hide login button by text as well (fallback) =====
-  function hideLoginByText(){
-    Array.from(document.querySelectorAll("button, a")).forEach(el=>{
-      const t = (el.textContent||"").trim();
-      if (t === "登入" || t.toLowerCase() === "login"){
-        el.style.display = "none";
-        el.classList.add("no-print");
-      }
-    });
-  }
-  document.addEventListener("DOMContentLoaded", hideLoginByText);
-
-  // Tooltip behavior already exists from previous version; no change needed.
-})();
-</script>
-
-<script>
-// ===== V2.4: Robust dictionary hint marker with global observer & debouncing =====
-(()=>{
-  const DICT = { 
-    love:'愛', dream:'夢想', moon:'月亮', sun:'太陽', world:'世界',
-    festival:'節日', round:'圓形的', brave:'勇敢的', mountain:'山', arrow:'箭',
-    day:'天', people:'人們', happy:'快樂的', hot:'炎熱的', help:'幫助'
-  };
-  const WORDS = Object.keys(DICT).sort((a,b)=>b.length-a.length);
-  if (!WORDS.length) return;
-
-  const ESC = s => s.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&');
-  const WORD_RE = new RegExp("\\\\b(" + WORDS.map(ESC).join("|") + ")\\\\b", "gi");
-
-  const TARGET_SELECTORS = [
-    "#pane-sub", "#pane-quiz", "#pane-vocab",
-    ".subtitle-table", ".subs", ".right", "table"
-  ];
-
-  function shouldSkipNode(n){
-    if (!n || n.nodeType !== 3) return true;
-    if (!n.nodeValue || !n.nodeValue.trim()) return true;
-    const p = n.parentElement;
-    if (!p) return true;
-    const tn = p.tagName;
-    if (/^(SCRIPT|STYLE|CODE|PRE)$/i.test(tn)) return true;
-    if (p.closest('.dict-hint')) return true; // already wrapped
-    return false;
-  }
-
-  function wrapHintsInTextNode(node){
-    if (shouldSkipNode(node)) return;
-    const txt = node.nodeValue;
-    if (!WORD_RE.test(txt)){ WORD_RE.lastIndex = 0; return; }
-    WORD_RE.lastIndex = 0;
-    const fragHTML = txt.replace(WORD_RE, (m)=>`<span class="dict-hint" data-w="${m}">${m}</span>`);
-    const span = document.createElement('span');
-    span.innerHTML = fragHTML;
-    node.parentNode.replaceChild(span, node);
-  }
-
-  function walkAndWrap(root){
-    const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
-    const list = [];
-    while (walker.nextNode()) list.push(walker.currentNode);
-    list.forEach(wrapHintsInTextNode);
-  }
-
-  function applyHints(){
-    const roots = new Set();
-    TARGET_SELECTORS.forEach(sel => document.querySelectorAll(sel).forEach(el => roots.add(el)));
-    if (roots.size === 0) return;
-    roots.forEach(walkAndWrap);
-  }
-
-  // Debounce helper
-  let timer = null;
-  function scheduleApply(){ if (timer) cancelAnimationFrame(timer); timer = requestAnimationFrame(applyHints); }
-
-  // Initial
-  document.addEventListener('DOMContentLoaded', ()=>{
-    setTimeout(applyHints, 150);
-    // Global observer to catch late content
-    const mo = new MutationObserver(()=>scheduleApply());
-    mo.observe(document.body, {childList:true, subtree:true});
-  });
-})();
-</script>
-
-<script>
-// ===== V2.7 全字幕單字可翻譯：英欄位逐字標記 + 懸停/長按顯示翻譯 =====
-(()=>{
-  const $=(s,r=document)=>r.querySelector(s);
-  const $$=(s,r=document)=>Array.from(r.querySelectorAll(s));
-  const tip = document.getElementById('wordTip');
-  if (!tip) return;
-
-  function translateWordLocal(w){
-    const dict = { love:'愛', dream:'夢想', moon:'月亮', sun:'太陽', world:'世界', festival:'節日', round:'圓形的', brave:'勇敢的', mountain:'山', arrow:'箭' };
-    return dict[w.toLowerCase()] || '(暫無翻譯)';
-  }
-
-  function showTipNear(el, word, meaning){
-    tip.innerHTML = `<span class="w">${word}</span><span class="p">：${meaning}</span>`;
-    tip.style.display = 'block';
-    const r = el.getBoundingClientRect();
-    const x = r.left + window.scrollX;
-    const y = r.top + window.scrollY - tip.offsetHeight - 8;
-    tip.style.left = Math.max(8, Math.min(x, window.scrollX + document.documentElement.clientWidth - tip.offsetWidth - 8)) + 'px';
-    tip.style.top  = (y < window.scrollY ? (r.bottom + window.scrollY + 8) : y) + 'px';
-  }
-  function hideTip(){ tip.style.display='none'; }
-
-  // 1) 將字幕表中的「英文欄」逐字包裝成 .wtoken
-  function wrapSubtitleEnglishWords(){
-    const sub = $('#pane-sub');
-    if (!sub) return;
-    const table = sub.querySelector('table');
-    if (!table) return;
-    const ths = $$('thead th', table);
-    let enIdx = -1;
-    ths.forEach((th,i)=>{
-      const t = (th.textContent||'').trim().toLowerCase();
-      if (t.includes('英文') || t.includes('english')) enIdx = i;
-    });
-    if (enIdx === -1) return;
-    $$('tbody tr', table).forEach(tr=>{
-      const tds = $$('td', tr);
-      if (!tds[enIdx]) return;
-      tokenizeCell(tds[enIdx]);
-    });
-  }
-
-  function tokenizeCell(cell){
-    const walker = document.createTreeWalker(cell, NodeFilter.SHOW_TEXT);
-    const nodes = [];
-    while (walker.nextNode()) nodes.push(walker.currentNode);
-    nodes.forEach(n=>{
-      const text = n.nodeValue;
-      if (!text || !text.trim()) return;
-      const parts = text.split(/(\b[A-Za-z][A-Za-z'-]*\b)/g);
-      if (parts.length<=1) return;
-      const frag = document.createDocumentFragment();
-      parts.forEach(p=>{
-        if (/^\b[A-Za-z][A-Za-z'-]*\b$/.test(p)){
-          const span = document.createElement('span');
-          span.className = 'wtoken';
-          span.textContent = p;
-          frag.appendChild(span);
-        }else{
-          frag.appendChild(document.createTextNode(p));
-        }
-      });
-      n.parentNode.replaceChild(frag, n);
-    });
-  }
-
-  // 2) 懸停/長按事件（覆用本地小字典；後續可接 AI）
-  function bindHoverAndTouch(){
-    document.addEventListener('mouseover', (e)=>{
-      const t = e.target.closest('.wtoken');
-      if (!t){ hideTip(); return; }
-      const w = t.textContent.trim();
-      const m = translateWordLocal(w);
-      showTipNear(t, w, m);
-    });
-    document.addEventListener('mouseout', (e)=>{
-      if (e.relatedTarget && e.relatedTarget.closest && e.relatedTarget.closest('#wordTip')) return;
-      const t = e.target.closest('.wtoken');
-      if (t) hideTip();
-    });
-    let pressTimer=null, touchTarget=null;
-    document.addEventListener('touchstart', (e)=>{
-      const t = e.target.closest('.wtoken'); if (!t) return;
-      touchTarget = t;
-      pressTimer = setTimeout(()=>{
-        const w = t.textContent.trim();
-        const m = translateWordLocal(w);
-        showTipNear(t, w, m);
-      }, 400);
-    }, {passive:true});
-    document.addEventListener('touchend', ()=>{ if (pressTimer){ clearTimeout(pressTimer); pressTimer=null; } });
-    document.addEventListener('touchmove', ()=>{ if (pressTimer){ clearTimeout(pressTimer); pressTimer=null; hideTip(); } }, {passive:true});
-    document.addEventListener('scroll', hideTip, {passive:true});
-  }
-
-  document.addEventListener('DOMContentLoaded', ()=>{
-    // 初次標記
-    wrapSubtitleEnglishWords();
-    // 監聽字幕表變動（例如載入其他字幕）
-    const sub = $('#pane-sub');
-    if (sub){
-      const mo = new MutationObserver(()=>wrapSubtitleEnglishWords());
-      mo.observe(sub, {childList:true, subtree:true});
-    }
-    bindHoverAndTouch();
-  });
-})();
-</script>
-
-<script>
-/* ===== V2.9: 字幕載入增強（preview=1 走公開檔、失敗退回 Supabase、具備 timeout／重試） ===== */
-(() => {
-  const urlp = new URLSearchParams(location.search);
-  const slug = urlp.get('slug') || 'mid-autumn';
-  const isPreview = urlp.get('preview') === '1';
-
-  const PUBLIC_SUB_URLS = [
-    `/english-videos/subs/${slug}.vtt`,
-    `/english-videos/subs/${slug}.srt`,
-    `/english-videos/subs/${slug}.json`
-  ];
-
-  async function loadFromSupabase(slug) {
-    throw new Error('SUPABASE_LOADER_NOT_WIRED');
-  }
-
-  function withTimeout(promise, ms = 6000) {
-    return Promise.race([promise, new Promise((_, rej)=>setTimeout(()=>rej(new Error('TIMEOUT')), ms))]);
-  }
-  async function fetchText(url){
-    const res = await fetch(url, { cache: 'no-store' });
-    if(!res.ok) throw new Error(`HTTP ${res.status} for ${url}`);
-    return res.text();
-  }
-
-  async function tryLoadSubtitles(){
-    const tried=[];
-    if(isPreview){
-      for(const u of PUBLIC_SUB_URLS){
-        try{ const txt = await withTimeout(fetchText(u)); return {kind:'public', data:txt, url:u}; }
-        catch(e){ tried.push(`${u} -> ${e.message}`); }
-      }
-    }
-    try{
-      const txt = await withTimeout(loadFromSupabase(slug));
-      if (txt) return {kind:'supabase', data:txt, url:'supabase'};
-    }catch(e){ tried.push(`supabase -> ${e.message}`); }
-    throw new Error('SUBTITLE_LOAD_FAILED\\n' + tried.join('\\n'));
-  }
-
-  async function bootstrapSubtitles(){
-    const hintEl = document.querySelector('#pane-sub .loading-hint') ||
-                   document.querySelector('#pane-sub') || document.body;
-    const showError = (msg)=>{
-      hintEl.innerHTML = `
-        <div style="padding:12px;border:1px solid #e2e8f0;background:#fff7f7;color:#b91c1c;border-radius:8px">
-          <div style="font-weight:600;margin-bottom:6px">字幕載入失敗</div>
-          <div style="white-space:pre-line;font-size:12px">${msg}</div>
-          <button id="retryLoad" style="margin-top:8px;padding:6px 10px;border:1px solid #94a3b8;border-radius:8px;background:#fff">重試</button>
-        </div>`;
-      document.getElementById('retryLoad')?.addEventListener('click', ()=>{
-        hintEl.textContent = '（字幕載入中…）'; start();
-      });
+  function bindWordEvents(){
+    const onHover = (e) => {
+      const el = e.target.closest('.wtoken'); if(!el) return;
+      const word = el.dataset.w || el.textContent.trim().toLowerCase();
+      const meaning = vocabMap[word];
+      showTip(e.clientX, e.clientY, el.textContent.trim(), meaning);
     };
+    const onLeave = () => hideTip();
 
-    try{
-      const res = await tryLoadSubtitles();
-      console.log('[subtitle] loaded from', res.kind, res.url);
-      // TODO: 將 res.data 丟進你的 parse/render 流程
-      // e.g., if(res.data.trim().startsWith('WEBVTT')) cues=parseVTT(res.data); else if(res.data.includes('-->')) cues=parseSRT(res.data); else cues=JSON.parse(res.data);
-      // renderSubtitleTable(cues);
-      if (hintEl && hintEl === document.querySelector('#pane-sub')){
-        const ok = document.createElement('div');
-        ok.style.padding='8px'; ok.style.fontSize='12px'; ok.style.color='#047857';
-        ok.textContent='（字幕已載入，等待渲染…）';
-        hintEl.prepend(ok);
-      }
-    }catch(err){
-      console.error(err);
-      showError(String(err.message||err));
-    }
-  }
-
-  function start(){ bootstrapSubtitles(); }
-  document.addEventListener('DOMContentLoaded', start);
-})();
-</script>
-
-<script>
-/* ===== V3.1: Load subtitles from local JSON data/cues-<slug>.json ===== */
-(function(){
-  const urlp = new URLSearchParams(location.search);
-  const slug = urlp.get('slug') || 'mid-autumn';
-
-  // helpers
-  const $ = (s, r=document)=>r.querySelector(s);
-
-  async function fetchJSON(url, timeoutMs=6000){
-    const ctrl = new AbortController();
-    const t = setTimeout(()=>ctrl.abort(), timeoutMs);
-    try{
-      const res = await fetch(url, {signal: ctrl.signal, cache:'no-store'});
-      if(!res.ok) throw new Error(`HTTP ${res.status}`);
-      return await res.json();
-    } finally { clearTimeout(t); }
-  }
-
-  function showError(msg){
-    const host = $("#pane-sub") || document.body;
-    const box = document.createElement("div");
-    box.style.cssText = "padding:12px;margin:8px;border:1px solid #fecaca;background:#fff7f7;color:#991b1b;border-radius:10px";
-    box.innerHTML = `<div style="font-weight:700;margin-bottom:6px">字幕載入失敗</div>
-    <div style="white-space:pre-line;font-size:12px">${msg}</div>
-    <button id="retryLocal" style="margin-top:8px;padding:6px 10px;border:1px solid #94a3b8;border-radius:8px;background:#fff">重試</button>`;
-    host.innerHTML = "";
-    host.appendChild(box);
-    $("#retryLocal")?.addEventListener("click", ()=>{
-      host.innerHTML = "（字幕載入中…）";
-      start();
+    // Desktop hover
+    $$('#cuesBody .wtoken').forEach(el => {
+      el.addEventListener('mouseenter', onHover);
+      el.addEventListener('mousemove', onHover);
+      el.addEventListener('mouseleave', onLeave);
+      // Mobile long-press
+      el.addEventListener('touchstart', (ev) => {
+        clearTimeout(longTimer);
+        const t = ev.touches[0];
+        longTimer = setTimeout(() => {
+          const word = el.dataset.w || el.textContent.trim().toLowerCase();
+          const meaning = vocabMap[word];
+          showTip(t.clientX, t.clientY, el.textContent.trim(), meaning);
+        }, 420);
+      }, {passive:true});
+      el.addEventListener('touchend', () => { clearTimeout(longTimer); hideTip(); }, {passive:true});
+      el.addEventListener('touchmove', () => { clearTimeout(longTimer); hideTip(); }, {passive:true});
     });
+    // hide on scroll
+    $('#pane-sub')?.addEventListener('scroll', hideTip, {passive:true});
   }
 
-  async function start(){
-    const basePath = "./data/"; // relative to player.html
-    const url = `${basePath}cues-${slug}.json`;
+  // Hook vocab loader to build map
+  const _loadVocab = window.loadVocab;
+  window.loadVocab = async function(){
+    await _loadVocab.apply(this, arguments);
     try{
-      const cues = await fetchJSON(url);
-      // ---- Hook into your existing render pipeline ----
-      // If you already have a function like renderSubtitleTable(cues),
-      // call it here. Otherwise, put the cues in a known global.
-      window.cues = cues;
-      // Try typical hooks:
-      const render = window.renderSubtitleTable || window.renderSubtitles || null;
-      if (typeof render === "function"){
-        render(cues);
-      } else {
-        // Minimal fallback UI to prove loaded
-        const host = $("#pane-sub") || document.body;
-        const info = document.createElement("div");
-        info.style.cssText="padding:8px;color:#065f46;font-size:12px";
-        info.textContent = `（已載入 ${Array.isArray(cues)?cues.length:Object.keys(cues||{}).length} 筆字幕）`;
-        host.prepend(info);
-      }
-      try{ window.__onLocalSubtitlesOK(Array.isArray(cues)?cues.length:Object.keys(cues||{}).length); }catch(_){}
-      console.log("[subtitle] loaded from local JSON:", url);
-    }catch(err){
-      console.error("Subtitle load error:", err);
-      showError(`無法讀取 ${url}\n${String(err.message||err)}`);
-    }
-  }
-
-  document.addEventListener("DOMContentLoaded", start);
-})();
-</script>
-
-<script>
-/* ===== V3.2: Safety — disable legacy Supabase subtitle loader if present ===== */
-window.loadFromSupabase = async function(){ throw new Error('Supabase loader disabled in V3.2 (local JSON only).'); };
-</script>
-
-<script>
-// Extra guard: if any legacy tryLoadSubtitles attempts to call Supabase, short-circuit it.
-(function(){
-  const origTry = window.tryLoadSubtitles;
-  if (typeof origTry === 'function'){
-    window.tryLoadSubtitles = async function(){
-      if (window.__ONLY_LOCAL_SUBS){
-        // Prefer local JSON path; if an implementation exists that accepts the flag, call it.
-        if (typeof window.tryLoadSubtitlesLocal === 'function'){
-          return await window.tryLoadSubtitlesLocal();
-        }
-      }
-      return await origTry.apply(this, arguments);
-    }
-  }
-})();
-</script>
-
-<script>
-// ===== V3.4: hide legacy 'SUBTITLE_LOAD_FAILED' panel after local JSON success =====
-(function(){
-  function removeOldErrorPanels(){
-    // remove any element that contains '字幕載入失敗' or the legacy error box
-    const nodes = Array.from(document.querySelectorAll('body *'));
-    nodes.forEach(el=>{
-      const t = (el.textContent||'').trim();
-      if (!t) return;
-      if (t.includes('字幕載入失敗') || t.includes('SUBTITLE_LOAD_FAILED')){
-        // keep the container for #pane-sub if needed
-        if (el.id === 'pane-sub') return;
-        if (el.classList && el.classList.contains('keep-error')) return;
-        // remove small error boxes
-        if (el.tagName !== 'BODY' && el.tagName !== 'HTML'){
-          try{ el.remove(); }catch(_){}
-        }
-      }
-    });
-  }
-  window.__onLocalSubtitlesOK = function(count){
-    // Called by local JSON loader when it succeeds
-    removeOldErrorPanels();
-    const host = document.querySelector('#pane-sub') || document.body;
-    const ok = document.createElement('div');
-    ok.style.cssText = 'padding:6px 8px;margin:6px 0;color:#065f46;background:#ecfdf5;border:1px solid #99f6e4;border-radius:8px;font-size:12px';
-    ok.textContent = '（已載入 ' + count + ' 筆字幕）';
-    host.prepend(ok);
+      const items = Array.from(document.querySelectorAll('#vocabBox .voc-word')).map(el => el.textContent.trim());
+      const zhEls = Array.from(document.querySelectorAll('#vocabBox .voc-zh'));
+      // 建立 word->zh mapping（如果 vocab 檔有提供）
+      const cards = Array.from(document.querySelectorAll('#vocabBox .voc'));
+      cards.forEach(card => {
+        const w = (card.querySelector('.voc-word')?.textContent || '').trim().toLowerCase();
+        const zh = (card.querySelector('.voc-zh')?.textContent || '').trim();
+        if (w) vocabMap[w] = zh || vocabMap[w];
+      });
+    }catch{}
   };
+
+  // Hook cue loader to tokenize after table render
+  const _loadCues = window.loadCues;
+  window.loadCues = async function(){
+    await _loadCues.apply(this, arguments);
+    tokenizeEnglishCells();
+  };
+
+  // Show rotate hint when in portrait & narrow
+  function checkRotateHint(){
+    const hint = document.getElementById('rotateHint');
+    if (!hint) return;
+    const portrait = window.matchMedia("(orientation: portrait)").matches;
+    const narrow = (window.innerWidth || 0) < 860;
+    hint.classList.toggle('show', portrait && narrow);
+  }
+  window.addEventListener('resize', checkRotateHint);
+  window.addEventListener('orientationchange', checkRotateHint);
+  document.addEventListener('DOMContentLoaded', checkRotateHint);
 })();
 </script>
+<div id="rotateHint">為獲得最佳閱讀體驗，建議將手機橫向放置（本頁已維持左右排版）。</div>
 </body>
 </html>
+
 
 
 
