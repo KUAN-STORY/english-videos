@@ -149,6 +149,21 @@
 }
 
 </style>
+
+<style>
+
+/* === Mobile visibility hotfix === */
+@media (max-width: 768px){
+  .right{ display:block !important; width:100% !important; }
+  .tabs{ display:flex !important; }
+  /* 預設顯示字幕 pane，避免整個內容被隱藏看起來像全黑 */
+  #pane-sub{ display:block !important; }
+  #pane-quiz, #pane-vocab{ display:none; }
+  /* 內容背景補強，避免與頁面背景混成一片黑 */
+  .right .pane{ background: transparent; }
+}
+
+</style>
 </head>
 <body>
 <header>
@@ -590,9 +605,29 @@ $$('.tabs .tab').forEach(t=>t.addEventListener('click',()=>showTab(t.dataset.tab
 })();
 </script>
 
+
+
+<script>
+// 防呆：載入時不要處在 follow-mode，避免把底部 pane 全部隱藏
+(function(){
+  document.addEventListener('DOMContentLoaded', function(){
+    document.body.classList.remove('follow-mode');
+    // 若你的初始化程式沒有呼叫 showTab('sub')，這裡補一下
+    try{
+      if (typeof showTab === 'function'){ showTab('sub'); }
+      else {
+        var sub = document.getElementById('pane-sub');
+        if (sub){ sub.hidden = false; sub.style.display='block'; }
+        var q = document.getElementById('pane-quiz'); if (q){ q.hidden = true; q.style.display='none'; }
+        var v = document.getElementById('pane-vocab'); if (v){ v.hidden = true; v.style.display='none'; }
+      }
+    }catch(e){}
+  });
+})();
+</script>
+
 </body>
 </html>
-
 
 
 
