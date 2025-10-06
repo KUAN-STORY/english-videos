@@ -1,10 +1,28 @@
 !doctype html>
 <html lang="zh-Hant">
+  
 <head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1"/>
+<!-- player.html 版本：2025.10.13 FocusMobile v2.2 -->
+<!-- player.html 版本：2025.10.13 FocusMobile v2.4 -->
+<!-- player.html 版本：2025.10.13 FocusMobile v2.5 -->
+<!-- player.html 版本：2025.10.13 FocusMobile v2.6 -->
 <title>英語影片播放器</title>
+<!-- player.html 版本：2025.10.13 V3.3-restore | 自動翻譯/泡泡回復版 -->
+
 <style>
+  /* ===== 手機直式自動上下堆疊 ===== */
+@media (max-width: 768px) and (orientation: portrait) {
+  #mainWrap {
+    flex-direction: column !important;
+  }
+  #leftPanel, #rightPanel {
+    width: 100% !important;
+    flex: none !important;
+  }
+}
+
   :root{ --bg:#0b1324; --panel:#0f172a; --border:#1f2a44; --ink:#e6efff; --muted:#9fb0c9; --accent:#3c7cff; }
   *{box-sizing:border-box}
   html,body{height:100%;margin:0;background:var(--bg);color:var(--ink);font-family:ui-sans-serif,system-ui,"Noto Sans TC"}
@@ -87,50 +105,175 @@
 </style>
 
 <style>
-/* ===== 2025.10.14 FocusMobile v3.0 (TwoPage) - Mobile Two-Page ===== */
+/* === V3.3-restore additions (auto-translate bubble) === */
+.wtoken{border-bottom:1.5px dotted #0b3b6f;cursor:help;text-underline-offset:2px}
+#wordTip{position:fixed;z-index:99999;display:none;background:#fff;color:#111;
+  border:1px solid #cbd5e1;border-radius:10px;padding:6px 10px;box-shadow:0 10px 24px rgba(0,0,0,.15);
+  font-size:14px;line-height:1.2;max-width:80vw}
+</style>
+
+<style>
+/* ===== 2025.10.13 FocusMobile v2.2 ===== */
+:root{ --badge-bg: rgba(15,23,42,.9); --badge-fg:#e6efff; --badge-bd: rgba(100,116,139,.5); }
+
+/* 右上版本角標（也用來取代登入） */
+#verBadgeTop{
+  position: fixed; top: 8px; right: 10px; z-index: 100000;
+  background: var(--badge-bg); color: var(--badge-fg);
+  padding: 4px 8px; border-radius: 8px; font-size: 12px;
+  border: 1px solid var(--badge-bd);
+}
+
+@media (max-width: 860px) and (orientation: portrait) {
+  /* 上下堆疊，不壓縮 */
+  .layout{ display:flex; flex-direction:column !important; gap:12px; }
+  .left,.right{ width:100% !important; max-width:100% !important; flex:none !important; min-width:0 !important; }
+  .left video, .left iframe, .left .player, .left .video-wrapper{ max-width:100%; height:auto; }
+
+  /* 字幕表格避免英文字直排 */
+  #pane-sub table{ table-layout:auto !important; width:100%; }
+  #pane-sub td, #pane-sub th{ white-space:normal !important; word-break:break-word; line-height:1.6; }
+
+  /* 專注模式：影片隱藏、內容全寬；顯示返回鍵 */
+  body.focus-mode .left{ display:none !important; }
+  body.focus-mode .right{ width:100% !important; max-width:100% !important; }
+  #btnExitFocus{ position:fixed; right:14px; bottom:18px; z-index: 100001;
+    padding:.6rem .9rem; border-radius:12px; background:#2563eb; color:#fff; border:0;
+    box-shadow: 0 10px 24px rgba(0,0,0,.18); display:none; }
+  body.focus-mode #btnExitFocus{ display:inline-block; }
+
+  /* 工具列預設收合（避免重覆，JS 會找容器加上這個 class） */
+  .tools-collapsed{ max-height:0 !important; overflow:hidden !important; padding-top:0 !important; padding-bottom:0 !important; opacity:0; transition:max-height .25s ease, opacity .2s ease; }
+
+  /* 我們自家的把手（若頁面已有「播放工具列」按鈕，JS 不會再建立） */
+  .tools-toggle{ display:inline-flex; align-items:center; gap:.4rem; padding:.45rem .8rem;
+    border:1px solid var(--badge-bd); background:var(--badge-bg); color:var(--badge-fg);
+    border-radius:10px; font-size:.95rem; }
+}
+</style>
+
+<style>
+/* ===== 2025.10.13 FocusMobile v2.4 ===== */
+:root{
+  --badge-bg: rgba(15,23,42,.9);
+  --badge-fg: #e6efff;
+  --badge-bd: rgba(100,116,139,.5);
+}
+#verBadgeTop{
+  position: fixed; top: 8px; right: 10px; z-index: 100000;
+  background: var(--badge-bg); color: var(--badge-fg);
+  padding: 4px 8px; border-radius: 8px; font-size: 12px;
+  border: 1px solid var(--badge-bd);
+}
+
 @media (max-width: 860px) and (orientation: portrait){
-  .layout.pager-track{
-    flex-direction: row !important;
-    overflow-x: auto !important;
-    overflow-y: hidden !important;
-    scroll-snap-type: x mandatory !important;
-    -webkit-overflow-scrolling: touch !important;
-    gap: 0 !important;
+  .layout{ display:flex; flex-direction:column !important; gap:12px; }
+  .left,.right{ width:100% !important; max-width:100% !important; flex:none !important; min-width:0 !important; }
+  .left video,.left iframe,.left .player,.left .video-wrapper{ max-width:100%; height:auto; }
+  .mobile-tabs-bar{
+    position: sticky; top: 8px; z-index: 10000;
+    background: var(--panel1,#0f172a);
+    border: 1px solid rgba(100,116,139,.4);
+    border-radius: 12px; padding: 6px 8px; margin: 6px 0 8px 0;
+    backdrop-filter: blur(2px);
   }
-  .pager-page{
-    flex: 0 0 100vw !important;
-    max-width: 100vw !important;
-    height: calc(100vh - 58px);
-    scroll-snap-align: start;
-    overflow-y: auto;
-  }
-  .pager-page > .left,
-  .pager-page > .right{
-    width: 100% !important;
-    max-width: 100% !important;
-    border-radius: 0 !important;
-    border-left: 0 !important; border-right: 0 !important;
-  }
-  #controlsDrawer, .controls, .toolbar, .player-toolbar{
-    max-height: none !important;
-    opacity: 1 !important;
-    visibility: visible !important;
-  }
+  body.focus-mode .left{ display:none !important; }
+  body.focus-mode .right{ width:100% !important; max-width:100% !important; }
   #btnExitFocus{
-    position: fixed !important;
-    right: 16px; bottom: 16px;
-    z-index: 10020;
-    display: none;
+    position:fixed; right:14px; bottom:18px; z-index:100001;
+    padding:.6rem .9rem; border-radius:12px; background:#2563eb; color:#fff; border:0;
+    box-shadow:0 10px 24px rgba(0,0,0,.18); display:none;
   }
-  .at-right-page #btnExitFocus{ display: inline-flex; }
-  #verBadgeTop{
-    position: fixed; top: 8px; right: 10px; z-index: 10050;
-    background: rgba(15,23,42,.9); color: #e6efff;
-    border: 1px solid rgba(100,116,139,.5);
-    padding: 4px 8px; border-radius: 8px; font-size: 12px;
+  body.focus-mode #btnExitFocus{ display:inline-block; }
+  .tools-collapsed{
+    max-height:0 !important; overflow:hidden !important;
+    padding-top:0 !important; padding-bottom:0 !important;
+    opacity:0; transition:max-height .25s ease, opacity .2s ease;
+  }
+  .tools-toggle{
+    display:inline-flex; align-items:center; gap:.4rem; padding:.45rem .8rem;
+    border:1px solid var(--badge-bd); background:var(--badge-bg); color:var(--badge-fg);
+    border-radius:10px; font-size:.95rem;
   }
 }
 </style>
+
+<style>
+/* ===== 2025.10.13 FocusMobile v2.5 ===== */
+@media (max-width: 860px) and (orientation: portrait){
+  /* 固定顯示的工具列把手（若原生有就不再顯示） */
+  #toolsToggleFixed{
+    position: sticky; top: 8px; z-index: 10002;
+    display: inline-flex; align-items: center; gap: .4rem;
+    padding: .45rem .8rem; border-radius: 10px;
+    border: 1px solid rgba(100,116,139,.5);
+    background: rgba(15,23,42,.9); color: #e6efff;
+    margin-bottom: 6px;
+  }
+  /* 收合時高度為 0；展開時允許高度自動 */
+  .tools-collapsed{ max-height: 0 !important; overflow: hidden !important; opacity: 0; }
+  .tools-expanded{ max-height: 1000px !important; overflow: visible !important; opacity: 1; transition: max-height .25s ease, opacity .2s ease; }
+}
+</style>
+
+<style>
+/* ===== 2025.10.13 FocusMobile v2.6 ===== */
+@media (max-width: 860px) and (orientation: portrait){
+  #btnPrintQuiz{
+    position: sticky; top: 8px; right: 10px; z-index: 10003;
+    float: right;
+    margin: 0 0 8px 8px;
+    padding: .45rem .7rem;
+    border-radius: 10px; border: 1px solid rgba(100,116,139,.5);
+    background: rgba(15,23,42,.9); color: #e6efff; font-size: .9rem;
+  }
+}
+
+/* ---- Print rules: 保證 20 題完整列印 ---- */
+@media print {
+  /* 白底黑字，移除背景 */
+  * { color: #000 !important; background: #fff !important; box-shadow: none !important; }
+  html, body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  /* 版面：只印右欄內容（測驗） */
+  .left, header, nav, .mobile-tabs-bar, #verBadgeTop, #toolsToggle, #toolsToggleFixed, #btnExitFocus { display: none !important; }
+  .right { width: 100% !important; max-width: 100% !important; }
+  /* 工具列不印 */
+  .tools, .controls, #toolbar, #playTools { display: none !important; }
+  /* 測驗內容全部展開可見 */
+  #pane-quiz, [data-pane="quiz"], .quiz, .exam, .questions, .question-list { display: block !important; visibility: visible !important; height: auto !important; max-height: none !important; }
+  /* 避免 sticky / fixed 造成覆蓋 */
+  * { position: static !important; }
+  /* 段落/題組換頁友善 */
+  .question, .q { break-inside: avoid-page; page-break-inside: avoid; margin-bottom: 10px; }
+  .section, .part { page-break-before: auto; }
+  /* 連結樣式 */
+  a::after { content: ""; }
+}
+</style>
+
+<style>
+/* ===== 2025.10.13 FocusMobile v2.7 — Mobile horizontal swipe pager ===== */
+@media (max-width: 860px) and (orientation: portrait){
+  /* Use the existing .layout as the pager track */
+  .layout{
+    flex-direction: row !important;
+    overflow-x: auto;
+    overflow-y: hidden;
+    scroll-snap-type: x mandatory;
+    -webkit-overflow-scrolling: touch;
+  }
+  .left, .right{
+    flex: 0 0 100% !important;
+    max-width: 100% !important;
+    scroll-snap-align: start;
+  }
+  /* Neutralize old focus-mode (we will slide instead of hiding the video) */
+  body.focus-mode .left{ display:block !important; }
+  body.focus-mode .right{ width:100% !important; max-width:100% !important; }
+  #btnExitFocus{ position: fixed; right: 14px; bottom: 18px; z-index: 100001; }
+}
+</style>
+
 </head>
 <body>
 <header>
@@ -477,111 +620,932 @@ $$('.tabs .tab').forEach(t=>t.addEventListener('click',()=>showTab(t.dataset.tab
 </script>
 
 <script>
+// === V3.3-restore: auto word-translate tooltip (desktop hover 0.3s / mobile long-press) ===
 (function(){
-  const VERSION = "2025.10.14 FocusMobile v3.0 (TwoPage)";
-  const isMobile = () => matchMedia('(max-width: 860px) and (orientation: portrait)').matches;
+  const $ = (s, r=document)=>r.querySelector(s);
+  const $$ = (s, r=document)=>Array.from(r.querySelectorAll(s));
+  const vocabMap = window.vocabMap || (window.vocabMap = Object.create(null));
+  const builtIn = Object.assign(Object.create(null), {
+    festival:'節日', moon:'月亮', sun:'太陽', legend:'傳說', story:'故事', shoot:'射擊',
+    earth:'地球', people:'人們', special:'特別的', look:'看', big:'大', round:'圓的'
+  });
+  let tip, showTimer, longTimer;
+
+  function ensureTip(){
+    if (tip) return tip;
+    tip = document.createElement('div'); tip.id='wordTip'; document.body.appendChild(tip);
+    return tip;
+  }
+  function hideTip(){ if(tip) tip.style.display='none'; }
+  function showTipAt(x,y,word){
+    const el = ensureTip();
+    const w = word.toLowerCase();
+    const zh = vocabMap[w] || builtIn[w] || '（暫無翻譯）';
+    el.innerHTML = `<b>${word}</b>：${zh}`;
+    el.style.display='block';
+    const pad=10, vw=Math.max(document.documentElement.clientWidth, innerWidth||0), vh=Math.max(document.documentElement.clientHeight, innerHeight||0);
+    const wmax = Math.min(vw*0.8, el.offsetWidth||260);
+    el.style.left = Math.min(vw - wmax - pad, Math.max(pad, x+8)) + 'px';
+    el.style.top  = Math.min(vh - 60, Math.max(pad, y+8)) + 'px';
+  }
+
+  function englishColIndex(table){
+    const ths = $$('thead th', table).map(th=>th.textContent.trim());
+    let idx = ths.findIndex(t=>/英/.test(t)); if (idx === -1 && ths.length>=2) idx = 1;
+    return idx;
+  }
+
+  function tokenizeOnce(){
+    const table = $('#pane-sub table') || $('table'); if(!table) return false;
+    if (table.dataset.v33tk === '1') return true;
+    const idx = englishColIndex(table); if (idx<0) return false;
+    const rows = $$('tbody tr', table); const re=/[A-Za-z]+(?:'[A-Za-z]+)?/g;
+    rows.forEach(tr=>{
+      const tds = $$('td', tr); const td = tds[idx]; if(!td) return;
+      const raw = td.textContent; let out='', last=0; for(const m of raw.matchAll(re)){
+        const w = m[0], i = m.index;
+        if (i>last) out += raw.slice(last,i);
+        out += `<span class="wtoken" data-w="${w.toLowerCase()}">${w}</span>`;
+        last = i + w.length;
+      }
+      out += raw.slice(last);
+      td.innerHTML = out;
+    });
+    bindEvents(table);
+    table.dataset.v33tk = '1';
+    console.log('[V3.3-restore] tokenized.');
+    return true;
+  }
+
+  function bindEvents(root){
+    const onEnter = (e)=>{
+      const el = e.target.closest('.wtoken'); if(!el) return;
+      clearTimeout(showTimer);
+      const {clientX:x, clientY:y} = e;
+      showTimer = setTimeout(()=> showTipAt(x,y, el.textContent.trim()), 300);
+    };
+    const onMove = (e)=>{
+      if(!e.target.closest('.wtoken')) return;
+      const {clientX:x, clientY:y} = e;
+      if (tip && tip.style.display==='block') showTipAt(x,y, e.target.textContent.trim());
+    };
+    $$('.wtoken', root).forEach(el=>{
+      el.addEventListener('mouseenter', onEnter);
+      el.addEventListener('mousemove', onMove);
+      el.addEventListener('mouseleave', ()=>{ clearTimeout(showTimer); hideTip(); });
+      // Mobile long-press
+      el.addEventListener('touchstart', (ev)=>{
+        clearTimeout(longTimer);
+        const t = ev.touches[0];
+        longTimer = setTimeout(()=> showTipAt(t.clientX,t.clientY, el.textContent.trim()), 420);
+      }, {passive:true});
+      el.addEventListener('touchend', ()=>{ clearTimeout(longTimer); hideTip(); }, {passive:true});
+      el.addEventListener('touchmove', ()=>{ clearTimeout(longTimer); hideTip(); }, {passive:true});
+    });
+    $('#pane-sub')?.addEventListener('scroll', hideTip, {passive:true});
+  }
+
+  function buildVocab(){
+    $$('#vocabBox .voc').forEach(card=>{
+      const w = (card.querySelector('.voc-word')?.textContent||'').trim().toLowerCase();
+      const zh = (card.querySelector('.voc-zh')?.textContent||'').trim();
+      if(w) vocabMap[w] = zh || vocabMap[w];
+    });
+  }
+
+  const tryInit = ()=> tokenizeOnce();
+  document.addEventListener('DOMContentLoaded', ()=>{ buildVocab(); tryInit(); });
+  const mo = new MutationObserver(()=>{ buildVocab(); tryInit(); });
+  mo.observe(document.body, {subtree:true, childList:true});
+})();
+</script>
+
+<script>
+(function(){
+  const VERSION = "2025.10.13 FocusMobile v2.2";
+  const isMobilePortrait = () => matchMedia('(max-width: 860px) and (orientation: portrait)').matches;
+  const $ = (s, r=document)=>r.querySelector(s);
+  const $$ = (s, r=document)=>Array.from(r.querySelectorAll(s));
+
+  // 右上角版本角標，並隱藏「登入」
+  function mountVersionBadgeTop(){
+    const loginBtn = $$('a,button').find(el => (el.textContent||'').trim() === '登入');
+    if (loginBtn) loginBtn.style.display = 'none';
+    if (!$('#verBadgeTop')){
+      const b = document.createElement('div');
+      b.id='verBadgeTop'; b.textContent = VERSION;
+      document.body.appendChild(b);
+    }
+  }
+
+  // 嘗試找到播放工具列容器
+  function findToolPanel(){
+    const nativeToggle = $$('button, [role="button"]').find(b => /播放工具列/.test((b.textContent||'').trim()));
+    if (nativeToggle) return nativeToggle.closest('section,div,form,article') || nativeToggle.parentElement;
+    const labels = ['上一句','播放','暫停','下一句','重複本句','跟隨','偏移','速度'];
+    let best=null, score=0;
+    $$('button,[role="button"],label').forEach(el=>{
+      const t=(el.textContent||'').trim();
+      if (labels.some(k=>t.includes(k))){
+        const p = el.closest('.tools,.controls,.panel,section,div');
+        if (p){
+          let s=1;
+          labels.forEach(k=>{ if ((p.textContent||'').includes(k)) s++; });
+          if (s>score){ score=s; best=p; }
+        }
+      }
+    });
+    return best;
+  }
+
+  // 綁定「字幕／測驗／單字」→ 專注模式；再按一次或按返回可退出
+  function bindFocusModeOnTabs(){
+    if (!isMobilePortrait()) return;
+    const need = new Set(['字幕','測驗','單字']);
+    const tabs = $$('button, a, [role="tab"]');
+    tabs.forEach(el=>{
+      const t=(el.textContent||'').trim();
+      if (need.has(t) && !el.dataset.fmBound){
+        el.dataset.fmBound='1';
+        el.addEventListener('click', ()=>{
+          document.body.classList.toggle('focus-mode');
+        }, {passive:true});
+      }
+    });
+  }
+
+  // 手機：跟隨預設不勾選
+  function keepFollowOff(){
+    if (!isMobilePortrait()) return;
+    const chk = $('#chkFollow') || $$('input[type="checkbox"]').find(i=> (i.id||'').toLowerCase().includes('follow')) ||
+                $$('label').find(l=>/跟隨/.test((l.textContent||'')))?.querySelector('input[type="checkbox"]');
+    if (chk) chk.checked = false;
+  }
+
+  // 確保返回影片按鈕存在
+  function ensureExitButton(){
+    if (!$('#btnExitFocus')){
+      const btn = document.createElement('button');
+      btn.id='btnExitFocus'; btn.textContent='返回影片';
+      document.body.appendChild(btn);
+      btn.addEventListener('click', ()=> document.body.classList.remove('focus-mode'));
+    }
+  }
+
+  // 工具列預設收合；若已存在原生「播放工具列」按鈕就使用原生，不再建立第二顆
+  function ensureToolsCollapsed(){
+    if (!isMobilePortrait()) return;
+    const tools = findToolPanel();
+    if (!tools) return;
+    if (!tools.classList.contains('tools-collapsed')) tools.classList.add('tools-collapsed');
+    const hasNativeToggle = $$('button, [role="button"]').some(b => /播放工具列/.test((b.textContent||'').trim()));
+    if (!hasNativeToggle && !$('#toolsToggle')){
+      const h=document.createElement('button');
+      h.id='toolsToggle'; h.className='tools-toggle'; h.type='button';
+      h.textContent='播放工具列 ▾';
+      tools.parentNode.insertBefore(h, tools);
+      h.addEventListener('click', ()=>{
+        tools.classList.toggle('tools-collapsed');
+        h.textContent = tools.classList.contains('tools-collapsed') ? '播放工具列 ▾' : '播放工具列 ▴';
+      });
+    }
+  }
+
+  function init(){
+    mountVersionBadgeTop();
+    if (isMobilePortrait()){
+      ensureExitButton();
+      ensureToolsCollapsed();
+      bindFocusModeOnTabs();
+      keepFollowOff();
+    } else {
+      document.body.classList.remove('focus-mode');
+    }
+  }
+
+  window.addEventListener('resize', init, {passive:true});
+  window.addEventListener('orientationchange', init, {passive:true});
+  document.addEventListener('DOMContentLoaded', init);
+  const mo = new MutationObserver(()=>{ if (isMobilePortrait()) bindFocusModeOnTabs(); });
+  mo.observe(document.body, {subtree:true, childList:true});
+})();
+</script>
+
+<script>
+(function(){
+  const VERSION = "2025.10.13 FocusMobile v2.4";
+  const isMobilePortrait = () => matchMedia('(max-width: 860px) and (orientation: portrait)').matches;
   const $  = (s, r=document)=>r.querySelector(s);
   const $$ = (s, r=document)=>Array.from(r.querySelectorAll(s));
 
-  function ensureBadge(){
+  function mountVersionBadgeTop(){
+    const loginBtn = $$('a,button').find(el => (el.textContent||'').trim() === '登入');
+    if (loginBtn) loginBtn.style.display = 'none';
     if (!$('#verBadgeTop')){
       const b = document.createElement('div');
-      b.id = 'verBadgeTop'; b.textContent = VERSION;
+      b.id='verBadgeTop'; b.textContent = VERSION;
       document.body.appendChild(b);
     } else { $('#verBadgeTop').textContent = VERSION; }
   }
 
-  function ensureBackButton(){
+  function stickTabsBar(){
+    if (!isMobilePortrait()) return;
+    const keys = new Set(['字幕','測驗','單字']);
+    const tabs = $$('button,a,[role="tab"]').filter(el => keys.has((el.textContent||'').trim()));
+    if (tabs.length){
+      const bar = tabs[0].closest('nav,.tabs,.tabbar,.tabs-container,.panel,section,div') || tabs[0].parentElement;
+      if (bar && !bar.classList.contains('mobile-tabs-bar')) bar.classList.add('mobile-tabs-bar');
+    }
+  }
+
+  function findToolPanel(){
+    const nativeToggle = $$('button,[role="button"]').find(b => /播放工具列/.test((b.textContent||'').trim()));
+    if (nativeToggle) return nativeToggle.closest('section,div,form,article') || nativeToggle.parentElement;
+    const labels = ['上一句','播放','暫停','下一句','重複本句','跟隨','偏移','速度'];
+    let best=null, score=0;
+    $$('button,[role="button"],label').forEach(el=>{
+      const t=(el.textContent||'').trim();
+      if (labels.some(k=>t.includes(k))){
+        const p = el.closest('.tools,.controls,.panel,section,div');
+        if (p){
+          let s=1; labels.forEach(k=>{ if ((p.textContent||'').includes(k)) s++; });
+          if (s>score){ score=s; best=p; }
+        }
+      }
+    });
+    return best;
+  }
+
+  function collapseToolsAsOne(){
+    if (!isMobilePortrait()) return;
+    const tools = findToolPanel();
+    if (!tools) return;
+    tools.classList.add('tools-collapsed');
+    const hasNativeToggle = $$('button,[role="button"]').some(b => /播放工具列/.test((b.textContent||'').trim()));
+    if (!hasNativeToggle && !$('#toolsToggle')){
+      const h=document.createElement('button');
+      h.id='toolsToggle'; h.className='tools-toggle'; h.type='button';
+      h.textContent='播放工具列 ▾';
+      tools.parentNode.insertBefore(h, tools);
+      h.addEventListener('click', ()=>{
+        tools.classList.toggle('tools-collapsed');
+        h.textContent = tools.classList.contains('tools-collapsed') ? '播放工具列 ▾' : '播放工具列 ▴';
+      });
+    }
+  }
+
+  function bindFocusModeOnTabs(){
+    if (!isMobilePortrait()) return;
+    const keys = new Set(['字幕','測驗','單字']);
+    const tabs = $$('button,a,[role="tab"]');
+    tabs.forEach(el=>{
+      const t=(el.textContent||'').trim();
+      if (keys.has(t) && !el.dataset.fmBound){
+        el.dataset.fmBound='1';
+        el.addEventListener('click', ()=>{
+          document.body.classList.toggle('focus-mode');
+          if (document.body.classList.contains('focus-mode')) window.scrollTo({ top: 0, behavior:'smooth' });
+        }, {passive:true});
+      }
+    });
+  }
+
+  function ensureExitButton(){
     if (!$('#btnExitFocus')){
       const btn = document.createElement('button');
-      btn.id = 'btnExitFocus';
-      btn.className = 'btn blue';
-      btn.textContent = '返回影片';
+      btn.id='btnExitFocus'; btn.textContent='返回影片';
       document.body.appendChild(btn);
-      btn.addEventListener('click', ()=> setPage(0));
+      btn.addEventListener('click', ()=> document.body.classList.remove('focus-mode'));
     }
   }
 
-  function ensurePager(){
-    const track = $('.layout');
-    if (!track) return null;
-    track.classList.add('pager-track');
-
-    let leftPage = $('#mPageLeft');
-    const left = $('.left', track);
-    if (!leftPage && left){
-      leftPage = document.createElement('section');
-      leftPage.id = 'mPageLeft'; leftPage.className = 'pager-page';
-      left.before(leftPage); leftPage.appendChild(left);
-    }
-
-    let rightPage = $('#mPageRight');
-    const right = $('.right', track);
-    if (!rightPage && right){
-      rightPage = document.createElement('section');
-      rightPage.id = 'mPageRight'; rightPage.className = 'pager-page';
-      right.before(rightPage); rightPage.appendChild(right);
-    }
-    return { track, leftPage, rightPage };
+  function keepFollowOff(){
+    if (!isMobilePortrait()) return;
+    const chk = $('#chkFollow') ||
+      $$('input[type="checkbox"]').find(i=> (i.id||'').toLowerCase().includes('follow')) ||
+      $$('label').find(l=>/跟隨/.test((l.textContent||'')))?.querySelector('input[type="checkbox"]');
+    if (chk) chk.checked = false;
   }
+
+  function init(){
+    mountVersionBadgeTop();
+    if (isMobilePortrait()){
+      stickTabsBar();
+      collapseToolsAsOne();
+      bindFocusModeOnTabs();
+      ensureExitButton();
+      keepFollowOff();
+    } else {
+      document.body.classList.remove('focus-mode');
+    }
+  }
+
+  window.addEventListener('resize', init, {passive:true});
+  window.addEventListener('orientationchange', init, {passive:true});
+  document.addEventListener('DOMContentLoaded', init);
+  const mo = new MutationObserver(()=>{ if (isMobilePortrait()) { stickTabsBar(); bindFocusModeOnTabs(); } });
+  mo.observe(document.body, {subtree:true, childList:true});
+})();
+</script>
+
+<script>
+(function(){
+  const VERSION = "2025.10.13 FocusMobile v2.5";
+  const isMobilePortrait = () => matchMedia('(max-width: 860px) and (orientation: portrait)').matches;
+  const $  = (s, r=document)=>r.querySelector(s);
+  const $$ = (s, r=document)=>Array.from(r.querySelectorAll(s));
+
+  // 更新版本角標
+  document.addEventListener('DOMContentLoaded', ()=>{
+    const badge = document.getElementById('verBadgeTop');
+    if (badge) badge.textContent = VERSION;
+  });
+
+  // 找「整組」工具列容器（含抓把/上一句/播放/下一句/跟隨/速度）
+  function findControlsWrap(){
+    const candidates = [
+      '#controlsWrap', '#playerControls', '#toolbar', '#playTools', '.controls', '.tools', '.play-tools'
+    ];
+    for (const sel of candidates){
+      const el = document.querySelector(sel);
+      if (el) return el;
+    }
+    // fallback 以按鈕文字推回容器
+    const labels = ['上一句','播放','暫停','下一句','重複本句','跟隨','偏移','速度'];
+    let best=null, score=0;
+    $$('button,[role="button"],label').forEach(el=>{
+      const t=(el.textContent||'').trim();
+      if (labels.some(k=>t.includes(k))){
+        const p = el.closest('section,div,form,article');
+        if (p){
+          let s=1; labels.forEach(k=>{ if ((p.textContent||'').includes(k)) s++; });
+          if (s>score){ score=s; best=p; }
+        }
+      }
+    });
+    return best;
+  }
+
+  // 固定顯示一顆把手，確保永遠可以展開（如果頁面已有原生按鈕就不顯示這顆）
+  function ensureToolsToggle(controls){
+    if (!isMobilePortrait() || !controls) return;
+    const hasNative = $$('button,[role="button"]').some(b => /播放工具列/.test((b.textContent||'').trim()));
+    if (hasNative) return;
+    if (!document.getElementById('toolsToggleFixed')){
+      const btn = document.createElement('button');
+      btn.id = 'toolsToggleFixed';
+      btn.type = 'button';
+      btn.textContent = '播放工具列 ▾';
+      // 把把手放在右欄最前面（若找不到右欄，就放在 controls 前面）
+      const right = document.querySelector('.right') || controls.parentNode;
+      if (right && right.firstChild) right.insertBefore(btn, right.firstChild);
+      else controls.parentNode.insertBefore(btn, controls);
+      btn.addEventListener('click', ()=>{
+        const collapsed = controls.classList.contains('tools-collapsed');
+        controls.classList.toggle('tools-collapsed', !collapsed);
+        controls.classList.toggle('tools-expanded', collapsed);
+        btn.textContent = collapsed ? '播放工具列 ▴' : '播放工具列 ▾';
+      });
+    }
+  }
+
+  // 初始將工具列設為收合（tools-collapsed），點按鈕後切換到 tools-expanded
+  function prepareControls(){
+    const controls = findControlsWrap();
+    if (!controls) return;
+    controls.classList.remove('tools-expanded');
+    controls.classList.add('tools-collapsed');
+    ensureToolsToggle(controls);
+  }
+
+  // 僅將「最上層分頁列：字幕/測驗/單字」綁為專注模式，不影響測驗內部的「單字/文法/閱讀/綜合」
+  function bindFocusOnTopTabs(){
+    if (!isMobilePortrait()) return;
+    const TOP = new Set(['字幕','測驗','單字']);
+    // 找到同一個 tabs 容器，且同時包含「字幕/測驗/單字」三個字
+    const allButtons = $$('button,a,[role="tab"]');
+    const containers = new Map();
+    allButtons.forEach(el=>{
+      const t=(el.textContent||'').trim();
+      if (TOP.has(t)){
+        const c = el.closest('nav,.tabs,.tabbar,.tabs-container,.panel,section,div') || el.parentElement;
+        if (!c) return;
+        const set = containers.get(c) || new Set();
+        set.add(t); containers.set(c,set);
+      }
+    });
+    // 找出同時包含三個標籤的容器
+    const topBars = Array.from(containers.entries()).filter(([c,set])=> set.has('字幕') && set.has('測驗') && set.has('單字')).map(([c])=>c);
+    if (!topBars.length) return;
+    const topBar = topBars[0];
+    // 給這個容器 sticky 樣式（若尚未）
+    if (!topBar.classList.contains('mobile-tabs-bar')) topBar.classList.add('mobile-tabs-bar');
+
+    // 綁定 topBar 內的三個按鈕，不去碰測驗內部的其他分頁
+    $$('button,a,[role="tab"]', topBar).forEach(el=>{
+      const t=(el.textContent||'').trim();
+      if (TOP.has(t) && !el.dataset.fmBound){
+        el.dataset.fmBound='1';
+        el.addEventListener('click', ()=>{
+          document.body.classList.add('focus-mode');
+          window.scrollTo({ top: 0, behavior:'smooth' });
+        }, {passive:true});
+      }
+    });
+  }
+
+  // 右下角返回鍵
+  function ensureExitButton(){
+    if (!document.getElementById('btnExitFocus')){
+      const btn = document.createElement('button');
+      btn.id='btnExitFocus'; btn.textContent='返回影片';
+      document.body.appendChild(btn);
+      btn.addEventListener('click', ()=> document.body.classList.remove('focus-mode'));
+    }
+  }
+
+  // 手機預設不啟動「跟隨」
+  function keepFollowOff(){
+    if (!isMobilePortrait()) return;
+    const chk = document.getElementById('chkFollow') ||
+      $$('input[type="checkbox"]').find(i=> (i.id||'').toLowerCase().includes('follow')) ||
+      $$('label').find(l=>/跟隨/.test((l.textContent||'')))?.querySelector('input[type="checkbox"]');
+    if (chk) chk.checked = false;
+  }
+
+  function init(){
+    if (isMobilePortrait()){
+      prepareControls();
+      bindFocusOnTopTabs();
+      ensureExitButton();
+      keepFollowOff();
+    } else {
+      document.body.classList.remove('focus-mode');
+    }
+  }
+
+  window.addEventListener('resize', init, {passive:true});
+  window.addEventListener('orientationchange', init, {passive:true});
+  document.addEventListener('DOMContentLoaded', init);
+  const mo = new MutationObserver(()=>{ if (isMobilePortrait()) { bindFocusOnTopTabs(); } });
+  mo.observe(document.body, {subtree:true, childList:true});
+})();
+</script>
+
+<script>
+(function(){
+  const VERSION = "2025.10.13 FocusMobile v2.6";
+  const isMobilePortrait = () => matchMedia('(max-width: 860px) and (orientation: portrait)').matches;
+  const $  = (s, r=document)=>r.querySelector(s);
+  const $$ = (s, r=document)=>Array.from(r.querySelectorAll(s));
+
+  // 更新右上角版本角標
+  document.addEventListener('DOMContentLoaded', ()=>{
+    const badge = document.getElementById('verBadgeTop');
+    if (badge) badge.textContent = VERSION;
+  });
+
+  // 找到「字幕/測驗/單字」最上層分頁容器（同時包含三個）
+  function getTopTabsBar(){
+    const TOP = new Set(['字幕','測驗','單字']);
+    const buttons = $$('button,a,[role="tab"]');
+    const byContainer = new Map();
+    buttons.forEach(el=>{
+      const t=(el.textContent||'').trim();
+      if (TOP.has(t)){
+        const c = el.closest('nav,.tabs,.tabbar,.tabs-container,.panel,section,div') || el.parentElement;
+        if (!c) return;
+        const set = byContainer.get(c) || new Set();
+        set.add(t); byContainer.set(c,set);
+      }
+    });
+    const bars = Array.from(byContainer.entries()).filter(([c,set])=> set.has('字幕') && set.has('測驗') && set.has('單字')).map(([c])=>c);
+    return bars[0] || null;
+  }
+
+  function clickQuizTabIfNeeded(){
+    const bar = getTopTabsBar();
+    if (!bar) return;
+    const quizBtn = $$('button,a,[role="tab"]', bar).find(el => (el.textContent||'').trim() === '測驗');
+    if (quizBtn) quizBtn.click();
+  }
+
+  function ensurePrintButton(){
+    if (!isMobilePortrait()) return;
+    if (document.getElementById('btnPrintQuiz')) return;
+    const bar = getTopTabsBar();
+    const host = bar || document.querySelector('.right') || document.body;
+    const btn = document.createElement('button');
+    btn.id = 'btnPrintQuiz';
+    btn.type = 'button';
+    btn.textContent = '列印測驗';
+    host.insertBefore(btn, host.firstChild);
+    btn.addEventListener('click', ()=>{
+      // 1) 切到測驗分頁（若尚未）
+      clickQuizTabIfNeeded();
+      // 2) 退出 focus-mode（避免按鈕被隱藏），或也可保持，因為 print CSS 會隱藏影片
+      // document.body.classList.remove('focus-mode');
+      // 3) 延遲一拍讓 DOM 完成切換
+      setTimeout(()=> window.print(), 120);
+    });
+  }
+
+  function init(){
+    if (isMobilePortrait()) ensurePrintButton();
+  }
+  window.addEventListener('resize', init, {passive:true});
+  window.addEventListener('orientationchange', init, {passive:true});
+  document.addEventListener('DOMContentLoaded', init);
+})();
+</script>
+
+<script>
+// ===== 2025.10.13 FocusMobile v2.7 — swipe pager logic =====
+(function(){
+  const isMP = () => matchMedia('(max-width: 860px) and (orientation: portrait)').matches;
+  function $$(s, r=document){ return Array.from(r.querySelectorAll(s)); }
+  function $(s, r=document){ return r.querySelector(s); }
 
   function setPage(idx){
     const track = $('.layout');
     if (!track) return;
     const w = track.clientWidth;
     track.scrollTo({ left: idx * w, behavior: 'smooth' });
-    document.body.classList.toggle('at-right-page', idx === 1);
   }
 
   function bindTopTabs(){
-    if (!isMobile()) return;
-    const labels = new Set(['字幕','測驗','單字']);
-    const buttons = $$('button,a,[role="tab"]');
-    const groups = new Map();
-    buttons.forEach(el=>{
-      const t=(el.textContent||'').trim();
-      if (!labels.has(t)) return;
-      const c = el.closest('.tabs, nav, .tabbar, .tabs-container, section, div') || el.parentElement;
-      if (!c) return;
-      const s = groups.get(c) || new Set();
-      s.add(t); groups.set(c, s);
-    });
-    const topBars = Array.from(groups.entries()).filter(([c,set])=> set.has('字幕') && set.has('測驗') && set.has('單字')).map(([c])=>c);
-    if (!topBars.length) return;
-    const topBar = topBars[0];
-    $$('button,a,[role="tab"]', topBar).forEach(el=>{
-      const t=(el.textContent||'').trim();
-      if (!labels.has(t) || el.dataset._pagerBound) return;
-      el.dataset._pagerBound = '1';
-      el.addEventListener('click', ()=> setPage(1), {passive:true});
+    if (!isMP()) return;
+    const TOP = new Set(['字幕','測驗','單字']);
+    const all = $$('button,a,[role="tab"]');
+    all.forEach(el=>{
+      const t = (el.textContent||'').trim();
+      if (TOP.has(t) && !el.dataset.pagerBound){
+        el.dataset.pagerBound = '1';
+        el.addEventListener('click', ()=> setPage(1), { passive:true });
+      }
     });
   }
 
-  function onScrollSync(){
-    const track = $('.layout');
-    if (!track) return;
-    const idx = track.scrollLeft >= (track.clientWidth * 0.5) ? 1 : 0;
-    document.body.classList.toggle('at-right-page', idx === 1);
+  function bindBack(){
+    const back = document.getElementById('btnExitFocus');
+    if (back && !back.dataset.pagerBound){
+      back.dataset.pagerBound = '1';
+      back.onclick = () => setPage(0);
+    }
   }
 
   function init(){
-    ensureBadge();
-    ensureBackButton();
-    if (isMobile()) ensurePager();
+    if (!isMP()) return;
+    // ensure smooth scroll behaviour
+    const track = document.querySelector('.layout');
+    if (track) track.style.scrollBehavior = 'smooth';
     bindTopTabs();
-    onScrollSync();
+    bindBack();
   }
 
-  window.addEventListener('resize', init, {passive:true});
-  window.addEventListener('orientationchange', init, {passive:true});
+  window.addEventListener('resize', init, { passive:true });
+  window.addEventListener('orientationchange', init, { passive:true });
   document.addEventListener('DOMContentLoaded', init);
-  document.addEventListener('scroll', onScrollSync, {passive:true});
-  const mo = new MutationObserver(init);
-  mo.observe(document.body, {subtree:true, childList:true});
+  // Observe for late-rendered tabs
+  const mo = new MutationObserver(()=> init());
+  mo.observe(document.body, { subtree:true, childList:true });
 })();
 </script>
+
 </body>
 </html>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
