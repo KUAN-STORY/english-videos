@@ -1,3 +1,9 @@
+<!--
+  index.html 版本：2025.10.10V1.0
+  更新：
+  - 「試看：故事《Mid-Autumn》」按鈕加入 preview=1，手機與桌機皆可直接試看。
+  - 加入捕獲階段 click 補丁：含 preview=1 的 player.html 連結一律放行，不再觸發登入攔截。
+-->
 <!doctype html>
 <html lang="zh-Hant">
 <head>
@@ -107,7 +113,7 @@
       <div class="h1">看影片、做測驗、背單字 —— 一頁完成</div>
       <div class="muted">BookWide 用 <b>故事・音樂・電影・新聞・專業主題</b> 帶你學英文。逐句播放、雙語字幕、單字卡與分區測驗，完整練到聽讀寫。</div>
       <div class="cta-row">
-        <a class="cta" href="./player.html?slug=mid-autumn">試看：故事《Mid-Autumn》</a>
+        <a class="cta" href="./player.html?slug=mid-autumn&preview=1">試看：故事《Mid-Autumn》</a>
         <a class="cta secondary" href="#catalog">瀏覽教材</a>
       </div>
     </section>
@@ -413,8 +419,26 @@
 <!-- ===== /未登入禁止進入 player.html ===== -->
 
   <!-- ===== /服務導覽 ===== -->
+
+<script>
+// ===== Preview bypass: allow ?preview=1 links to open without login guards (mobile + desktop) =====
+document.addEventListener('click', function(ev){
+  const a = ev.target.closest && ev.target.closest('a[href*="player.html"]');
+  if (!a) return;
+  try{
+    const url = new URL(a.getAttribute('href'), location.href);
+    if (url.searchParams.get('preview') === '1'){
+      ev.stopImmediatePropagation(); // prevent other handlers from blocking
+      ev.preventDefault();
+      location.href = url.toString();
+    }
+  }catch(e){ /* ignore */ }
+}, true); // capture phase
+</script>
 </body>
 </html>
+
+
 
 
 
