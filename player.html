@@ -4,7 +4,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1"/>
-<!-- player.html 版本：2025.10.13 FocusMobile v2 -->
+<!-- player.html 版本：2025.10.13 FocusMobile v2.2 -->
 <title>英語影片播放器</title>
 <!-- player.html 版本：2025.10.13 V3.3-restore | 自動翻譯/泡泡回復版 -->
 
@@ -110,26 +110,42 @@
 </style>
 
 <style>
-/* ===== 2025.10.13 FocusMobile v2 ===== */
-@media (max-width: 860px) and (orientation: portrait) {
-  .layout { display:flex; flex-direction:column !important; gap:12px; }
-  .left,.right { width:100% !important; max-width:100% !important; flex:none !important; min-width:0 !important; }
-  #pane-sub table{ table-layout:auto !important; width:100%; }
-  #pane-sub td, #pane-sub th{ white-space:normal !important; word-break:break-word; line-height:1.6; }
-  body.focus-mode .left { display:none !important; }
-  body.focus-mode .right { width:100% !important; max-width:100% !important; }
+/* ===== 2025.10.13 FocusMobile v2.2 ===== */
+:root{ --badge-bg: rgba(15,23,42,.9); --badge-fg:#e6efff; --badge-bd: rgba(100,116,139,.5); }
 
-  .tools-collapsed{ max-height:0 !important; overflow:hidden !important; padding-top:0 !important; padding-bottom:0 !important; opacity:0; transition:max-height .25s ease, opacity .2s ease; }
-  .tools-toggle{ display:inline-flex; align-items:center; gap:.4rem; padding:.45rem .8rem; border:1px solid var(--border,#2c3e50); background:var(--panel1,#0f172a); color:var(--ink,#e6efff); border-radius:10px; font-size:.95rem; }
-
-  #btnExitFocus{ position:fixed; right:14px; bottom:18px; z-index:99999; padding:.6rem .9rem; border-radius:12px; background:#2563eb; color:#fff; border:0; box-shadow:0 10px 24px rgba(0,0,0,.18); display:none; }
-  body.focus-mode #btnExitFocus{ display:inline-block; }
+/* 右上版本角標（也用來取代登入） */
+#verBadgeTop{
+  position: fixed; top: 8px; right: 10px; z-index: 100000;
+  background: var(--badge-bg); color: var(--badge-fg);
+  padding: 4px 8px; border-radius: 8px; font-size: 12px;
+  border: 1px solid var(--badge-bd);
 }
 
-#verBadge{
-  position: fixed; left: 10px; bottom: 10px; z-index: 9999;
-  background: rgba(15,23,42,.8); color:#e6efff; padding:4px 8px; border-radius:8px;
-  font-size: 12px; border:1px solid rgba(100,116,139,.5);
+@media (max-width: 860px) and (orientation: portrait) {
+  /* 上下堆疊，不壓縮 */
+  .layout{ display:flex; flex-direction:column !important; gap:12px; }
+  .left,.right{ width:100% !important; max-width:100% !important; flex:none !important; min-width:0 !important; }
+  .left video, .left iframe, .left .player, .left .video-wrapper{ max-width:100%; height:auto; }
+
+  /* 字幕表格避免英文字直排 */
+  #pane-sub table{ table-layout:auto !important; width:100%; }
+  #pane-sub td, #pane-sub th{ white-space:normal !important; word-break:break-word; line-height:1.6; }
+
+  /* 專注模式：影片隱藏、內容全寬；顯示返回鍵 */
+  body.focus-mode .left{ display:none !important; }
+  body.focus-mode .right{ width:100% !important; max-width:100% !important; }
+  #btnExitFocus{ position:fixed; right:14px; bottom:18px; z-index: 100001;
+    padding:.6rem .9rem; border-radius:12px; background:#2563eb; color:#fff; border:0;
+    box-shadow: 0 10px 24px rgba(0,0,0,.18); display:none; }
+  body.focus-mode #btnExitFocus{ display:inline-block; }
+
+  /* 工具列預設收合（避免重覆，JS 會找容器加上這個 class） */
+  .tools-collapsed{ max-height:0 !important; overflow:hidden !important; padding-top:0 !important; padding-bottom:0 !important; opacity:0; transition:max-height .25s ease, opacity .2s ease; }
+
+  /* 我們自家的把手（若頁面已有「播放工具列」按鈕，JS 不會再建立） */
+  .tools-toggle{ display:inline-flex; align-items:center; gap:.4rem; padding:.45rem .8rem;
+    border:1px solid var(--badge-bd); background:var(--badge-bg); color:var(--badge-fg);
+    border-radius:10px; font-size:.95rem; }
 }
 </style>
 </head>
@@ -580,72 +596,87 @@ $$('.tabs .tab').forEach(t=>t.addEventListener('click',()=>showTab(t.dataset.tab
 
 <script>
 (function(){
-  const VERSION = "2025.10.13 FocusMobile v2";
-  if (!document.getElementById('verBadge')) {
-    const b = document.createElement('div');
-    b.id = 'verBadge'; b.textContent = VERSION;
-    document.addEventListener('DOMContentLoaded', ()=>document.body.appendChild(b));
-  }
-
+  const VERSION = "2025.10.13 FocusMobile v2.2";
   const isMobilePortrait = () => matchMedia('(max-width: 860px) and (orientation: portrait)').matches;
   const $ = (s, r=document)=>r.querySelector(s);
   const $$ = (s, r=document)=>Array.from(r.querySelectorAll(s));
 
-  function findToolPanel() {
-    const labels = ['上一句','播放','暫停','下一句','重複本句','跟隨','偏移'];
+  // 右上角版本角標，並隱藏「登入」
+  function mountVersionBadgeTop(){
+    const loginBtn = $$('a,button').find(el => (el.textContent||'').trim() === '登入');
+    if (loginBtn) loginBtn.style.display = 'none';
+    if (!$('#verBadgeTop')){
+      const b = document.createElement('div');
+      b.id='verBadgeTop'; b.textContent = VERSION;
+      document.body.appendChild(b);
+    }
+  }
+
+  // 嘗試找到播放工具列容器
+  function findToolPanel(){
+    const nativeToggle = $$('button, [role="button"]').find(b => /播放工具列/.test((b.textContent||'').trim()));
+    if (nativeToggle) return nativeToggle.closest('section,div,form,article') || nativeToggle.parentElement;
+    const labels = ['上一句','播放','暫停','下一句','重複本句','跟隨','偏移','速度'];
     let best=null, score=0;
-    $$('button, [role="button"]').forEach(btn=>{
-      const t=(btn.textContent||'').trim();
-      for (const k of labels) if (t.includes(k)) {
-        const p = btn.closest('.tools, .tool, .controls, .panel, section, div');
-        if (!p) continue;
-        let s=1;
-        labels.forEach(k2=>{ if (p.textContent.includes(k2)) s++; });
-        if (s>score) { score=s; best=p; }
+    $$('button,[role="button"],label').forEach(el=>{
+      const t=(el.textContent||'').trim();
+      if (labels.some(k=>t.includes(k))){
+        const p = el.closest('.tools,.controls,.panel,section,div');
+        if (p){
+          let s=1;
+          labels.forEach(k=>{ if ((p.textContent||'').includes(k)) s++; });
+          if (s>score){ score=s; best=p; }
+        }
       }
     });
     return best;
   }
 
-  function bindFocusModeOnTabs() {
+  // 綁定「字幕／測驗／單字」→ 專注模式；再按一次或按返回可退出
+  function bindFocusModeOnTabs(){
     if (!isMobilePortrait()) return;
     const need = new Set(['字幕','測驗','單字']);
-    const candidates = $$('button, a, [role="tab"]');
-    candidates.forEach(el=>{
+    const tabs = $$('button, a, [role="tab"]');
+    tabs.forEach(el=>{
       const t=(el.textContent||'').trim();
-      if (need.has(t) && !el.dataset.fmBound) {
+      if (need.has(t) && !el.dataset.fmBound){
         el.dataset.fmBound='1';
-        el.addEventListener('click', ()=>document.body.classList.add('focus-mode'), {passive:true});
+        el.addEventListener('click', ()=>{
+          document.body.classList.toggle('focus-mode');
+        }, {passive:true});
       }
     });
   }
 
-  function keepFollowOffByDefault(){
+  // 手機：跟隨預設不勾選
+  function keepFollowOff(){
     if (!isMobilePortrait()) return;
-    const chk = $('#chkFollow') || $$('input[type="checkbox"]').find(i=> (i.id||'').includes('Follow')) ||
-                $$('label').find(l=>/跟隨/.test(l.textContent))?.querySelector('input[type="checkbox"]');
+    const chk = $('#chkFollow') || $$('input[type="checkbox"]').find(i=> (i.id||'').toLowerCase().includes('follow')) ||
+                $$('label').find(l=>/跟隨/.test((l.textContent||'')))?.querySelector('input[type="checkbox"]');
     if (chk) chk.checked = false;
   }
 
+  // 確保返回影片按鈕存在
   function ensureExitButton(){
-    let btnExit = $('#btnExitFocus');
-    if (!btnExit) {
-      btnExit = document.createElement('button');
-      btnExit.id='btnExitFocus';
-      btnExit.textContent='返回';
-      document.body.appendChild(btnExit);
-      btnExit.addEventListener('click', ()=>document.body.classList.remove('focus-mode'));
+    if (!$('#btnExitFocus')){
+      const btn = document.createElement('button');
+      btn.id='btnExitFocus'; btn.textContent='返回影片';
+      document.body.appendChild(btn);
+      btn.addEventListener('click', ()=> document.body.classList.remove('focus-mode'));
     }
   }
 
+  // 工具列預設收合；若已存在原生「播放工具列」按鈕就使用原生，不再建立第二顆
   function ensureToolsCollapsed(){
     if (!isMobilePortrait()) return;
-    const tools = $('#playTools') || $('#toolbar') || document.querySelector('.play-tools') || findToolPanel();
+    const tools = findToolPanel();
     if (!tools) return;
     if (!tools.classList.contains('tools-collapsed')) tools.classList.add('tools-collapsed');
-    if (!$('#toolsToggle')){
+    const hasNativeToggle = $$('button, [role="button"]').some(b => /播放工具列/.test((b.textContent||'').trim()));
+    if (!hasNativeToggle && !$('#toolsToggle')){
       const h=document.createElement('button');
-      h.id='toolsToggle'; h.className='tools-toggle'; h.type='button'; h.textContent='播放工具列 ▾';
+      h.id='toolsToggle'; h.className='tools-toggle'; h.type='button';
+      h.textContent='播放工具列 ▾';
       tools.parentNode.insertBefore(h, tools);
       h.addEventListener('click', ()=>{
         tools.classList.toggle('tools-collapsed');
@@ -655,11 +686,12 @@ $$('.tabs .tab').forEach(t=>t.addEventListener('click',()=>showTab(t.dataset.tab
   }
 
   function init(){
-    if (isMobilePortrait()) {
+    mountVersionBadgeTop();
+    if (isMobilePortrait()){
       ensureExitButton();
       ensureToolsCollapsed();
       bindFocusModeOnTabs();
-      keepFollowOffByDefault();
+      keepFollowOff();
     } else {
       document.body.classList.remove('focus-mode');
     }
@@ -674,6 +706,73 @@ $$('.tabs .tab').forEach(t=>t.addEventListener('click',()=>showTab(t.dataset.tab
 </script>
 </body>
 </html>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
