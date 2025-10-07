@@ -5,19 +5,6 @@
 <meta name="viewport" content="width=device-width,initial-scale=1"/>
 <title>英語影片播放器</title>
 <style>
-/* === patch: remove login & sticky quiz actions on mobile === */
-#authArea { display:none !important; }
-@media (max-width: 860px) {
-  #pane-quiz .q-actions{
-    position: sticky;
-    top: 0;
-    z-index: 5;
-    background: var(--panel1, #0f172a);
-    border-bottom: 1px solid var(--border, #1f2a44);
-    padding: 10px 8px !important;
-  }
-}
-
   :root{ --bg:#0b1324; --panel:#0f172a; --border:#1f2a44; --ink:#e6efff; --muted:#9fb0c9; --accent:#3c7cff; }
   *{box-sizing:border-box}
   html,body{height:100%;margin:0;background:var(--bg);color:var(--ink);font-family:ui-sans-serif,system-ui,"Noto Sans TC"}
@@ -99,90 +86,28 @@
   #phFeedback{font-size:12px;color:#444}
 </style>
 
-<style>
-/* ===== FocusMobile v3.0.2 base ===== */
-#verBadgeTop{
-  position: fixed; top: 8px; right: 10px; z-index: 10050;
-  background: rgba(15,23,42,.9); color: #e6efff;
-  border: 1px solid rgba(100,116,139,.5);
-  padding: 4px 8px; border-radius: 8px; font-size: 12px;
-}
-@media (max-width:860px) and (orientation:portrait){
-  /* Two-page track */
-  #mainWrap.pager-track, .layout.pager-track{
-    display: flex !important;
-    flex-direction: row !important;
-    overflow-x: auto !important;
-    overflow-y: hidden !important;
-    scroll-snap-type: x mandatory !important;
-    -webkit-overflow-scrolling: touch !important;
-    gap: 0 !important;
-  }
-  .pager-page{
-    flex: 0 0 100vw !important;
-    max-width: 100vw !important;
-    height: calc(100vh - 58px);
-    scroll-snap-align: start;
-    overflow-y: auto;
-  }
-  .pager-page > .left, .pager-page > .right{
-    width: 100% !important;
-    max-width: 100% !important;
-    border-radius: 0 !important;
-    border-left: 0 !important; border-right: 0 !important;
-  }
-  /* 工具列預設展開 */
-  #controlsDrawer, .controls, .toolbar, .player-toolbar{
-    max-height: none !important; opacity: 1 !important; visibility: visible !important;
-  }
-  #btnExitFocus{
-    position: fixed; right: 16px; bottom: 16px;
-    z-index: 10020; display: none;
-    padding:8px 12px;border-radius:10px;border:1px solid rgba(100,116,139,.5);
-    background:#0f172a;color:#e6efff;
-  }
-  .at-right-page #btnExitFocus{ display: inline-flex; }
-}
+<style id="patch-20251007-09">
+.auth-locked { pointer-events:none; filter: grayscale(.05); opacity:.75; }
+@media print { #authVersionBadge { display:none !important; } }
 </style>
-<style>
-/* === Print helpers (added by patch V20251007-08) === */
-@media print{
-  #verBadge, #loginGate, .nav, .toolbar, .topbar, [data-no-print="1"]{ display:none !important; }
-  #printHeader{ display:block !important; margin-bottom:12px; }
-  body{ -webkit-print-color-adjust:exact; print-color-adjust:exact; }
-}
-</style>
+
 </head>
 <body>
 
-<!-- version badge -->
-<div id="verBadge" style="position:fixed;top:10px;right:10px;z-index:9999;">
-  <span style="display:inline-block;background:#0b1e3a;color:#fff;border:1px solid #2c6fff;border-radius:12px;padding:4px 10px;font:600 12px/1.2 system-ui, -apple-system, Segoe UI, Roboto, 'Noto Sans', Arial;">V20251007-08</span>
+<!-- Version badge: V20251007-09 -->
+<div id="authVersionBadge" style="position:fixed;top:10px;right:12px;z-index:99999;background:#fff;color:#111;font-weight:700;border-radius:10px;padding:4px 10px;box-shadow:0 2px 10px rgba(0,0,0,.15);font-family:ui-sans-serif,system-ui,-apple-system,'Segoe UI',Roboto,'Noto Sans TC',Arial;font-size:12px;">
+  V20251007-09
+  <span id="userBadgeEmail" style="margin-left:8px;opacity:.85;"></span>
 </div>
-
-<!-- LOGIN GATE (lite) -->
-<div id="loginGate" style="position:fixed;left:0;right:0;bottom:0;background:rgba(15,23,42,.95);color:#e5edff;padding:18px 16px;display:none;z-index:9998;border-top:1px solid rgba(100,116,139,.35)">
-  <div style="max-width:900px;margin:0 auto;display:flex;gap:12px;align-items:center;justify-content:space-between;flex-wrap:wrap">
-    <div style="font:600 16px/1.4 system-ui,-apple-system,Segoe UI,Roboto,Arial">需要登入</div>
-    <div style="opacity:.9">請先登入以繼續使用，您的學習記錄會安全地儲存於雲端。</div>
-    <div style="margin-left:auto;display:flex;gap:10px">
-      <button id="gateLater" style="background:#334155;color:#e2e8f0;border:0;border-radius:10px;padding:8px 14px;">稍後</button>
-      <button id="gateLogin" style="background:#2563eb;color:#fff;border:0;border-radius:10px;padding:8px 14px;">以 Google 登入</button>
-    </div>
-  </div>
-</div>
-
-<!-- Print header -->
-<div id="printHeader" style="display:none">
-  <h2 id="ph_title">英語影片測驗成績單</h2>
-  <div id="ph_meta" style="font-size:14px;opacity:.8"></div>
-  <hr/>
-</div>
-
 
 <header>
   <h1>英語影片播放器</h1>
-  </header>
+  <div id="authArea" style="display:flex;gap:10px;align-items:center">
+    <button id="btnLogin" class="btn">登入</button>
+    <button id="btnLogout" class="btn" style="display:none">登出</button>
+    <span id="userNameBadge" class="muted"></span>
+  </div>
+</header>
 
 <div class="wrap">
   <div class="layout">
@@ -255,25 +180,6 @@
         </div>
 
         <div id="pane-quiz" style="display:none">
-<div id="printHeader" aria-hidden="true">
-  <div id="phLeft">
-    <svg id="phLogo" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-      <circle cx="12" cy="12" r="10" stroke="#111" stroke-width="2"></circle>
-      <path d="M7 13h10M7 9h10M7 17h6" stroke="#111" stroke-width="2" stroke-linecap="round"/>
-    </svg>
-    <div>
-      <div id="phTitle">BookWide · 英語影片測驗成績單</div>
-      <div id="phMeta">
-        影片：<span id="phSlug">-</span>　分區：<span id="phSection">-</span>　列印：<span id="phTime">-</span>
-      </div>
-    </div>
-  </div>
-  <div id="phRight">
-    <div id="phScore">0 / 100</div>
-    <div id="phFeedback">（0%）</div>
-  </div>
-</div>
-
           <div class="quiz-shell">
             <div id="quizTabs" class="q-tabs" style="margin:6px 0 10px 0;">
               <button class="qtab on" data-sec="Vocabulary">單字</button>
@@ -499,648 +405,248 @@ $$('.tabs .tab').forEach(t=>t.addEventListener('click',()=>showTab(t.dataset.tab
 })();
 </script>
 
-
-
-<script>
-/* ===== Mobile Two-Page Freeze-Guard v3.0.1 ===== */
-(function () {
-  const qs = new URLSearchParams(location.search);
-  if (qs.get('noPager') === '1') return;   // 緊急關閉：?noPager=1
-  const isMobile = () => matchMedia('(max-width:860px) and (orientation:portrait)').matches;
-  const $  = (s, r = document) => r.querySelector(s);
-  const $$ = (s, r = document) => Array.from(r.querySelectorAll(s));
-
-  const TRACK_SEL = '#mainWrap, .layout';
-  const LEFT_SEL  = '#leftPanel, .left';
-  const RIGHT_SEL = '#rightPanel, .right';
-
-  let inited = false;
-  let rafInit = 0;
-  let rafScroll = 0;
-
-  function ensureBadge() {
-    let b = $('#verBadgeTop');
-    if (!b) {
-      b = document.createElement('div');
-      b.id = 'verBadgeTop';
-      document.body.appendChild(b);
-    }
-    b.textContent = '2025.10.14 FocusMobile v3.0.2';
-  }
-
-  function setPage(idx) {
-    const track = $(TRACK_SEL);
-    if (!track) return;
-    const w = track.clientWidth;
-    track.scrollTo({ left: idx * w, behavior: 'smooth' });
-    document.body.classList.toggle('at-right-page', idx === 1);
-    const back = $('#btnExitFocus');
-    if (back) back.style.display = idx === 1 ? 'inline-flex' : 'none';
-  }
-
-  function bindTopTabsOnce() {
-    const labels = new Set(['字幕', '測驗', '單字']);
-    const buttons = $$('button,a,[role="tab"]');
-    const groups = new Map();
-    buttons.forEach((el) => {
-      const t = (el.textContent || '').trim();
-      if (!labels.has(t)) return;
-      const c = el.closest('.tabs, nav, .tabbar, .tabs-container, section, div') || el.parentElement;
-      if (!c) return;
-      const s = groups.get(c) || new Set();
-      s.add(t); groups.set(c, s);
-    });
-    const topBars = Array.from(groups.entries())
-      .filter(([c, set]) => set.has('字幕') && set.has('測驗') && set.has('單字'))
-      .map(([c]) => c);
-    if (!topBars.length) return;
-    const topBar = topBars[0];
-    $$('button,a,[role="tab"]', topBar).forEach((el) => {
-      const t = (el.textContent || '').trim();
-      if (!labels.has(t) || el.dataset._pagerBound) return;
-      el.dataset._pagerBound = '1';
-      el.addEventListener('click', () => setPage(1), { passive: true });
-    });
-  }
-
-  function ensureBackButton() {
-    if ($('#btnExitFocus')) return;
-    const btn = document.createElement('button');
-    btn.id = 'btnExitFocus';
-    btn.textContent = '返回影片';
-    document.body.appendChild(btn);
-    btn.addEventListener('click', () => setPage(0));
-  }
-
-  // 只做一次包裝
-  function ensurePagerOnce() {
-    const track = $(TRACK_SEL);
-    if (!track) return;
-    track.classList.add('pager-track');
-
-    if (!$('#mPageLeft')) {
-      const left = $(LEFT_SEL, track);
-      if (left) {
-        const leftPage = document.createElement('section');
-        leftPage.id = 'mPageLeft'; leftPage.className = 'pager-page';
-        left.before(leftPage); leftPage.appendChild(left);
-      }
-    }
-    if (!$('#mPageRight')) {
-      const right = $(RIGHT_SEL, track);
-      if (right) {
-        const rightPage = document.createElement('section');
-        rightPage.id = 'mPageRight'; rightPage.className = 'pager-page';
-        right.before(rightPage); rightPage.appendChild(right);
-      }
-    }
-  }
-
-  function onScrollSync() {
-    const track = $(TRACK_SEL);
-    if (!track) return;
-    const idx = track.scrollLeft >= track.clientWidth * 0.5 ? 1 : 0;
-    document.body.classList.toggle('at-right-page', idx === 1);
-    const back = $('#btnExitFocus');
-    if (back) back.style.display = idx === 1 ? 'inline-flex' : 'none';
-  }
-
-  function scheduleInit() {
-    cancelAnimationFrame(rafInit);
-    rafInit = requestAnimationFrame(init);
-  }
-
-  function init() {
-    if (!isMobile()) return;
-    ensureBadge();
-    ensureBackButton();
-    ensurePagerOnce();
-    bindTopTabsOnce();
-    onScrollSync();
-    inited = true;
-  }
-
-  window.addEventListener('resize', scheduleInit, { passive: true });
-  window.addEventListener('orientationchange', scheduleInit, { passive: true });
-  document.addEventListener('DOMContentLoaded', scheduleInit);
-
-  document.addEventListener('scroll', (e) => {
-    const t = e.target;
-    const track = $(TRACK_SEL);
-    if (!track) return;
-    if (t !== track && !(t.matches && t.matches(TRACK_SEL))) return;
-    cancelAnimationFrame(rafScroll);
-    rafScroll = requestAnimationFrame(onScrollSync);
-  }, { passive: true, capture: true });
-
-  // 只監聽 track 的直接子項變化
-  const mo = new MutationObserver(() => scheduleInit());
-  document.addEventListener('DOMContentLoaded', () => {
-    const track = $(TRACK_SEL);
-    if (track) mo.observe(track, { childList: true, subtree: false });
-  });
-})();
-</script>
-
-<!-- === Subtitle inline (EN + CN under EN) & Version Badge === -->
-<style>
-#verBadgeTop {
-  position: fixed;
-  top: 8px;
-  right: 10px;
-  background: white;
-  color: black;
-  font-weight: 600;
-  font-size: 13px;
-  padding: 4px 8px;
-  border-radius: 6px;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.3);
-  z-index: 9999;
-}
-
-/* Subtitles: hide CN column; show CN under EN */
-.table-subtitles thead th.cnCol { display:none; }
-.table-subtitles td.cnCol { display:none; }
-.table-subtitles td.enCol .cn-inline {
-  display:block; margin-top:.35rem;
-  font-size:.92em; line-height:1.45;
-  opacity:.85; color:rgba(255,255,255,.85);
-}
-.table-subtitles td.timeCol{
-  white-space:nowrap; width:64px;
-}
-</style>
-
-<div id="verBadgeTop">V20251007-002</div>
-
-<script>
-(function(){
-function findSubtitleTable(){
-  let t = document.querySelector('table.table-subtitles');
-  if (t) return t;
-  const tables = document.querySelectorAll('table');
-  for (const tb of tables) {
-    const heads = Array.from(tb.querySelectorAll('thead th')).map(th=>th.textContent.trim());
-    if (heads.join('|').includes('時間') && heads.join('|').includes('英文') && heads.join('|').includes('中文')) {
-      tb.classList.add('table-subtitles');
-      const headTh = tb.querySelectorAll('thead th');
-      if (headTh[0]) headTh[0].classList.add('timeCol');
-      if (headTh[1]) headTh[1].classList.add('enCol');
-      if (headTh[2]) headTh[2].classList.add('cnCol');
-      tb.querySelectorAll('tbody tr').forEach(tr=>{
-        const tds = tr.children;
-        if (tds[0]) tds[0].classList.add('timeCol');
-        if (tds[1]) tds[1].classList.add('enCol');
-        if (tds[2]) tds[2].classList.add('cnCol');
-      });
-      return tb;
-    }
-  }
-  return null;
-}
-
-function mergeRows(table){
-  if (!table) return;
-  const rows = table.querySelectorAll('tbody tr');
-  rows.forEach(tr=>{
-    const enCell = tr.querySelector('td.enCol') || tr.children[1];
-    const cnCell = tr.querySelector('td.cnCol') || tr.children[2];
-    if (!enCell || !cnCell) return;
-    const cnHTML = cnCell.innerHTML.trim();
-    if (!cnHTML) return;
-    if (!enCell.querySelector('.cn-inline')) {
-      const div = document.createElement('div');
-      div.className = 'cn-inline';
-      div.innerHTML = cnHTML;
-      enCell.appendChild(div);
-    }
-    cnCell.style.display = 'none';
-  });
-  const thCN = table.querySelector('thead th.cnCol');
-  if (thCN) thCN.style.display = 'none';
-}
-
-function run(){
-  const table = findSubtitleTable();
-  if (!table) return;
-  mergeRows(table);
-  const tbody = table.querySelector('tbody');
-  if (tbody) {
-    const mo = new MutationObserver(()=>mergeRows(table));
-    mo.observe(tbody, { childList:true, subtree:true });
-  }
-}
-
-if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', run);
-} else {
-  run();
-}
-})();
-</script>
-
-
-<!-- === Supabase Auth + Watch Logs + Version Badge === -->
-<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-
-<style>
-#verBadgeTop { position: fixed; top: 8px; right: 10px; background: #fff; color:#111; 
-  font-weight:700; font-size:12px; padding:4px 8px; border-radius:8px; box-shadow:0 1px 3px rgba(0,0,0,.25); z-index:10001; }
-#authGate { position:fixed; inset:0; background:rgba(0,0,0,.5); display:none; align-items:center; justify-content:center; z-index:10000; }
-#authGate .card { background:#101826; color:#e6f0ff; padding:24px 18px; border:1px solid #213048; border-radius:14px; width:min(92vw,440px); }
-#authGate .row { display:flex; justify-content:flex-end; gap:8px; margin-top:16px; }
-.btn { cursor:pointer; padding:8px 12px; border-radius:10px; border:1px solid #2a3a58; background:#0f172a; color:#e6f0ff; }
-.btn.primary { background:#2563eb; border-color:#2563eb; }
-#userBadge { position:fixed; top:8px; right:110px; color:#e6f0ff; font-size:13px; opacity:.9; }
-#authBtns { position:fixed; top:8px; right:10px; display:flex; gap:6px; z-index:10002; }
-#authBtns .btn { padding:4px 10px; font-size:12px; }
-
-/* ===== 列印（手機/桌機皆用）===== */
-@media print{
-  html,body{ background:#fff !important; color:#000 !important; height:auto !important; }
-  header,.tabs,.controls,#authArea,.drawer-grab{ display:none !important; }
-  .wrap{ padding:0 !important; }
-  .layout{ display:block !important; height:auto !important; overflow:visible !important; }
-  .left{ display:none !important; }
-  .right{ border:none !important; background:#fff !important; display:block !important; }
-  .pane, #pane-quiz, .quiz-shell, #quizList{ height:auto !important; max-height:none !important; overflow:visible !important; }
-  #pane-quiz{ display:block !important; }
-  #quizList{ font-size:12.5pt; line-height:1.25; }
-  #quizList > li{ break-inside:avoid; page-break-inside:avoid; padding:6px 0; margin:0 0 6px 0; border-bottom:1px dotted #ccc; }
-  @page { margin:10mm 10mm 12mm 10mm; }
-  #printHeader{ display:flex !important; }
-  #phScore{ font-size:22px; font-weight:900; }
-}
-#printHeader{display:none; align-items:center; justify-content:space-between; padding:12px 8px 16px; margin:0 8px 8px; border-bottom:1px solid #ddd; color:#111; background:#fff;}
-#phLeft{display:flex;align-items:center;gap:10px}
-#phLogo{width:26px;height:26px}
-#phTitle{font-weight:800}
-#phMeta{font-size:12px;color:#444;margin-top:2px}
-#phRight{text-align:right}
-#phScore{font-size:24px;font-weight:900}
-#phFeedback{font-size:12px;color:#444}
-</style>
-
-<div id="verBadgeTop">V20251007-003</div>
-<div id="authBtns">
-  <button id="btnLogin" class="btn primary">登入</button>
-  <button id="btnLogout" class="btn" style="display:none">登出</button>
-</div>
-<div id="userBadge" style="display:none"></div>
-
-<div id="authGate">
-  <div class="card">
-    <h3 style="margin:0 0 6px 0;">需要登入</h3>
-    <p style="margin:0 0 12px 0; opacity:.9">請先登入以繼續使用，您的學習記錄會安全地保存於雲端。</p>
-    <div class="row">
-      <button id="gateCancel" class="btn">稍後</button>
-      <button id="gateLogin" class="btn primary">以 Google 登入</button>
-    </div>
-  </div>
-</div>
-
-<script>
-const SUPABASE_URL = 'https://qtgwedankftrqjmzuset.supabase.co';
-const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InF0Z3dlZGFua2Z0cnFqbXp1c2V0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTg4NDYxMDMsImV4cCI6MjA3NDQyMjEwM30.jyETpt09pgm66aCZheMgsjtbKlVmYo-lt-hrrt6BF8g';
-const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-
-const qs = new URLSearchParams(location.search);
-const videoSlug = qs.get('slug') || 'unknown';
-
-const $gate = document.getElementById('authGate');
-const $btnLogin = document.getElementById('btnLogin');
-const $btnLogout = document.getElementById('btnLogout');
-const $userBadge = document.getElementById('userBadge');
-const $gateLogin = document.getElementById('gateLogin');
-const $gateCancel = document.getElementById('gateCancel');
-
-let watchLogged = false;
-
-function showGate(show){
-  $gate.style.display = show ? 'flex' : 'none';
-}
-
-function setUserUI(user){
-  if (user) {
-    $btnLogin.style.display = 'none';
-    $btnLogout.style.display = 'inline-block';
-    $userBadge.style.display = 'inline-block';
-    $userBadge.textContent = user.email || (user.user_metadata && user.user_metadata.full_name) || '已登入';
-  } else {
-    $btnLogin.style.display = 'inline-block';
-    $btnLogout.style.display = 'none';
-    $userBadge.style.display = 'none';
-    $userBadge.textContent = '';
-  }
-}
-
-async function logWatch(user){
-  if (watchLogged || !user) return;
-  try {
-    const payload = { user_id: user.id, email: user.email, video_slug: videoSlug };
-    const { error } = await supabase.from('watch_logs').insert(payload);
-    if (!error) watchLogged = true;
-    else console.warn('watch_logs insert error', error);
-  } catch(err) { console.error(err); }
-}
-
-async function initAuth(){
-  const { data: { user } } = await supabase.auth.getUser();
-  setUserUI(user);
-  if (!user) showGate(true);
-  else logWatch(user);
-}
-
-supabase.auth.onAuthStateChange((_event, session)=>{
-  const user = session?.user || null;
-  setUserUI(user);
-  showGate(!user);
-  if (user) logWatch(user);
-});
-
-$btnLogin.addEventListener('click', ()=>{ 
-  supabase.auth.signInWithOAuth({ provider:'google', options:{ redirectTo: location.href } });
-});
-$gateLogin.addEventListener('click', ()=>{ 
-  supabase.auth.signInWithOAuth({ provider:'google', options:{ redirectTo: location.href } });
-});
-$gateCancel.addEventListener('click', ()=> showGate(false));
-$btnLogout.addEventListener('click', async ()=>{ await supabase.auth.signOut(); });
-
-initAuth();
-
-// ===== 手機/桌機 列印成績單（存 PDF）補丁 =====
-function updatePrintHeader(score, full){
-  const pct = full ? Math.round((score/full)*100) : 0;
-  const words = pct>=90 ? '太強了！' : pct>=75 ? '很棒，繼續加油！' : pct>=60 ? '還可以，再練練會更好。' : '先別灰心！重作錯題、背關鍵字再試一次會更好。';
-  const usp = new URLSearchParams(location.search);
-  const slug = usp.get('slug') || (document.querySelector('#videoSlug')?.textContent?.trim()) || 'mid-autumn';
-  document.querySelector('#phSlug').textContent = slug;
-  document.querySelector('#phSection').textContent = document.querySelector('#quizTabs .qtab.on')?.textContent?.trim() || 'Vocabulary';
-  document.querySelector('#phTime').textContent = new Date().toLocaleString('zh-TW', { hour12:false });
-  document.querySelector('#phScore').textContent = `${score} / ${full}`;
-  document.querySelector('#phFeedback').textContent = `（${pct}%）${words}`;
-}
-
-(function(){
-  const btnSubmit = document.querySelector('#btnSubmitQuiz');
-  const btnPrint  = document.querySelector('#btnPrint');
-  const scoreNode = document.querySelector('#quizScore');
-  if(!btnSubmit || !btnPrint) return;
-
-  btnSubmit.addEventListener('click', ()=>{
-    let s=0,f=0;
-    const m=(scoreNode?.textContent||'').match(/(\d+)\s*\/\s*(\d+)/);
-    if(m){ s=+m[1]; f=+m[2]; } else { s=0; f=100; }
-    updatePrintHeader(s,f);
-    btnPrint.style.display='inline-block';
-  });
-
-  btnPrint.addEventListener('click', ()=>{
-    let s=0,f=0;
-    const m=(scoreNode?.textContent||'').match(/(\d+)\s*\/\s*(\d+)/);
-    if(m){ s=+m[1]; f=+m[2]; } else { s=0; f=100; }
-    updatePrintHeader(s,f);
-    window.print();
-  });
-
-  window.addEventListener('beforeprint', ()=>{
-    let s=0,f=0;
-    const m=(scoreNode?.textContent||'').match(/(\d+)\s*\/\s*(\d+)/);
-    if(m){ s=+m[1]; f=+m[2]; } else { s=0; f=100; }
-    updatePrintHeader(s,f);
-  });
-})();
-// ===== end: 列印補丁 =====
-</script>
-
-
-<!-- ======= LOGIN-GATE (LITE) PATCH v20251007-06: start ======= -->
-<style>
-  .ver-badge {
-    position: fixed; right: 12px; top: 10px; z-index: 2147483647;
-    background: #fff; color: #111; font-weight: 700; border-radius: 12px;
-    padding: 2px 10px; box-shadow: 0 2px 10px rgba(0,0,0,.25);
-    font-size: 12px; opacity: .95; pointer-events: none;
-  }
-  .btn-login, #btnLogin, [data-role="login"] { display: none !important; }
-  #gateMask {
-    position: fixed; inset: 0; background: rgba(0,0,0,.5);
-    display: none; z-index: 2147483600;
-  }
-  #gateDialog {
-    position: fixed; left: 50%; top: 50%; transform: translate(-50%,-50%);
-    width: min(92vw, 520px); background: #141b2d; color: #e8eefc;
-    border: 1px solid rgba(255,255,255,.12); border-radius: 14px;
-    box-shadow: 0 12px 40px rgba(0,0,0,.45);
-    display: none; z-index: 2147483601; overflow: hidden;
-  }
-  #gateDialog header { padding: 16px 18px; font-size: 18px; font-weight: 800; }
-  #gateDialog .msg { padding: 0 18px 16px; line-height: 1.6; color: #cfe0ff; }
-  #gateDialog footer { padding: 12px 18px 18px; display: flex; gap: 10px; justify-content: flex-end; }
-  #gateDialog button {
-    appearance: none; border: 0; cursor: pointer; border-radius: 10px; padding: 10px 14px;
-    font-weight: 700;
-  }
-  #btnGateLater { background: #233252; color: #e8eefc; }
-  #btnGateLogin { background: #2f6dff; color: #fff; }
-  #gateToast {
-    position: fixed; left: 50%; bottom: 18px; transform: translateX(-50%);
-    background: rgba(20,27,45,.95); color: #e8eefc; border: 1px solid rgba(255,255,255,.12);
-    border-radius: 12px; padding: 10px 14px; z-index: 2147483602; display: none;
-    box-shadow: 0 8px 24px rgba(0,0,0,.35);
-  }
-</style>
-
-<div class="ver-badge">V20251007-06</div>
-<div id="gateMask"></div>
-<div id="gateDialog" role="dialog" aria-modal="true" aria-labelledby="gateTitle">
-  <header id="gateTitle">需要登入</header>
-  <div class="msg">請先登入以繼續使用，您的學習記錄會安全地儲存於雲端。</div>
-  <footer>
-    <button id="btnGateLater">稍後</button>
-    <button id="btnGateLogin">以 Google 登入（示意）</button>
-  </footer>
-</div>
-<div id="gateToast">請先登入以繼續使用</div>
-
-<script>
-(function(){
-  const IS_LOGGED_IN = false;
-  let gateActive = !IS_LOGGED_IN;
-
-  const $ = (s, r=document) => r.querySelector(s);
-  const $$ = (s, r=document) => Array.from(r.querySelectorAll(s));
-
-  const $mask = $('#gateMask');
-  const $dlg  = $('#gateDialog');
-  const $toast= $('#gateToast');
-  const $btnLater = $('#btnGateLater');
-  const $btnLogin = $('#btnGateLogin');
-
-  function showDialog(on=true){
-    $mask.style.display = on ? 'block' : 'none';
-    $dlg.style.display  = on ? 'block' : 'none';
-  }
-  function toast(msg='請先登入以繼續使用', time=1500){
-    $toast.textContent = msg;
-    $toast.style.display='block';
-    clearTimeout(toast._t);
-    toast._t = setTimeout(()=>{ $toast.style.display='none'; }, time);
-  }
-
-  function attachGuards() {
-    const blocker = (e) => {
-      if (!gateActive) return;
-      e.preventDefault();
-      e.stopPropagation();
-      if ($dlg.style.display !== 'block') toast();
-    };
-
-    $$('video').forEach(v => {
-      v.addEventListener('play', blocker, true);
-      v.addEventListener('click', blocker, true);
-    });
-
-    const controlAreas = ['#playerControls','.controls','.toolbar'];
-    controlAreas.forEach(sel => {
-      $$(sel).forEach(area => {
-        area.addEventListener('click', blocker, true);
-        area.addEventListener('input', blocker, true);
-      });
-    });
-
-    const tabSelectors = ['[data-tab]','.tab','.tabs button','#tabSub','#tabQuiz','#tabVocab'];
-    tabSelectors.forEach(sel => {
-      $$(sel).forEach(el => {
-        el.addEventListener('click', blocker, true);
-      });
-    });
-  }
-
-  function initGate(){
-    if (gateActive) showDialog(true);
-    attachGuards();
-    const legacyLogin = $('#btnLogin') || $('.btn-login') || $('[data-role="login"]');
-    if (legacyLogin) legacyLogin.style.display = 'none';
-
-    $btnLater.addEventListener('click', () => {
-      showDialog(false);
-      toast('未登入狀態，功能已限制');
-    });
-
-    $btnLogin.addEventListener('click', () => {
-      toast('此版本僅示意，未提供實際登入');
-    });
-  }
-
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', initGate);
-  } else {
-    initGate();
-  }
-})();
-</script>
-<!-- ======= LOGIN-GATE (LITE) PATCH v20251007-06: end ======= -->
-
-
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script>
-(() => {
+<!-- ===== Supabase 守門 & 觀看紀錄 ===== -->
+<script type="module">
+  import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm";
 
   const SUPABASE_URL = "https://qtgwedankftrqjmzuset.supabase.co";
   const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InF0Z3dlZGFua2Z0cnFqbXp1c2V0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTg4NDYxMDMsImV4cCI6MjA3NDQyMjEwM30.jyETpt09pgm66aCZheMgsjtbKlVmYo-lt-hrrt6BF8g";
-  const supabase = window.supabase?.createClient
-        ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
-        : window.supabaseClient || window.SUPABASE_CLIENT || window.supabase?.createClient?.(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-  const gateEl = document.getElementById('loginGate');
-  const btnLater = document.getElementById('gateLater');
-  const btnLogin = document.getElementById('gateLogin');
+  const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-  let authed = false;
-  let userEmail = '';
+  // 必須登入
+  const { data: authData, error: authErr } = await supabase.auth.getUser();
+  if (authErr || !authData?.user) {
+    alert("請先登入後再觀看影片。");
+    location.href = "index.html";
+  } else {
+    const user = authData.user;
+    const videoSlug = new URLSearchParams(location.search).get("slug") || "mid-autumn";
 
-  function setBlocked(b){
-    if(!gateEl) return;
-    gateEl.style.display = b ? 'block' : 'none';
-    const v = document.querySelector('video');
-    if(v){
-      v.style.pointerEvents = b ? 'none' : 'auto';
-      v.pause && v.pause();
-    }
-    document.querySelectorAll('button, input[type="checkbox"], a').forEach(el=>{
-      if(el.closest('#loginGate')) return;
-      if(b) el.setAttribute('data-gated','1');
-      el.disabled = b ? true : (el.getAttribute('data-gated') ? false : el.disabled);
+    // 第一次播放寫一筆紀錄
+    let hasLogged = false;
+    const logOnce = async () => {
+      if (hasLogged) return;
+      hasLogged = true;
+      try {
+        await supabase.from("watch_logs").insert({
+          user_id: user.id,
+          email: user.email,
+          video_slug: videoSlug
+          // viewed_at 交給 DB default now()
+        });
+      } catch (e) {
+        console.warn("watch_logs 寫入失敗：", e?.message || e);
+      }
+    };
+    document.getElementById("player")?.addEventListener("play", logOnce, { once: true });
+  }
+</script>
+
+<!-- Supabase Auth Gate + PDF Export (player_v20251007-09, non-invasive) -->
+<script>
+(function(){
+  const SUPABASE_URL = 'https://qtgwedankftrqjmzuset.supabase.co';
+  const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InF0Z3dlZGFua2Z0cnFqbXp1c2V0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTg4NDYxMDMsImV4cCI6MjA3NDQyMjEwM30.jyETpt09pgm66aCZheMgsjtbKlVmYo-lt-hrrt6BF8g';
+
+  const $ = (s, r=document)=>r.querySelector(s);
+  const $$ = (s, r=document)=>Array.from(r.querySelectorAll(s));
+
+  function ensureSupabase() {
+    return new Promise((resolve)=>{
+      if (window.supabase && window.supabase.createClient) return resolve(window.supabase);
+      const s = document.createElement('script');
+      s.src = 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2';
+      s.onload = ()=>resolve(window.supabase);
+      document.head.appendChild(s);
     });
   }
 
-  async function checkAuth(){
+  function showGate(open){
+    if (typeof window.showGate === 'function') { window.showGate(open); return; }
+    let bar = $('#loginGateLite');
+    if (!bar) {
+      bar = document.createElement('div');
+      bar.id = 'loginGateLite';
+      bar.style.cssText = 'position:fixed;left:0;right:0;bottom:0;background:rgba(15,23,42,.96);color:#e5edff;z-index:99998;padding:14px;border-top:1px solid rgba(255,255,255,.12)';
+      bar.innerHTML = '<div style="max-width:980px;margin:0 auto;display:flex;gap:10px;align-items:center;justify-content:space-between;flex-wrap:wrap"><strong>需要登入</strong><span style="opacity:.85">請先登入以繼續使用。</span><div style="margin-left:auto;display:flex;gap:8px;"><button id="gateLoginLite" style="background:#2563eb;color:#fff;border:0;border-radius:10px;padding:8px 12px;font-weight:700;cursor:pointer;">以 Google 登入</button></div></div>';
+      document.body.appendChild(bar);
+      $('#gateLoginLite').addEventListener('click', async ()=>{
+        const { data, error } = await supabase.auth.signInWithOAuth({ provider:'google', options:{ redirectTo: location.href } });
+      });
+    }
+    bar.style.display = open ? 'block' : 'none';
+  }
+
+  function setLocked(locked){
+    const areas = [
+      '#rightPanel','.right-panel','.tabs','.tab','#tabSubtitle','#tabQuiz','#tabWords',
+      'video','#player','.controls','.toolbar','.player-controls'
+    ];
+    areas.forEach(sel => {
+      $$(sel).forEach(el => {
+        if (locked){
+          el.classList.add('auth-locked');
+          el.setAttribute('data-auth-locked','1');
+          if (el.tagName === 'VIDEO') { try{ el.pause(); }catch(_){} }
+        }else{
+          if (el.hasAttribute('data-auth-locked')){
+            el.classList.remove('auth-locked');
+            el.removeAttribute('data-auth-locked');
+          }
+        }
+      });
+    });
+  }
+
+  let supabase, userEmail = '';
+
+  async function checkAuthOnce(){
     try{
       const { data } = await supabase.auth.getUser();
-      if(data && data.user){
-        authed = true;
-        userEmail = data.user.email || '';
-        setBlocked(false);
-        let badge = document.querySelector('#userBadgeEmail');
-        if(!badge){
-          badge = document.createElement('div');
-          badge.id = 'userBadgeEmail';
-          badge.style.cssText = 'position:fixed;top:10px;right:130px;z-index:9999;background:#172554;color:#e2e8f0;border:1px solid #2563eb;border-radius:12px;padding:4px 10px;font:600 12px system-ui';
-          document.body.appendChild(badge);
-        }
-        badge.textContent = userEmail;
+      return data && data.user ? data.user : null;
+    }catch(e){
+      return null;
+    }
+  }
+
+  async function ensureAuthLoop(maxRetry=8, delay=500){
+    for (let i=0;i<maxRetry;i++){
+      const u = await checkAuthOnce();
+      if (u) return u;
+      await new Promise(r=>setTimeout(r, delay));
+    }
+    return null;
+  }
+
+  async function boot(){
+    await ensureSupabase();
+    supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    showGate(false);
+    setLocked(false);
+
+    let user = await checkAuthOnce();
+    if (!user) user = await ensureAuthLoop(8, 500);
+
+    if (user){
+      userEmail = user.email || '';
+      const badge = $('#userBadgeEmail'); if (badge) badge.textContent = userEmail;
+      setLocked(false); showGate(false);
+    }else{
+      userEmail = '';
+      setLocked(true); showGate(true);
+    }
+
+    supabase.auth.onAuthStateChange((_evt, session)=>{
+      if (session?.user){
+        userEmail = session.user.email || '';
+        const badge = $('#userBadgeEmail'); if (badge) badge.textContent = userEmail;
+        setLocked(false); showGate(false);
       }else{
-        authed = false;
-        setBlocked(true);
+        userEmail = '';
+        const badge = $('#userBadgeEmail'); if (badge) badge.textContent = '';
+        setLocked(true); showGate(true);
       }
-    }catch(e){
-      console.warn('auth check fail', e);
-      setBlocked(true);
-    }
-  }
+    });
 
-  btnLater && btnLater.addEventListener('click', ()=> setBlocked(true));
-  btnLogin && btnLogin.addEventListener('click', async ()=>{
-    try{
-      await supabase.auth.signInWithOAuth({
-        provider: 'google',
-        options: { redirectTo: window.location.href }
+    const tabSelectors = ['[data-tab="subtitle"]','[data-tab="quiz"]','[data-tab="vocab"]','#tabSubtitle','#tabQuiz','#tabWords'];
+    tabSelectors.forEach(sel=>{
+      $$(sel).forEach(el=>{
+        el.addEventListener('click', async (e)=>{
+          const u = await checkAuthOnce();
+          if (!u){
+            e.preventDefault(); e.stopPropagation();
+            showGate(true);
+          }
+        }, true);
       });
-    }catch(e){
-      alert('登入失敗，請稍後再試');
-    }
-  });
+    });
 
-  function updatePrintHeader(){
-    try{
-      const title = document.querySelector('#ph_title');
-      const meta = document.querySelector('#ph_meta');
-      const scoreNow = document.querySelector('[data-score-now]')?.textContent || '';
-      const slug = new URLSearchParams(window.location.search).get('slug') || (document.querySelector('[data-video-slug]')?.dataset?.videoSlug || '');
-      const dt = new Date();
-      const ts = dt.toISOString().slice(0,19).replace('T',' ');
-      title && (title.textContent = '英語影片測驗成績單');
-      meta && (meta.textContent = `帳號: ${userEmail||'未登入'} ｜ 影片: ${slug||'-'} ｜ 分數: ${scoreNow||'-'} ｜ 列印時間: ${ts}`);
-    }catch(e){ console.warn(e); }
+    wirePdfExport();
   }
-  window.addEventListener('beforeprint', updatePrintHeader);
 
-  checkAuth();
-  document.addEventListener('visibilitychange', ()=>{
-    if(document.visibilityState === 'visible') checkAuth();
-  });
+  function wirePdfExport(){
+    function ensureJsPDF(){
+      return new Promise((resolve)=>{
+        if (window.jspdf && window.jspdf.jsPDF) return resolve(window.jspdf);
+        const s = document.createElement('script');
+        s.src = 'https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js';
+        s.onload = ()=>resolve(window.jspdf);
+        document.head.appendChild(s);
+      });
+    }
 
+    async function exportPdf(){
+      const { jsPDF } = await ensureJsPDF();
+      const doc = new jsPDF({ unit:'pt', format:'a4' });
+
+      const line = (y)=>{ doc.setDrawColor(200); doc.line(40,y,555,y); };
+
+      const slug = new URLSearchParams(location.search).get('slug') || '';
+      const scoreText = (document.querySelector('[data-score-now]')?.textContent || document.querySelector('.score-value')?.textContent || '').trim();
+      const quizRoot = document.querySelector('#quizPanel, .quiz-container, [data-quiz-root], #testPanel, #rightPanel') || document.body;
+      const textDump = (quizRoot.innerText || '').replace(/
+{3,}/g, '
+
+').slice(0, 12000);
+
+      let y = 60;
+      doc.setFont('helvetica','bold'); doc.setFontSize(16);
+      doc.text('英語影片：測驗成績單', 40, y);
+      doc.setFont('helvetica',''); doc.setFontSize(10);
+      const dt = new Date(); const ts = dt.toISOString().slice(0,19).replace('T',' ');
+      const email = (document.querySelector('#userBadgeEmail')?.textContent || '').trim();
+      doc.text(`帳號：${email || '（未登入）'}`, 40, y += 20);
+      doc.text(`影片：${slug || '-'}`, 300, y);
+      doc.text(`時間：${ts}`, 40, y += 16);
+      doc.text(`分數：${scoreText || '-'}`, 300, y);
+      line(y += 14); y += 20;
+
+      doc.setFontSize(11);
+      const lines = doc.splitTextToSize(textDump, 515);
+      for (let i=0;i<lines.length;i++){
+        if (y > 770){ doc.addPage(); y = 60; }
+        doc.text(lines[i], 40, y);
+        y += 14;
+      }
+      const safeTs = ts.replace(/[: ]/g,'-');
+      doc.save(`score_${slug || 'quiz'}_${safeTs}.pdf`);
+    }
+
+    const selectors = ['#btnPrintScore','[data-action="print-score"]','#btnPrint','.btn-print-score','#btnDownloadPDF','[data-action="download-pdf"]'];
+    selectors.forEach(sel=>{
+      $$(sel).forEach(btn=>{
+        if (btn._pdfBound) return;
+        btn.addEventListener('click', async (e)=>{
+          e.preventDefault(); e.stopPropagation();
+          const { data } = await supabase.auth.getUser();
+          if (!data || !data.user) { showGate(true); return; }
+          exportPdf();
+        });
+        btn._pdfBound = true;
+        if (/列印/.test(btn.textContent)) btn.textContent = '下載 PDF 成績';
+      });
+    });
+
+    window.__wirePdfExport = wirePdfExport;
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', boot);
+  } else {
+    boot();
+  }
 })();
 </script>
+
+
 <!-- 🔐 Supabase Gate · V20251007-10 (append-only) -->
 <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
 (() => {
-  if (window.__gateV20251007_10__) return;       // 防重複掛載
+  if (window.__gateV20251007_10__) return;
   window.__gateV20251007_10__ = true;
 
   const SUPABASE_URL = 'https://qtgwedankftrqjmzuset.supabase.co';
@@ -1149,7 +655,6 @@ function updatePrintHeader(score, full){
 
   const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-  // 單一遮罩（未登入時覆蓋全頁，避免動到既有 DOM）
   function ensureOverlay() {
     let o = document.getElementById('loginGateOverlay');
     if (!o) {
@@ -1170,12 +675,11 @@ function updatePrintHeader(score, full){
     return o;
   }
 
-  function showOverlay()  { ensureOverlay().style.display = 'flex'; }
-  function hideOverlay()  { const o = document.getElementById('loginGateOverlay'); if (o) o.style.display = 'none'; }
+  function showOverlay() { ensureOverlay().style.display = 'flex'; }
+  function hideOverlay() { const o = document.getElementById('loginGateOverlay'); if (o) o.style.display = 'none'; }
   function setEmail(email) {
     const box = document.getElementById('userEmailDisplay');
     if (box) box.textContent = email || '';
-    // 若頁面右上角沒有這個節點可忽略，不會影響既有結構
   }
 
   async function syncAuth() {
@@ -1193,7 +697,6 @@ function updatePrintHeader(score, full){
     }
   }
 
-  // 狀態變更即時同步
   sb.auth.onAuthStateChange((_ev, session) => {
     if (session?.user) {
       setEmail(session.user.email || '');
@@ -1203,7 +706,6 @@ function updatePrintHeader(score, full){
     }
   });
 
-  // DOM 就緒後檢查一次
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', syncAuth, { once:true });
   } else {
@@ -1215,6 +717,7 @@ function updatePrintHeader(score, full){
 
 </body>
 </html>
+
 
 
 
