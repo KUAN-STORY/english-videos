@@ -1135,6 +1135,83 @@ function updatePrintHeader(score, full){
 
 })();
 </script>
+<!-- 🔐 Supabase Gate · V20251007-10 (append-only) -->
+<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+(() => {
+  if (window.__gateV20251007_10__) return;       // 防重複掛載
+  window.__gateV20251007_10__ = true;
+
+  const SUPABASE_URL = 'https://qtgwedankftrqjmzuset.supabase.co';
+  const SUPABASE_ANON_KEY =
+    'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InF0Z3dlZGFua2Z0cnFqbXp1c2V0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTg4NDYxMDMsImV4cCI6MjA3NDQyMjEwM30.jyETpt09pgm66aCZheMgsjtbKlVmYo-lt-hrrt6BF8g';
+
+  const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+  // 單一遮罩（未登入時覆蓋全頁，避免動到既有 DOM）
+  function ensureOverlay() {
+    let o = document.getElementById('loginGateOverlay');
+    if (!o) {
+      o = document.createElement('div');
+      o.id = 'loginGateOverlay';
+      o.style.cssText =
+        'position:fixed;inset:0;background:rgba(0,0,0,.86);color:#fff;z-index:2147483000;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:24px;line-height:1.8';
+      o.innerHTML = `
+        <div style="font-size:22px;margin-bottom:16px">🔒 請先登入以使用本內容</div>
+        <button id="gateToIndex"
+          style="padding:10px 18px;border:0;border-radius:10px;background:#2563eb;color:#fff;font-weight:700;cursor:pointer">
+          返回登入頁
+        </button>
+      `;
+      document.body.appendChild(o);
+      o.querySelector('#gateToIndex').onclick = () => location.href = 'index.html';
+    }
+    return o;
+  }
+
+  function showOverlay()  { ensureOverlay().style.display = 'flex'; }
+  function hideOverlay()  { const o = document.getElementById('loginGateOverlay'); if (o) o.style.display = 'none'; }
+  function setEmail(email) {
+    const box = document.getElementById('userEmailDisplay');
+    if (box) box.textContent = email || '';
+    // 若頁面右上角沒有這個節點可忽略，不會影響既有結構
+  }
+
+  async function syncAuth() {
+    try {
+      const { data: { session } } = await sb.auth.getSession();
+      if (session?.user) {
+        setEmail(session.user.email || '');
+        hideOverlay();
+      } else {
+        showOverlay();
+      }
+    } catch (e) {
+      console.warn('[gate] getSession failed:', e);
+      showOverlay();
+    }
+  }
+
+  // 狀態變更即時同步
+  sb.auth.onAuthStateChange((_ev, session) => {
+    if (session?.user) {
+      setEmail(session.user.email || '');
+      hideOverlay();
+    } else {
+      showOverlay();
+    }
+  });
+
+  // DOM 就緒後檢查一次
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', syncAuth, { once:true });
+  } else {
+    syncAuth();
+  }
+})();
+</script>
+<!-- /Supabase Gate · V20251007-10 -->
 
 </body>
 </html>
