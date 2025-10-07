@@ -1,3 +1,4 @@
+<!-- Player patched V20251007-24: stronger submit handler with text-input grading -->
 <!-- Player patched V20251007-23: AirPrint/Preview grade printing added; no other changes -->\n<!-- Player patched V20251007-22: quiz submit compatibility added; no other changes -->
 <!-- Player patched V20251007-21: mobile 2-page pager injected (player(2).html style); no other changes -->
 <!-- Player patched V20251007-20: lite pager + lite badge/login + cues observer; heavy watchers removed -->
@@ -1345,6 +1346,226 @@ $$('.tabs .tab').forEach(t=>t.addEventListener('click',()=>showTab(t.dataset.tab
     const pct = total ? Math.round((correct/total)*100) : (scoreText ? parseInt(scoreText,10) : 0);
     const score = scoreText || (pct + ' / 100');
     return {score, correct, total, details};
+  }
+
+  async function getUserEmail(){
+    try{
+      if (window.supa && window.supa.auth){
+        const { data } = await window.supa.auth.getUser();
+        return (data && data.user && data.user.email) || '';
+      }
+    }catch(e){}
+    return '';
+  }
+
+  function buildHTML(data){
+    const css = `
+      <style>
+        :root{ -webkit-text-size-adjust:100%; }
+        body{ font:14px/1.6 -apple-system,BlinkMacSystemFont,Segoe UI,Roboto,Helvetica,Arial; color:#0b1220; margin:24px; }
+        h1{ font-size:20px; margin:0 0 8px; }
+        .meta{ margin:8px 0 16px; }
+        .meta b{ display:inline-block; width:92px; }
+        .score{ font-weight:700; font-size:18px; margin:12px 0 18px; }
+        table{ border-collapse:collapse; width:100%; }
+        th,td{ border:1px solid #d1d5db; padding:6px 8px; vertical-align:top; }
+        th{ background:#f3f4f6; text-align:left; }
+        .ok{ color:#047857; }
+        .bad{ color:#b91c1c; }
+        @page{ size: auto; margin: 12mm; }
+        @media print{
+          .no-print{ display:none !important; }
+        }
+      </style>`;
+    const rows = data.details.map((d,i)=>`
+      <tr>
+        <td>${i+1}</td>
+        <td>${d.qText || d.name || ''}</td>
+        <td class="${d.ok?'ok':'bad'}">${d.ok?'✓ 正確':'✗ 錯誤'}</td>
+      </tr>`).join('');
+    const slug = (new URLSearchParams(location.search)).get('slug') || '';
+    const now = new Date();
+    const ts = now.toLocaleString();
+    const html = `<!doctype html><html><head><meta charset="utf-8">${css}<title>成績單</title></head>
+      <body>
+        <h1>英語影片播放器 – 成績單</h1>
+        <div class="meta"><div><b>影片代號</b>${slug}</div>
+        <div><b>列印時間</b>${ts}</div>
+        ${data.email ? `<div><b>學生帳號</b>${data.email}</div>` : ''}
+        </div>
+        <div class="score">分數：${data.score}</div>
+        <table>
+          <thead><tr><th style="width:42px">題號</th><th>題目</th><th style="width:88px">作答</th></tr></thead>
+          <tbody>${rows}</tbody>
+        </table>
+        <div class="no-print" style="margin-top:16px;color:#6b7280;">提示：使用 iPhone 的「分享」可儲存 PDF，或用 AirPrint 列印。</div>
+      </body></html>`;
+    return html;
+  }
+
+  async function handlePrint(){
+    const info = getScoreInfo();
+    info.email = await getUserEmail();
+    const html = buildHTML(info);
+    // 必須在使用者手勢中 window.open 才不會被 iOS 擋下
+    const w = window.open('', '_blank');
+    if(!w){ alert('請允許彈出視窗以列印成績單'); return; }
+    w.document.open(); w.document.write(html); w.document.close();
+    // 等新視窗渲染完成再印
+    const tryPrint = ()=>{ try{ w.focus(); w.print(); }catch(e){} };
+    w.onload = tryPrint;
+    setTimeout(tryPrint, 400);
+  }
+
+  document.addEventListener('click', function(e){
+    const btn = e.target.closest(SEL_BTN);
+    if(!btn) return;
+    e.preventDefault();
+    handlePrint();
+  }, true);
+})();
+</script>
+<!-- END Print Score (AirPrint / Preview) · V20251007-23 -->
+
+<!-- BEGIN Quiz Submit Ultra-Compat · V20251007-24 -->
+<script>
+(function ultraCompatSubmit(){
+  const ROOT_SEL = '#quiz, #quizWrap, #pane-sub .quiz, #tab-quiz, [data-quiz-root], #pane-sub';
+  const BTN_SELS = [
+    'button[data-action="submit-quiz"]',
+    '#btnSubmit', '.btn-submit', 'button[name="submitQuiz"]', 'button#submitQuiz',
+    'button[type="submit"]', 'input[type="submit"]'
+  ];
+
+  function textIncludes(el, word){
+    return ((el.textContent || el.value || '').replace(/\s+/g,'').indexOf(word) >= 0);
+  }
+
+  function looksLikeSubmit(el){
+    const t = (el.getAttribute && (el.getAttribute('aria-label')||el.getAttribute('title'))) || '';
+    if (/交卷|提交|交作業/i.test(t)) return true;
+    if (textIncludes(el, '交卷')) return true;
+    if (/submit/i.test((el.getAttribute && el.getAttribute('name'))||'')) return true;
+    return false;
+  }
+
+  // ---------- Native first ----------
+  function callNative(){
+    const fns = ['submitQuiz','gradeQuiz','onQuizSubmit','handleSubmitQuiz','quizSubmit','finalizeQuiz','doSubmit'];
+    for (const name of fns){
+      if (typeof window[name] === 'function'){
+        try{ window[name](); return true; }catch(e){}
+      }
+    }
+    // try any form submit
+    const root = document.querySelector(ROOT_SEL) || document;
+    const form = root.querySelector('form');
+    if (form && typeof form.requestSubmit === 'function'){ try{ form.requestSubmit(); return true; }catch(e){} }
+    if (form && typeof form.submit === 'function'){ try{ form.submit(); return true; }catch(e){} }
+    // try native submit button
+    const nativeBtn = root.querySelector(BTN_SELS.join(','));
+    if (nativeBtn){ try{ nativeBtn.click(); return true; }catch(e){} }
+    return false;
+  }
+
+  // ---------- Helpers ----------
+  function norm(s){
+    return String(s||'')
+      .trim()
+      .toLowerCase()
+      .replace(/[’'"]/g,'')
+      .replace(/[_\-–—]/g,'-')
+      .replace(/\s+/g,' ')
+      .replace(/\s*-\s*/g,'-');
+  }
+  function anyMatch(answer, expectRaw){
+    if (!expectRaw) return false;
+    const ans = norm(answer);
+    const list = String(expectRaw).split(/[,|、\/;]/).map(norm).filter(Boolean);
+    return list.includes(ans);
+  }
+
+  // ---------- Fallback grading (radio/checkbox + short text) ----------
+  function gradeFallback(){
+    const root = document.querySelector(ROOT_SEL) || document;
+    let correct=0,total=0;
+
+    // Radio/checkbox grouped by name
+    const groups = {};
+    root.querySelectorAll('input[type="radio"][name], input[type="checkbox"][name]').forEach(input=>{
+      (groups[input.name] || (groups[input.name]=[])).push(input);
+    });
+    Object.values(groups).forEach(list=>{
+      total += 1;
+      const checked = list.find(i=>i.checked);
+      let expected = null, expectedInput = null;
+
+      expectedInput = list.find(i=> i.dataset.correct==='1' || i.getAttribute('aria-correct')==='true');
+      if (!expectedInput){
+        const lbls = list.map(i=>i.closest('label')).filter(Boolean);
+        const lbl = lbls.find(l=> l.classList.contains('is-correct') || l.dataset.correct==='1');
+        if (lbl) expectedInput = lbl.querySelector('input');
+      }
+      if (!expectedInput){
+        const wrap = list[0].closest('[data-answer], [data-correct]');
+        expected = wrap && (wrap.getAttribute('data-answer') || wrap.getAttribute('data-correct'));
+        if (expected) expectedInput = list.find(i=> i.value===expected);
+      }
+      if (checked && expectedInput && checked===expectedInput) correct += 1;
+    });
+
+    // Short text inputs (name or data-key identifies question)
+    const textInputs = Array.from(root.querySelectorAll('input[type="text"], input[type="search"], input[type="tel"], textarea'))
+      .filter(el => !el.disabled && !el.readOnly);
+    if (textInputs.length){
+      // de-duplicate by name (one question per name)
+      const seen = new Set();
+      textInputs.forEach(inp=>{
+        const key = inp.name || inp.id || inp.dataset.key || inp.closest('[data-key]')?.getAttribute('data-key') || '';
+        if (seen.has(key)) return; seen.add(key);
+        total += 1;
+        const user = inp.value;
+        // expected from data-*
+        let expect = inp.dataset.answer || inp.dataset.ans || inp.dataset.correct || inp.getAttribute('aria-answer');
+        if (!expect){
+          // search nearby containers
+          const wrap = inp.closest('[data-answer],[data-ans],[data-correct-answer],[data-key]');
+          if (wrap) expect = wrap.getAttribute('data-answer') || wrap.getAttribute('data-ans') || wrap.getAttribute('data-correct-answer');
+          if (!expect){
+            // look for sibling hidden input or span
+            const sib = inp.parentElement && (inp.parentElement.querySelector('input[type="hidden"][name$="answer"], [data-correct], .answer, .correct'));
+            if (sib){
+              expect = sib.getAttribute('data-correct') || (sib.value) || sib.textContent;
+            }
+          }
+        }
+        if (anyMatch(user, expect)) correct += 1;
+      });
+    }
+
+    const scorePct = Math.round((correct/Math.max(1,total))*100);
+    // write to common score area
+    const scoreEl = root.querySelector('[data-role="score"], #quizScore, .score-text, [data-score]');
+    if (scoreEl){ scoreEl.textContent = `${scorePct} / 100`; }
+    try{ if(!scoreEl) alert(`分數：${scorePct} / 100`); }catch(e){}
+    return scorePct;
+  }
+
+  // ---------- Global delegated handler ----------
+  document.addEventListener('click', function(e){
+    const btn = e.target.closest(BTN_SELS.join(',')) || (e.target && looksLikeSubmit(e.target) ? e.target : null);
+    if (!btn && !looksLikeSubmit(e.target)) return;
+    // 不強制阻止預設，避免破壞原生表單；只有在沒有 form 的情況下才阻止跳轉
+    if (btn && btn.tagName !== 'BUTTON' && !btn.closest('form')) e.preventDefault();
+    // 原生先，失敗才 fallback
+    if (!callNative()) gradeFallback();
+  }, true);
+})();
+</script>
+<!-- END Quiz Submit Ultra-Compat · V20251007-24 -->
+</body>
+</html>
+
   }
 
   async function getUserEmail(){
