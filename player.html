@@ -1,3 +1,4 @@
+<!-- Player patched V20251007-24: stronger submit handler with text-input grading -->
 <!-- Player patched V20251007-23: AirPrint/Preview grade printing added; no other changes -->\n<!-- Player patched V20251007-22: quiz submit compatibility added; no other changes -->
 <!-- Player patched V20251007-21: mobile 2-page pager injected (player(2).html style); no other changes -->
 <!-- Player patched V20251007-20: lite pager + lite badge/login + cues observer; heavy watchers removed -->
@@ -1041,20 +1042,6 @@ $$('.tabs .tab').forEach(t=>t.addEventListener('click',()=>showTab(t.dataset.tab
 </script>
 <!-- END Cues Format Protection Patch · V20251007-14 -->
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 <!-- BEGIN Lite Scripts · V20251007-20 -->
 <script>
 (function(){
@@ -1425,8 +1412,146 @@ $$('.tabs .tab').forEach(t=>t.addEventListener('click',()=>showTab(t.dataset.tab
 })();
 </script>
 <!-- END Print Score (AirPrint / Preview) · V20251007-23 -->
+
+<!-- BEGIN Quiz Submit Ultra-Compat · V20251007-24 -->
+<script>
+(function ultraCompatSubmit(){
+  const ROOT_SEL = '#quiz, #quizWrap, #pane-sub .quiz, #tab-quiz, [data-quiz-root], #pane-sub';
+  const BTN_SELS = [
+    'button[data-action="submit-quiz"]',
+    '#btnSubmit', '.btn-submit', 'button[name="submitQuiz"]', 'button#submitQuiz',
+    'button[type="submit"]', 'input[type="submit"]'
+  ];
+
+  function textIncludes(el, word){
+    return ((el.textContent || el.value || '').replace(/\s+/g,'').indexOf(word) >= 0);
+  }
+
+  function looksLikeSubmit(el){
+    const t = (el.getAttribute && (el.getAttribute('aria-label')||el.getAttribute('title'))) || '';
+    if (/交卷|提交|交作業/i.test(t)) return true;
+    if (textIncludes(el, '交卷')) return true;
+    if (/submit/i.test((el.getAttribute && el.getAttribute('name'))||'')) return true;
+    return false;
+  }
+
+  // ---------- Native first ----------
+  function callNative(){
+    const fns = ['submitQuiz','gradeQuiz','onQuizSubmit','handleSubmitQuiz','quizSubmit','finalizeQuiz','doSubmit'];
+    for (const name of fns){
+      if (typeof window[name] === 'function'){
+        try{ window[name](); return true; }catch(e){}
+      }
+    }
+    // try any form submit
+    const root = document.querySelector(ROOT_SEL) || document;
+    const form = root.querySelector('form');
+    if (form && typeof form.requestSubmit === 'function'){ try{ form.requestSubmit(); return true; }catch(e){} }
+    if (form && typeof form.submit === 'function'){ try{ form.submit(); return true; }catch(e){} }
+    // try native submit button
+    const nativeBtn = root.querySelector(BTN_SELS.join(','));
+    if (nativeBtn){ try{ nativeBtn.click(); return true; }catch(e){} }
+    return false;
+  }
+
+  // ---------- Helpers ----------
+  function norm(s){
+    return String(s||'')
+      .trim()
+      .toLowerCase()
+      .replace(/[’'"]/g,'')
+      .replace(/[_\-–—]/g,'-')
+      .replace(/\s+/g,' ')
+      .replace(/\s*-\s*/g,'-');
+  }
+  function anyMatch(answer, expectRaw){
+    if (!expectRaw) return false;
+    const ans = norm(answer);
+    const list = String(expectRaw).split(/[,|、\/;]/).map(norm).filter(Boolean);
+    return list.includes(ans);
+  }
+
+  // ---------- Fallback grading (radio/checkbox + short text) ----------
+  function gradeFallback(){
+    const root = document.querySelector(ROOT_SEL) || document;
+    let correct=0,total=0;
+
+    // Radio/checkbox grouped by name
+    const groups = {};
+    root.querySelectorAll('input[type="radio"][name], input[type="checkbox"][name]').forEach(input=>{
+      (groups[input.name] || (groups[input.name]=[])).push(input);
+    });
+    Object.values(groups).forEach(list=>{
+      total += 1;
+      const checked = list.find(i=>i.checked);
+      let expected = null, expectedInput = null;
+
+      expectedInput = list.find(i=> i.dataset.correct==='1' || i.getAttribute('aria-correct')==='true');
+      if (!expectedInput){
+        const lbls = list.map(i=>i.closest('label')).filter(Boolean);
+        const lbl = lbls.find(l=> l.classList.contains('is-correct') || l.dataset.correct==='1');
+        if (lbl) expectedInput = lbl.querySelector('input');
+      }
+      if (!expectedInput){
+        const wrap = list[0].closest('[data-answer], [data-correct]');
+        expected = wrap && (wrap.getAttribute('data-answer') || wrap.getAttribute('data-correct'));
+        if (expected) expectedInput = list.find(i=> i.value===expected);
+      }
+      if (checked && expectedInput && checked===expectedInput) correct += 1;
+    });
+
+    // Short text inputs (name or data-key identifies question)
+    const textInputs = Array.from(root.querySelectorAll('input[type="text"], input[type="search"], input[type="tel"], textarea'))
+      .filter(el => !el.disabled && !el.readOnly);
+    if (textInputs.length){
+      // de-duplicate by name (one question per name)
+      const seen = new Set();
+      textInputs.forEach(inp=>{
+        const key = inp.name || inp.id || inp.dataset.key || inp.closest('[data-key]')?.getAttribute('data-key') || '';
+        if (seen.has(key)) return; seen.add(key);
+        total += 1;
+        const user = inp.value;
+        // expected from data-*
+        let expect = inp.dataset.answer || inp.dataset.ans || inp.dataset.correct || inp.getAttribute('aria-answer');
+        if (!expect){
+          // search nearby containers
+          const wrap = inp.closest('[data-answer],[data-ans],[data-correct-answer],[data-key]');
+          if (wrap) expect = wrap.getAttribute('data-answer') || wrap.getAttribute('data-ans') || wrap.getAttribute('data-correct-answer');
+          if (!expect){
+            // look for sibling hidden input or span
+            const sib = inp.parentElement && (inp.parentElement.querySelector('input[type="hidden"][name$="answer"], [data-correct], .answer, .correct'));
+            if (sib){
+              expect = sib.getAttribute('data-correct') || (sib.value) || sib.textContent;
+            }
+          }
+        }
+        if (anyMatch(user, expect)) correct += 1;
+      });
+    }
+
+    const scorePct = Math.round((correct/Math.max(1,total))*100);
+    // write to common score area
+    const scoreEl = root.querySelector('[data-role="score"], #quizScore, .score-text, [data-score]');
+    if (scoreEl){ scoreEl.textContent = `${scorePct} / 100`; }
+    try{ if(!scoreEl) alert(`分數：${scorePct} / 100`); }catch(e){}
+    return scorePct;
+  }
+
+  // ---------- Global delegated handler ----------
+  document.addEventListener('click', function(e){
+    const btn = e.target.closest(BTN_SELS.join(',')) || (e.target && looksLikeSubmit(e.target) ? e.target : null);
+    if (!btn && !looksLikeSubmit(e.target)) return;
+    // 不強制阻止預設，避免破壞原生表單；只有在沒有 form 的情況下才阻止跳轉
+    if (btn && btn.tagName !== 'BUTTON' && !btn.closest('form')) e.preventDefault();
+    // 原生先，失敗才 fallback
+    if (!callNative()) gradeFallback();
+  }, true);
+})();
+</script>
+<!-- END Quiz Submit Ultra-Compat · V20251007-24 -->
 </body>
 </html>
+
 
 
 
