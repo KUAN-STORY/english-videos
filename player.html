@@ -1,3 +1,4 @@
+<!-- Player patched V20251007-25: mobile submit catch-all listeners (click/touchend/pointerup) -->
 <!-- Player patched V20251007-24: stronger submit handler with text-input grading -->
 <!-- Player patched V20251007-23: AirPrint/Preview grade printing added; no other changes -->\n<!-- Player patched V20251007-22: quiz submit compatibility added; no other changes -->
 <!-- Player patched V20251007-21: mobile 2-page pager injected (player(2).html style); no other changes -->
@@ -121,6 +122,14 @@
 .cues-table tbody tr:hover { background: rgba(255,255,255,.04); }
 </style>
 <!-- END Patch V20251007-11 -->
+
+
+
+
+
+
+
+
 
 <!-- BEGIN Lite Styles · V20251007-20 -->
 <style>
@@ -1034,6 +1043,20 @@ $$('.tabs .tab').forEach(t=>t.addEventListener('click',()=>showTab(t.dataset.tab
 </script>
 <!-- END Cues Format Protection Patch · V20251007-14 -->
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 <!-- BEGIN Lite Scripts · V20251007-20 -->
 <script>
 (function(){
@@ -1541,8 +1564,152 @@ $$('.tabs .tab').forEach(t=>t.addEventListener('click',()=>showTab(t.dataset.tab
 })();
 </script>
 <!-- END Quiz Submit Ultra-Compat · V20251007-24 -->
+
+<!-- BEGIN Quiz Submit Mobile Catch-All · V20251007-25 -->
+<script>
+(function submitMobileCatchAll(){
+  if (window.__QUIZ_SUBMIT_MOBILE_PATCH__) return;
+  window.__QUIZ_SUBMIT_MOBILE_PATCH__ = true;
+
+  const ROOT_SEL = '#quiz, #quizWrap, #pane-sub .quiz, #tab-quiz, [data-quiz-root], #pane-sub';
+  const BTN_SELS = [
+    'button[data-action="submit-quiz"]',
+    '#btnSubmit', '.btn-submit', 'button[name="submitQuiz"]', 'button#submitQuiz',
+    'button[type="submit"]', 'input[type="submit"]', 'a[data-action="submit-quiz"]'
+  ];
+
+  function textOf(el){
+    return ((el && (el.innerText || el.textContent || el.value)) || '').replace(/\s+/g,'');
+  }
+  function looksSubmit(el){
+    if (!el) return false;
+    if (el.matches) {
+      for (const s of BTN_SELS) { try{ if (el.matches(s)) return true; }catch(e){} }
+    }
+    const t = textOf(el);
+    if (/交卷|提交|送出/.test(t)) return true;
+    const title = (el.getAttribute && ((el.getAttribute('aria-label')||'') + (el.getAttribute('title')||''))) || '';
+    if (/交卷|提交|送出/.test(title)) return true;
+    return false;
+  }
+
+  function callNative(){
+    const fns = ['submitQuiz','gradeQuiz','onQuizSubmit','handleSubmitQuiz','quizSubmit','finalizeQuiz','doSubmit'];
+    for (const name of fns){
+      if (typeof window[name] === 'function'){
+        try{ window[name](); return true; }catch(e){}
+      }
+    }
+    // submit form if exists
+    const root = document.querySelector(ROOT_SEL) || document;
+    const form = root.querySelector('form');
+    if (form) {
+      try {
+        if (typeof form.requestSubmit === 'function') { form.requestSubmit(); return true; }
+        if (typeof form.submit === 'function') { form.submit(); return true; }
+      } catch(e){}
+    }
+    // click any native submit-looking button
+    const nativeBtn = root.querySelector(BTN_SELS.join(','));
+    if (nativeBtn) { try{ nativeBtn.click(); return true; }catch(e){} }
+    return false;
+  }
+
+  function norm(s){
+    return String(s||'').trim().toLowerCase()
+      .replace(/[’'"]/g,'').replace(/[_\-–—]/g,'-').replace(/\s+/g,' ')
+      .replace(/\s*-\s*/g,'-');
+  }
+  function anyMatch(answer, expectRaw){
+    if (!expectRaw) return false;
+    const ans = norm(answer);
+    const list = String(expectRaw).split(/[,|、\/;]/).map(norm).filter(Boolean);
+    return list.includes(ans);
+  }
+
+  function gradeFallback(){
+    const root = document.querySelector(ROOT_SEL) || document;
+    let correct=0,total=0;
+
+    // radio/checkbox
+    const groups = {};
+    root.querySelectorAll('input[type="radio"][name], input[type="checkbox"][name]').forEach(input=>{
+      (groups[input.name] || (groups[input.name]=[])).push(input);
+    });
+    Object.values(groups).forEach(list=>{
+      total += 1;
+      const checked = list.find(i=>i.checked);
+      let expectedInput = list.find(i=> i.dataset.correct==='1' || i.getAttribute('aria-correct')==='true');
+      if (!expectedInput){
+        const lbls = list.map(i=>i.closest('label')).filter(Boolean);
+        const lbl = lbls.find(l=> l.classList.contains('is-correct') || l.dataset.correct==='1');
+        if (lbl) expectedInput = lbl.querySelector('input');
+      }
+      if (!expectedInput){
+        const wrap = list[0].closest('[data-answer], [data-correct]');
+        const expected = wrap && (wrap.getAttribute('data-answer') || wrap.getAttribute('data-correct'));
+        if (expected) expectedInput = list.find(i=> i.value === expected);
+      }
+      if (checked && expectedInput && checked===expectedInput) correct += 1;
+    });
+
+    // text inputs
+    const textInputs = Array.from(root.querySelectorAll('input[type="text"], input[type="search"], input[type="tel"], textarea'))
+      .filter(el => !el.disabled && !el.readOnly);
+    const seen = new Set();
+    textInputs.forEach(inp=>{
+      const key = inp.name || inp.id || inp.dataset.key || inp.closest('[data-key]')?.getAttribute('data-key') || '';
+      if (seen.has(key)) return; seen.add(key);
+      total += 1;
+      const user = inp.value;
+      let expect = inp.dataset.answer || inp.dataset.ans || inp.dataset.correct || inp.getAttribute('aria-answer');
+      if (!expect){
+        const wrap = inp.closest('[data-answer],[data-ans],[data-correct-answer],[data-key]');
+        if (wrap) expect = wrap.getAttribute('data-answer') || wrap.getAttribute('data-ans') || wrap.getAttribute('data-correct-answer');
+        if (!expect){
+          const sib = inp.parentElement && (inp.parentElement.querySelector('input[type="hidden"][name$="answer"], [data-correct], .answer, .correct'));
+          if (sib) expect = sib.getAttribute('data-correct') || (sib.value) || sib.textContent;
+        }
+      }
+      if (anyMatch(user, expect)) correct += 1;
+    });
+
+    const scorePct = Math.round((correct/Math.max(1,total))*100);
+    const scoreEl = root.querySelector('[data-role="score"], #quizScore, .score-text, [data-score]');
+    if (scoreEl) scoreEl.textContent = `${scorePct} / 100`;
+    try{ if(!scoreEl) alert(`分數：${scorePct} / 100`); }catch(e){}
+    return scorePct;
+  }
+
+  let submitting = false;
+  function handleSubmitEvent(e){
+    // inspect entire composed path for any "交卷" element
+    const path = (e.composedPath && e.composedPath()) || [];
+    let target = null;
+    for (const el of [e.target, ...path]) {
+      if (el && el.nodeType === 1 && looksSubmit(el)) { target = el; break; }
+    }
+    if (!target) return;
+    if (submitting) return;
+    submitting = true;
+    // 若沒有 form，再阻止預設；避免 hash 跳轉
+    if (!target.closest('form')) { try{ e.preventDefault(); }catch(_){} }
+    setTimeout(()=>{ submitting=false; }, 400);
+
+    // 先原生，再備援
+    if (!callNative()) gradeFallback();
+  }
+
+  // iOS 某些框架只觸發 touchend/pointerup，不觸發 click，所以三種都綁
+  ['click','touchend','pointerup'].forEach(ev => {
+    document.addEventListener(ev, handleSubmitEvent, true);
+  });
+})();
+</script>
+<!-- END Quiz Submit Mobile Catch-All · V20251007-25 -->
 </body>
 </html>
+
 
 
 
