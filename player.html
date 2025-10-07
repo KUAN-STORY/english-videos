@@ -1,3 +1,4 @@
+<!-- Player patched V20251007-12: cues vertical stack + Supabase protection; no other changes -->
 !doctype html>
 <html lang="zh-Hant">
 <head>
@@ -91,6 +92,24 @@
 @media print { #authVersionBadge { display:none !important; } }
 </style>
 
+
+<!-- BEGIN Patch V20251007-11 (rebuilt): cues English/Chinese vertical stack -->
+<style>
+.cues-table { width: 100%; border-collapse: collapse; table-layout: fixed; }
+.cues-table th, .cues-table td { padding: 10px 12px; vertical-align: top; }
+.cue-time {
+  width: 64px; min-width: 64px;
+  color: rgba(255,255,255,.7);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  white-space: nowrap;
+}
+.cue-en { line-height: 1.6; word-break: break-word; }
+.cue-en .zh-line { margin-top: 6px; opacity: .9; }
+.cue-zh { display: none !important; }
+.cues-table tbody tr { border-top: 1px solid rgba(255,255,255,.06); }
+.cues-table tbody tr:hover { background: rgba(255,255,255,.04); }
+</style>
+<!-- END Patch V20251007-11 -->
 </head>
 <body>
 
@@ -715,6 +734,86 @@ $$('.tabs .tab').forEach(t=>t.addEventListener('click',()=>showTab(t.dataset.tab
 </script>
 <!-- /Supabase Gate · V20251007-10 -->
 
+
+<!-- BEGIN Patch V20251007-11 (rebuilt): cues English/Chinese vertical stack -->
+<script>
+(function stackBilingualUnderEnglish() {
+  try {
+    const table = document.querySelector('.cues-table')
+               || document.querySelector('#cuesTable')
+               || document.querySelector('table.cues');
+    if (!table) return;
+    const tbody = table.tBodies && table.tBodies[0];
+    if (!tbody) return;
+    const rows = Array.from(tbody.rows);
+    rows.forEach(tr => {
+      const tdTime = tr.querySelector('.cue-time') || tr.cells[0];
+      const tdEn   = tr.querySelector('.cue-en')   || tr.cells[1];
+      const tdZh   = tr.querySelector('.cue-zh')   || tr.cells[2];
+      if (!tdEn || !tdZh) return;
+      const zhHTML = (tdZh.innerHTML || '').trim();
+      if (zhHTML && !tdEn.querySelector('.zh-line')) {
+        const zhDiv = document.createElement('div');
+        zhDiv.className = 'zh-line';
+        zhDiv.innerHTML = zhHTML;
+        tdEn.appendChild(zhDiv);
+      }
+      tdZh.style.display = 'none';
+      if (tdTime) tdTime.classList.add('cue-time');
+      tdEn.classList.add('cue-en');
+      tdZh.classList.add('cue-zh');
+    });
+    const zhHeader = table.tHead ? (table.tHead.querySelector('.cue-zh') || (table.tHead.rows[0] && table.tHead.rows[0].cells[2])) : null;
+    if (zhHeader) zhHeader.style.display = 'none';
+  } catch (e) {
+    console && console.warn && console.warn('[Patch V20251007-11] stackBilingualUnderEnglish error:', e);
+  }
+})();
+</script>
+<!-- END Patch V20251007-11 -->
+
+<!-- BEGIN Supabase Protection Patch · V20251007-12 -->
+<script>
+(function protectSupabaseBlocks(){
+  const SAFE_KEY = "SUPABASE_PLAYER_PROTECTED_V1";
+  if (window[SAFE_KEY]) return;
+  window[SAFE_KEY] = true;
+  const backupKey = "supabase_player_backup_v1";
+  function findBlocks(){
+    const scripts = Array.from(document.scripts);
+    return scripts.filter(s => /createClient\s*\(|Supabase Gate/i.test(s.textContent))
+                  .map(s => s.outerHTML);
+  }
+  function saveBackup(){
+    try{
+      const blocks = findBlocks();
+      if(blocks.length){
+        localStorage.setItem(backupKey, JSON.stringify(blocks));
+        console.info("[SupabaseProtect] 已備份 Supabase 程式區塊。");
+      }
+    }catch(e){}
+  }
+  function restoreIfMissing(){
+    try{
+      const exists = Array.from(document.scripts).some(s => /createClient\s*\(/.test(s.textContent));
+      if(!exists){
+        const backup = localStorage.getItem(backupKey);
+        if(backup){
+          const arr = JSON.parse(backup);
+          arr.forEach(html=>{
+            const frag = document.createRange().createContextualFragment(html);
+            document.body.appendChild(frag);
+          });
+          console.warn("[SupabaseProtect] 已自動恢復 Supabase 程式。");
+        }
+      }
+    }catch(e){}
+  }
+  document.addEventListener("DOMContentLoaded", saveBackup);
+  setInterval(restoreIfMissing, 60000);
+})();
+</script>
+<!-- END Supabase Protection Patch · V20251007-12 -->
 </body>
 </html>
 
