@@ -1,3 +1,4 @@
+<!-- Player patched V20251007-26: bridge quiz buttons to reveal print & add AirPrint hook -->
 <!-- Player patched V20251007-25: mobile submit catch-all listeners (click/touchend/pointerup) -->
 <!-- Player patched V20251007-24: stronger submit handler with text-input grading -->
 <!-- Player patched V20251007-23: AirPrint/Preview grade printing added; no other changes -->\n<!-- Player patched V20251007-22: quiz submit compatibility added; no other changes -->
@@ -1707,7 +1708,38 @@ $$('.tabs .tab').forEach(t=>t.addEventListener('click',()=>showTab(t.dataset.tab
 })();
 </script>
 <!-- END Quiz Submit Mobile Catch-All · V20251007-25 -->
-</body>
+<!-- BEGIN Quiz Buttons Bridge · V20251007-26 -->
+
+<script>
+(function quizButtonsBridge(){{
+  const SUBMIT_SELS = '#btnSubmitQuiz, button[data-action="submit-quiz"], #btnSubmit, .btn-submit, button[name="submitQuiz"], button#submitQuiz';
+  const PRINT_SELS  = '#btnPrintQuiz, #btnPrintScore, .btn-print-score, button[name="printScore"]';
+
+  function showAfterSubmit(){{
+    const printBtn = document.querySelector(PRINT_SELS);
+    const showBtn  = document.querySelector('#btnShowAnswer, [data-action="show-answers"]');
+    if (printBtn) printBtn.style.display = 'inline-block';
+    if (showBtn)  showBtn.style.display  = 'inline-block';
+  }}
+
+  // 1) 點交卷後，保險地把列印/顯示答案露出（不影響原邏輯）
+  document.addEventListener('click', (e)=>{{
+    const btn = e.target.closest(SUBMIT_SELS);
+    if (!btn) return;
+    // 等原生處理完再顯示
+    setTimeout(showAfterSubmit, 60);
+  }}, true);
+
+  // 2) 支援 AirPrint/預覽：把 #btnPrintQuiz 也導到 window.print()
+  document.addEventListener('click', (e)=>{{
+    const btn = e.target.closest('#btnPrintQuiz');
+    if (!btn) return;
+    try {{ e.preventDefault(); window.print(); }} catch(_) {{}}
+  }}, true);
+}})();
+</script>
+
+<!-- END Quiz Buttons Bridge · V20251007-26 --></body>
 </html>
 
 
