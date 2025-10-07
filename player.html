@@ -1,3 +1,4 @@
+<!-- Player patched V20251007-17: badge unify, login hide, stronger mobile pager; no other changes -->
 <!-- Player patched V20251007-16: hide login, dynamic build tag, portrait pager fix; no other changes -->
 <!-- Player patched V20251007-15: mobile horizontal pager added; no other changes -->
 <!-- Player patched V20251007-14: cues format protection added; no other changes -->
@@ -155,6 +156,13 @@
   /* #btnLogout { display:none !important; } */
 </style>
 <!-- END Hide Login on Player · V20251007-16 -->
+
+<!-- BEGIN Quick CSS Fixes · V20251007-17 -->
+<style>
+  #btnLogin { display:none !important; }
+  .version-pill, .build-badge { z-index: 9998; }
+</style>
+<!-- END Quick CSS Fixes · V20251007-17 -->
 </head>
 <body>
 
@@ -1192,7 +1200,131 @@ $$('.tabs .tab').forEach(t=>t.addEventListener('click',()=>showTab(t.dataset.tab
 })();
 </script>
 <!-- END Mobile Pager Portrait Fix · V20251007-16 -->
-</body>
+<!-- BEGIN Unified Badge + Login Hide + Pager Boost · V20251007-17 -->
+
+<script>
+(function unifiedFixes(){{
+  const VERSION="V20251007-17";
+  const params = new URLSearchParams(location.search);
+
+  function hideLoginButtons(){{
+    const byId = document.getElementById('btnLogin');
+    if(byId) byId.style.display='none';
+    const all = Array.from(document.querySelectorAll('a,button'));
+    all.forEach(el=>{{
+      const t=(el.textContent||'').trim();
+      if(t==='登入') el.style.display='none';
+    }});
+  }}
+
+  function unifyVersionBadges(){{
+    if(params.get('noBadge')==='1'){{
+      document.querySelectorAll('*').forEach(el=>{{
+        if(/^V\d{{8}}-\d{{2}}$/.test((el.textContent||'').trim())) el.style.display='none';
+      }});
+      return;
+    }}
+    const candidates = Array.from(document.querySelectorAll('div,span,button,a')).filter(el=>/^V\d{{8}}-\d{{2}}$/.test((el.textContent||'').trim()));
+    let kept = null;
+    candidates.forEach((el,idx)=>{{
+      if(!kept){{ kept = el; }}
+      el.textContent = VERSION;
+      if(idx>0) el.style.display='none';
+      if(!el.id) el.id = 'buildTag';
+      if(getComputedStyle(el).position==='static'){{ el.style.position='fixed'; el.style.top='8px'; el.style.right='8px'; }}
+      el.style.zIndex = 9999;
+      el.style.padding = '6px 10px';
+      el.style.borderRadius = '999px';
+      el.style.background = 'rgba(255,255,255,.92)';
+      el.style.color = '#111';
+      el.style.border = '1px solid rgba(0,0,0,.2)';
+      el.style.boxShadow = '0 2px 8px rgba(0,0,0,.1)';
+      el.setAttribute('data-build-tag','1');
+    }});
+    if(!candidates.length){{
+      const badge=document.createElement('div');
+      badge.id='buildTag'; badge.setAttribute('data-build-tag','1'); badge.textContent=VERSION;
+      Object.assign(badge.style,{{position:'fixed',top:'8px',right:'8px',zIndex:9999,padding:'6px 10px',borderRadius:'999px',background:'rgba(255,255,255,.92)',color:'#111',border:'1px solid rgba(0,0,0,.2)',boxShadow:'0 2px 8px rgba(0,0,0,.1)'}});
+      document.body.appendChild(badge);
+    }}
+  }}
+
+  function enablePagerStrongly(){{
+    const force = params.get('pager')==='1' || params.get('mobilePager')==='1';
+    const isPortrait = () => window.innerHeight > window.innerWidth;
+    const narrow = () => window.matchMedia('(max-width: 1024px)').matches;
+    const mobileLike = () => ('ontouchstart' in window) || navigator.maxTouchPoints>0 || narrow();
+    function nudge(){{ try{{ window.dispatchEvent(new Event('resize')); }}catch(e){{}} }}
+
+    function ensure(){{
+      if(!(mobileLike() && (isPortrait() || force))) return;
+      if(document.getElementById('mobilePager')) return;
+
+      function bySel(list){{ for(const s of list){{ const el=document.querySelector(s); if(el) return el; }} return null; }}
+      let left = bySel(['#pane-video','#player-left','.left-pane','#videoPane','#videoCol','main video']) || document.querySelector('video');
+      if(left && left.tagName==='VIDEO') left = left.closest('section,div,article') || left.parentElement;
+
+      let right = bySel(['#pane-sub','#panel-sub','.right-pane','#tabsWrap','#subPane']);
+      if(!right){{
+        const candidates = Array.from(document.querySelectorAll('section,div,aside'));
+        right = candidates.find(el=>/字幕|測驗|單字/.test((el.textContent||'')));
+      }}
+      if(!left || !right) return;
+
+      const phL=document.createElement('div'); phL.hidden=true; left.parentElement && left.parentElement.insertBefore(phL,left);
+      const phR=document.createElement('div'); phR.hidden=true; right.parentElement && right.parentElement.insertBefore(phR,right);
+
+      const tabs = document.createElement('div');
+      tabs.className='mobile-tabs';
+      tabs.innerHTML = '<button class="tab on" data-i="0">影片</button><button class="tab" data-i="1">字幕／測驗</button>';
+
+      const pager=document.createElement('div'); pager.id='mobilePager';
+      const pL=document.createElement('section'); pL.className='mobile-page page-left';
+      const pR=document.createElement('section'); pR.className='mobile-page page-right';
+      pL.appendChild(left); pR.appendChild(right);
+      pager.appendChild(pL); pager.appendChild(pR);
+
+      const root = (phL.parentElement) || document.querySelector('main') || document.body;
+      root.insertBefore(tabs, phL);
+      root.insertBefore(pager, phL);
+
+      function fit(){{
+        const h = Math.max(320, (window.innerHeight||document.documentElement.clientHeight) - tabs.offsetHeight - 8);
+        pager.style.height = h + 'px';
+      }}
+      window.addEventListener('resize', fit, {{passive:true}}); fit();
+
+      tabs.addEventListener('click', (e)=>{{
+        const b=e.target.closest('.tab'); if(!b) return;
+        const i=Number(b.dataset.i||0);
+        pager.scrollTo({{left:i*pager.clientWidth, behavior:'smooth'}});
+        tabs.querySelectorAll('.tab').forEach((t,idx)=> t.classList.toggle('on', idx===i));
+      }});
+
+      pager.addEventListener('scroll', ()=>{{
+        const i = Math.round(pager.scrollLeft / Math.max(1, pager.clientWidth));
+        tabs.querySelectorAll('.tab').forEach((t,idx)=> t.classList.toggle('on', idx===i));
+      }}, {{passive:true}});
+
+      document.body.classList.add('is-mobile-pager');
+    }}
+
+    ensure();
+    ['orientationchange','resize','DOMContentLoaded','load'].forEach(ev=> addEventListener(ev, ensure, {{passive:true}}));
+    setTimeout(nudge, 120); setTimeout(nudge, 360); setTimeout(nudge, 800);
+  }}
+
+  function init(){{
+    hideLoginButtons();
+    unifyVersionBadges();
+    enablePagerStrongly();
+  }}
+  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded', init);
+  else init();
+}})();
+</script>
+
+<!-- END Unified Badge + Login Hide + Pager Boost · V20251007-17 --></body>
 </html>
 
 
