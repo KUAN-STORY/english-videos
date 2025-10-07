@@ -1,3 +1,4 @@
+<!-- Player patched V20251007-18: resize recursion guard + UI enforcement; no other changes -->
 <!-- Player patched V20251007-17: badge unify, login hide, stronger mobile pager; no other changes -->
 <!-- Player patched V20251007-16: hide login, dynamic build tag, portrait pager fix; no other changes -->
 <!-- Player patched V20251007-15: mobile horizontal pager added; no other changes -->
@@ -1324,7 +1325,76 @@ $$('.tabs .tab').forEach(t=>t.addEventListener('click',()=>showTab(t.dataset.tab
 }})();
 </script>
 
-<!-- END Unified Badge + Login Hide + Pager Boost · V20251007-17 --></body>
+<!-- END Unified Badge + Login Hide + Pager Boost · V20251007-17 -->
+<!-- BEGIN Resize Recursion Guard · V20251007-18 -->
+<script>
+(function preventResizeRecursion(){
+  const KEY='RESIZE_RECURSION_GUARD_V1';
+  if(window[KEY]) return; window[KEY]=true;
+  const _dispatch = window.dispatchEvent;
+  let inResize = false;
+  window.dispatchEvent = function(ev){
+    try{
+      if(ev && ev.type === 'resize'){
+        if(inResize) return true; // swallow nested resize to avoid sync recursion
+        inResize = true;
+        const r = _dispatch.call(this, ev);
+        setTimeout(()=>{ inResize = false; }, 0);
+        return r;
+      }
+      return _dispatch.call(this, ev);
+    }catch(e){
+      try{ return _dispatch.call(this, ev); }catch(_){ return false; }
+    }
+  };
+})();
+</script>
+<!-- END Resize Recursion Guard · V20251007-18 -->
+
+
+<!-- BEGIN Enforce Login-Hide & Single Badge · V20251007-18 -->
+<script>
+(function enforceUiTidiness(){
+  const VER="V20251007-18";
+  function hideLoginButtons(){
+    // hide by id
+    const idEl = document.getElementById('btnLogin'); if(idEl) idEl.style.display='none';
+    // hide by text
+    Array.from(document.querySelectorAll('a,button')).forEach(el=>{
+      const t=(el.textContent||'').trim();
+      if(t==='登入') el.style.display='none';
+    });
+  }
+  function unifyBadge(){
+    const nodes = Array.from(document.querySelectorAll('div,span,button,a'));
+    const pillRe = /^V\d{8}-\d{2}$/;
+    let first=null;
+    nodes.forEach(el=>{
+      const t=(el.textContent||'').trim();
+      if(!pillRe.test(t)) return;
+      el.textContent = VER;
+      if(!first) first = el; else el.style.display='none';
+      // style
+      if(!el.id) el.id='buildTag';
+      if(getComputedStyle(el).position==='static'){ el.style.position='fixed'; el.style.top='8px'; el.style.right='8px'; }
+      el.style.zIndex=9999; el.style.padding='6px 10px'; el.style.borderRadius='999px';
+      el.style.background='rgba(255,255,255,.92)'; el.style.color='#111'; el.style.border='1px solid rgba(0,0,0,.2)'; el.style.boxShadow='0 2px 8px rgba(0,0,0,.1)';
+      el.setAttribute('data-build-tag','1');
+    });
+    if(!first){ // create if none
+      const b=document.createElement('div'); b.id='buildTag'; b.textContent=VER; b.setAttribute('data-build-tag','1');
+      Object.assign(b.style,{position:'fixed',top:'8px',right:'8px',zIndex:9999,padding:'6px 10px',borderRadius:'999px',background:'rgba(255,255,255,.92)',color:'#111',border:'1px solid rgba(0,0,0,.2)',boxShadow:'0 2px 8px rgba(0,0,0,.1)'});
+      document.body.appendChild(b);
+    }
+  }
+  const mo = new MutationObserver(()=>{ hideLoginButtons(); unifyBadge(); });
+  mo.observe(document.documentElement, {subtree:true, childList:true});
+  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded', ()=>{ hideLoginButtons(); unifyBadge(); });
+  else { hideLoginButtons(); unifyBadge(); }
+})();
+</script>
+<!-- END Enforce Login-Hide & Single Badge · V20251007-18 -->
+</body>
 </html>
 
 
