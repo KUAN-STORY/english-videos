@@ -1,3 +1,4 @@
+<!-- Player patched V20251007-27: cleaned submit handler (explicit selectors only, no alerts) -->
 <!-- Player patched V20251007-26: bridge quiz buttons to reveal print & add AirPrint hook -->
 <!-- Player patched V20251007-25: mobile submit catch-all listeners (click/touchend/pointerup) -->
 <!-- Player patched V20251007-24: stronger submit handler with text-input grading -->
@@ -1231,81 +1232,7 @@ $$('.tabs .tab').forEach(t=>t.addEventListener('click',()=>showTab(t.dataset.tab
 </script>
 <!-- END Mobile 2-Page Pager · V20251007-21 -->
 
-<!-- BEGIN Quiz Submit Compatibility · V20251007-22 -->
-<script>
-(function ensureQuizSubmitWorks(){
-  const ROOT_SEL = '#quiz, #quizWrap, #pane-sub .quiz, #tab-quiz, [data-quiz-root]';
 
-  function callNative(){
-    // try common global functions
-    const fns = ['submitQuiz','gradeQuiz','onQuizSubmit','handleSubmitQuiz','quizSubmit'];
-    for (const name of fns){
-      if (typeof window[name] === 'function'){
-        try{ window[name](); return true; } catch(e){ /* ignore and fallback */ }
-      }
-    }
-    // try trigger an existing submit button programmatically
-    const root = document.querySelector(ROOT_SEL) || document;
-    const nativeBtn = root.querySelector('button[type="submit"], form button[type="submit"]');
-    if (nativeBtn){
-      try{
-        nativeBtn.click();
-        return true;
-      }catch(e){}
-    }
-    return false;
-  }
-
-  function gradeFallback(){
-    const root = document.querySelector(ROOT_SEL) || document;
-    const groups = {};
-    root.querySelectorAll('input[type="radio"][name], input[type="checkbox"][name]').forEach(input=>{
-      if (!groups[input.name]) groups[input.name] = [];
-      groups[input.name].push(input);
-    });
-    let correct=0,total=0;
-    Object.values(groups).forEach(list=>{
-      if (!list.length) return;
-      total += 1;
-      const checked = list.find(i=>i.checked);
-      // heuristics to find the correct option
-      let expectedValue = null, expectedInput = null;
-      // prefer data-correct marker
-      expectedInput = list.find(i=>i.dataset.correct === '1' || i.getAttribute('aria-correct') === 'true');
-      if (!expectedInput){
-        const container = list[0].closest('[data-answer], [data-correct]');
-        expectedValue = container && (container.getAttribute('data-answer') || container.getAttribute('data-correct'));
-      }
-      if (!expectedInput && expectedValue){
-        expectedInput = list.find(i=>i.value === expectedValue);
-      }
-      if (!expectedInput){
-        // last resort: look for label with .is-correct or [data-correct]
-        const labels = list.map(i=>i.closest('label')).filter(Boolean);
-        const lbl = labels.find(l=>l.classList.contains('is-correct') || l.dataset.correct === '1');
-        if (lbl){ expectedInput = lbl.querySelector('input'); }
-      }
-      if (checked && expectedInput && checked === expectedInput) correct += 1;
-    });
-    const scorePct = Math.round((correct/Math.max(1,total))*100);
-    // write to a visible score area if present
-    const scoreEl = root.querySelector('[data-role="score"], #quizScore, .score-text');
-    if (scoreEl){ scoreEl.textContent = `${scorePct} / 100`; }
-    // show an alert fallback so user有回饋
-    try{ if(!scoreEl) alert(`分數：${scorePct} / 100`); }catch(e){}
-    return scorePct;
-  }
-
-  document.addEventListener('click', function(e){
-    const btn = e.target.closest('button[data-action="submit-quiz"], #btnSubmit, .btn-submit, button[name="submitQuiz"], button#submitQuiz');
-    if (!btn) return;
-    e.preventDefault();
-    // call native if exists, else fallback grading
-    if (!callNative()) gradeFallback();
-  }, true);
-})();
-</script>
-<!-- END Quiz Submit Compatibility · V20251007-22 -->
 
 <!-- BEGIN Print Score (AirPrint / Preview) · V20251007-23 -->
 <script>
@@ -1429,285 +1356,9 @@ $$('.tabs .tab').forEach(t=>t.addEventListener('click',()=>showTab(t.dataset.tab
 </script>
 <!-- END Print Score (AirPrint / Preview) · V20251007-23 -->
 
-<!-- BEGIN Quiz Submit Ultra-Compat · V20251007-24 -->
-<script>
-(function ultraCompatSubmit(){
-  const ROOT_SEL = '#quiz, #quizWrap, #pane-sub .quiz, #tab-quiz, [data-quiz-root], #pane-sub';
-  const BTN_SELS = [
-    'button[data-action="submit-quiz"]',
-    '#btnSubmit', '.btn-submit', 'button[name="submitQuiz"]', 'button#submitQuiz',
-    'button[type="submit"]', 'input[type="submit"]'
-  ];
 
-  function textIncludes(el, word){
-    return ((el.textContent || el.value || '').replace(/\s+/g,'').indexOf(word) >= 0);
-  }
 
-  function looksLikeSubmit(el){
-    const t = (el.getAttribute && (el.getAttribute('aria-label')||el.getAttribute('title'))) || '';
-    if (/交卷|提交|交作業/i.test(t)) return true;
-    if (textIncludes(el, '交卷')) return true;
-    if (/submit/i.test((el.getAttribute && el.getAttribute('name'))||'')) return true;
-    return false;
-  }
 
-  // ---------- Native first ----------
-  function callNative(){
-    const fns = ['submitQuiz','gradeQuiz','onQuizSubmit','handleSubmitQuiz','quizSubmit','finalizeQuiz','doSubmit'];
-    for (const name of fns){
-      if (typeof window[name] === 'function'){
-        try{ window[name](); return true; }catch(e){}
-      }
-    }
-    // try any form submit
-    const root = document.querySelector(ROOT_SEL) || document;
-    const form = root.querySelector('form');
-    if (form && typeof form.requestSubmit === 'function'){ try{ form.requestSubmit(); return true; }catch(e){} }
-    if (form && typeof form.submit === 'function'){ try{ form.submit(); return true; }catch(e){} }
-    // try native submit button
-    const nativeBtn = root.querySelector(BTN_SELS.join(','));
-    if (nativeBtn){ try{ nativeBtn.click(); return true; }catch(e){} }
-    return false;
-  }
-
-  // ---------- Helpers ----------
-  function norm(s){
-    return String(s||'')
-      .trim()
-      .toLowerCase()
-      .replace(/[’'"]/g,'')
-      .replace(/[_\-–—]/g,'-')
-      .replace(/\s+/g,' ')
-      .replace(/\s*-\s*/g,'-');
-  }
-  function anyMatch(answer, expectRaw){
-    if (!expectRaw) return false;
-    const ans = norm(answer);
-    const list = String(expectRaw).split(/[,|、\/;]/).map(norm).filter(Boolean);
-    return list.includes(ans);
-  }
-
-  // ---------- Fallback grading (radio/checkbox + short text) ----------
-  function gradeFallback(){
-    const root = document.querySelector(ROOT_SEL) || document;
-    let correct=0,total=0;
-
-    // Radio/checkbox grouped by name
-    const groups = {};
-    root.querySelectorAll('input[type="radio"][name], input[type="checkbox"][name]').forEach(input=>{
-      (groups[input.name] || (groups[input.name]=[])).push(input);
-    });
-    Object.values(groups).forEach(list=>{
-      total += 1;
-      const checked = list.find(i=>i.checked);
-      let expected = null, expectedInput = null;
-
-      expectedInput = list.find(i=> i.dataset.correct==='1' || i.getAttribute('aria-correct')==='true');
-      if (!expectedInput){
-        const lbls = list.map(i=>i.closest('label')).filter(Boolean);
-        const lbl = lbls.find(l=> l.classList.contains('is-correct') || l.dataset.correct==='1');
-        if (lbl) expectedInput = lbl.querySelector('input');
-      }
-      if (!expectedInput){
-        const wrap = list[0].closest('[data-answer], [data-correct]');
-        expected = wrap && (wrap.getAttribute('data-answer') || wrap.getAttribute('data-correct'));
-        if (expected) expectedInput = list.find(i=> i.value===expected);
-      }
-      if (checked && expectedInput && checked===expectedInput) correct += 1;
-    });
-
-    // Short text inputs (name or data-key identifies question)
-    const textInputs = Array.from(root.querySelectorAll('input[type="text"], input[type="search"], input[type="tel"], textarea'))
-      .filter(el => !el.disabled && !el.readOnly);
-    if (textInputs.length){
-      // de-duplicate by name (one question per name)
-      const seen = new Set();
-      textInputs.forEach(inp=>{
-        const key = inp.name || inp.id || inp.dataset.key || inp.closest('[data-key]')?.getAttribute('data-key') || '';
-        if (seen.has(key)) return; seen.add(key);
-        total += 1;
-        const user = inp.value;
-        // expected from data-*
-        let expect = inp.dataset.answer || inp.dataset.ans || inp.dataset.correct || inp.getAttribute('aria-answer');
-        if (!expect){
-          // search nearby containers
-          const wrap = inp.closest('[data-answer],[data-ans],[data-correct-answer],[data-key]');
-          if (wrap) expect = wrap.getAttribute('data-answer') || wrap.getAttribute('data-ans') || wrap.getAttribute('data-correct-answer');
-          if (!expect){
-            // look for sibling hidden input or span
-            const sib = inp.parentElement && (inp.parentElement.querySelector('input[type="hidden"][name$="answer"], [data-correct], .answer, .correct'));
-            if (sib){
-              expect = sib.getAttribute('data-correct') || (sib.value) || sib.textContent;
-            }
-          }
-        }
-        if (anyMatch(user, expect)) correct += 1;
-      });
-    }
-
-    const scorePct = Math.round((correct/Math.max(1,total))*100);
-    // write to common score area
-    const scoreEl = root.querySelector('[data-role="score"], #quizScore, .score-text, [data-score]');
-    if (scoreEl){ scoreEl.textContent = `${scorePct} / 100`; }
-    try{ if(!scoreEl) alert(`分數：${scorePct} / 100`); }catch(e){}
-    return scorePct;
-  }
-
-  // ---------- Global delegated handler ----------
-  document.addEventListener('click', function(e){
-    const btn = e.target.closest(BTN_SELS.join(',')) || (e.target && looksLikeSubmit(e.target) ? e.target : null);
-    if (!btn && !looksLikeSubmit(e.target)) return;
-    // 不強制阻止預設，避免破壞原生表單；只有在沒有 form 的情況下才阻止跳轉
-    if (btn && btn.tagName !== 'BUTTON' && !btn.closest('form')) e.preventDefault();
-    // 原生先，失敗才 fallback
-    if (!callNative()) gradeFallback();
-  }, true);
-})();
-</script>
-<!-- END Quiz Submit Ultra-Compat · V20251007-24 -->
-
-<!-- BEGIN Quiz Submit Mobile Catch-All · V20251007-25 -->
-<script>
-(function submitMobileCatchAll(){
-  if (window.__QUIZ_SUBMIT_MOBILE_PATCH__) return;
-  window.__QUIZ_SUBMIT_MOBILE_PATCH__ = true;
-
-  const ROOT_SEL = '#quiz, #quizWrap, #pane-sub .quiz, #tab-quiz, [data-quiz-root], #pane-sub';
-  const BTN_SELS = [
-    'button[data-action="submit-quiz"]',
-    '#btnSubmit', '.btn-submit', 'button[name="submitQuiz"]', 'button#submitQuiz',
-    'button[type="submit"]', 'input[type="submit"]', 'a[data-action="submit-quiz"]'
-  ];
-
-  function textOf(el){
-    return ((el && (el.innerText || el.textContent || el.value)) || '').replace(/\s+/g,'');
-  }
-  function looksSubmit(el){
-    if (!el) return false;
-    if (el.matches) {
-      for (const s of BTN_SELS) { try{ if (el.matches(s)) return true; }catch(e){} }
-    }
-    const t = textOf(el);
-    if (/交卷|提交|送出/.test(t)) return true;
-    const title = (el.getAttribute && ((el.getAttribute('aria-label')||'') + (el.getAttribute('title')||''))) || '';
-    if (/交卷|提交|送出/.test(title)) return true;
-    return false;
-  }
-
-  function callNative(){
-    const fns = ['submitQuiz','gradeQuiz','onQuizSubmit','handleSubmitQuiz','quizSubmit','finalizeQuiz','doSubmit'];
-    for (const name of fns){
-      if (typeof window[name] === 'function'){
-        try{ window[name](); return true; }catch(e){}
-      }
-    }
-    // submit form if exists
-    const root = document.querySelector(ROOT_SEL) || document;
-    const form = root.querySelector('form');
-    if (form) {
-      try {
-        if (typeof form.requestSubmit === 'function') { form.requestSubmit(); return true; }
-        if (typeof form.submit === 'function') { form.submit(); return true; }
-      } catch(e){}
-    }
-    // click any native submit-looking button
-    const nativeBtn = root.querySelector(BTN_SELS.join(','));
-    if (nativeBtn) { try{ nativeBtn.click(); return true; }catch(e){} }
-    return false;
-  }
-
-  function norm(s){
-    return String(s||'').trim().toLowerCase()
-      .replace(/[’'"]/g,'').replace(/[_\-–—]/g,'-').replace(/\s+/g,' ')
-      .replace(/\s*-\s*/g,'-');
-  }
-  function anyMatch(answer, expectRaw){
-    if (!expectRaw) return false;
-    const ans = norm(answer);
-    const list = String(expectRaw).split(/[,|、\/;]/).map(norm).filter(Boolean);
-    return list.includes(ans);
-  }
-
-  function gradeFallback(){
-    const root = document.querySelector(ROOT_SEL) || document;
-    let correct=0,total=0;
-
-    // radio/checkbox
-    const groups = {};
-    root.querySelectorAll('input[type="radio"][name], input[type="checkbox"][name]').forEach(input=>{
-      (groups[input.name] || (groups[input.name]=[])).push(input);
-    });
-    Object.values(groups).forEach(list=>{
-      total += 1;
-      const checked = list.find(i=>i.checked);
-      let expectedInput = list.find(i=> i.dataset.correct==='1' || i.getAttribute('aria-correct')==='true');
-      if (!expectedInput){
-        const lbls = list.map(i=>i.closest('label')).filter(Boolean);
-        const lbl = lbls.find(l=> l.classList.contains('is-correct') || l.dataset.correct==='1');
-        if (lbl) expectedInput = lbl.querySelector('input');
-      }
-      if (!expectedInput){
-        const wrap = list[0].closest('[data-answer], [data-correct]');
-        const expected = wrap && (wrap.getAttribute('data-answer') || wrap.getAttribute('data-correct'));
-        if (expected) expectedInput = list.find(i=> i.value === expected);
-      }
-      if (checked && expectedInput && checked===expectedInput) correct += 1;
-    });
-
-    // text inputs
-    const textInputs = Array.from(root.querySelectorAll('input[type="text"], input[type="search"], input[type="tel"], textarea'))
-      .filter(el => !el.disabled && !el.readOnly);
-    const seen = new Set();
-    textInputs.forEach(inp=>{
-      const key = inp.name || inp.id || inp.dataset.key || inp.closest('[data-key]')?.getAttribute('data-key') || '';
-      if (seen.has(key)) return; seen.add(key);
-      total += 1;
-      const user = inp.value;
-      let expect = inp.dataset.answer || inp.dataset.ans || inp.dataset.correct || inp.getAttribute('aria-answer');
-      if (!expect){
-        const wrap = inp.closest('[data-answer],[data-ans],[data-correct-answer],[data-key]');
-        if (wrap) expect = wrap.getAttribute('data-answer') || wrap.getAttribute('data-ans') || wrap.getAttribute('data-correct-answer');
-        if (!expect){
-          const sib = inp.parentElement && (inp.parentElement.querySelector('input[type="hidden"][name$="answer"], [data-correct], .answer, .correct'));
-          if (sib) expect = sib.getAttribute('data-correct') || (sib.value) || sib.textContent;
-        }
-      }
-      if (anyMatch(user, expect)) correct += 1;
-    });
-
-    const scorePct = Math.round((correct/Math.max(1,total))*100);
-    const scoreEl = root.querySelector('[data-role="score"], #quizScore, .score-text, [data-score]');
-    if (scoreEl) scoreEl.textContent = `${scorePct} / 100`;
-    try{ if(!scoreEl) alert(`分數：${scorePct} / 100`); }catch(e){}
-    return scorePct;
-  }
-
-  let submitting = false;
-  function handleSubmitEvent(e){
-    // inspect entire composed path for any "交卷" element
-    const path = (e.composedPath && e.composedPath()) || [];
-    let target = null;
-    for (const el of [e.target, ...path]) {
-      if (el && el.nodeType === 1 && looksSubmit(el)) { target = el; break; }
-    }
-    if (!target) return;
-    if (submitting) return;
-    submitting = true;
-    // 若沒有 form，再阻止預設；避免 hash 跳轉
-    if (!target.closest('form')) { try{ e.preventDefault(); }catch(_){} }
-    setTimeout(()=>{ submitting=false; }, 400);
-
-    // 先原生，再備援
-    if (!callNative()) gradeFallback();
-  }
-
-  // iOS 某些框架只觸發 touchend/pointerup，不觸發 click，所以三種都綁
-  ['click','touchend','pointerup'].forEach(ev => {
-    document.addEventListener(ev, handleSubmitEvent, true);
-  });
-})();
-</script>
-<!-- END Quiz Submit Mobile Catch-All · V20251007-25 -->
 <!-- BEGIN Quiz Buttons Bridge · V20251007-26 -->
 
 <script>
@@ -1739,8 +1390,119 @@ $$('.tabs .tab').forEach(t=>t.addEventListener('click',()=>showTab(t.dataset.tab
 }})();
 </script>
 
-<!-- END Quiz Buttons Bridge · V20251007-26 --></body>
+<!-- END Quiz Buttons Bridge · V20251007-26 -->
+<!-- BEGIN Quiz Submit Minimal Bridge · V20251007-27 -->
+<script>
+(function quizSubmitMinimal(){
+  const ROOT = document;
+  const SUBMIT_SELS = '#btnSubmitQuiz, #btnSubmit, button[data-action="submit-quiz"], form button[type="submit"], form input[type="submit"]';
+  const PRINT_SELS  = '#btnPrintQuiz, #btnPrintScore, .btn-print-score, button[name="printScore"]';
+  const SCORE_SELS  = '[data-role="score"], #quizScore, .score-text, [data-score]';
+
+  function writeScore(score){
+    const el = ROOT.querySelector(SCORE_SELS);
+    if (el) el.textContent = `${score} / 100`;
+  }
+
+  function fallbackGrade(){
+    try{
+      const root = ROOT.querySelector('#quiz, #quizWrap, #pane-sub .quiz, #tab-quiz, [data-quiz-root], #pane-sub') || ROOT;
+      let correct=0,total=0;
+
+      const groups = {};
+      root.querySelectorAll('input[type="radio"][name], input[type="checkbox"][name]').forEach(input=>{
+        (groups[input.name] || (groups[input.name]=[])).push(input);
+      });
+      Object.values(groups).forEach(list=>{
+        total += 1;
+        const checked = list.find(i=>i.checked);
+        let expected = null, expectedInput = null;
+        expectedInput = list.find(i=> i.dataset.correct==='1' || i.getAttribute('aria-correct')==='true');
+        if (!expectedInput){
+          const lbls = list.map(i=>i.closest('label')).filter(Boolean);
+          const lbl = lbls.find(l=> l.classList.contains('is-correct') || l.dataset.correct==='1');
+          if (lbl) expectedInput = lbl.querySelector('input');
+        }
+        if (!expectedInput){
+          const wrap = list[0].closest('[data-answer], [data-correct]');
+          expected = wrap && (wrap.getAttribute('data-answer') || wrap.getAttribute('data-correct'));
+          if (expected) expectedInput = list.find(i=> i.value === expected);
+        }
+        if (checked && expectedInput && checked===expectedInput) correct += 1;
+      });
+
+      const txtInputs = Array.from(root.querySelectorAll('input[type="text"], input[type="search"], input[type="tel"], textarea'))
+        .filter(el => !el.disabled && !el.readOnly);
+      const seen = new Set();
+      function norm(s){ return String(s||'').trim().toLowerCase().replace(/[’'"]/g,'').replace(/[_\-–—]/g,'-').replace(/\s+/g,' ').replace(/\s*-\s*/g,'-'); }
+      function anyMatch(answer, expectRaw){
+        if (!expectRaw) return false;
+        const ans = norm(answer);
+        const list = String(expectRaw).split(/[,|、\/;]/).map(norm).filter(Boolean);
+        return list.includes(ans);
+      }
+      txtInputs.forEach(inp=>{
+        const key = inp.name || inp.id || inp.dataset.key || inp.closest('[data-key]')?.getAttribute('data-key') || '';
+        if (seen.has(key)) return; seen.add(key);
+        total += 1;
+        const user = inp.value;
+        let expect = inp.dataset.answer || inp.dataset.ans || inp.dataset.correct || inp.getAttribute('aria-answer');
+        if (!expect){
+          const wrap = inp.closest('[data-answer],[data-ans],[data-correct-answer],[data-key]');
+          if (wrap) expect = wrap.getAttribute('data-answer') || wrap.getAttribute('data-ans') || wrap.getAttribute('data-correct-answer');
+          if (!expect){
+            const sib = inp.parentElement && (inp.parentElement.querySelector('input[type="hidden"][name$="answer"], [data-correct], .answer, .correct'));
+            if (sib) expect = sib.getAttribute('data-correct') || (sib.value) || sib.textContent;
+          }
+        }
+        if (anyMatch(user, expect)) correct += 1;
+      });
+
+      const score = Math.round((correct/Math.max(1,total))*100);
+      writeScore(score);
+      return score;
+    }catch(e){ return 0; }
+  }
+
+  function callNative(){
+    const fns = ['submitQuiz','gradeQuiz','onQuizSubmit','handleSubmitQuiz','quizSubmit','finalizeQuiz','doSubmit'];
+    for (const name of fns){ if (typeof window[name] === 'function'){ try{ window[name](); return true; }catch(e){} } }
+    // any form inside quiz
+    const form = ROOT.querySelector('#quiz form, #quizWrap form, #pane-sub form, [data-quiz-root] form');
+    if (form){ try{ form.requestSubmit ? form.requestSubmit() : form.submit(); return true; }catch(e){} }
+    return false;
+  }
+
+  // Delegated click only for explicit selectors (避免亂觸發)
+  ROOT.addEventListener('click', function(e){
+    const btn = e.target.closest(SUBMIT_SELS);
+    if (!btn) return;
+    // 讓原生流程先跑，過一會兒檢查是否有分數，沒有再備援
+    setTimeout(()=>{
+      const hasScore = !!ROOT.querySelector(SCORE_SELS)?.textContent?.trim();
+      if (!hasScore){
+        if (!callNative()) fallbackGrade();
+      }
+      // 顯示列印與顯示答案
+      const printBtn = ROOT.querySelector(PRINT_SELS);
+      const showBtn  = ROOT.querySelector('#btnShowAnswer, [data-action="show-answers"]');
+      if (printBtn) printBtn.style.display = 'inline-block';
+      if (showBtn)  showBtn.style.display  = 'inline-block';
+    }, 120);
+  }, true);
+
+  // AirPrint/Preview for #btnPrintQuiz
+  ROOT.addEventListener('click', function(e){
+    const btn = e.target.closest('#btnPrintQuiz');
+    if (!btn) return;
+    try{ e.preventDefault(); window.print(); }catch(_){}
+  }, true);
+})();
+</script>
+<!-- END Quiz Submit Minimal Bridge · V20251007-27 -->
+</body>
 </html>
+
 
 
 
