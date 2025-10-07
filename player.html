@@ -1,3 +1,4 @@
+<!-- Player patched V20251007-13: cues observer patch added; no other changes -->
 <!-- Player patched V20251007-12: cues vertical stack + Supabase protection; no other changes -->
 !doctype html>
 <html lang="zh-Hant">
@@ -814,8 +815,86 @@ $$('.tabs .tab').forEach(t=>t.addEventListener('click',()=>showTab(t.dataset.tab
 })();
 </script>
 <!-- END Supabase Protection Patch · V20251007-12 -->
+
+<!-- BEGIN Cues Stack Observer Patch · V20251007-13 -->
+<script>
+(function cuesStackObserverPatch(){
+  const READY_KEY = "CUES_STACK_OBSERVER_V1";
+  if (window[READY_KEY]) return;
+  window[READY_KEY] = true;
+
+  function applyStack(table){
+    if(!table) return;
+    table.classList.add('cues-table');
+    try{
+      const thZh = table.tHead && table.tHead.rows[0] && table.tHead.rows[0].cells[2];
+      if (thZh) thZh.style.display = 'none';
+    }catch(e){}
+
+    const tbody = table.tBodies && table.tBodies[0];
+    if(!tbody) return;
+
+    Array.from(tbody.rows).forEach(tr => {
+      if (tr.dataset.stacked === '1') return;
+      const tdTime = tr.cells[0];
+      const tdEn   = tr.cells[1];
+      const tdZh   = tr.cells[2];
+      if (!tdTime || !tdEn || !tdZh) return;
+
+      tdTime.classList.add('cue-time');
+      tdEn.classList.add('cue-en');
+      tdZh.classList.add('cue-zh');
+
+      const zhHTML = (tdZh.innerHTML||'').trim();
+      if (zhHTML && !tdEn.querySelector('.zh-line')){
+        const zhDiv = document.createElement('div');
+        zhDiv.className = 'zh-line';
+        zhDiv.innerHTML = zhHTML;
+        tdEn.appendChild(zhDiv);
+      }
+      tdZh.style.display = 'none';
+      tr.dataset.stacked = '1';
+    });
+  }
+
+  function findTable(){
+    const tbody = document.getElementById('cuesBody');
+    if (tbody && tbody.closest) {
+      const table = tbody.closest('table');
+      if (table) return table;
+    }
+    const tables = document.querySelectorAll('main table, #pane-sub table, table');
+    return tables[0] || null;
+  }
+
+  function init(){
+    const table = findTable();
+    if (!table) return;
+    applyStack(table);
+    const tbody = table.tBodies && table.tBodies[0];
+    if (!tbody) return;
+    const mo = new MutationObserver(()=> applyStack(table));
+    mo.observe(tbody, { childList:true, subtree:false });
+
+    let tries = 5;
+    const t = setInterval(()=>{
+      applyStack(table);
+      tries -= 1;
+      if (tries<=0) clearInterval(t);
+    }, 800);
+  }
+
+  if (document.readyState === 'loading'){
+    document.addEventListener('DOMContentLoaded', init);
+  } else {
+    init();
+  }
+})();
+</script>
+<!-- END Cues Stack Observer Patch · V20251007-13 -->
 </body>
 </html>
+
 
 
 
