@@ -1,3 +1,4 @@
+<!-- Player patched V20251007-20: lite pager + lite badge/login + cues observer; heavy watchers removed -->
 <!-- Player patched V20251007-19: cleaned pager (no resize dispatch), unified badge/login); kept cues & supabase patches -->
 <!-- Player patched V20251007-18: resize recursion guard + UI enforcement; no other changes -->
 <!-- Player patched V20251007-17: badge unify, login hide, stronger mobile pager; no other changes -->
@@ -124,37 +125,27 @@
 
 
 
-<!-- BEGIN Mobile Pager Styles · V20251007-19 -->
+
+
+<!-- BEGIN Lite Styles · V20251007-20 -->
 <style>
+/* Keep login hidden (player page only) */
+#btnLogin{ display:none !important; }
+
+/* Mobile pager LITE */
 @media (max-width: 920px){
   body.is-mobile-pager { overflow-x:hidden; }
-  .mobile-tabs{
-    position:sticky; top:0; z-index:45;
-    display:flex; gap:8px; padding:8px; margin:0 -8px 4px;
-    background:rgba(9,16,30,.9); backdrop-filter:saturate(160%) blur(6px);
-    border-bottom:1px solid rgba(255,255,255,.08);
-  }
-  .mobile-tabs .tab{
-    flex:1; padding:10px 12px; border-radius:12px;
-    border:1px solid rgba(255,255,255,.18); color:#eaf1ff; background:transparent;
-  }
+  .mobile-tabs{ position:sticky; top:0; z-index:45; display:flex; gap:8px; padding:8px; margin:0 -8px 4px;
+                 background:rgba(9,16,30,.9); border-bottom:1px solid rgba(255,255,255,.08); }
+  .mobile-tabs .tab{ flex:1; padding:10px 12px; border-radius:12px; border:1px solid rgba(255,255,255,.18); background:transparent; color:#eaf1ff; }
   .mobile-tabs .tab.on{ background:rgba(255,255,255,.08); }
-
-  #mobilePager{
-    display:flex; overflow-x:auto; overflow-y:hidden;
-    -webkit-overflow-scrolling:touch; scroll-snap-type:x mandatory;
-    scroll-behavior:smooth; width:100%;
-    height: calc(100vh - 64px);
-  }
+  #mobilePager{ display:flex; overflow-x:auto; overflow-y:hidden; -webkit-overflow-scrolling:touch; scroll-snap-type:x mandatory; scroll-behavior:smooth; width:100%;
+                 height: calc(100vh - 64px); }
   #mobilePager::-webkit-scrollbar{ display:none; }
-  .mobile-page{ flex:0 0 100%; width:100%; max-width:100%;
-                 scroll-snap-align:start; overflow-y:auto; padding:8px; }
+  .mobile-page{ flex:0 0 100%; width:100%; max-width:100%; scroll-snap-align:start; overflow-y:auto; padding:8px; }
 }
-
-/* Hide login button if present */
-#btnLogin{ display:none !important; }
 </style>
-<!-- END Mobile Pager Styles · V20251007-19 -->
+<!-- END Lite Styles · V20251007-20 -->
 </head>
 <body>
 
@@ -1032,142 +1023,104 @@ $$('.tabs .tab').forEach(t=>t.addEventListener('click',()=>showTab(t.dataset.tab
 
 
 
-<!-- BEGIN Unified Mobile Pager + Badge/Login · V20251007-19 -->
+
+
+<!-- BEGIN Lite Scripts · V20251007-20 -->
 <script>
 (function(){
-  const VERSION="V20251007-19";
-  const params = new URLSearchParams(location.search);
+  const VERSION="V20251007-20";
 
-  // ---- Badge & Login (lightweight, non-recursive) ----
-  function hideLoginButtons(){
-    const idEl = document.getElementById('btnLogin');
-    if(idEl) idEl.style.display='none';
-    document.querySelectorAll('a,button').forEach(el=>{
-      const t=(el.textContent||'').trim();
-      if(t==='登入') el.style.display='none';
-    });
+  // 1) Minimal badge/login (one-time, no observers)
+  function setupBadgeLogin(){
+    try{ const tag=document.getElementById('buildTag'); if(tag) tag.textContent=VERSION; }catch(e){}
+    try{ const btn=document.getElementById('btnLogin'); if(btn) btn.style.display='none'; }catch(e){}
   }
-  function updateSingleBadge(){
-    if(params.get('noBadge')==='1'){ 
-      document.querySelectorAll('[data-build-tag], #buildTag').forEach(el=> el.style.display='none');
-      return;
-    }
-    const pillRe = /^V\d{8}-\d{2}$/;
-    const nodes = Array.from(document.querySelectorAll('div,span,button,a'));
-    let first=null;
-    nodes.forEach(el=>{
-      const t=(el.textContent||'').trim();
-      if(!pillRe.test(t)) return;
-      el.textContent=VERSION;
-      if(!first) first=el; else el.style.display='none';
-      if(!el.id) el.id='buildTag'; el.setAttribute('data-build-tag','1');
-      const st = el.style;
-      if(getComputedStyle(el).position==='static'){ st.position='fixed'; st.top='8px'; st.right='8px'; }
-      st.zIndex=9999; st.padding='6px 10px'; st.borderRadius='999px';
-      st.background='rgba(255,255,255,.92)'; st.color='#111'; st.border='1px solid rgba(0,0,0,.2)'; st.boxShadow='0 2px 8px rgba(0,0,0,.1)';
-    });
-    if(!first){
-      const b=document.createElement('div'); b.id='buildTag'; b.textContent=VERSION; b.setAttribute('data-build-tag','1');
-      Object.assign(b.style,{position:'fixed',top:'8px',right:'8px',zIndex:9999,padding:'6px 10px',borderRadius:'999px',background:'rgba(255,255,255,.92)',color:'#111',border:'1px solid rgba(0,0,0,.2)',boxShadow:'0 2px 8px rgba(0,0,0,.1)'});
-      document.body.appendChild(b);
-    }
-  }
-  const uiMo = new MutationObserver(()=>{ hideLoginButtons(); updateSingleBadge(); });
-  uiMo.observe(document.documentElement, {subtree:true, childList:true});
-  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded', ()=>{ hideLoginButtons(); updateSingleBadge(); });
-  else { hideLoginButtons(); updateSingleBadge(); }
 
-  // ---- Clean Mobile Pager (no resize dispatch) ----
-  function bySel(list){ for(const s of list){ const el=document.querySelector(s); if(el) return el; } return null; }
-
-  function buildPager(){
-    if(document.body.dataset.mobilePager==='on') return;
-    // portrait or forced
-    const force = params.get('pager')==='1' || params.get('mobilePager')==='1';
-    const portrait = window.innerHeight > window.innerWidth;
-    const narrow = window.matchMedia('(max-width: 920px)').matches;
-    if(!(force || (narrow && portrait))) return;
-
-    // find left & right
-    let left = bySel(['#pane-video','#player-left','.left-pane','#videoPane','#videoCol','main video']) || document.querySelector('video');
-    if(left && left.tagName === 'VIDEO') left = left.closest('section,div,article') || left.parentElement;
-    let right = bySel(['#pane-sub','#panel-sub','.right-pane','#tabsWrap','#subPane']);
-    if(!right){
-      const candidates = Array.from(document.querySelectorAll('section,div,aside'));
-      right = candidates.find(el=>/字幕|測驗|單字/.test((el.textContent||'')));
-    }
-    if(!left || !right) return;
-
-    // placeholders
-    const phL=document.createElement('div'); phL.hidden=true; left.parentElement && left.parentElement.insertBefore(phL,left);
-    const phR=document.createElement('div'); phR.hidden=true; right.parentElement && right.parentElement.insertBefore(phR,right);
-
-    const tabs = document.createElement('div'); tabs.className='mobile-tabs';
-    tabs.innerHTML='<button class="tab on" data-i="0">影片</button><button class="tab" data-i="1">字幕／測驗</button>';
-
-    const pager=document.createElement('div'); pager.id='mobilePager';
-    const pL=document.createElement('section'); pL.className='mobile-page page-left';
-    const pR=document.createElement('section'); pR.className='mobile-page page-right';
-    pL.appendChild(left); pR.appendChild(right);
-    pager.appendChild(pL); pager.appendChild(pR);
-
-    const root=(phL.parentElement)||document.querySelector('main')||document.body;
-    root.insertBefore(tabs, phL);
-    root.insertBefore(pager, phL);
-
-    function fit(){
-      const h=Math.max(320,(window.innerHeight||document.documentElement.clientHeight)-tabs.offsetHeight-8);
-      pager.style.height=h+'px';
-    }
-    window.addEventListener('resize', fit, {passive:true});
-    fit();
-
-    tabs.addEventListener('click', (e)=>{
-      const b=e.target.closest('.tab'); if(!b) return;
-      const i=Number(b.dataset.i||0);
-      pager.scrollTo({left:i*pager.clientWidth, behavior:'smooth'});
-      tabs.querySelectorAll('.tab').forEach((t,idx)=> t.classList.toggle('on', idx===i));
-    });
-
-    pager.addEventListener('scroll', ()=>{
-      const i = Math.round(pager.scrollLeft / Math.max(1, pager.clientWidth));
-      tabs.querySelectorAll('.tab').forEach((t,idx)=> t.classList.toggle('on', idx===i));
-    }, {passive:true});
-
-    document.body.classList.add('is-mobile-pager');
-    document.body.dataset.mobilePager='on';
-
-    // Destroy when landscape or wide
-    function maybeDestroy(){
-      const portrait2 = window.innerHeight > window.innerWidth;
-      const narrow2 = window.matchMedia('(max-width: 920px)').matches;
-      if(!(portrait2 && narrow2) && !force){
-        try{
-          // restore
-          if(phL && phL.parentElement && pL.firstChild) phL.replaceWith(pL.firstChild);
-          if(phR && phR.parentElement && pR.firstChild) phR.replaceWith(pR.firstChild);
-          pager.remove(); tabs.remove();
-          document.body.classList.remove('is-mobile-pager');
-          document.body.dataset.mobilePager='';
-        }catch(e){}
-        window.removeEventListener('resize', fit);
-        window.removeEventListener('resize', maybeDestroy);
+  // 2) Cues stack observer (works even if cues動態插入)
+  function cuesStackObserver(){
+    try{
+      function apply(table){
+        if(!table) return;
+        table.classList.add('cues-table');
+        const thZh = table.tHead && table.tHead.rows[0] && table.tHead.rows[0].cells[2];
+        if (thZh) thZh.style.display = 'none';
+        const tbody = table.tBodies && table.tBodies[0]; if(!tbody) return;
+        Array.from(tbody.rows).forEach(tr=>{
+          if (tr.dataset.stacked === '1') return;
+          const td0=tr.cells[0], td1=tr.cells[1], td2=tr.cells[2]; if(!td0||!td1||!td2) return;
+          td0.classList.add('cue-time'); td1.classList.add('cue-en'); td2.classList.add('cue-zh');
+          if(!td1.querySelector('.zh-line')){ const d=document.createElement('div'); d.className='zh-line'; d.innerHTML=(td2.innerHTML||'').trim(); td1.appendChild(d); }
+          td2.style.display='none';
+          tr.dataset.stacked='1';
+        });
       }
-    }
-    window.addEventListener('resize', maybeDestroy, {passive:true});
+      function findTable(){
+        const tbody=document.getElementById('cuesBody');
+        if(tbody && tbody.closest) return tbody.closest('table');
+        return null;
+      }
+      const table = findTable(); if(!table) return;
+      apply(table);
+      const tbody = table.tBodies && table.tBodies[0]; if(!tbody) return;
+      const mo=new MutationObserver(()=> apply(table));
+      mo.observe(tbody, {childList:true});
+    }catch(e){ /* silent */ }
+  }
+
+  // 3) Mobile Pager LITE（只在已知容器存在時啟用；不 dispatch resize）
+  function pagerLite(){
+    try{
+      const portrait = window.innerHeight > window.innerWidth;
+      const narrow = window.matchMedia('(max-width: 920px)').matches;
+      const force = /[?&](pager|mobilePager)=1/.test(location.search);
+      if(!(force || (portrait && narrow))) return;
+      if(document.getElementById('mobilePager')) return;
+
+      const left = document.querySelector('#pane-video');
+      const right = document.querySelector('#pane-sub');
+      if(!left || !right) return; // 結構不符合就不做，避免影響字幕載入
+
+      const phL=document.createElement('div'); phL.hidden=true; left.parentElement.insertBefore(phL,left);
+      const phR=document.createElement('div'); phR.hidden=true; right.parentElement.insertBefore(phR,right);
+
+      const tabs=document.createElement('div'); tabs.className='mobile-tabs';
+      tabs.innerHTML='<button class="tab on" data-i="0">影片</button><button class="tab" data-i="1">字幕／測驗</button>';
+
+      const pager=document.createElement('div'); pager.id='mobilePager';
+      const pL=document.createElement('section'); pL.className='mobile-page page-left';
+      const pR=document.createElement('section'); pR.className='mobile-page page-right';
+      pL.appendChild(left); pR.appendChild(right);
+      pager.appendChild(pL); pager.appendChild(pR);
+
+      const root=phL.parentElement;
+      root.insertBefore(tabs, phL);
+      root.insertBefore(pager, phL);
+
+      function fit(){ const h=Math.max(320,(window.innerHeight||document.documentElement.clientHeight)-tabs.offsetHeight-8); pager.style.height=h+'px'; }
+      window.addEventListener('resize', fit, {passive:true}); fit();
+
+      tabs.addEventListener('click', (e)=>{ const b=e.target.closest('.tab'); if(!b) return; const i=Number(b.dataset.i||0);
+        pager.scrollTo({left:i*pager.clientWidth, behavior:'smooth'}); tabs.querySelectorAll('.tab').forEach((t,idx)=> t.classList.toggle('on', idx===i)); });
+
+      pager.addEventListener('scroll', ()=>{ const i=Math.round(pager.scrollLeft/Math.max(1,pager.clientWidth)); tabs.querySelectorAll('.tab').forEach((t,idx)=> t.classList.toggle('on', idx===i)); }, {passive:true});
+
+      // 還原：轉橫式或放大寬度
+      function maybeDestroy(){ const portrait2 = window.innerHeight > window.innerWidth; const narrow2 = window.matchMedia('(max-width: 920px)').matches;
+        if(!(portrait2 && narrow2) && !force){ try{ if(pL.firstChild) phL.replaceWith(pL.firstChild); if(pR.firstChild) phR.replaceWith(pR.firstChild);
+          pager.remove(); tabs.remove(); window.removeEventListener('resize', fit); window.removeEventListener('resize', maybeDestroy); }catch(e){} } }
+      window.addEventListener('resize', maybeDestroy, {passive:true});
+    }catch(e){ /* silent */ }
   }
 
   function init(){
-    // run after layout settles
-    if(document.readyState==='loading') document.addEventListener('DOMContentLoaded', ()=> requestAnimationFrame(buildPager));
-    else requestAnimationFrame(buildPager);
-    window.addEventListener('orientationchange', ()=> requestAnimationFrame(buildPager), {passive:true});
-    window.addEventListener('resize', ()=> requestAnimationFrame(buildPager), {passive:true});
+    setupBadgeLogin();
+    // defer to next frame避免與原始渲染碰撞
+    requestAnimationFrame(()=>{ cuesStackObserver(); pagerLite(); });
   }
-  init();
+  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded', init); else init();
 })();
 </script>
-<!-- END Unified Mobile Pager + Badge/Login · V20251007-19 -->
+<!-- END Lite Scripts · V20251007-20 -->
 </body>
 </html>
 
