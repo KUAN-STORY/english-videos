@@ -1,3 +1,4 @@
+<!-- Player patched V20251007-16: hide login, dynamic build tag, portrait pager fix; no other changes -->
 <!-- Player patched V20251007-15: mobile horizontal pager added; no other changes -->
 <!-- Player patched V20251007-14: cues format protection added; no other changes -->
 <!-- Player patched V20251007-13: cues observer patch added; no other changes -->
@@ -145,6 +146,15 @@
 }
 </style>
 <!-- END Mobile Pager Styles · V20251007-15 -->
+
+<!-- BEGIN Hide Login on Player · V20251007-16 -->
+<style>
+  /* Hide login (and optionally logout) button on player page only */
+  #btnLogin { display:none !important; }
+  /* 若需要一併隱藏登出，取消註解下一行 */
+  /* #btnLogout { display:none !important; } */
+</style>
+<!-- END Hide Login on Player · V20251007-16 -->
 </head>
 <body>
 
@@ -1115,6 +1125,73 @@ $$('.tabs .tab').forEach(t=>t.addEventListener('click',()=>showTab(t.dataset.tab
 })();
 </script>
 <!-- END Mobile Pager Script · V20251007-15 -->
+
+<!-- BEGIN Build Tag Updater · V20251007-16 -->
+<script>
+(function buildTagUpdater(){
+  const TAG="V20251007-16";
+  function apply(){
+    // 1) 既有：#buildTag / [data-build-tag] 直接覆寫
+    document.querySelectorAll('#buildTag,[data-build-tag]').forEach(el=>{ el.textContent = TAG; });
+    // 2) 若沒有現成徽章，找右上角可用容器（nav 或 body），補上一個小浮標
+    if(!document.querySelector('#buildTag,[data-build-tag]')){
+      const badge = document.createElement('div');
+      badge.id = 'buildTag';
+      badge.setAttribute('data-build-tag','1');
+      badge.textContent = TAG;
+      Object.assign(badge.style, {
+        position:'fixed', zIndex: 9999, top:'8px', right:'8px',
+        padding:'6px 10px', borderRadius:'999px',
+        background:'rgba(255,255,255,.92)', color:'#111',
+        font:'600 12px/1 ui-sans-serif,system-ui,Segoe UI,Arial',
+        border:'1px solid rgba(0,0,0,.2)', boxShadow:'0 2px 8px rgba(0,0,0,.1)'
+      });
+      document.body.appendChild(badge);
+    }
+  }
+  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded', apply);
+  else apply();
+})();
+</script>
+<!-- END Build Tag Updater · V20251007-16 -->
+
+
+<!-- BEGIN Mobile Pager Portrait Fix · V20251007-16 -->
+<script>
+(function mobilePagerPortraitFix(){
+  const KEY='MOBILE_PAGER_PORTRAIT_FIX_V1';
+  if(window[KEY]) return; window[KEY]=true;
+
+  // 更強的啟用條件：行動裝置 + 直式（或寬度 ≤ 920）
+  const mqW = window.matchMedia('(max-width: 920px)');
+  const mqPortrait = window.matchMedia('(orientation: portrait)');
+  const isMobileLike = () => ('ontouchstart' in window) || navigator.maxTouchPoints>0 || mqW.matches;
+  const isPortrait = () => mqPortrait.matches || (window.innerHeight > window.innerWidth);
+
+  // 與 V20251007-15 的 pager 溝通：呼叫它的 apply()，否則自行觸發 resize 讓它生效
+  function nudgePager(){
+    try{ window.dispatchEvent(new Event('resize')); }catch(e){}
+  }
+
+  function ensurePager(){
+    const should = isMobileLike() && isPortrait();
+    const pager = document.getElementById('mobilePager');
+    if(should && !pager){
+      // 如果先前模組還沒建好，推它一下
+      nudgePager();
+      setTimeout(nudgePager, 120);
+      setTimeout(nudgePager, 360);
+    }
+  }
+
+  function init(){
+    ensurePager();
+  }
+  ['DOMContentLoaded','load','resize','orientationchange'].forEach(ev=>addEventListener(ev, ensurePager, {passive:true}));
+  init();
+})();
+</script>
+<!-- END Mobile Pager Portrait Fix · V20251007-16 -->
 </body>
 </html>
 
