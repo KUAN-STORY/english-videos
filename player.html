@@ -1,4 +1,4 @@
-<!-- Player patched V20251007-22: quiz submit compatibility added; no other changes -->
+<!-- Player patched V20251007-23: AirPrint/Preview grade printing added; no other changes -->\n<!-- Player patched V20251007-22: quiz submit compatibility added; no other changes -->
 <!-- Player patched V20251007-21: mobile 2-page pager injected (player(2).html style); no other changes -->
 <!-- Player patched V20251007-20: lite pager + lite badge/login + cues observer; heavy watchers removed -->
 <!-- Player patched V20251007-19: cleaned pager (no resize dispatch), unified badge/login); kept cues & supabase patches -->
@@ -1040,6 +1040,393 @@ $$('.tabs .tab').forEach(t=>t.addEventListener('click',()=>showTab(t.dataset.tab
 })();
 </script>
 <!-- END Cues Format Protection Patch · V20251007-14 -->
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<!-- BEGIN Lite Scripts · V20251007-20 -->
+<script>
+(function(){
+  const VERSION="V20251007-20";
+
+  // 1) Minimal badge/login (one-time, no observers)
+  function setupBadgeLogin(){
+    try{ const tag=document.getElementById('buildTag'); if(tag) tag.textContent=VERSION; }catch(e){}
+    try{ const btn=document.getElementById('btnLogin'); if(btn) btn.style.display='none'; }catch(e){}
+  }
+
+  // 2) Cues stack observer (works even if cues動態插入)
+  function cuesStackObserver(){
+    try{
+      function apply(table){
+        if(!table) return;
+        table.classList.add('cues-table');
+        const thZh = table.tHead && table.tHead.rows[0] && table.tHead.rows[0].cells[2];
+        if (thZh) thZh.style.display = 'none';
+        const tbody = table.tBodies && table.tBodies[0]; if(!tbody) return;
+        Array.from(tbody.rows).forEach(tr=>{
+          if (tr.dataset.stacked === '1') return;
+          const td0=tr.cells[0], td1=tr.cells[1], td2=tr.cells[2]; if(!td0||!td1||!td2) return;
+          td0.classList.add('cue-time'); td1.classList.add('cue-en'); td2.classList.add('cue-zh');
+          if(!td1.querySelector('.zh-line')){ const d=document.createElement('div'); d.className='zh-line'; d.innerHTML=(td2.innerHTML||'').trim(); td1.appendChild(d); }
+          td2.style.display='none';
+          tr.dataset.stacked='1';
+        });
+      }
+      function findTable(){
+        const tbody=document.getElementById('cuesBody');
+        if(tbody && tbody.closest) return tbody.closest('table');
+        return null;
+      }
+      const table = findTable(); if(!table) return;
+      apply(table);
+      const tbody = table.tBodies && table.tBodies[0]; if(!tbody) return;
+      const mo=new MutationObserver(()=> apply(table));
+      mo.observe(tbody, {childList:true});
+    }catch(e){ /* silent */ }
+  }
+
+  // 3) Mobile Pager LITE（只在已知容器存在時啟用；不 dispatch resize）
+  function pagerLite(){
+    try{
+      const portrait = window.innerHeight > window.innerWidth;
+      const narrow = window.matchMedia('(max-width: 920px)').matches;
+      const force = /[?&](pager|mobilePager)=1/.test(location.search);
+      if(!(force || (portrait && narrow))) return;
+      if(document.getElementById('mobilePager')) return;
+
+      const left = document.querySelector('#pane-video');
+      const right = document.querySelector('#pane-sub');
+      if(!left || !right) return; // 結構不符合就不做，避免影響字幕載入
+
+      const phL=document.createElement('div'); phL.hidden=true; left.parentElement.insertBefore(phL,left);
+      const phR=document.createElement('div'); phR.hidden=true; right.parentElement.insertBefore(phR,right);
+
+      const tabs=document.createElement('div'); tabs.className='mobile-tabs';
+      tabs.innerHTML='<button class="tab on" data-i="0">影片</button><button class="tab" data-i="1">字幕／測驗</button>';
+
+      const pager=document.createElement('div'); pager.id='mobilePager';
+      const pL=document.createElement('section'); pL.className='mobile-page page-left';
+      const pR=document.createElement('section'); pR.className='mobile-page page-right';
+      pL.appendChild(left); pR.appendChild(right);
+      pager.appendChild(pL); pager.appendChild(pR);
+
+      const root=phL.parentElement;
+      root.insertBefore(tabs, phL);
+      root.insertBefore(pager, phL);
+
+      function fit(){ const h=Math.max(320,(window.innerHeight||document.documentElement.clientHeight)-tabs.offsetHeight-8); pager.style.height=h+'px'; }
+      window.addEventListener('resize', fit, {passive:true}); fit();
+
+      tabs.addEventListener('click', (e)=>{ const b=e.target.closest('.tab'); if(!b) return; const i=Number(b.dataset.i||0);
+        pager.scrollTo({left:i*pager.clientWidth, behavior:'smooth'}); tabs.querySelectorAll('.tab').forEach((t,idx)=> t.classList.toggle('on', idx===i)); });
+
+      pager.addEventListener('scroll', ()=>{ const i=Math.round(pager.scrollLeft/Math.max(1,pager.clientWidth)); tabs.querySelectorAll('.tab').forEach((t,idx)=> t.classList.toggle('on', idx===i)); }, {passive:true});
+
+      // 還原：轉橫式或放大寬度
+      function maybeDestroy(){ const portrait2 = window.innerHeight > window.innerWidth; const narrow2 = window.matchMedia('(max-width: 920px)').matches;
+        if(!(portrait2 && narrow2) && !force){ try{ if(pL.firstChild) phL.replaceWith(pL.firstChild); if(pR.firstChild) phR.replaceWith(pR.firstChild);
+          pager.remove(); tabs.remove(); window.removeEventListener('resize', fit); window.removeEventListener('resize', maybeDestroy); }catch(e){} } }
+      window.addEventListener('resize', maybeDestroy, {passive:true});
+    }catch(e){ /* silent */ }
+  }
+
+  function init(){
+    setupBadgeLogin();
+    // defer to next frame避免與原始渲染碰撞
+    requestAnimationFrame(()=>{ cuesStackObserver(); pagerLite(); });
+  }
+  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded', init); else init();
+})();
+</script>
+<!-- END Lite Scripts · V20251007-20 -->
+
+<!-- BEGIN Mobile 2-Page Pager (from player(2).html style) · V20251007-21 -->
+<script>
+(function(){
+  const isMobile = () => matchMedia('(max-width:860px) and (orientation:portrait)').matches;
+  const $  = (s, r=document)=>r.querySelector(s);
+  const $$ = (s, r=document)=>Array.from(r.querySelectorAll(s));
+
+  const TRACK_SEL = '#mainWrap, .layout';
+  const LEFT_SEL  = '#leftPanel, .left, #pane-video';
+  const RIGHT_SEL = '#rightPanel, .right, #pane-sub';
+
+  function setPage(idx){
+    const track = $(TRACK_SEL); if(!track) return;
+    track.scrollTo({ left: idx * track.clientWidth, behavior:'smooth' });
+    document.body.classList.toggle('at-right-page', idx===1);
+  }
+
+  function bindTopTabsOnce(){
+    const labels = new Set(['字幕','測驗','單字']);
+    const bars = $$('.tabs, nav, .tabbar');
+    let topBar = null;
+    for(const bar of bars){
+      const names = $$('button,a,[role="tab"]', bar).map(b=>(b.textContent||'').trim());
+      if(names.includes('字幕') && names.includes('測驗') && names.includes('單字')){ topBar = bar; break; }
+    }
+    if(!topBar) return;
+    $$('button,a,[role="tab"]', topBar).forEach(el=>{
+      const t=(el.textContent||'').trim();
+      if(!labels.has(t) || el.dataset._pagerBound) return;
+      el.dataset._pagerBound = '1';
+      el.addEventListener('click', ()=>setPage(1), {passive:true});
+    });
+  }
+
+  function ensureBackButton(){
+    if($('#btnExitFocus')) return;
+    const btn=document.createElement('button'); btn.id='btnExitFocus'; btn.textContent='返回影片';
+    document.body.appendChild(btn);
+    btn.addEventListener('click', ()=>setPage(0));
+  }
+
+  function ensurePagerOnce(){
+    const track = $(TRACK_SEL); if(!track || track.classList.contains('pager-track')) return;
+    const left  = $(LEFT_SEL, track);
+    const right = $(RIGHT_SEL, track);
+    if(!left || !right) return; // 結構不符合不處理
+
+    track.classList.add('pager-track');
+
+    const leftPage  = document.createElement('section'); leftPage.id  = 'mPageLeft';  leftPage.className  = 'pager-page';
+    const rightPage = document.createElement('section'); rightPage.id = 'mPageRight'; rightPage.className = 'pager-page';
+    left.before(leftPage);  leftPage.appendChild(left);
+    right.before(rightPage); rightPage.appendChild(right);
+
+    // 同步位置狀態
+    track.addEventListener('scroll', ()=>{
+      const idx = track.scrollLeft >= track.clientWidth * 0.5 ? 1 : 0;
+      document.body.classList.toggle('at-right-page', idx===1);
+    }, {passive:true});
+  }
+
+  function init(){
+    if(!isMobile()) return;
+    ensureBackButton();
+    ensurePagerOnce();
+    bindTopTabsOnce();
+  }
+
+  const schedule = ()=>requestAnimationFrame(init);
+  window.addEventListener('resize', schedule, {passive:true});
+  window.addEventListener('orientationchange', schedule, {passive:true});
+  document.addEventListener('DOMContentLoaded', schedule);
+})();
+</script>
+<!-- END Mobile 2-Page Pager · V20251007-21 -->
+
+<!-- BEGIN Quiz Submit Compatibility · V20251007-22 -->
+<script>
+(function ensureQuizSubmitWorks(){
+  const ROOT_SEL = '#quiz, #quizWrap, #pane-sub .quiz, #tab-quiz, [data-quiz-root]';
+
+  function callNative(){
+    // try common global functions
+    const fns = ['submitQuiz','gradeQuiz','onQuizSubmit','handleSubmitQuiz','quizSubmit'];
+    for (const name of fns){
+      if (typeof window[name] === 'function'){
+        try{ window[name](); return true; } catch(e){ /* ignore and fallback */ }
+      }
+    }
+    // try trigger an existing submit button programmatically
+    const root = document.querySelector(ROOT_SEL) || document;
+    const nativeBtn = root.querySelector('button[type="submit"], form button[type="submit"]');
+    if (nativeBtn){
+      try{
+        nativeBtn.click();
+        return true;
+      }catch(e){}
+    }
+    return false;
+  }
+
+  function gradeFallback(){
+    const root = document.querySelector(ROOT_SEL) || document;
+    const groups = {};
+    root.querySelectorAll('input[type="radio"][name], input[type="checkbox"][name]').forEach(input=>{
+      if (!groups[input.name]) groups[input.name] = [];
+      groups[input.name].push(input);
+    });
+    let correct=0,total=0;
+    Object.values(groups).forEach(list=>{
+      if (!list.length) return;
+      total += 1;
+      const checked = list.find(i=>i.checked);
+      // heuristics to find the correct option
+      let expectedValue = null, expectedInput = null;
+      // prefer data-correct marker
+      expectedInput = list.find(i=>i.dataset.correct === '1' || i.getAttribute('aria-correct') === 'true');
+      if (!expectedInput){
+        const container = list[0].closest('[data-answer], [data-correct]');
+        expectedValue = container && (container.getAttribute('data-answer') || container.getAttribute('data-correct'));
+      }
+      if (!expectedInput && expectedValue){
+        expectedInput = list.find(i=>i.value === expectedValue);
+      }
+      if (!expectedInput){
+        // last resort: look for label with .is-correct or [data-correct]
+        const labels = list.map(i=>i.closest('label')).filter(Boolean);
+        const lbl = labels.find(l=>l.classList.contains('is-correct') || l.dataset.correct === '1');
+        if (lbl){ expectedInput = lbl.querySelector('input'); }
+      }
+      if (checked && expectedInput && checked === expectedInput) correct += 1;
+    });
+    const scorePct = Math.round((correct/Math.max(1,total))*100);
+    // write to a visible score area if present
+    const scoreEl = root.querySelector('[data-role="score"], #quizScore, .score-text');
+    if (scoreEl){ scoreEl.textContent = `${scorePct} / 100`; }
+    // show an alert fallback so user有回饋
+    try{ if(!scoreEl) alert(`分數：${scorePct} / 100`); }catch(e){}
+    return scorePct;
+  }
+
+  document.addEventListener('click', function(e){
+    const btn = e.target.closest('button[data-action="submit-quiz"], #btnSubmit, .btn-submit, button[name="submitQuiz"], button#submitQuiz');
+    if (!btn) return;
+    e.preventDefault();
+    // call native if exists, else fallback grading
+    if (!callNative()) gradeFallback();
+  }, true);
+})();
+</script>
+<!-- END Quiz Submit Compatibility · V20251007-22 -->
+
+<!-- BEGIN Print Score (AirPrint / Preview) · V20251007-23 -->
+<script>
+(function enableAirPrintScore(){
+  const SEL_BTN = '[data-action="print-score"], #btnPrintScore, .btn-print-score, button[name="printScore"]';
+
+  function getScoreInfo(){
+    const root = document.querySelector('#quiz, #quizWrap, #pane-sub .quiz, #tab-quiz, [data-quiz-root]') || document;
+    // 現成分數
+    let scoreText = '';
+    const scoreEl = root.querySelector('[data-role="score"], #quizScore, .score-text');
+    if (scoreEl) scoreText = (scoreEl.textContent || '').trim();
+    // 若沒有，嘗試計算（同 v20251007-22 的邏輯的輕量版）
+    let correct=0,total=0, details=[];
+    const groups = {};
+    root.querySelectorAll('input[type="radio"][name], input[type="checkbox"][name]').forEach(input=>{
+      if(!groups[input.name]) groups[input.name] = [];
+      groups[input.name].push(input);
+    });
+    Object.entries(groups).forEach(([name,list])=>{
+      total += 1;
+      const checked = list.find(i=>i.checked);
+      let expectedInput = list.find(i=>i.dataset.correct === '1' || i.getAttribute('aria-correct') === 'true');
+      if (!expectedInput){
+        const labels = list.map(i=>i.closest('label')).filter(Boolean);
+        const lbl = labels.find(l=>l.classList.contains('is-correct') || l.dataset.correct === '1');
+        if (lbl) expectedInput = lbl.querySelector('input');
+      }
+      const ok = !!(checked && expectedInput && checked === expectedInput);
+      if (ok) correct += 1;
+      // 題目文字
+      let qText = '';
+      try{
+        const q = list[0].closest('.question, li, fieldset');
+        const t = q && q.querySelector('.q, .title, legend, .question-title');
+        qText = (t && t.textContent.trim()) || '';
+      }catch(e){}
+      details.push({qText, ok, name});
+    });
+    const pct = total ? Math.round((correct/total)*100) : (scoreText ? parseInt(scoreText,10) : 0);
+    const score = scoreText || (pct + ' / 100');
+    return {score, correct, total, details};
+  }
+
+  async function getUserEmail(){
+    try{
+      if (window.supa && window.supa.auth){
+        const { data } = await window.supa.auth.getUser();
+        return (data && data.user && data.user.email) || '';
+      }
+    }catch(e){}
+    return '';
+  }
+
+  function buildHTML(data){
+    const css = `
+      <style>
+        :root{ -webkit-text-size-adjust:100%; }
+        body{ font:14px/1.6 -apple-system,BlinkMacSystemFont,Segoe UI,Roboto,Helvetica,Arial; color:#0b1220; margin:24px; }
+        h1{ font-size:20px; margin:0 0 8px; }
+        .meta{ margin:8px 0 16px; }
+        .meta b{ display:inline-block; width:92px; }
+        .score{ font-weight:700; font-size:18px; margin:12px 0 18px; }
+        table{ border-collapse:collapse; width:100%; }
+        th,td{ border:1px solid #d1d5db; padding:6px 8px; vertical-align:top; }
+        th{ background:#f3f4f6; text-align:left; }
+        .ok{ color:#047857; }
+        .bad{ color:#b91c1c; }
+        @page{ size: auto; margin: 12mm; }
+        @media print{
+          .no-print{ display:none !important; }
+        }
+      </style>`;
+    const rows = data.details.map((d,i)=>`
+      <tr>
+        <td>${i+1}</td>
+        <td>${d.qText || d.name || ''}</td>
+        <td class="${d.ok?'ok':'bad'}">${d.ok?'✓ 正確':'✗ 錯誤'}</td>
+      </tr>`).join('');
+    const slug = (new URLSearchParams(location.search)).get('slug') || '';
+    const now = new Date();
+    const ts = now.toLocaleString();
+    const html = `<!doctype html><html><head><meta charset="utf-8">${css}<title>成績單</title></head>
+      <body>
+        <h1>英語影片播放器 – 成績單</h1>
+        <div class="meta"><div><b>影片代號</b>${slug}</div>
+        <div><b>列印時間</b>${ts}</div>
+        ${data.email ? `<div><b>學生帳號</b>${data.email}</div>` : ''}
+        </div>
+        <div class="score">分數：${data.score}</div>
+        <table>
+          <thead><tr><th style="width:42px">題號</th><th>題目</th><th style="width:88px">作答</th></tr></thead>
+          <tbody>${rows}</tbody>
+        </table>
+        <div class="no-print" style="margin-top:16px;color:#6b7280;">提示：使用 iPhone 的「分享」可儲存 PDF，或用 AirPrint 列印。</div>
+      </body></html>`;
+    return html;
+  }
+
+  async function handlePrint(){
+    const info = getScoreInfo();
+    info.email = await getUserEmail();
+    const html = buildHTML(info);
+    // 必須在使用者手勢中 window.open 才不會被 iOS 擋下
+    const w = window.open('', '_blank');
+    if(!w){ alert('請允許彈出視窗以列印成績單'); return; }
+    w.document.open(); w.document.write(html); w.document.close();
+    // 等新視窗渲染完成再印
+    const tryPrint = ()=>{ try{ w.focus(); w.print(); }catch(e){} };
+    w.onload = tryPrint;
+    setTimeout(tryPrint, 400);
+  }
+
+  document.addEventListener('click', function(e){
+    const btn = e.target.closest(SEL_BTN);
+    if(!btn) return;
+    e.preventDefault();
+    handlePrint();
+  }, true);
+})();
+</script>
+<!-- END Print Score (AirPrint / Preview) · V20251007-23 -->
+</body>
+</html>
 
 
 
