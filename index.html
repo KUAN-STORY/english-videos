@@ -85,6 +85,12 @@
 
     @media (max-width:1000px){ .features{grid-template-columns:repeat(2,1fr)} .grid{grid-template-columns:repeat(2,1fr)} }
     @media (max-width:640px){ .grid{grid-template-columns:1fr} .h1{font-size:22px} }
+  
+    /* 版本徽章 */
+    .ver-badge{position:fixed;top:10px;right:10px;z-index:9999;background:#1a2a4a;color:#dfe8ff;
+      border:1px solid rgba(255,255,255,.2);padding:6px 12px;border-radius:999px;font:600 12px/1 ui-sans-serif,system-ui,'Noto Sans TC'}
+    @media (max-width:640px){.ver-badge{top:auto;bottom:10px;right:10px}}
+    
   </style>
 </head>
 <body>
@@ -437,7 +443,6 @@ document.addEventListener('click', function(ev){
 </script>
 </body>
 </html>
-
 
 
 
