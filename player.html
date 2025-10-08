@@ -1304,64 +1304,39 @@ $$('.tabs .tab').forEach(t=>t.addEventListener('click',()=>showTab(t.dataset.tab
 </script>
 <!-- END Quiz Submit Compatibility · V20251007-22 -->
 
-<!-- BEGIN Minimal Patch · V20251007-22F2 -->
-<script>
-(function(){ 
-  const VERSION = 'V20251007-22F2';
-  const $ = (s, r=document)=>r.querySelector(s);
-  const $$ = (s, r=document)=>Array.from(r.querySelectorAll(s));
-
-  (function forceBadge(){
-    const cands = ['#buildTag','.build-tag','.version-badge','[data-version]','[id*="version"]','[class*="version"]'];
-    let done = False;
-    cands.forEach(sel => $$(sel).forEach(el => { if (!done && el && el.textContent) { el.textContent = VERSION; done = true; } }));
-    if (!done) {
-      const guess = $$('body *').find(el => /^V\d{8}-\w+$/i.test((el.textContent||'').trim()));
-      if (guess) guess.textContent = VERSION;
-    }
-  })();
-
-  (function ensurePrintButton(){
-    let btn = $('#btnPrint') || $('#btnPrintQuiz') || $('#btnPrintScore');
-    if (!btn) return;
-    try { btn.textContent = '列印題庫'; } catch(_ ) { }
-    if (!btn.__boundPrintF2) {
-      btn.__boundPrintF2 = true;
-      btn.addEventListener('click', function(e){ try { e.preventDefault(); } catch(_ ) { } try { window.print(); } catch(_ ) { } }, {passive:false});
-    }
-    btn.style.display = 'inline-block';
-  })();
-})();
-</script>
-<!-- END Minimal Patch · V20251007-22F2 -->
-
-<!-- BEGIN Mobile Lift + Print & Version Badge · V20251007-22F3 -->
+<!-- BEGIN Mobile Lift + Print & Version Badge + Auto Diagnostics · V20251007-22F4 -->
 <style>
-  /* 提升工具列在 iPhone 底部安全區上方一行 */
   .quiz-safe-spacer { height: calc(env(safe-area-inset-bottom) + 56px); }
+  .diag-hint {
+    position: fixed; right: 12px; bottom: calc(12px + env(safe-area-inset-bottom));
+    max-width: 88vw; z-index: 99999; background: rgba(18,27,38,.96);
+    color:#d8f0ff; border:1px solid rgba(120,180,255,.35);
+    padding: 10px 12px; border-radius: 12px; box-shadow: 0 8px 24px rgba(0,0,0,.35);
+    font-size: 14px; line-height: 1.45;
+  }
+  .diag-hint h4 { margin: 0 0 6px; font-size: 15px; color:#9ed0ff; }
+  .diag-hint code { background: rgba(255,255,255,.07); padding: 0 4px; border-radius: 6px; }
+  .diag-hint .small { opacity:.85; font-size:12px; }
+  .diag-hide { display:none !important; }
 </style>
 <script>
 (function(){
-  const VERSION = 'V20251007-22F3';
+  const VERSION = 'V20251007-22F4';
   const $  = (s, r=document)=>r.querySelector(s);
   const $$ = (s, r=document)=>Array.from(r.querySelectorAll(s));
 
-  // 1) 右上版號：強制把頁面上所有形如 VYYYYMMDD-xxx 的列印成現在版本
   (function forceBadgeAll(){
-    const els = $$('body *');
-    els.forEach(el=>{
-      const t = (el.textContent||'').trim();
+    $$('body *').forEach(el=>{
+      const t=(el.textContent||'').trim();
       if (/^V\d{8}-[\w.-]+$/.test(t)) el.textContent = VERSION;
     });
-    // 常見容器補一次
-    const cands = ['#buildTag','.build-tag','.version-badge','[data-version]','[id*="version"]','[class*="version"]'];
+    const cands=['#buildTag','.build-tag','.version-badge','[data-version]','[id*="version"]','[class*="version"]'];
     cands.forEach(sel => $$(sel).forEach(el => { if (el) el.textContent = VERSION; }));
   })();
 
-  // 2) 讓「列印題庫」在行動裝置也會跳預覽（AirPrint）
   function bindPrint(el){
-    if (!el || el.__boundPrintF3) return;
-    el.__boundPrintF3 = true;
+    if (!el || el.__boundPrintF4) return;
+    el.__boundPrintF4 = true;
     const handler = function(e){
       try{ e.preventDefault(); }catch(_){}
       try{ e.stopPropagation(); }catch(_){}
@@ -1371,36 +1346,93 @@ $$('.tabs .tab').forEach(t=>t.addEventListener('click',()=>showTab(t.dataset.tab
     ['click','touchend','pointerup'].forEach(ev=> el.addEventListener(ev, handler, {passive:false}));
     el.style.pointerEvents = 'auto';
   }
-
   function ensurePrint(){
     let btn = $('#btnPrint') || $('#btnPrintQuiz') || $('#btnPrintScore');
-    if (!btn) return;
-    try{ btn.textContent = '列印題庫'; }catch(_){}
-    bindPrint(btn);
-
-    // 3) 把按鈕列往上提一行：在按鈕容器後插入 spacer
-    const row = btn.closest('.actions, .quiz-actions, .btn-row, .controls, .toolbar, .section, div, footer');
-    if (row && !row.__spaced){
-      row.__spaced = true;
-      try{
+    if (btn){
+      try{ btn.textContent = '列印題庫'; }catch(_){}
+      bindPrint(btn);
+      const row = btn.closest('.actions, .quiz-actions, .btn-row, .controls, .toolbar, .section, div, footer');
+      if (row && !row.__spaced){
+        row.__spaced = true;
         row.style.marginBottom = 'calc(env(safe-area-inset-bottom) + 10px)';
-        const sp = document.createElement('div');
-        sp.className = 'quiz-safe-spacer';
+        const sp = document.createElement('div'); sp.className='quiz-safe-spacer';
         row.parentElement && row.parentElement.insertBefore(sp, row.nextSibling);
-      }catch(_){}
+      }
+    }
+  }
+  ensurePrint();
+  const moPrint = new MutationObserver(ensurePrint);
+  moPrint.observe(document.documentElement, {childList:true, subtree:true});
+
+  function diagBox(){ 
+    let box = $('.diag-hint'); 
+    if (!box){ box = document.createElement('div'); box.className='diag-hint diag-hide'; document.body.appendChild(box); }
+    return box;
+  }
+  function showDiag(html){ const box=diagBox(); box.innerHTML = html; box.classList.remove('diag-hide'); }
+  function hideDiag(){ const box=diagBox(); box.classList.add('diag-hide'); }
+
+  function getSlug(){
+    const u = new URL(location.href);
+    return u.searchParams.get('slug') || (u.pathname.split('?')[0].match(/([^/]+)\.html$/) ? RegExp.$1 : '');
+  }
+
+  async function tryFetch(url){
+    try{ const r = await fetch(url, {cache:'no-store'}); return {url, status:r.status, ok:r.ok}; }
+    catch(e){ return {url, status:0, ok:false, err:e.message}; }
+  }
+
+  async function probeJSON(){
+    const slug = getSlug() || 'houyi';
+    const cuesList = [`cues-${slug}.json`, `cues-${slug.toLowerCase()}.json`];
+    const wordsList= [`words-${slug}.json`, `words-${slug.toLowerCase()}.json`];
+
+    const results = [];
+    for (const u of cuesList.concat(wordsList)){
+      results.push(await tryFetch(u));
+    }
+
+    const cuesOK = results.find(r=>r.ok && /cues-/.test(r.url));
+    const wordsOK= results.find(r=>r.ok && /words-/.test(r.url));
+
+    const cuesTableEmpty = !document.querySelector('.cues-table tbody tr, #cuesTable tbody tr, [data-cues-loaded="1"]');
+    const wordsEmpty     = !document.querySelector('.words-table tbody tr, #wordsTable tbody tr, [data-words-loaded="1"]');
+
+    if ((cuesTableEmpty && !cuesOK) || (wordsEmpty && !wordsOK)){
+      const rows = results.map(r=>{
+        const label = r.url.includes('cues-') ? '字幕' : '單字';
+        const st = r.ok ? '✅ 200 OK' : (r.status ? '❌ ' + r.status : '❌ 連線失敗');
+        return `<div class="small">・${label}：<code>${r.url}</code> → ${st}</div>`;
+      }).join('');
+      showDiag(`<h4>資料載入偵測</h4>
+        <div>可能是 <b>檔名大小寫</b> 或 <b>路徑</b> 不符。</div>
+        ${rows}
+        <div class="small" style="margin-top:6px">建議：確認檔案是否位於同層，並將檔名改為 <code>cues-${slug.toLowerCase()}.json</code> 與 <code>words-${slug.toLowerCase()}.json</code>。</div>`);
+    } else {
+      hideDiag();
     }
   }
 
-  // 初始與動態保險
-  ensurePrint();
-  const mo = new MutationObserver(()=> ensurePrint());
-  mo.observe(document.documentElement, {childList:true, subtree:true});
+  function probeVideo(){
+    const v = document.querySelector('video');
+    if (!v) return;
+    const bad = (v.readyState===0 || v.networkState===3);
+    if (bad){
+      const src = v.currentSrc || v.src || '(未知)';
+      showDiag(`<h4>影片來源偵測</h4>
+        <div>視訊來源可能無法連線或被 CORS/大小寫影響。</div>
+        <div class="small">src：<code>${src}</code></div>`);
+    }
+  }
 
-})(); 
+  setTimeout(probeJSON, 4500);
+  setTimeout(probeVideo, 5000);
+})();
 </script>
-<!-- END Mobile Lift + Print & Version Badge · V20251007-22F3 -->
+<!-- END Mobile Lift + Print & Version Badge + Auto Diagnostics · V20251007-22F4 -->
 </body>
 </html>
+
 
 
 
