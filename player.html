@@ -216,6 +216,56 @@
 }
 </style>
 
+
+<style id="print-full-content-fix">
+/* iOS Safari：列印只出現部分內容，多半是因為容器被設成固定高度 + overflow/transform。
+   這裡在列印時把所有可疑容器打開，並把左欄與影片隱藏，只留測驗區完整輸出。 */
+@media print {
+  html, body {
+    height: auto !important;
+    overflow: visible !important;
+  }
+
+  /* 解除各層容器的高度/捲軸/變形，避免只印出可視區 */
+  .layout, .wrap, .right, .content, .main, .pane, .panel,
+  #pane-quiz, #pane-quiz .quiz-shell, [class*="pane"], [class*="wrap"] {
+    height: auto !important;
+    max-height: none !important;
+    overflow: visible !important;
+    transform: none !important;
+    -webkit-transform: none !important;
+    position: static !important;
+  }
+
+  /* 隱藏不需要列印的左側區塊與播放器／工具條／分頁籤 */
+  .left, .videoWrap, .player, .player-tools, .speed, .q-tabs, header, nav,
+  .version, [class*="version"], [id*="version"] {
+    display: none !important;
+  }
+
+  /* 讓測驗區獨佔寬度，避免被兩欄排版壓扁 */
+  #pane-quiz {
+    display: block !important;
+    width: auto !important;
+  }
+
+  /* 交卷相關按鈕不要固定在底部，避免被截斷 */
+  #pane-quiz .q-actions,
+  #pane-quiz .result-actions,
+  #pane-quiz .score-actions,
+  #pane-quiz [data-role="result-actions"] {
+    position: static !important;
+    bottom: auto !important;
+  }
+
+  /* 題目避免被拆頁(盡量) */
+  .q-item, [class*="question"] {
+    page-break-inside: avoid;
+    break-inside: avoid;
+  }
+}
+</style>
+
 </head>
 <body>
 
@@ -1348,6 +1398,7 @@ $$('.tabs .tab').forEach(t=>t.addEventListener('click',()=>showTab(t.dataset.tab
 
 </body>
 </html>
+
 
 
 
