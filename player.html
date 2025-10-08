@@ -1303,8 +1303,45 @@ $$('.tabs .tab').forEach(t=>t.addEventListener('click',()=>showTab(t.dataset.tab
 })();
 </script>
 <!-- END Quiz Submit Compatibility · V20251007-22 -->
+
+<!-- Minimal Mobile Enhancer: keep original logic intact -->
+<script>
+(function(){
+  // strengthen the existing #btnSubmitQuiz without changing its handler
+  const submit = document.getElementById('btnSubmitQuiz');
+  if (submit && !submit.dataset.mobileEnhanced) {
+    submit.dataset.mobileEnhanced = '1';
+    // Use the original onclick handler if present
+    const original = typeof submit.onclick === 'function' ? submit.onclick.bind(submit) : null;
+    function safeCall(e){
+      try{ e && e.preventDefault && e.preventDefault(); }catch(_){}
+      try{ if (original) original(e); else submit.click(); }catch(_){}
+    }
+    ['touchstart','touchend','pointerup','keydown'].forEach(ev => {
+      submit.addEventListener(ev, function(e){
+        if (ev==='keydown' && !(e.key==='Enter' || e.key===' ')) return;
+        safeCall(e);
+      }, {passive:false});
+    });
+  }
+
+  // Make print button persistent & allow AirPrint/Preview
+  const printBtn = document.getElementById('btnPrint');
+  if (printBtn && !printBtn.dataset.mobileEnhanced) {
+    printBtn.dataset.mobileEnhanced = '1';
+    printBtn.style.display = 'inline-block';
+    // keep the page from swallowing the click
+    ['touchend','pointerup'].forEach(ev => 
+      printBtn.addEventListener(ev, e => { try{e.preventDefault();}catch(_){}
+        try{window.print();}catch(_){}
+      }, {passive:false})
+    );
+  }
+})();
+</script>
 </body>
 </html>
+
 
 
 
