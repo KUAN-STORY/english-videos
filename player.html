@@ -176,13 +176,6 @@
 }
 </style>
 <!-- END Mobile 2-Page Pager · V20251007-21 -->
-
-<style id="hotfix-v22-topbar">
-body::before{content:"";position:fixed;top:0;left:0;right:0;height:22px;background:var(--bg,#0b1324);z-index:2147483645;pointer-events:none}
-header{position:sticky;top:0;z-index:1000;background:var(--panel,#0f172a)}
-#uni-actions-bar{display:none!important}
-</style>
-
 </head>
 <body>
 
@@ -1310,20 +1303,9 @@ $$('.tabs .tab').forEach(t=>t.addEventListener('click',()=>showTab(t.dataset.tab
 })();
 </script>
 <!-- END Quiz Submit Compatibility · V20251007-22 -->
-
-<script>
-(function(){
-  try{
-    var pill = Array.from(document.querySelectorAll('*')).find(function(el){
-      return /V\d{8}-\d{2,}/.test((el.textContent||'').trim());
-    });
-    if(pill){ pill.textContent = 'V20251007-22'; }
-  }catch(e){}
-})();
-</script>
-
 </body>
 </html>
+
 
 
 
