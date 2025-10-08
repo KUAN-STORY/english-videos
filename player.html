@@ -278,7 +278,7 @@
               <button class="btn" id="btnSubmitQuiz">交卷</button>
               <button class="btn" id="btnShowAnswer" style="display:none">顯示答案</button>
               <!-- 列印按鈕（常駐顯示於測驗區） -->
-              <button class="btn" id="btnPrint" style="display:none">列印題庫</button>
+              <button class="btn" id="btnPrint" style="display:none">列印成績單</button>
               <span id="quizScore" style="margin-left:8px"></span>
             </div>
             <div id="quizResult" style="display:none;margin-top:10px"></div>
@@ -1303,135 +1303,9 @@ $$('.tabs .tab').forEach(t=>t.addEventListener('click',()=>showTab(t.dataset.tab
 })();
 </script>
 <!-- END Quiz Submit Compatibility · V20251007-22 -->
-
-<!-- BEGIN Mobile Lift + Print & Version Badge + Auto Diagnostics · V20251007-22F4 -->
-<style>
-  .quiz-safe-spacer { height: calc(env(safe-area-inset-bottom) + 56px); }
-  .diag-hint {
-    position: fixed; right: 12px; bottom: calc(12px + env(safe-area-inset-bottom));
-    max-width: 88vw; z-index: 99999; background: rgba(18,27,38,.96);
-    color:#d8f0ff; border:1px solid rgba(120,180,255,.35);
-    padding: 10px 12px; border-radius: 12px; box-shadow: 0 8px 24px rgba(0,0,0,.35);
-    font-size: 14px; line-height: 1.45;
-  }
-  .diag-hint h4 { margin: 0 0 6px; font-size: 15px; color:#9ed0ff; }
-  .diag-hint code { background: rgba(255,255,255,.07); padding: 0 4px; border-radius: 6px; }
-  .diag-hint .small { opacity:.85; font-size:12px; }
-  .diag-hide { display:none !important; }
-</style>
-<script>
-(function(){
-  const VERSION = 'V20251007-22F4';
-  const $  = (s, r=document)=>r.querySelector(s);
-  const $$ = (s, r=document)=>Array.from(r.querySelectorAll(s));
-
-  (function forceBadgeAll(){
-    $$('body *').forEach(el=>{
-      const t=(el.textContent||'').trim();
-      if (/^V\d{8}-[\w.-]+$/.test(t)) el.textContent = VERSION;
-    });
-    const cands=['#buildTag','.build-tag','.version-badge','[data-version]','[id*="version"]','[class*="version"]'];
-    cands.forEach(sel => $$(sel).forEach(el => { if (el) el.textContent = VERSION; }));
-  })();
-
-  function bindPrint(el){
-    if (!el || el.__boundPrintF4) return;
-    el.__boundPrintF4 = true;
-    const handler = function(e){
-      try{ e.preventDefault(); }catch(_){}
-      try{ e.stopPropagation(); }catch(_){}
-      try{ document.activeElement && document.activeElement.blur && document.activeElement.blur(); }catch(_){}
-      setTimeout(function(){ try{ window.print(); }catch(_){} }, 0);
-    };
-    ['click','touchend','pointerup'].forEach(ev=> el.addEventListener(ev, handler, {passive:false}));
-    el.style.pointerEvents = 'auto';
-  }
-  function ensurePrint(){
-    let btn = $('#btnPrint') || $('#btnPrintQuiz') || $('#btnPrintScore');
-    if (btn){
-      try{ btn.textContent = '列印題庫'; }catch(_){}
-      bindPrint(btn);
-      const row = btn.closest('.actions, .quiz-actions, .btn-row, .controls, .toolbar, .section, div, footer');
-      if (row && !row.__spaced){
-        row.__spaced = true;
-        row.style.marginBottom = 'calc(env(safe-area-inset-bottom) + 10px)';
-        const sp = document.createElement('div'); sp.className='quiz-safe-spacer';
-        row.parentElement && row.parentElement.insertBefore(sp, row.nextSibling);
-      }
-    }
-  }
-  ensurePrint();
-  const moPrint = new MutationObserver(ensurePrint);
-  moPrint.observe(document.documentElement, {childList:true, subtree:true});
-
-  function diagBox(){ 
-    let box = $('.diag-hint'); 
-    if (!box){ box = document.createElement('div'); box.className='diag-hint diag-hide'; document.body.appendChild(box); }
-    return box;
-  }
-  function showDiag(html){ const box=diagBox(); box.innerHTML = html; box.classList.remove('diag-hide'); }
-  function hideDiag(){ const box=diagBox(); box.classList.add('diag-hide'); }
-
-  function getSlug(){
-    const u = new URL(location.href);
-    return u.searchParams.get('slug') || (u.pathname.split('?')[0].match(/([^/]+)\.html$/) ? RegExp.$1 : '');
-  }
-
-  async function tryFetch(url){
-    try{ const r = await fetch(url, {cache:'no-store'}); return {url, status:r.status, ok:r.ok}; }
-    catch(e){ return {url, status:0, ok:false, err:e.message}; }
-  }
-
-  async function probeJSON(){
-    const slug = getSlug() || 'houyi';
-    const cuesList = [`cues-${slug}.json`, `cues-${slug.toLowerCase()}.json`];
-    const wordsList= [`words-${slug}.json`, `words-${slug.toLowerCase()}.json`];
-
-    const results = [];
-    for (const u of cuesList.concat(wordsList)){
-      results.push(await tryFetch(u));
-    }
-
-    const cuesOK = results.find(r=>r.ok && /cues-/.test(r.url));
-    const wordsOK= results.find(r=>r.ok && /words-/.test(r.url));
-
-    const cuesTableEmpty = !document.querySelector('.cues-table tbody tr, #cuesTable tbody tr, [data-cues-loaded="1"]');
-    const wordsEmpty     = !document.querySelector('.words-table tbody tr, #wordsTable tbody tr, [data-words-loaded="1"]');
-
-    if ((cuesTableEmpty && !cuesOK) || (wordsEmpty && !wordsOK)){
-      const rows = results.map(r=>{
-        const label = r.url.includes('cues-') ? '字幕' : '單字';
-        const st = r.ok ? '✅ 200 OK' : (r.status ? '❌ ' + r.status : '❌ 連線失敗');
-        return `<div class="small">・${label}：<code>${r.url}</code> → ${st}</div>`;
-      }).join('');
-      showDiag(`<h4>資料載入偵測</h4>
-        <div>可能是 <b>檔名大小寫</b> 或 <b>路徑</b> 不符。</div>
-        ${rows}
-        <div class="small" style="margin-top:6px">建議：確認檔案是否位於同層，並將檔名改為 <code>cues-${slug.toLowerCase()}.json</code> 與 <code>words-${slug.toLowerCase()}.json</code>。</div>`);
-    } else {
-      hideDiag();
-    }
-  }
-
-  function probeVideo(){
-    const v = document.querySelector('video');
-    if (!v) return;
-    const bad = (v.readyState===0 || v.networkState===3);
-    if (bad){
-      const src = v.currentSrc || v.src || '(未知)';
-      showDiag(`<h4>影片來源偵測</h4>
-        <div>視訊來源可能無法連線或被 CORS/大小寫影響。</div>
-        <div class="small">src：<code>${src}</code></div>`);
-    }
-  }
-
-  setTimeout(probeJSON, 4500);
-  setTimeout(probeVideo, 5000);
-})();
-</script>
-<!-- END Mobile Lift + Print & Version Badge + Auto Diagnostics · V20251007-22F4 -->
 </body>
 </html>
+
 
 
 
