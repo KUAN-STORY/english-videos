@@ -16,41 +16,6 @@
 <meta name="viewport" content="width=device-width,initial-scale=1"/>
 <title>英語影片播放器</title>
 <style>
-  <style id="mobile-fix-quiz-bars">
-/* 手機直式：把兩條按鈕列固定在視窗底部、分兩層高度，並增底部可捲空間 */
-@media (max-width: 768px) {
-  /* 右側內容區多留空，避免捲到底被按鈕擋住 */
-  #pane-quiz .quiz-shell { padding-bottom: 180px; }
-
-  /* 交卷前那一列（含「交卷」等）放上層 */
-  #pane-quiz .q-actions {
-    position: fixed;
-    left: 12px; right: 12px;
-    bottom: calc(env(safe-area-inset-bottom) + 64px); /* 往上抬一層 */
-    z-index: 2147483647;
-    background: #0e2038; border: 1px solid #183459; border-radius: 12px;
-    padding: 10px 12px; box-shadow: 0 10px 24px rgba(0,0,0,.35);
-    pointer-events: auto; -webkit-transform: translateZ(0);
-  }
-
-  /* 交卷後出現的那一列（顯示答案 / 列印成績 / 本區分數）放底層 */
-  #pane-quiz .result-actions,
-  #pane-quiz .after-submit,
-  #pane-quiz .score-actions,
-  #pane-quiz .quiz-actions,
-  #pane-quiz [data-role="result-actions"],
-  #pane-quiz [class*="actions"]:not(.q-actions) {
-    position: fixed;
-    left: 12px; right: 12px;
-    bottom: calc(env(safe-area-inset-bottom) + 16px); /* 比上面低一階 */
-    z-index: 2147483647;
-    background: #0e2038; border: 1px solid #183459; border-radius: 12px;
-    padding: 10px 12px; box-shadow: 0 10px 24px rgba(0,0,0,.35);
-    pointer-events: auto; -webkit-transform: translateZ(0);
-  }
-}
-</style>
-
   :root{ --bg:#0b1324; --panel:#0f172a; --border:#1f2a44; --ink:#e6efff; --muted:#9fb0c9; --accent:#3c7cff; }
   *{box-sizing:border-box}
   html,body{height:100%;margin:0;background:var(--bg);color:var(--ink);font-family:ui-sans-serif,system-ui,"Noto Sans TC"}
@@ -1340,6 +1305,7 @@ $$('.tabs .tab').forEach(t=>t.addEventListener('click',()=>showTab(t.dataset.tab
 <!-- END Quiz Submit Compatibility · V20251007-22 -->
 </body>
 </html>
+
 
 
 
