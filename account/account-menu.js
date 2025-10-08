@@ -1,123 +1,124 @@
-/* account-menu.js — drop-in account UI for index.html (V2025V001, preconfigured) */
+/* V2025V001 – BookWide Account Menu */
 (() => {
-  const VERSION = "V2025V001";
-  window.SUPABASE_URL = "https://qtgwedankftrqjmzuset.supabase.co";
-  window.SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InF0Z3dlZGFua2Z0cnFqbXp1c2V0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTg4NDYxMDMsImV4cCI6MjA3NDQyMjEwM30.jyETpt09pgm66aCZheMgsjtbKlVmYo-lt-hrrt6BF8g";
+  const VERSION = 'V2025V001';
 
-  function loadScript(src) {
-    return new Promise((resolve, reject) => {
+  // 你的專案（可被 window.SUPABASE_URL / SUPABASE_ANON_KEY 覆寫）
+  const SUPABASE_URL  = window.SUPABASE_URL  || 'https://qtgwedankftrqjmzuset.supabase.co';
+  const SUPABASE_KEY  = window.SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InF0Z3dlZGFua2Z0cnFqbXp1c2V0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTg4NDYxMDMsImV4cCI6MjA3NDQyMjEwM30.jyETpt09pgm66aCZheMgsjtbKlVmYo-lt-hrrt6BF8g';
+
+  // 要隱藏舊的登入 / 登出按鈕可塞 selector（選填）
+  const HIDE_LOGIN_SEL  = window.SB_LOGIN_HIDE_SELECTOR  || '.btn-login,.login,.js-login';
+  const HIDE_LOGOUT_SEL = window.SB_LOGOUT_HIDE_SELECTOR || '';
+
+  // 載入 supabase-js v2（如未載）
+  function ensureSupabase() {
+    return new Promise((resolve) => {
+      if (window.supabase) return resolve();
       const s = document.createElement('script');
-      s.src = src; s.async = true;
-      s.onload = resolve; s.onerror = reject;
+      s.src = 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2';
+      s.onload = () => resolve();
       document.head.appendChild(s);
     });
   }
 
-  async function ensureSupabase() {
-    if (!window.supabase) {
-      await loadScript('https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2');
-    }
-    const url = window.SUPABASE_URL;
-    const key = window.SUPABASE_ANON_KEY;
-    if (!window._sbClient) {
-      window._sbClient = window.supabase.createClient(url, key, { auth: { persistSession: true } });
-    }
-    return window._sbClient;
-  }
+  // UI
+  function mountUI(client) {
+    // 隱藏舊按鈕（如果頁面有）
+    if (HIDE_LOGIN_SEL)  document.querySelectorAll(HIDE_LOGIN_SEL).forEach(el => el.style.display='none');
+    if (HIDE_LOGOUT_SEL) document.querySelectorAll(HIDE_LOGOUT_SEL).forEach(el => el.style.display='none');
 
-  function upsertVersionPill() {
-    const id = 'kv-version-pill';
-    let el = document.getElementById(id);
-    if (!el) {
-      el = document.createElement('div');
-      el.id = id;
-      el.textContent = VERSION;
-      el.setAttribute('aria-label', 'version');
-      document.body.appendChild(el);
-    } else {
-      el.textContent = VERSION;
-    }
-  }
+    // root
+    const root = document.createElement('div');
+    root.id = 'accMenuRoot';
+    root.innerHTML = `
+      <span class="acc-badge">${VERSION}</span>
+      <button class="acc-avatar" id="accAvatarBtn" aria-label="account">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M12 12c2.761 0 5-2.686 5-6s-2.239-6-5-6-5 2.686-5 6 2.239 6 5 6zm0 2c-3.859 0-7 2.91-7 6.5V22h14v-1.5C19 16.91 15.859 14 12 14z"/></svg>
+        <span id="accAvatarText" class="muted">未登入</span>
+      </button>
+      <div class="acc-menu" id="accDropdown">
+        <div class="acc-item" data-link="./account/profile.html">我的資料</div>
+        <div class="acc-item" data-link="./account/favorites.html">收藏影片</div>
+        <div class="acc-item" data-link="./account/learning.html">學習曲線</div>
+        <div class="split"></div>
+        <div class="acc-item" id="accLogin">登入</div>
+        <div class="acc-item" id="accLogout" style="display:none">登出</div>
+      </div>
+    `;
+    document.body.appendChild(root);
 
-  function hideLegacyLoginButtons() {
-    const nodes = Array.from(document.querySelectorAll('a,button'));
-    nodes.forEach(n => {
-      const t = (n.textContent || '').trim();
-      if (!t) return;
-      if (t === '登入' || t.includes('登入')) {
-        if (n.closest('#kv-account-menu')) return;
-        n.style.display = 'none';
+    const avatarBtn = root.querySelector('#accAvatarBtn');
+    const menu      = root.querySelector('#accDropdown');
+    const txt       = root.querySelector('#accAvatarText');
+    const btnLogin  = root.querySelector('#accLogin');
+    const btnLogout = root.querySelector('#accLogout');
+
+    // 切換選單
+    avatarBtn.addEventListener('click', () => menu.classList.toggle('open'));
+    document.addEventListener('click', (e) => {
+      if (!root.contains(e.target)) menu.classList.remove('open');
+    });
+
+    // 連結
+    menu.querySelectorAll('[data-link]').forEach(a=>{
+      a.addEventListener('click', () => { location.href = a.dataset.link; });
+    });
+
+    // 登入：若設定 provider 就 OAuth，否則寄 Magic Link
+    btnLogin.addEventListener('click', async () => {
+      const provider = (window.SB_LOGIN_PROVIDER||'').toLowerCase();
+      if (provider === 'google' || provider === 'github') {
+        const { error } = await client.auth.signInWithOAuth({
+          provider,
+          options: { redirectTo: location.href }
+        });
+        if (error) alert(error.message);
+      } else {
+        const email = prompt('請輸入 Email（會寄驗證連結）');
+        if (!email) return;
+        const { error } = await client.auth.signInWithOtp({
+          email, options:{ emailRedirectTo: location.href }
+        });
+        alert(error ? error.message : '已寄出登入連結，請到信箱點擊完成登入');
+      }
+    });
+
+    // 登出
+    btnLogout.addEventListener('click', async () => {
+      await client.auth.signOut();
+      location.reload();
+    });
+
+    // 初始狀態
+    client.auth.getUser().then(({ data }) => {
+      const user = data?.user;
+      if (user) {
+        txt.textContent = user.email || '已登入';
+        btnLogin.style.display = 'none';
+        btnLogout.style.display = 'flex';
+      }
+    });
+
+    // 狀態變動
+    client.auth.onAuthStateChange((_e, session) => {
+      const user = session?.user;
+      if (user) {
+        txt.textContent = user.email || '已登入';
+        btnLogin.style.display = 'none';
+        btnLogout.style.display = 'flex';
+      } else {
+        txt.textContent = '未登入';
+        btnLogin.style.display = 'flex';
+        btnLogout.style.display = 'none';
       }
     });
   }
 
-  function buildMenu() {
-    if (document.getElementById('kv-account-menu')) return;
-    const wrap = document.createElement('div');
-    wrap.id = 'kv-account-menu';
-    wrap.innerHTML = `
-      <button id="kv-avatar" class="kv-avatar" aria-haspopup="true" aria-expanded="false" title="帳號">
-        <span class="kv-avatar-icon">👤</span>
-      </button>
-      <div id="kv-menu" class="kv-menu" role="menu" aria-hidden="true">
-        <a class="kv-item" href="./account/profile.html" role="menuitem">我的資料</a>
-        <a class="kv-item" href="./account/favorites.html" role="menuitem">收藏影片</a>
-        <a class="kv-item" href="./account/learning.html" role="menuitem">學習曲線</a>
-        <hr class="kv-sep"/>
-        <button class="kv-item" id="kv-login" role="menuitem">登入</button>
-        <button class="kv-item" id="kv-logout" role="menuitem">登出</button>
-      </div>
-    `;
-    document.body.appendChild(wrap);
-
-    const btn = wrap.querySelector('#kv-avatar');
-    const menu = wrap.querySelector('#kv-menu');
-    function closeMenu() { menu.setAttribute('aria-hidden','true'); btn.setAttribute('aria-expanded','false'); }
-    function openMenu() { menu.setAttribute('aria-hidden','false'); btn.setAttribute('aria-expanded','true'); }
-    btn.addEventListener('click', e=>{ e.stopPropagation(); menu.getAttribute('aria-hidden')==='true'?openMenu():closeMenu(); });
-    document.addEventListener('click', e=>{ if(!wrap.contains(e.target)) closeMenu(); });
-    return { wrap, menu };
-  }
-
-  async function init() {
-    upsertVersionPill();
-    if (!document.getElementById('kv-account-css')) {
-      const s = document.createElement('link');
-      s.id = 'kv-account-css'; s.rel = 'stylesheet'; s.href = './account/account-menu.css';
-      document.head.appendChild(s);
-    }
-    const sb = await ensureSupabase();
-    const { wrap } = buildMenu();
-    const loginBtn = wrap.querySelector('#kv-login');
-    const logoutBtn = wrap.querySelector('#kv-logout');
-
-    async function refreshAuthUI() {
-      const { data: { session } } = await sb.auth.getSession();
-      loginBtn.style.display = session ? 'none':'block';
-      logoutBtn.style.display = session ? 'block':'none';
-    }
-    loginBtn.addEventListener('click', async () => {
-      try {
-        const provider = (window.SB_LOGIN_PROVIDER || '').toLowerCase();
-        if (provider === 'google') {
-          await sb.auth.signInWithOAuth({ provider:'google', options: { redirectTo: location.href } });
-        } else if (provider === 'github') {
-          await sb.auth.signInWithOAuth({ provider:'github', options: { redirectTo: location.href } });
-        } else {
-          const email = prompt('輸入 Email 以取得登入連結：');
-          if (email) {
-            await sb.auth.signInWithOtp({ email, options: { emailRedirectTo: location.href } });
-            alert('已寄出登入連結，請至信箱確認。');
-          }
-        }
-      } catch(e) { alert('登入失敗：'+ e.message); }
-    });
-    logoutBtn.addEventListener('click', async () => { await sb.auth.signOut(); await refreshAuthUI(); });
-    sb.auth.onAuthStateChange((_e,_s)=>refreshAuthUI());
-    await refreshAuthUI();
-    hideLegacyLoginButtons();
-  }
-
-  if (document.readyState==='loading') document.addEventListener('DOMContentLoaded', init);
-  else init();
+  // 啟動
+  (async () => {
+    await ensureSupabase();
+    const supa = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+    mountUI(supa);
+    console.log('[AccountMenu] Ready', VERSION);
+  })();
 })();
