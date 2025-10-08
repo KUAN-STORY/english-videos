@@ -1396,6 +1396,23 @@ $$('.tabs .tab').forEach(t=>t.addEventListener('click',()=>showTab(t.dataset.tab
 
 <!-- removed uni-actions-js (mobile overlay bar logic) -->
 
+
+<script id="version-badge-patcher">
+(function(){
+  var NEW = 'V2025V001'; // 新版顯示格式：去月日、僅年+流水號
+  // 1) 常見位置（膠囊/徽章/版本容器）
+  ['#buildTag','.build-tag','.version-badge','[data-version]','[class*="version"]','[id*="version"]']
+    .forEach(function(sel){
+      document.querySelectorAll(sel).forEach(function(el){ try{ el.textContent = NEW; }catch(e){} });
+    });
+  // 2) 後備：頁面上任何看起來是版本字串的純文字
+  Array.prototype.forEach.call(document.querySelectorAll('body *'), function(el){
+    var t = (el.textContent||'').trim();
+    if (/^V[\dA-Za-z_.-]+$/.test(t)) { try{ el.textContent = NEW; }catch(e){} }
+  });
+})();
+</script>
+
 </body>
 </html>
 
