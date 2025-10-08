@@ -278,7 +278,7 @@
               <button class="btn" id="btnSubmitQuiz">交卷</button>
               <button class="btn" id="btnShowAnswer" style="display:none">顯示答案</button>
               <!-- 列印按鈕（常駐顯示於測驗區） -->
-              <button class="btn" id="btnPrint" style="display:none">列印成績單</button>
+              <button class="btn" id="btnPrint" style="display:none">列印題庫</button>
               <span id="quizScore" style="margin-left:8px"></span>
             </div>
             <div id="quizResult" style="display:none;margin-top:10px"></div>
@@ -1304,43 +1304,39 @@ $$('.tabs .tab').forEach(t=>t.addEventListener('click',()=>showTab(t.dataset.tab
 </script>
 <!-- END Quiz Submit Compatibility · V20251007-22 -->
 
-<!-- Minimal Mobile Enhancer: keep original logic intact -->
+<!-- BEGIN Minimal Patch · V20251007-22F2 -->
 <script>
-(function(){
-  // strengthen the existing #btnSubmitQuiz without changing its handler
-  const submit = document.getElementById('btnSubmitQuiz');
-  if (submit && !submit.dataset.mobileEnhanced) {
-    submit.dataset.mobileEnhanced = '1';
-    // Use the original onclick handler if present
-    const original = typeof submit.onclick === 'function' ? submit.onclick.bind(submit) : null;
-    function safeCall(e){
-      try{ e && e.preventDefault && e.preventDefault(); }catch(_){}
-      try{ if (original) original(e); else submit.click(); }catch(_){}
-    }
-    ['touchstart','touchend','pointerup','keydown'].forEach(ev => {
-      submit.addEventListener(ev, function(e){
-        if (ev==='keydown' && !(e.key==='Enter' || e.key===' ')) return;
-        safeCall(e);
-      }, {passive:false});
-    });
-  }
+(function(){ 
+  const VERSION = 'V20251007-22F2';
+  const $ = (s, r=document)=>r.querySelector(s);
+  const $$ = (s, r=document)=>Array.from(r.querySelectorAll(s));
 
-  // Make print button persistent & allow AirPrint/Preview
-  const printBtn = document.getElementById('btnPrint');
-  if (printBtn && !printBtn.dataset.mobileEnhanced) {
-    printBtn.dataset.mobileEnhanced = '1';
-    printBtn.style.display = 'inline-block';
-    // keep the page from swallowing the click
-    ['touchend','pointerup'].forEach(ev => 
-      printBtn.addEventListener(ev, e => { try{e.preventDefault();}catch(_){}
-        try{window.print();}catch(_){}
-      }, {passive:false})
-    );
-  }
+  (function forceBadge(){
+    const cands = ['#buildTag','.build-tag','.version-badge','[data-version]','[id*="version"]','[class*="version"]'];
+    let done = False;
+    cands.forEach(sel => $$(sel).forEach(el => { if (!done && el && el.textContent) { el.textContent = VERSION; done = true; } }));
+    if (!done) {
+      const guess = $$('body *').find(el => /^V\d{8}-\w+$/i.test((el.textContent||'').trim()));
+      if (guess) guess.textContent = VERSION;
+    }
+  })();
+
+  (function ensurePrintButton(){
+    let btn = $('#btnPrint') || $('#btnPrintQuiz') || $('#btnPrintScore');
+    if (!btn) return;
+    try { btn.textContent = '列印題庫'; } catch(_ ) { }
+    if (!btn.__boundPrintF2) {
+      btn.__boundPrintF2 = true;
+      btn.addEventListener('click', function(e){ try { e.preventDefault(); } catch(_ ) { } try { window.print(); } catch(_ ) { } }, {passive:false});
+    }
+    btn.style.display = 'inline-block';
+  })();
 })();
 </script>
+<!-- END Minimal Patch · V20251007-22F2 -->
 </body>
 </html>
+
 
 
 
