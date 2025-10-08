@@ -16,29 +16,6 @@
 <meta name="viewport" content="width=device-width,initial-scale=1"/>
 <title>英語影片播放器</title>
 <style>
-/* === Mobile quiz bars fix (mobile) === */
-/* 手機直式：把兩條按鈕列固定在視窗底部、分兩層高度，並增底部可捲空間 */
-@media (max-width:768px){
-  #pane-quiz .quiz-shell{padding-bottom:180px}
-  #pane-quiz .q-actions{
-    position:fixed;left:12px;right:12px;
-    bottom:calc(env(safe-area-inset-bottom) + 64px);
-    z-index:2147483647;background:#0e2038;border:1px solid #183459;border-radius:12px;
-    padding:10px 12px;box-shadow:0 10px 24px rgba(0,0,0,.35);pointer-events:auto;-webkit-transform:translateZ(0)
-  }
-  #pane-quiz .result-actions,
-  #pane-quiz .after-submit,
-  #pane-quiz .score-actions,
-  #pane-quiz .quiz-actions,
-  #pane-quiz [data-role="result-actions"],
-  #pane-quiz [class*="actions"]:not(.q-actions){
-    position:fixed;left:12px;right:12px;
-    bottom:calc(env(safe-area-inset-bottom) + 16px);
-    z-index:2147483647;background:#0e2038;border:1px solid #183459;border-radius:12px;
-    padding:10px 12px;box-shadow:0 10px 24px rgba(0,0,0,.35);pointer-events:auto;-webkit-transform:translateZ(0)
-  }
-}
-
   :root{ --bg:#0b1324; --panel:#0f172a; --border:#1f2a44; --ink:#e6efff; --muted:#9fb0c9; --accent:#3c7cff; }
   *{box-sizing:border-box}
   html,body{height:100%;margin:0;background:var(--bg);color:var(--ink);font-family:ui-sans-serif,system-ui,"Noto Sans TC"}
@@ -199,6 +176,50 @@
 }
 </style>
 <!-- END Mobile 2-Page Pager · V20251007-21 -->
+
+<style id="uni-actions-css">
+@media (max-width: 768px){
+  #pane-quiz .result-actions,
+  #pane-quiz .after-submit,
+  #pane-quiz .score-actions,
+  #pane-quiz .quiz-actions { display:none !important; }
+  #pane-quiz .result-actions img,
+  #pane-quiz .result-actions canvas,
+  #pane-quiz .result-actions [class*="bg"],
+  #pane-quiz .result-actions [style*="background-image"] { pointer-events:none !important; }
+
+  #pane-quiz .quiz-shell { padding-bottom: 180px; }
+
+  #uni-actions-bar{
+    position:fixed; left:12px; right:12px;
+    bottom:calc(env(safe-area-inset-bottom) + 16px);
+    z-index:2147483647; display:flex; gap:12px; align-items:center;
+    background:#0e2038; border:1px solid #183459; border-radius:12px;
+    padding:10px 12px; box-shadow:0 10px 24px rgba(0,0,0,.35);
+  }
+  #uni-actions-bar button{
+    padding:10px 14px; border-radius:10px; border:1px solid #2a4aa0;
+    background:#203a66; color:#fff; font-size:16px; line-height:1;
+  }
+  #uni-actions-bar .spacer{ flex:1 }
+  #uni-actions-bar .score-hint{ color:#cfe2ff; font-weight:700; font-size:18px }
+}
+@media print {
+  body { background:#fff !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  header, nav, .left, .videoWrap, #pane-cues, #pane-words, .q-tabs, .tab,
+  #uni-actions-bar, .q-actions, .btn, .toolbar, .controls, footer { display:none !important; }
+  #pane-quiz, #pane-quiz .quiz-shell { display:block !important; height:auto !important; overflow:visible !important; padding:0 !important; margin:0 !important; }
+
+  body.printing-sheet .is-correct,
+  body.printing-sheet .is-wrong,
+  body.printing-sheet .answer,
+  body.printing-sheet .result,
+  body.printing-sheet [class*="score"],
+  body.printing-sheet [class*="正解"],
+  body.printing-sheet [class*="解答"] { display:none !important; }
+}
+</style>
+
 </head>
 <body>
 
@@ -1326,8 +1347,67 @@ $$('.tabs .tab').forEach(t=>t.addEventListener('click',()=>showTab(t.dataset.tab
 })();
 </script>
 <!-- END Quiz Submit Compatibility · V20251007-22 -->
+
+<script id="uni-actions-js">
+(function(){
+  const S = { submitted:false };
+  function clickOriginalSubmit(){
+    const norm = s => (s||'').replace(/\s+/g,'');
+    const all = document.querySelectorAll('button,a,[role="button"]');
+    for (const el of all) {
+      const txt = norm(el.innerText || el.textContent);
+      if (txt.includes(norm('交卷')) || /submit/i.test(el.id||'')) { el.click(); return true; }
+    }
+    return false;
+  }
+  function detectSubmitted(){
+    if (S.submitted) return true;
+    const zone = document.querySelector('#pane-quiz');
+    if (!zone) return false;
+    const t = (zone.innerText||'').trim();
+    if (/本分區分數|分數[:：]\s*\d+\/\d+|正解|錯誤/.test(t)) { S.submitted = true; refreshBar(); return true; }
+    return false;
+  }
+  function ensureBar(){
+    if (document.getElementById('uni-actions-bar')) return;
+    const bar = document.createElement('div');
+    bar.id = 'uni-actions-bar';
+    const bSubmit = document.createElement('button'); bSubmit.textContent = '交卷';
+    const bPrint  = document.createElement('button'); bPrint.textContent  = '列印';
+    const spacer = document.createElement('div'); spacer.className='spacer';
+    const scoreHint = document.createElement('div'); scoreHint.className='score-hint';
+    bar.append(bSubmit, bPrint, spacer, scoreHint);
+    document.body.appendChild(bar);
+
+    bSubmit.addEventListener('click', () => {
+      if (!clickOriginalSubmit()) window.dispatchEvent(new CustomEvent('quiz:submit'));
+      setTimeout(()=>{ S.submitted = detectSubmitted() || S.submitted; refreshBar(); }, 200);
+    });
+    bPrint.addEventListener('click', () => {
+      const cls = S.submitted ? 'printing-result' : 'printing-sheet';
+      document.body.classList.add(cls);
+      try { window.print(); } finally { setTimeout(()=> document.body.classList.remove(cls), 300); }
+    });
+
+    detectSubmitted(); refreshBar();
+    new MutationObserver(()=>{ if(detectSubmitted()) refreshBar(); })
+      .observe(document.querySelector('#pane-quiz') || document.body, {childList:true, subtree:true});
+  }
+  function refreshBar(){
+    const hint = document.querySelector('#uni-actions-bar .score-hint');
+    if (!hint) return;
+    if (S.submitted){
+      const m = (document.querySelector('#pane-quiz')?.innerText||'').match(/(\d+)\s*\/\s*(\d+)/);
+      hint.textContent = m ? `本區分數：${m[1]} / ${m[2]}` : '已交卷';
+    } else { hint.textContent=''; }
+  }
+  ensureBar();
+})();
+</script>
+
 </body>
 </html>
+
 
 
 
