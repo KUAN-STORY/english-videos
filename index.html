@@ -87,24 +87,32 @@
     @media (max-width:640px){ .grid{grid-template-columns:1fr} .h1{font-size:22px} }
   </style>
 
-  <!-- V2025V001: BookWide Account Menu bootstrap -->
-  <link rel="stylesheet" href="./account/account-menu.css?v=V2025V001">
-  <script>
-    window.SUPABASE_URL = 'https://qtgwedankftrqjmzuset.supabase.co';
-    window.SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InF0Z3dlZGFua2Z0cnFqbXp1c2V0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTg4NDYxMDMsImV4cCI6MjA3NDQyMjEwM30.jyETpt09pgm66aCZheMgsjtbKlVmYo-lt-hrrt6BF8g';
-  </script>
-  <script defer src="./account/account-menu.js?v=V2025V001"></script>
-  <script>
-    // V2025V001: hide legacy "登入" button(s) if present
-    document.addEventListener('DOMContentLoaded', () => {
-      try {
-        const nodes = Array.from(document.querySelectorAll('a,button'))
-          .filter(el => /登入/.test((el.textContent||'').trim()));
-        nodes.forEach(el => el.style.display = 'none');
-      } catch (_) {}
-    });
-  </script>
-  <!-- /V2025V001 -->
+<style>
+  /* 右下角版本徽章 */
+  .build-badge{
+    position: fixed;
+    right: calc(env(safe-area-inset-right) + 12px);
+    bottom: calc(env(safe-area-inset-bottom) + 12px);
+    z-index: 2147483647;
+    padding: 6px 14px;
+    border-radius: 999px;
+    font-weight: 700;
+    font-size: 14px;
+    background: rgba(255,255,255,.96);
+    color: #0e223b;
+    border: 1px solid #e5e7eb;
+    box-shadow: 0 8px 24px rgba(0,0,0,.18);
+    -webkit-backdrop-filter: saturate(140%) blur(8px);
+    backdrop-filter: saturate(140%) blur(8px);
+  }
+  @media (prefers-color-scheme: dark){
+    .build-badge{
+      background: #0e2038;
+      color:#fff;
+      border-color:#183459;
+    }
+  }
+</style>
 
 </head>
 <body>
@@ -455,8 +463,45 @@ document.addEventListener('click', function(ev){
   }catch(e){ /* ignore */ }
 }, true); // capture phase
 </script>
+
+<script>
+  (function () {
+    var ID = 'buildTag';
+    var BADGE = document.getElementById(ID);
+    if (!BADGE) {
+      BADGE = document.createElement('span');
+      BADGE.id = ID;
+      BADGE.className = 'build-badge';
+      BADGE.textContent = 'V2025V001';
+      document.body.appendChild(BADGE);
+    } else {
+      BADGE.classList.add('build-badge');
+      if(!BADGE.textContent.trim()) BADGE.textContent = 'V2025V001';
+    }
+  })();
+</script>
+
 </body>
 </html>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
