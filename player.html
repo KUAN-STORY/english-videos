@@ -1334,8 +1334,74 @@ $$('.tabs .tab').forEach(t=>t.addEventListener('click',()=>showTab(t.dataset.tab
 })();
 </script>
 <!-- END Minimal Patch · V20251007-22F2 -->
+
+<!-- BEGIN Mobile Lift + Print & Version Badge · V20251007-22F3 -->
+<style>
+  /* 提升工具列在 iPhone 底部安全區上方一行 */
+  .quiz-safe-spacer { height: calc(env(safe-area-inset-bottom) + 56px); }
+</style>
+<script>
+(function(){
+  const VERSION = 'V20251007-22F3';
+  const $  = (s, r=document)=>r.querySelector(s);
+  const $$ = (s, r=document)=>Array.from(r.querySelectorAll(s));
+
+  // 1) 右上版號：強制把頁面上所有形如 VYYYYMMDD-xxx 的列印成現在版本
+  (function forceBadgeAll(){
+    const els = $$('body *');
+    els.forEach(el=>{
+      const t = (el.textContent||'').trim();
+      if (/^V\d{8}-[\w.-]+$/.test(t)) el.textContent = VERSION;
+    });
+    // 常見容器補一次
+    const cands = ['#buildTag','.build-tag','.version-badge','[data-version]','[id*="version"]','[class*="version"]'];
+    cands.forEach(sel => $$(sel).forEach(el => { if (el) el.textContent = VERSION; }));
+  })();
+
+  // 2) 讓「列印題庫」在行動裝置也會跳預覽（AirPrint）
+  function bindPrint(el){
+    if (!el || el.__boundPrintF3) return;
+    el.__boundPrintF3 = true;
+    const handler = function(e){
+      try{ e.preventDefault(); }catch(_){}
+      try{ e.stopPropagation(); }catch(_){}
+      try{ document.activeElement && document.activeElement.blur && document.activeElement.blur(); }catch(_){}
+      setTimeout(function(){ try{ window.print(); }catch(_){} }, 0);
+    };
+    ['click','touchend','pointerup'].forEach(ev=> el.addEventListener(ev, handler, {passive:false}));
+    el.style.pointerEvents = 'auto';
+  }
+
+  function ensurePrint(){
+    let btn = $('#btnPrint') || $('#btnPrintQuiz') || $('#btnPrintScore');
+    if (!btn) return;
+    try{ btn.textContent = '列印題庫'; }catch(_){}
+    bindPrint(btn);
+
+    // 3) 把按鈕列往上提一行：在按鈕容器後插入 spacer
+    const row = btn.closest('.actions, .quiz-actions, .btn-row, .controls, .toolbar, .section, div, footer');
+    if (row && !row.__spaced){
+      row.__spaced = true;
+      try{
+        row.style.marginBottom = 'calc(env(safe-area-inset-bottom) + 10px)';
+        const sp = document.createElement('div');
+        sp.className = 'quiz-safe-spacer';
+        row.parentElement && row.parentElement.insertBefore(sp, row.nextSibling);
+      }catch(_){}
+    }
+  }
+
+  // 初始與動態保險
+  ensurePrint();
+  const mo = new MutationObserver(()=> ensurePrint());
+  mo.observe(document.documentElement, {childList:true, subtree:true});
+
+})(); 
+</script>
+<!-- END Mobile Lift + Print & Version Badge · V20251007-22F3 -->
 </body>
 </html>
+
 
 
 
