@@ -195,6 +195,27 @@
 }
 </style>
 
+
+<style id="mobile-bottom-gap-fix">
+/* 讓最底下的「交卷」可自然捲上，不會被 Safari/瀏覽器工具列擋住 */
+@media (max-width: 768px){
+  /* 保證任何 action 列不是固定在底部，改回自然流動 */
+  #pane-quiz .q-actions,
+  #pane-quiz .result-actions,
+  #pane-quiz .score-actions,
+  #pane-quiz [data-role="result-actions"]{
+    position: static !important;
+    bottom: auto !important;
+  }
+  /* 在題目容器最後補一段空白，提供捲動餘裕 */
+  #pane-quiz .quiz-shell::after{
+    content:"";
+    display:block;
+    height: calc(env(safe-area-inset-bottom, 0px) + 120px);
+  }
+}
+</style>
+
 </head>
 <body>
 
