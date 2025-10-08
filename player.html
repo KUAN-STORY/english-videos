@@ -308,6 +308,22 @@
   @page { margin: 10mm; }
 }
 </style>
+
+<style id="download-pdf-btn-css">
+@media (max-width: 768px){
+  #btnDownloadPdf {
+    position: fixed; right: 14px;
+    bottom: calc(env(safe-area-inset-bottom,0px) + 86px);
+    z-index: 2147483647;
+    background: #0e2038; color: #fff;
+    border: 1px solid #183459; border-radius: 12px;
+    padding: 10px 14px; box-shadow: 0 10px 24px rgba(0,0,0,.35);
+    font-size: 15px;
+  }
+}
+@media print { #btnDownloadPdf { display: none !important; } }
+</style>
+
 </head>
 <body>
 
@@ -1442,9 +1458,71 @@ $$('.tabs .tab').forEach(t=>t.addEventListener('click',()=>showTab(t.dataset.tab
 
 
 
+
+
+
+<script id="line-print-banner">
+(function(){
+  var ua = navigator.userAgent || '';
+  var isLine = /Line\/| LINE\//i.test(ua);
+  if (!isLine) return;
+  if (!document.querySelector('.line-open-external')) {
+    var b = document.createElement('div');
+    b.className = 'line-open-external';
+    b.style.cssText = 'position:sticky;top:0;z-index:99999;background:#fde68a;color:#1f2937;padding:10px 14px;font-weight:700;text-align:center;border-bottom:1px solid #f59e0b';
+    b.innerHTML = 'LINE 內建瀏覽器不支援列印，請點右上角「在 Safari 中開啟」再列印。';
+    document.body.insertBefore(b, document.body.firstChild);
+  }
+  var _print = window.print;
+  window.print = function(){
+    alert('LINE 內建瀏覽器無法列印，請在 Safari / 系統瀏覽器開啟後再試。');
+    return;
+  };
+})();
+</script>
+
+<script id="download-pdf-btn-js">
+(function(){
+  function hasSubmitted(){
+    var z = document.querySelector('#pane-quiz');
+    if(!z) return false;
+    var t = (z.innerText||'').trim();
+    return /(本區分數|本分區分數|分數[:：]\s*\d+\/\d+|正解|錯誤)/.test(t);
+  }
+  function ensureBtn(){
+    if (document.getElementById('btnDownloadPdf')) return;
+    var b = document.createElement('button');
+    b.id = 'btnDownloadPdf'; b.type = 'button'; b.textContent = '下載 PDF 成績';
+    document.body.appendChild(b);
+    b.addEventListener('click', buildPdf);
+  }
+  function buildPdf(){
+    var ua = navigator.userAgent || ''; var isLine = /Line\/| LINE\//i.test(ua);
+    var zone = document.querySelector('#pane-quiz');
+    if (!zone) { alert('找不到測驗內容區'); return; }
+    var content = zone.cloneNode(true);
+    // 清掉工具元件
+    Array.from(content.querySelectorAll('.q-actions, .toolbar, .controls, .q-tabs, .tab')).forEach(function(el){ el.remove(); });
+    var title = hasSubmitted() ? '成績單' : '考題';
+    var now = new Date(); 
+    var dstr = now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0')+'-'+String(now.getDate()).padStart(2,'0')+' '+String(now.getHours()).padStart(2,'0')+':'+String(now.getMinutes()).padStart(2,'0');
+    var doc = '<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">'
+      + '<title>'+title+'</title>'
+      + '<style>body{background:#fff;color:#111;font-family:-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,Helvetica,Arial;line-height:1.5;padding:16px;}'
+      + 'h1{font-size:20px;margin:0 0 12px} .meta{color:#555;margin:0 0 16px}'
+      + '#paper{max-width:900px;margin:0 auto}'
+      + '#paper .q-item, #paper [class*="question"]{page-break-inside:avoid;break-inside:avoid;}'
+      + '@media print{ @page{margin:10mm;} header,footer{display:none!important;} }</style></head><body>'
+      + '<div id="paper">'
+      + '<h1>'+title+'</h1>'
+      + '<div class="meta">'+dstr+'｜來源：' + (location.href) + '</div>'
+      + content.outerHTML
+      + '</div>'
+      + '<script>(function(){ var ua=navigator.userAgent||""; var isLine=/Line\\/| LINE\\//i.test(ua); if(!isLine){ setTimeout(function(){window.print()}, 250);} else { var p=document.createElement("p"); p.style.cssText="background:#fde68a;color:#1f2937;padding:10px 14px;font-weight:700;border:1px solid #f59e0b"; p.textContent="LINE 內建瀏覽器不支援列印/匯出 PDF，請點右上角『在 Safari 中開啟』再列印或匯出 PDF。"; document.getElementById("paper").insertBefore(p, document.getElementById("paper").firstChild);} })();<' + '/script>'
+      + '
 <script id="version-badge-patcher">
 (function(){
-  var NEW = 'V2025V002';
+  var NEW = 'V2025V003';
   ['#buildTag','.build-tag','.version-badge','#authVersionBadge','[data-version]','[class*="version"]','[id*="version"]']
     .forEach(function(sel){
       document.querySelectorAll(sel).forEach(function(el){
@@ -1467,28 +1545,20 @@ $$('.tabs .tab').forEach(t=>t.addEventListener('click',()=>showTab(t.dataset.tab
 })();
 </script>
 
-
-<script id="line-print-banner">
-(function(){
-  var ua = navigator.userAgent || '';
-  var isLine = /Line\/| LINE\//i.test(ua);
-  if (!isLine) return;
-  if (!document.querySelector('.line-open-external')) {
-    var b = document.createElement('div');
-    b.className = 'line-open-external';
-    b.style.cssText = 'position:sticky;top:0;z-index:99999;background:#fde68a;color:#1f2937;padding:10px 14px;font-weight:700;text-align:center;border-bottom:1px solid #f59e0b';
-    b.innerHTML = 'LINE 內建瀏覽器不支援列印，請點右上角「在 Safari 中開啟」再列印。';
-    document.body.insertBefore(b, document.body.firstChild);
+</body></html>';
+    var blob = new Blob([doc], {type:'text/html'});
+    var url = URL.createObjectURL(blob);
+    var w = window.open(url, '_blank');
+    if (!w) { var a = document.createElement('a'); a.href = url; a.download = title + '.html'; a.click(); }
   }
-  var _print = window.print;
-  window.print = function(){
-    alert('LINE 內建瀏覽器無法列印，請在 Safari / 系統瀏覽器開啟後再試。');
-    return;
-  };
+  ensureBtn();
+  new MutationObserver(function(){ ensureBtn(); }).observe(document.body, {childList:true,subtree:true});
 })();
 </script>
+
 </body>
 </html>
+
 
 
 
