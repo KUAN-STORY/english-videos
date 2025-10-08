@@ -1409,14 +1409,14 @@ $$('.tabs .tab').forEach(t=>t.addEventListener('click',()=>showTab(t.dataset.tab
 <!-- END Hand-in Quiz · V20251007-29 -->
 <script>(function(){var t=document.querySelector('#buildTag,.build-tag,.version-badge');if(t)t.textContent='V20251007-29';})();</script>
 
-<!-- BEGIN Hand-in Auto-Reveal+Print · V20251007-31 -->
-<script>
-(function(){
-  const VERSION = 'V20251007-31';
-  function $(s, r=document){ return r.querySelector(s); }
-  function $all(s, r=document){ return Array.from(r.querySelectorAll(s)); }
 
-  (function forceBadge(){
+<!-- BEGIN Hand-in ShowAnswers Only + Persistent Print · V20251007-32 -->
+<script>
+(function(){ 
+  const VERSION = 'V20251007-32';
+  function $(s, r=document){ return r.querySelector(s); }
+
+  (function forceBadge(){ 
     const list = document.querySelectorAll('#buildTag, .build-tag, .version-badge, [class*="version"], [id*="version"]');
     let ok = false;
     list.forEach(el=>{ if(!ok && el && el.textContent){ el.textContent = VERSION; ok = true; } });
@@ -1427,35 +1427,36 @@ $$('.tabs .tab').forEach(t=>t.addEventListener('click',()=>showTab(t.dataset.tab
   function readScoreText(){ const el = $(SCORE_SELS); return el ? (el.textContent||'').trim() : ''; }
   function writeScore(pct){ const el = $(SCORE_SELS); if (el) el.textContent = pct + ' / 100'; }
 
-  function revealAnswers(){
-    const showBtn = $('#btnShowAnswer, [data-action="show-answers"]');
-    if (showBtn) try{ showBtn.click(); }catch(_ ){}
-  }
-
-  function ensurePrintButton(){
+  function ensurePrintButton(){ 
     let printBtn = $('#btnPrintQuiz,#btnPrintScore,#btnPrint');
-    if (!printBtn){
+    if (!printBtn){ 
       printBtn = document.createElement('button');
       printBtn.id = 'btnPrintQuiz';
       printBtn.type = 'button';
       printBtn.textContent = '列印成績單';
-      const hand = $('#btnHandInQuiz'); if (hand) hand.after(printBtn); else document.body.appendChild(printBtn);
+      const hand = $('#btnHandInQuiz'); 
+      if (hand && hand.parentElement) hand.parentElement.appendChild(printBtn);
+      else document.body.appendChild(printBtn);
     }
-    if (!printBtn.__boundPrint){
+    if (!printBtn.__boundPrint){ 
       printBtn.__boundPrint = true;
-      printBtn.addEventListener('click', function(e){ try{e.preventDefault();}catch(_ ){} try{window.print();}catch(_ ){} }, {passive:false});
+      printBtn.addEventListener('click', function(e){ try{ e.preventDefault(); }catch(_ ){} try{ window.print(); }catch(_ ){} }, {passive:false});
     }
     printBtn.style.display = 'inline-block';
     return printBtn;
   }
 
+  function revealAnswers(){ 
+    const showBtn = $('#btnShowAnswer, [data-action="show-answers"]');
+    if (showBtn) try{ showBtn.click(); }catch(_ ){}
+  }
+
   function norm(s){ return String(s||'').trim().toLowerCase().replace(/[’'"]/g,'').replace(/[_\-–—]/g,'-').replace(/\s+/g,' ').replace(/\s*-\s*/g,'-'); }
   function anyMatch(ans, expectRaw){ if (!expectRaw) return false; const a = norm(ans); const list = String(expectRaw).split(/[,|、\/;]/).map(norm).filter(Boolean); return list.includes(a); }
-  function fallbackGrade(){
+  function fallbackGrade(){ 
     const ROOT = '#quiz, #quizWrap, #pane-sub .quiz, #tab-quiz, [data-quiz-root], #pane-sub';
     const root = document.querySelector(ROOT) || document;
     let correct=0,total=0;
-
     const groups={};
     root.querySelectorAll('input[type="radio"][name], input[type="checkbox"][name]').forEach(i=>{ (groups[i.name]||(groups[i.name]=[])).push(i); });
     Object.values(groups).forEach(list=>{ 
@@ -1468,7 +1469,6 @@ $$('.tabs .tab').forEach(t=>t.addEventListener('click',()=>showTab(t.dataset.tab
       if (!expectedInput){ const liWrap = list[0].closest('ul,ol'); const li = liWrap && liWrap.querySelector('li[data-ans]'); if (li) expected = li.getAttribute('data-ans'); if (expected) expectedInput = list.find(i=> i.value === expected); }
       if (checked && expectedInput && checked===expectedInput) correct += 1;
     });
-
     const texts = Array.from(root.querySelectorAll('input[type="text"], input[type="search"], input[type="tel"], textarea')).filter(el=>!el.disabled && !el.readOnly);
     const seen = new Set();
     texts.forEach(inp=>{ 
@@ -1486,20 +1486,16 @@ $$('.tabs .tab').forEach(t=>t.addEventListener('click',()=>showTab(t.dataset.tab
       }
       if (anyMatch(user, expect)) correct += 1;
     });
-
     const pct = Math.round((correct/Math.max(1,total))*100);
     writeScore(pct);
     return pct;
   }
 
-  (function removeOldSubmit(){
-    const old = $('#btnSubmitQuiz') || $('#btnSubmit');
-    if (old) try{ old.remove(); }catch(_ ){ old.style.display='none'; }
-  })();
+  (function removeOldSubmit(){ const old = $('#btnSubmitQuiz') || $('#btnSubmit'); if (old) try{ old.remove(); }catch(_ ){ old.style.display='none'; } })();
 
   (function ensureButtons(){
     let hand = $('#btnHandInQuiz');
-    if (!hand){ 
+    if (!hand){
       hand = document.createElement('button');
       hand.id = 'btnHandInQuiz'; hand.type='button'; hand.textContent='交卷';
       const anchor = $('#btnShowAnswer') || $('#btnPrintQuiz') || $('#btnPrintScore') || $('[data-action="show-answers"]');
@@ -1511,7 +1507,7 @@ $$('.tabs .tab').forEach(t=>t.addEventListener('click',()=>showTab(t.dataset.tab
 
   (function bindHandIn(){
     const hand = $('#btnHandInQuiz');
-    if (!hand || hand.__bound) return; hand.__bound = true;
+    if (!hand || hand.__boundV32) return; hand.__boundV32 = true;
 
     function callNative(){
       const fns = ['submitQuiz','gradeQuiz','onQuizSubmit','handleSubmitQuiz','quizSubmit','finalizeQuiz','doSubmit'];
@@ -1521,24 +1517,19 @@ $$('.tabs .tab').forEach(t=>t.addEventListener('click',()=>showTab(t.dataset.tab
       return false;
     }
 
-    function doPrintNow(){
-      const btn = ensurePrintButton();
-      try { window.print(); } catch(_ ) { try { btn.click(); } catch(_ ) { } }
-    }
-
     const handler = function(e){
       try{ e.preventDefault(); }catch(_ ){}
       callNative();
       if (!readScoreText()) fallbackGrade();
-      revealAnswers();
-      doPrintNow();
+      revealAnswers();        // 不自動列印；列印鍵常駐讓使用者自己按
+      ensurePrintButton();
     };
 
-    ['click','touchend','pointerup'].forEach(ev => hand.addEventListener(ev, handler, {passive:false}));
+    ['click','touchend','pointerup'].forEach(ev=> hand.addEventListener(ev, handler, {passive:false}));
   })();
 })();
 </script>
-<!-- END Hand-in Auto-Reveal+Print · V20251007-31 -->
+<!-- END Hand-in ShowAnswers Only + Persistent Print · V20251007-32 -->
 </body>
 </html>
 
