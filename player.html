@@ -16,6 +16,29 @@
 <meta name="viewport" content="width=device-width,initial-scale=1"/>
 <title>英語影片播放器</title>
 <style>
+/* === Mobile quiz bars fix (mobile) === */
+/* 手機直式：把兩條按鈕列固定在視窗底部、分兩層高度，並增底部可捲空間 */
+@media (max-width:768px){
+  #pane-quiz .quiz-shell{padding-bottom:180px}
+  #pane-quiz .q-actions{
+    position:fixed;left:12px;right:12px;
+    bottom:calc(env(safe-area-inset-bottom) + 64px);
+    z-index:2147483647;background:#0e2038;border:1px solid #183459;border-radius:12px;
+    padding:10px 12px;box-shadow:0 10px 24px rgba(0,0,0,.35);pointer-events:auto;-webkit-transform:translateZ(0)
+  }
+  #pane-quiz .result-actions,
+  #pane-quiz .after-submit,
+  #pane-quiz .score-actions,
+  #pane-quiz .quiz-actions,
+  #pane-quiz [data-role="result-actions"],
+  #pane-quiz [class*="actions"]:not(.q-actions){
+    position:fixed;left:12px;right:12px;
+    bottom:calc(env(safe-area-inset-bottom) + 16px);
+    z-index:2147483647;background:#0e2038;border:1px solid #183459;border-radius:12px;
+    padding:10px 12px;box-shadow:0 10px 24px rgba(0,0,0,.35);pointer-events:auto;-webkit-transform:translateZ(0)
+  }
+}
+
   :root{ --bg:#0b1324; --panel:#0f172a; --border:#1f2a44; --ink:#e6efff; --muted:#9fb0c9; --accent:#3c7cff; }
   *{box-sizing:border-box}
   html,body{height:100%;margin:0;background:var(--bg);color:var(--ink);font-family:ui-sans-serif,system-ui,"Noto Sans TC"}
@@ -1305,6 +1328,7 @@ $$('.tabs .tab').forEach(t=>t.addEventListener('click',()=>showTab(t.dataset.tab
 <!-- END Quiz Submit Compatibility · V20251007-22 -->
 </body>
 </html>
+
 
 
 
