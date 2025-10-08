@@ -1408,141 +1408,140 @@ $$('.tabs .tab').forEach(t=>t.addEventListener('click',()=>showTab(t.dataset.tab
 </script>
 <!-- END Hand-in Quiz · V20251007-29 -->
 <script>(function(){var t=document.querySelector('#buildTag,.build-tag,.version-badge');if(t)t.textContent='V20251007-29';})();</script>
-<!-- BEGIN Mobile Hand-in & Print Harmonizer · V20251007-30 -->
+
+<!-- BEGIN Hand-in Auto-Reveal+Print · V20251007-31 -->
 <script>
-(function(){ 
-  const VERSION = 'V20251007-30';
-
+(function(){
+  const VERSION = 'V20251007-31';
   function $(s, r=document){ return r.querySelector(s); }
-  function addPrintHandler(btn){
-    if (!btn || btn.__boundPrint) return;
-    btn.__boundPrint = true;
-    btn.addEventListener('click', function(e){
-      try{ e.preventDefault(); }catch(_){}
-      try{ window.print(); }catch(_){}
-    }, {passive:false});
+  function $all(s, r=document){ return Array.from(r.querySelectorAll(s)); }
+
+  (function forceBadge(){
+    const list = document.querySelectorAll('#buildTag, .build-tag, .version-badge, [class*="version"], [id*="version"]');
+    let ok = false;
+    list.forEach(el=>{ if(!ok && el && el.textContent){ el.textContent = VERSION; ok = true; } });
+    if (!ok){ const guess=[...document.querySelectorAll('body *')].find(el=>/^V\d{8}-\d+$/i.test((el.textContent||'').trim())); if(guess) guess.textContent = VERSION; }
+  })();
+
+  const SCORE_SELS = '[data-role="score"], #quizScore, .score-text, [data-score]';
+  function readScoreText(){ const el = $(SCORE_SELS); return el ? (el.textContent||'').trim() : ''; }
+  function writeScore(pct){ const el = $(SCORE_SELS); if (el) el.textContent = pct + ' / 100'; }
+
+  function revealAnswers(){
+    const showBtn = $('#btnShowAnswer, [data-action="show-answers"]');
+    if (showBtn) try{ showBtn.click(); }catch(_ ){}
   }
 
-  function forceVersionBadge(){
-    const cands = document.querySelectorAll('#buildTag, .build-tag, .version-badge, [class*="version"], [id*="version"]');
-    let done = false;
-    cands.forEach(el=>{ if(!done && el && el.textContent){ el.textContent = VERSION; done = true; } });
-    if (!done){
-      const guess = Array.from(document.querySelectorAll('body *')).find(el => {
-        const t = (el.textContent||'').trim();
-        return /^V\d{8}-\d+$/i.test(t);
-      });
-      if (guess) guess.textContent = VERSION;
-    }
-  }
-
-  function ensureUI(){
-    const onTouch = window.matchMedia && window.matchMedia('(pointer:coarse)').matches;
-    const submitOld = $('#btnSubmitQuiz') || $('#btnSubmit');
-    if (submitOld){
-      submitOld.textContent = '出卷';
-      if (onTouch) { 
-        submitOld.disabled = true; 
-        submitOld.style.opacity = '0.5'; 
-        submitOld.style.pointerEvents = 'none';
-        submitOld.title = '行動裝置已停用此按鈕，請使用右側「交卷」';
-      }
-      const p = submitOld.parentElement;
-      if (p && !p.classList.contains('quiz-actions')) p.classList.add('quiz-actions');
-    }
-    let hand = $('#btnHandInQuiz');
-    if (!hand){
-      hand = document.createElement('button');
-      hand.id = 'btnHandInQuiz'; hand.type='button'; hand.textContent='交卷';
-      const anchor = submitOld || $('#btnShowAnswer') || $('#btnPrintQuiz') || $('#btnPrintScore') || $('#btnPrint');
-      if (anchor && anchor.parentElement){ anchor.parentElement.insertBefore(hand, anchor.nextSibling); }
-      else { document.body.appendChild(hand); }
-    }
-    let printBtn = $('#btnPrintQuiz') || $('#btnPrintScore') || $('#btnPrint');
-    if (!printBtn){ 
+  function ensurePrintButton(){
+    let printBtn = $('#btnPrintQuiz,#btnPrintScore,#btnPrint');
+    if (!printBtn){
       printBtn = document.createElement('button');
-      printBtn.id = 'btnPrintQuiz'; printBtn.type='button'; printBtn.textContent='列印成績單';
-      hand.after(printBtn);
+      printBtn.id = 'btnPrintQuiz';
+      printBtn.type = 'button';
+      printBtn.textContent = '列印成績單';
+      const hand = $('#btnHandInQuiz'); if (hand) hand.after(printBtn); else document.body.appendChild(printBtn);
     }
-    addPrintHandler(printBtn);
-  }
-
-  function revealAfterSubmit(){
-    const printBtn = document.querySelector('#btnPrintQuiz, #btnPrintScore, #btnPrint');
-    const showBtn  = document.querySelector('#btnShowAnswer, [data-action="show-answers"]');
-    if (printBtn) printBtn.style.display = 'inline-block';
-    if (showBtn)  showBtn.style.display  = 'inline-block';
-  }
-
-  function callNative(){
-    const fns = ['submitQuiz','gradeQuiz','onQuizSubmit','handleSubmitQuiz','quizSubmit','finalizeQuiz','doSubmit'];
-    for (const name of fns){ if (typeof window[name] === 'function'){ try{ window[name](); return true; }catch(e){} } }
-    const root = document.querySelector('#quiz, #quizWrap, #pane-sub .quiz, #tab-quiz, [data-quiz-root], #pane-sub') || document;
-    const form = root.querySelector('form');
-    if (form) { try{ form.requestSubmit ? form.requestSubmit() : form.submit(); return true; }catch(_ ){} }
-    return false;
+    if (!printBtn.__boundPrint){
+      printBtn.__boundPrint = true;
+      printBtn.addEventListener('click', function(e){ try{e.preventDefault();}catch(_ ){} try{window.print();}catch(_ ){} }, {passive:false});
+    }
+    printBtn.style.display = 'inline-block';
+    return printBtn;
   }
 
   function norm(s){ return String(s||'').trim().toLowerCase().replace(/[’'"]/g,'').replace(/[_\-–—]/g,'-').replace(/\s+/g,' ').replace(/\s*-\s*/g,'-'); }
-  function anyMatch(answer, expectRaw){ if (!expectRaw) return false; const ans = norm(answer); const list = String(expectRaw).split(/[,|、\/;]/).map(norm).filter(Boolean); return list.includes(ans); }
+  function anyMatch(ans, expectRaw){ if (!expectRaw) return false; const a = norm(ans); const list = String(expectRaw).split(/[,|、\/;]/).map(norm).filter(Boolean); return list.includes(a); }
   function fallbackGrade(){
-    const root = document.querySelector('#quiz, #quizWrap, #pane-sub .quiz, #tab-quiz, [data-quiz-root], #pane-sub') || document; 
+    const ROOT = '#quiz, #quizWrap, #pane-sub .quiz, #tab-quiz, [data-quiz-root], #pane-sub';
+    const root = document.querySelector(ROOT) || document;
     let correct=0,total=0;
+
     const groups={};
     root.querySelectorAll('input[type="radio"][name], input[type="checkbox"][name]').forEach(i=>{ (groups[i.name]||(groups[i.name]=[])).push(i); });
-    Object.values(groups).forEach(list=>{
-      total += 1; const checked = list.find(i=>i.checked); let expectedInput=null, expected=null;
+    Object.values(groups).forEach(list=>{ 
+      total += 1; 
+      const checked = list.find(i=>i.checked);
+      let expectedInput=null, expected=null;
       expectedInput = list.find(i=> i.dataset.correct==='1' || i.getAttribute('aria-correct')==='true');
       if (!expectedInput){ const lbls = list.map(i=>i.closest('label')).filter(Boolean); const lbl = lbls.find(l=> l.classList.contains('is-correct') || l.dataset.correct==='1'); if (lbl) expectedInput = lbl.querySelector('input'); }
       if (!expectedInput){ const wrap = list[0].closest('[data-answer], [data-correct]'); expected = wrap && (wrap.getAttribute('data-answer') || wrap.getAttribute('data-correct')); if (expected) expectedInput = list.find(i=> i.value === expected); }
       if (!expectedInput){ const liWrap = list[0].closest('ul,ol'); const li = liWrap && liWrap.querySelector('li[data-ans]'); if (li) expected = li.getAttribute('data-ans'); if (expected) expectedInput = list.find(i=> i.value === expected); }
       if (checked && expectedInput && checked===expectedInput) correct += 1;
     });
-    const texts = Array.from(root.querySelectorAll('input[type="text"], input[type="search"], input[type="tel"], textarea')).filter(el => !el.disabled && !el.readOnly);
+
+    const texts = Array.from(root.querySelectorAll('input[type="text"], input[type="search"], input[type="tel"], textarea')).filter(el=>!el.disabled && !el.readOnly);
     const seen = new Set();
-    texts.forEach(inp=>{
+    texts.forEach(inp=>{ 
       const key = inp.name || inp.id || inp.dataset.key || (inp.closest('[data-key]') && inp.closest('[data-key]').getAttribute('data-key')) || '';
       if (seen.has(key)) return; seen.add(key); total += 1;
-      const user = inp.value; let expect = inp.dataset.answer || inp.dataset.ans || inp.dataset.correct || inp.getAttribute('aria-answer');
-      if (!expect){ const wrap = inp.closest('[data-answer],[data-ans],[data-correct-answer],[data-key]'); if (wrap) expect = wrap.getAttribute('data-answer') || wrap.getAttribute('data-ans') || wrap.getAttribute('data-correct-answer'); if (!expect){ const sib = inp.parentElement && (inp.parentElement.querySelector('input[type="hidden"][name$="answer"], [data-correct], .answer, .correct')); if (sib) expect = sib.getAttribute('data-correct') || (sib.value) || sib.textContent; } }
+      const user = inp.value;
+      let expect = inp.dataset.answer || inp.dataset.ans || inp.dataset.correct || inp.getAttribute('aria-answer');
+      if (!expect){ 
+        const wrap = inp.closest('[data-answer],[data-ans],[data-correct-answer],[data-key]'); 
+        if (wrap) expect = wrap.getAttribute('data-answer') || wrap.getAttribute('data-ans') || wrap.getAttribute('data-correct-answer');
+        if (!expect){ 
+          const sib = inp.parentElement && (inp.parentElement.querySelector('input[type="hidden"][name$="answer"], [data-correct], .answer, .correct')); 
+          if (sib) expect = sib.getAttribute('data-correct') || (sib.value) || sib.textContent; 
+        }
+      }
       if (anyMatch(user, expect)) correct += 1;
     });
+
     const pct = Math.round((correct/Math.max(1,total))*100);
-    const scoreEl = document.querySelector('[data-role="score"], #quizScore, .score-text, [data-score]');
-    if (scoreEl) scoreEl.textContent = `${pct} / 100`;
+    writeScore(pct);
     return pct;
   }
 
-  function bindHandIn(){
-    const btn = document.getElementById('btnHandInQuiz');
-    if (!btn || btn.__bound) return; btn.__bound = true;
-    btn.addEventListener('click', function(e){
-      try{ e.preventDefault(); }catch(_){}
-      const ok = callNative();
-      setTimeout(()=>{
-        const scoreEl = document.querySelector('[data-role="score"], #quizScore, .score-text, [data-score]');
-        const hasScore = !!(scoreEl && String(scoreEl.textContent||'').trim());
-        if (!hasScore) fallbackGrade();
-        revealAfterSubmit();
-      }, 120);
-    }, {passive:false});
-  }
+  (function removeOldSubmit(){
+    const old = $('#btnSubmitQuiz') || $('#btnSubmit');
+    if (old) try{ old.remove(); }catch(_ ){ old.style.display='none'; }
+  })();
 
-  function init(){
-    forceVersionBadge();
-    ensureUI();
-    bindHandIn();
-  }
+  (function ensureButtons(){
+    let hand = $('#btnHandInQuiz');
+    if (!hand){ 
+      hand = document.createElement('button');
+      hand.id = 'btnHandInQuiz'; hand.type='button'; hand.textContent='交卷';
+      const anchor = $('#btnShowAnswer') || $('#btnPrintQuiz') || $('#btnPrintScore') || $('[data-action="show-answers"]');
+      if (anchor && anchor.parentElement) anchor.parentElement.insertBefore(hand, anchor);
+      else document.body.appendChild(hand);
+    }
+    ensurePrintButton();
+  })();
 
-  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
-  else init();
-  window.addEventListener('orientationchange', init, {passive:true});
-  window.addEventListener('resize', init, {passive:true});
+  (function bindHandIn(){
+    const hand = $('#btnHandInQuiz');
+    if (!hand || hand.__bound) return; hand.__bound = true;
+
+    function callNative(){
+      const fns = ['submitQuiz','gradeQuiz','onQuizSubmit','handleSubmitQuiz','quizSubmit','finalizeQuiz','doSubmit'];
+      for (const name of fns){ if (typeof window[name] === 'function'){ try{ window[name](); return true; }catch(e){} } }
+      const form = document.querySelector('form');
+      if (form) { try{ form.requestSubmit ? form.requestSubmit() : form.submit(); return true; }catch(_ ){} }
+      return false;
+    }
+
+    function doPrintNow(){
+      const btn = ensurePrintButton();
+      try { window.print(); } catch(_ ) { try { btn.click(); } catch(_ ) { } }
+    }
+
+    const handler = function(e){
+      try{ e.preventDefault(); }catch(_ ){}
+      callNative();
+      if (!readScoreText()) fallbackGrade();
+      revealAnswers();
+      doPrintNow();
+    };
+
+    ['click','touchend','pointerup'].forEach(ev => hand.addEventListener(ev, handler, {passive:false}));
+  })();
 })();
 </script>
-<!-- END Mobile Hand-in & Print Harmonizer · V20251007-30 -->
+<!-- END Hand-in Auto-Reveal+Print · V20251007-31 -->
 </body>
 </html>
+
 
 
 
