@@ -266,6 +266,48 @@
 }
 </style>
 
+
+<style id="ios-print-full-fix-strong">
+@media print {
+  html, body {
+    height: auto !important;
+    max-height: none !important;
+    overflow: visible !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+    background: #fff !important;
+  }
+  *, *::before, *::after {
+    overflow: visible !important;
+    transform: none !important;
+    -webkit-transform: none !important;
+    filter: none !important;
+    contain: none !important;
+    perspective: none !important;
+    -webkit-overflow-scrolling: auto !important;
+    position: static !important;
+  }
+  [style*="display:flex"], [style*="display:grid"],
+  .flex, .grid, .layout, .pane, .panel, .right, .content, .main {
+    display: block !important;
+  }
+  .left, .videoWrap, video, header, nav, footer, .q-tabs, .tab,
+  .toolbar, .controls, .version, [class*="version"], [id*="version"],
+  #uni-actions-bar { display: none !important; }
+  #pane-quiz, #pane-quiz .quiz-shell {
+    width: auto !important;
+    max-width: none !important;
+    height: auto !important;
+    max-height: none !important;
+    display: block !important;
+  }
+  .q-item, .question, [class*="q-"], li { 
+    page-break-inside: avoid;
+    break-inside: avoid;
+  }
+  @page { margin: 10mm; }
+}
+</style>
 </head>
 <body>
 
@@ -1397,15 +1439,27 @@ $$('.tabs .tab').forEach(t=>t.addEventListener('click',()=>showTab(t.dataset.tab
 <!-- removed uni-actions-js (mobile overlay bar logic) -->
 
 
+
+
+
 <script id="version-badge-patcher">
 (function(){
-  var NEW = 'V2025V001'; // 新版顯示格式：去月日、僅年+流水號
-  // 1) 常見位置（膠囊/徽章/版本容器）
-  ['#buildTag','.build-tag','.version-badge','[data-version]','[class*="version"]','[id*="version"]']
+  var NEW = 'V2025V002';
+  ['#buildTag','.build-tag','.version-badge','#authVersionBadge','[data-version]','[class*="version"]','[id*="version"]']
     .forEach(function(sel){
-      document.querySelectorAll(sel).forEach(function(el){ try{ el.textContent = NEW; }catch(e){} });
+      document.querySelectorAll(sel).forEach(function(el){
+        try{
+          if (el.id === 'authVersionBadge') {
+            var span = el.querySelector('#userBadgeEmail');
+            while (el.firstChild) el.removeChild(el.firstChild);
+            el.appendChild(document.createTextNode(NEW + ' '));
+            if (span) el.appendChild(span);
+          } else {
+            el.textContent = NEW;
+          }
+        }catch(e){}
+      });
     });
-  // 2) 後備：頁面上任何看起來是版本字串的純文字
   Array.prototype.forEach.call(document.querySelectorAll('body *'), function(el){
     var t = (el.textContent||'').trim();
     if (/^V[\dA-Za-z_.-]+$/.test(t)) { try{ el.textContent = NEW; }catch(e){} }
@@ -1413,8 +1467,29 @@ $$('.tabs .tab').forEach(t=>t.addEventListener('click',()=>showTab(t.dataset.tab
 })();
 </script>
 
+
+<script id="line-print-banner">
+(function(){
+  var ua = navigator.userAgent || '';
+  var isLine = /Line\/| LINE\//i.test(ua);
+  if (!isLine) return;
+  if (!document.querySelector('.line-open-external')) {
+    var b = document.createElement('div');
+    b.className = 'line-open-external';
+    b.style.cssText = 'position:sticky;top:0;z-index:99999;background:#fde68a;color:#1f2937;padding:10px 14px;font-weight:700;text-align:center;border-bottom:1px solid #f59e0b';
+    b.innerHTML = 'LINE 內建瀏覽器不支援列印，請點右上角「在 Safari 中開啟」再列印。';
+    document.body.insertBefore(b, document.body.firstChild);
+  }
+  var _print = window.print;
+  window.print = function(){
+    alert('LINE 內建瀏覽器無法列印，請在 Safari / 系統瀏覽器開啟後再試。');
+    return;
+  };
+})();
+</script>
 </body>
 </html>
+
 
 
 
