@@ -179,6 +179,22 @@
 
 <!-- removed uni-actions-css (mobile overlay bar) -->
 
+
+<style id="print-up-3lines">
+/* 只影響列印：把題目區往上移動約 3 行，並隱藏標題列與版本膠囊 */
+@media print{
+  /* 取消任何頂部遮罩 */
+  body::before{ display:none !important; }
+  header, nav, .header, .topbar, .version, [class*="version"], [id*="version"]{
+    display:none !important;
+  }
+  /* 往上拉 3.6em ≈ 3 行 */
+  #pane-quiz, #pane-quiz .quiz-shell{
+    margin-top: -3.6em !important;
+  }
+}
+</style>
+
 </head>
 <body>
 
@@ -1311,6 +1327,7 @@ $$('.tabs .tab').forEach(t=>t.addEventListener('click',()=>showTab(t.dataset.tab
 
 </body>
 </html>
+
 
 
 
