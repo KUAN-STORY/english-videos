@@ -1,6 +1,12 @@
 <!doctype html><meta charset="utf-8">
 <title>我的學習曲線</title>
-<link rel="stylesheet" href="/account/account.css">
+<link rel="stylesheet" href="./account.css">
+<script>
+  // Ensure Supabase keys exist even if not injected globally
+  window.SUPABASE_URL = window.SUPABASE_URL || 'https://YOUR-PROJECT.supabase.co';
+  window.SUPABASE_ANON_KEY = window.SUPABASE_ANON_KEY || 'YOUR-ANON-KEY';
+</script>
+
 <header class="bar"><a href="/" class="link">← 回首頁</a><h1>我的學習曲線</h1></header>
 
 <main class="wrap">
@@ -22,9 +28,9 @@
 </main>
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
-<script type="module" src="/account/_shared.js"></script>
+<script type="module" src="./_shared.js"></script>
 <script type="module">
-import { supa, requireUser, fmtDate } from '/account/_shared.js'
+import { supa, requireUser, fmtDate } from './_shared.js'
 
 function toCSV(rows){
   const header = 'date,video_slug,percent\n'

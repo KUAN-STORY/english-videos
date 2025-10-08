@@ -1,15 +1,21 @@
 <!doctype html><meta charset="utf-8">
 <title>我的收藏影片</title>
-<link rel="stylesheet" href="/account/account.css">
+<link rel="stylesheet" href="./account.css">
+<script>
+  // Ensure Supabase keys exist even if not injected globally
+  window.SUPABASE_URL = window.SUPABASE_URL || 'https://YOUR-PROJECT.supabase.co';
+  window.SUPABASE_ANON_KEY = window.SUPABASE_ANON_KEY || 'YOUR-ANON-KEY';
+</script>
+
 <header class="bar"><a href="/" class="link">← 回首頁</a><h1>我的收藏影片</h1></header>
 
 <main class="wrap">
   <div id="grid" class="grid"></div>
 </main>
 
-<script type="module" src="/account/_shared.js"></script>
+<script type="module" src="./_shared.js"></script>
 <script type="module">
-import { supa, requireUser } from '/account/_shared.js'
+import { supa, requireUser } from './_shared.js'
 const grid = document.getElementById('grid')
 
 ;(async () => {
