@@ -286,8 +286,13 @@
   @page { margin: 10mm; }
 }
 </style>
-<link href="assets/css/ai-interactive.css" rel="stylesheet"/>
-</head>
+
+<style>:root{--ink:#e6f0ff}
+.pane-ai{padding:10px}
+.pane-ai .btn{background:#102036;border:1px solid #233a60;border-radius:10px;padding:6px 10px;color:#e7f0ff}
+.pane-ai .ai-out{background:#0b1320;border:1px solid #223048;border-radius:10px;padding:10px;color:var(--ink)}
+.pane-ai .ai-hint{color:#9fb0c7;font-size:13px}
+</style></head>
 <body>
 <!-- Version badge: V20251007-09 -->
 <div id="authVersionBadge" style="position:fixed;top:10px;right:12px;z-index:99999;background:#fff;color:#111;font-weight:700;border-radius:10px;padding:4px 10px;box-shadow:0 2px 10px rgba(0,0,0,.15);font-family:ui-sans-serif,system-ui,-apple-system,'Segoe UI',Roboto,'Noto Sans TC',Arial;font-size:12px;">
@@ -1446,9 +1451,8 @@ $$('.tabs .tab').forEach(t=>t.addEventListener('click',()=>showTab(t.dataset.tab
   };
 })();
 </script>
-
 <!-- ============ AI Interactive (script) ============ -->
-<script src="assets/js/ai-interactive.js"></script>
+
 <script>
 (function(){
   const qs = new URLSearchParams(location.search);
