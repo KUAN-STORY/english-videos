@@ -1,5 +1,5 @@
 <!--
-  index.html 版本：2025.10.10V1.0
+  index.html 版本：index_v2025V002 (1)
   更新：
   - 「試看：故事《Mid-Autumn》」按鈕加入 preview=1，手機與桌機皆可直接試看。
   - 加入捕獲階段 click 補丁：含 preview=1 的 player.html 連結一律放行，不再觸發登入攔截。
@@ -87,20 +87,36 @@
     @media (max-width:640px){ .grid{grid-template-columns:1fr} .h1{font-size:22px} }
   </style>
 
-  <!-- injected: account menu + badge (V2025V002) -->
-  <link rel="stylesheet" href="./account/account-menu.css" />
-  <style>
-    .kw-version-badge{
-      position: fixed; right: 18px; bottom: 18px;
-      background: rgba(0,0,0,.75); color:#fff;
-      padding: 6px 12px; border-radius: 16px;
-      font: 600 13px/1.1 ui-sans-serif,system-ui,"Noto Sans TC",Segoe UI,Helvetica,Arial;
-      z-index: 99999; box-shadow: 0 6px 18px rgba(0,0,0,.25);
-      user-select: none; -webkit-user-select:none; pointer-events: none;
-    }
-    .kw-acc-anchor{ display:inline-flex; align-items:center; margin-left:8px; }
-  </style>
-
+<!-- account menu (inline) -->
+<script src="./account/_shared.js"></script>
+<style>
+#accountBtn{
+  position:fixed; right:12px; top:14px; z-index:2147483646;
+  display:inline-flex;align-items:center;justify-content:center;
+  width:40px;height:40px;border-radius:999px;
+  background:#0e2038;border:1px solid #183459;color:#cfe2ff;cursor:pointer;
+}
+#accountBtn:hover{box-shadow:0 0 0 2px rgba(207,226,255,.1) inset;}
+#accountMenu{
+  position:fixed;right:12px;top:64px;min-width:220px;
+  background:#0e2038;border:1px solid #183459;border-radius:12px;
+  box-shadow:0 10px 24px rgba(0,0,0,.35);display:none;overflow:hidden;z-index:2147483647;
+}
+#accountMenu.open{display:block;}
+#accountMenu .mi{padding:14px 16px;color:#e6f0ff;border-bottom:1px solid #183459;cursor:pointer;}
+#accountMenu .mi:last-child{border-bottom:none;}
+#accountMenu .mi:hover{background:#122a4a;}
+#loginModal{position:fixed;inset:0;background:rgba(0,0,0,.5);display:none;align-items:center;justify-content:center;z-index:2147483647;}
+#loginModal.open{display:flex;}
+#loginModal .sheet{width:min(92vw,560px);background:#0e2038;border:1px solid #183459;border-radius:16px;box-shadow:0 10px 24px rgba(0,0,0,.35);padding:20px;}
+#loginModal h3{margin:0 0 12px 0;color:#fff;}
+#loginModal label{display:block;margin:10px 0 6px;color:#cfe2ff;}
+#loginModal input{width:100%;padding:10px 12px;border-radius:10px;border:1px solid #24446f;background:#0b1324;color:#e6f0ff;}
+#loginModal .row{display:flex;gap:10px;justify-content:flex-end;margin-top:16px;}
+#loginModal .btn{background:#132b4a;border:1px solid #24446f;color:#fff;border-radius:10px;padding:10px 16px;cursor:pointer;}
+#loginModal .btn:hover{filter:brightness(1.08);}
+[data-legacy-login]{display:none!important;}
+</style>
 </head>
 <body>
 
@@ -451,37 +467,129 @@ document.addEventListener('click', function(ev){
 }, true); // capture phase
 </script>
 
-  <!-- injected: supabase shared + account menu + glue -->
-  <script type="module">
-    import { supabase } from './account/_shared.js';
-    window.supabase = supabase;
-    (function mountAccountAnchor(){
-      const hdr = document.querySelector('header, .header, nav, .topbar, .navbar') || document.body;
-      let anchor = document.getElementById('kw-acc-anchor');
-      if(!anchor){
-        anchor = document.createElement('span');
-        anchor.id = 'kw-acc-anchor';
-        anchor.className = 'kw-acc-anchor';
-        hdr.appendChild(anchor);
-      }
-      window.__KW_ACC_MOUNT__ = anchor;
-    })();
-    function hideOldLogin(){
-      document.querySelectorAll('a,button,[role="button"]').forEach(el => {
-        const t = (el.textContent || el.value || '').trim().toLowerCase();
-        if(t === '登入' || t === '登录' || t === 'login' || t.includes('登入')){
-          if(!t.includes('登出')) el.style.display = 'none';
-        }
-      });
-    }
-    hideOldLogin();
-    new MutationObserver(hideOldLogin).observe(document.body, {childList:true,subtree:true});
-  </script>
-  <script type="module" src="./account/account-menu.js"></script>
-  <div class="kw-version-badge">V2025V002</div>
+<!-- account menu module (inline) -->
+<button id="accountBtn" aria-label="account">
+  <svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor" aria-hidden="true">
+    <path d="M12 12c2.761 0 5-2.462 5-5.5S14.761 1 12 1 7 3.462 7 6.5 9.239 12 12 12zm0 2c-4.337 0-8 2.239-8 5v2h16v-2c0-2.761-3.663-5-8-5z"/>
+  </svg>
+</button>
+<div id="accountMenu" role="menu" aria-hidden="true">
+  <div class="mi" id="menuProfile">我的資料</div>
+  <div class="mi" id="menuFavorites">收藏影片</div>
+  <div class="mi" id="menuLearning">學習曲線</div>
+  <div class="mi" id="menuLogout">登出</div>
+</div>
+<div id="loginModal" aria-hidden="true">
+  <div class="sheet">
+    <h3>登入</h3>
+    <label for="loginEmail">Email</label>
+    <input id="loginEmail" type="email" placeholder="you@example.com" autocomplete="email" />
+    <label for="loginPass">密碼</label>
+    <input id="loginPass" type="password" placeholder="••••••••" autocomplete="current-password" />
+    <div class="row">
+      <button class="btn" id="btnLoginCancel">取消</button>
+      <button class="btn" id="btnLoginOK">送出</button>
+    </div>
+  </div>
+</div>
 
+<script>
+(function () {
+  const sb = window.supabase;
+  if (!sb) { console.warn('[account-menu] Supabase 未就緒'); return; }
+
+  const btn = document.querySelector('#accountBtn');
+  const DD  = document.querySelector('#accountMenu');
+  const legacyLogin = document.querySelectorAll('[data-legacy-login]');
+  const loginModal  = document.querySelector('#loginModal');
+  const loginEmail  = document.querySelector('#loginEmail');
+  const loginPass   = document.querySelector('#loginPass');
+  const loginOK     = document.querySelector('#btnLoginOK');
+  const loginCancel = document.querySelector('#btnLoginCancel');
+
+  const linkProfile  = document.querySelector('#menuProfile');
+  const linkFavs     = document.querySelector('#menuFavorites');
+  const linkLearning = document.querySelector('#menuLearning');
+  const linkLogout   = document.querySelector('#menuLogout');
+
+  legacyLogin.forEach(el => { el.style.display = 'none'; });
+
+  async function paint() {
+    const { data: { user } } = await sb.auth.getUser();
+    if (!user) {
+      DD.classList.remove('open');
+      btn.setAttribute('data-state', 'guest');
+      btn.title = '未登入';
+    } else {
+      btn.setAttribute('data-state', 'logged-in');
+      btn.title = user.email || '已登入';
+    }
+  }
+
+  function openLogin()  { loginModal.classList.add('open'); setTimeout(() => loginEmail?.focus(), 0); }
+  function closeLogin() { loginModal.classList.remove('open'); if(loginEmail) loginEmail.value=''; if(loginPass) loginPass.value=''; }
+
+  btn?.addEventListener('click', async () => {
+    const { data: { user } } = await sb.auth.getUser();
+    if (!user) openLogin();
+    else DD.classList.toggle('open');
+  });
+
+  async function doLogin() {
+    const email = loginEmail.value.trim();
+    const password = loginPass.value;
+    if (!email || !password) { alert('請輸入 Email 與密碼'); return; }
+    const { error } = await sb.auth.signInWithPassword({ email, password });
+    if (error) { alert(error.message); return; }
+    closeLogin();
+    await paint();
+    DD.classList.add('open');
+  }
+
+  loginOK?.addEventListener('click', doLogin);
+  loginCancel?.addEventListener('click', closeLogin);
+  loginPass?.addEventListener('keydown', (e) => { if (e.key === 'Enter') doLogin(); });
+
+  linkLogout?.addEventListener('click', async () => {
+    await sb.auth.signOut();
+    DD.classList.remove('open');
+    await paint();
+  });
+  linkProfile?.addEventListener('click',  () => location.href = './account/profile.html');
+  linkFavs?.addEventListener('click',     () => location.href = './account/favorites.html');
+  linkLearning?.addEventListener('click', () => location.href = './account/learning.html');
+
+  document.addEventListener('click', (e) => {
+    if (!DD.contains(e.target) && !btn.contains(e.target)) {
+      DD.classList.remove('open');
+    }
+  }, true);
+
+  paint();
+})();
+</script>
 </body>
 </html>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
