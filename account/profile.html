@@ -1,99 +1,216 @@
-<!doctype html><meta charset="utf-8">
-<title>我的資料</title>
-<link rel="stylesheet" href="./account.css">
-<script>
-  // Ensure Supabase keys exist even if not injected globally
-  window.SUPABASE_URL = window.SUPABASE_URL || 'https://YOUR-PROJECT.supabase.co';
-  window.SUPABASE_ANON_KEY = window.SUPABASE_ANON_KEY || 'YOUR-ANON-KEY';
-</script>
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>我的資料｜BookWide</title>
 
-<header class="bar"><a href="/" class="link">← 回首頁</a><h1>我的資料</h1></header>
+  <!-- 全站帳號樣式 -->
+  <link rel="stylesheet" href="./account.css" />
 
-<main class="wrap">
-  <section class="card">
-    <h2>基本資料</h2>
-    <div id="u">載入中…</div>
-    <div class="row gap">
-      <button id="btnReset" class="btn">寄送重設密碼信</button>
-      <button id="btnExport" class="btn btn-outline">下載我的資料（JSON）</button>
+  <!-- 後備樣式（若找不到 account.css 也能正常顯示） -->
+  <style>
+    :root{--ink:#e6f0ff;--muted:#98a7bd;--bg:#0b1324;--panel:#0f172a;--border:#1f2a44;--accent:#3c7cff;}
+    *{box-sizing:border-box}
+    html,body{margin:0;height:100%;background:var(--bg);color:var(--ink);font-family:ui-sans-serif,system-ui,"Noto Sans TC"}
+    a{color:#aaccff;text-decoration:none}
+    .wrap{max-width:980px;margin:0 auto;padding:16px}
+    header{position:sticky;top:0;z-index:10;background:linear-gradient(var(--bg),rgba(11,19,36,.6));backdrop-filter:saturate(160%) blur(8px);border-bottom:1px solid var(--border)}
+    header .inner{display:flex;align-items:center;gap:10px;padding:14px 10px}
+    header .back{display:inline-flex;align-items:center;gap:6px;padding:8px 12px;border:1px solid var(--border);border-radius:10px;background:#0c1730}
+    h1{font-size:22px;margin:0 0 16px}
+    h2{font-size:18px;margin:24px 0 10px}
+    .section{background:var(--panel);border:1px solid var(--border);border-radius:12px;padding:16px;margin:10px 0}
+    .muted{color:var(--muted)}
+    .btn{display:inline-flex;align-items:center;justify-content:center;padding:8px 14px;border:1px solid #244464;border-radius:10px;background:#16233d;color:#e6f0ff;cursor:pointer}
+    .btn_blue{background:#14325f;border-color:#2a568d}
+    .btn:disabled{opacity:.6;cursor:not-allowed}
+    input{width:100%;padding:10px;border-radius:10px;border:1px solid #2b3955;background:#0d1a33;color:var(--ink)}
+    .list{display:grid;gap:10px}
+    .rowlink{display:block;padding:12px;border:1px solid var(--border);border-radius:10px;background:#0e1c35}
+    .rowlink .title{font-weight:700}
+    .rowlink .meta{font-size:12px;color:var(--muted);margin-top:4px}
+    .card{background:#0e1b34;border:1px solid var(--border);border-radius:12px;padding:12px}
+    .grid{display:grid;gap:12px;max-width:520px}
+    .avatar{width:64px;height:64px;border-radius:50%;object-fit:cover;border:1px solid #234}
+  </style>
+</head>
+<body>
+  <header>
+    <div class="wrap inner">
+      <a class="back" href="../index.html">← 回首頁</a>
+      <h1 style="margin:0">我的資料</h1>
     </div>
-  </section>
+  </header>
 
-  <section class="card">
-    <h2>最近交卷</h2>
-    <ol id="attempts" class="list"></ol>
-  </section>
+  <main class="wrap">
+    <section class="section">
+      <h2>基本資料</h2>
+      <div id="basic-info"><p class="muted">載入中…</p></div>
+    </section>
 
-  <section class="card">
-    <h2>最近看片</h2>
-    <ol id="watches" class="list"></ol>
-  </section>
-</main>
+    <section class="section">
+      <h2>最近交卷</h2>
+      <div id="attempts-list"><p class="muted">載入中…</p></div>
+    </section>
 
-<script type="module" src="./_shared.js"></script>
-<script type="module">
-import { supa, requireUser, fmtDateTime } from './_shared.js'
+    <section class="section">
+      <h2>最近看片</h2>
+      <div id="watches-list"><p class="muted">載入中…</p></div>
+    </section>
+  </main>
 
-function html (strings, ...vals){return strings.map((s,i)=>s+(vals[i]??'')).join('')}
+  <!-- 全站 Supabase 初始化（提供 window.supa） -->
+  <script src="./_shared.js"></script>
 
-(async () => {
-  const user = await requireUser()
+  <script>
+  (async () => {
+    const supa = window.supa;
+    const $ = (sel) => document.querySelector(sel);
+    const basicBox    = $('#basic-info');
+    const attemptsBox = $('#attempts-list');
+    const watchesBox  = $('#watches-list');
 
-  // profiles（可無）
-  let profile = null
-  try {
-    const { data } = await supa.from('profiles')
-      .select('*').eq('user_id', user.id).maybeSingle()
-    profile = data
-  } catch {}
+    if (!supa) { basicBox.innerHTML = '<p>初始化失敗，請稍後再試。</p>'; return; }
 
-  const u = document.getElementById('u')
-  u.innerHTML = html`
-    <p>UID：<code>${user.id}</code></p>
-    <p>Email：<code>${user.email ?? '-'}</code></p>
-    <p>暱稱：<code>${profile?.display_name ?? '-'}</code></p>
-    <p>建立時間：<code>${fmtDateTime(user.created_at)}</code></p>
-    <p>最近登入：<code>${fmtDateTime(user.last_sign_in_at)}</code></p>
-  `
+    const { data: { user }, error: uErr } = await supa.auth.getUser();
+    if (uErr) console.error(uErr);
+    if (!user) { basicBox.innerHTML = '<p>尚未登入，請先回首頁登入。</p>'; return; }
 
-  // 密碼重設（Email 使用者）
-  document.getElementById('btnReset').onclick = async () => {
-    if (!user.email) return alert('非 Email 登入，請至提供者修改密碼')
-    const { error } = await supa.auth
-      .resetPasswordForEmail(user.email, { redirectTo: location.href })
-    alert(error ? error.message : '已寄出重設密碼信')
-  }
+    const fmt = (ts) => ts ? new Date(ts).toLocaleString() : '';
+    const esc = (s) => (s||'').replace(/[&<>\"']/g, (m)=>({ '&':'&amp;','<':'&lt;','>':'&gt;','\"':'&quot;',\"'\":'&#39;' }[m]));
 
-  // 匯出 JSON
-  document.getElementById('btnExport').onclick = () => {
-    const blob = new Blob([JSON.stringify(user, null, 2)], { type: 'application/json' })
-    const url = URL.createObjectURL(blob)
-    const a = Object.assign(document.createElement('a'), { href: url, download: 'my-data.json' })
-    a.click()
-    setTimeout(() => URL.revokeObjectURL(url), 1000)
-  }
+    async function ensureProfile(uid) {
+      let { data: row, error } = await supa.from('profiles').select('*').eq('user_id', uid).maybeSingle();
+      if (error && error.code !== 'PGRST116') throw error;
+      if (!row) {
+        const { data, error: insErr } = await supa.from('profiles')
+          .insert({ user_id: uid, display_name: null, photo_url: null })
+          .select('*').single();
+        if (insErr) throw insErr;
+        row = data;
+      }
+      return row;
+    }
 
-  // 最近交卷
-  const { data: atts } = await supa.from('quiz_attempts')
-    .select('video_slug, score, total, submitted_at')
-    .order('submitted_at', { ascending: false }).limit(10)
+    async function renderBasic() {
+      basicBox.innerHTML = '<p class="muted">載入中…</p>';
+      let profile;
+      try { profile = await ensureProfile(user.id); }
+      catch(e){ console.error(e); basicBox.innerHTML = '<p>載入失敗。</p>'; return; }
 
-  document.getElementById('attempts').innerHTML =
-    (atts?.length ? atts.map(a =>
-      `<li>${fmtDateTime(a.submitted_at)}｜${a.video_slug}｜${a.score}/${a.total}</li>`
-    ).join('') : '<li class="muted">尚無</li>')
+      basicBox.innerHTML = `
+        <div class="card">
+          <div style="display:flex;gap:16px;align-items:center;">
+            <img id="avatarPreview" class="avatar" src="\${esc(profile.photo_url)||'https://placehold.co/64x64?text=👤'}" alt="avatar">
+            <div>
+              <div style="font-size:12px;color:#9aa4;">Email</div>
+              <div>\${esc(user.email||'')}</div>
+            </div>
+          </div>
 
-  // 最近看片（若未啟用 watch_logs 會顯示「未啟用」）
-  try {
-    const { data: w } = await supa.from('watch_logs')
-      .select('video_slug, position_ms, last_seen_at')
-      .order('last_seen_at', { ascending: false }).limit(10)
-    document.getElementById('watches').innerHTML =
-      (w?.length ? w.map(x =>
-        `<li>${fmtDateTime(x.last_seen_at)}｜${x.video_slug}｜${Math.round((x.position_ms || 0) / 1000)}s</li>`
-      ).join('') : '<li class="muted">尚無</li>')
-  } catch {
-    document.getElementById('watches').innerHTML = '<li class="muted">未啟用</li>'
-  }
-})()
-</script>
+          <div class="grid" style="margin-top:16px;">
+            <label style="display:grid;gap:6px;">
+              <span class="muted">暱稱（顯示名稱）</span>
+              <input id="displayName" type="text" placeholder="未設定" value="\${esc(profile.display_name||'')}" />
+            </label>
+
+            <label style="display:grid;gap:6px;">
+              <span class="muted">頭像圖片網址（可空）</span>
+              <input id="photoUrl" type="url" placeholder="https://…" value="\${esc(profile.photo_url||'')}" />
+            </label>
+
+            <div style="display:flex;gap:8px;flex-wrap:wrap">
+              <button id="btnSaveProfile" class="btn">儲存變更</button>
+              <button id="btnResetPwd"   class="btn btn_blue">寄送重設密碼信</button>
+              <button id="btnExportJson" class="btn">下載我的資料（JSON）</button>
+            </div>
+          </div>
+        </div>`;
+
+      const photoInput = $('#photoUrl');
+      const avatarPrev = $('#avatarPreview');
+      photoInput?.addEventListener('input', () => {
+        avatarPrev.src = photoInput.value.trim() || 'https://placehold.co/64x64?text=👤';
+      });
+
+      $('#btnSaveProfile')?.addEventListener('click', async () => {
+        const display_name = $('#displayName').value.trim() || null;
+        const photo_url    = $('#photoUrl').value.trim() || null;
+        const { error } = await supa.from('profiles').update({ display_name, photo_url }).eq('user_id', user.id);
+        if (error) return alert('儲存失敗：' + error.message);
+        alert('已儲存！');
+      });
+
+      $('#btnResetPwd')?.addEventListener('click', async () => {
+        const { error } = await supa.auth.resetPasswordForEmail(user.email, {
+          redirectTo: location.origin + '/english-videos/account/profile.html'
+        });
+        if (error) return alert('寄送失敗：' + error.message);
+        alert('已寄出重設密碼信，請到信箱收信。');
+      });
+
+      $('#btnExportJson')?.addEventListener('click', async () => {
+        try {
+          const [attempts, watches] = await Promise.all([getAttempts(), getWatches()]);
+          const payload = { user: { id: user.id, email: user.email }, profile, attempts, watches };
+          const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+          const url  = URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url; a.download = 'my-bookwide-data.json'; a.click();
+          URL.revokeObjectURL(url);
+        } catch (e) {
+          console.error(e); alert('下載失敗');
+        }
+      });
+    }
+
+    async function getAttempts() {
+      const { data, error } = await supa.from('quiz_attempts')
+        .select('video_slug,score,total,submitted_at')
+        .order('submitted_at', { ascending:false }).limit(10);
+      if (error) throw error;
+      return data || [];
+    }
+
+    async function getWatches() {
+      const { data, error } = await supa.from('watch_logs')
+        .select('video_slug,last_seen_at,position_ms')
+        .order('last_seen_at', { ascending:false }).limit(10);
+      if (error) throw error;
+      return data || [];
+    }
+
+    async function renderAttempts() {
+      attemptsBox.innerHTML = '<p class="muted">載入中…</p>';
+      let rows=[]; try { rows = await getAttempts(); } catch(e){ console.error(e); attemptsBox.innerHTML='<p>讀取失敗</p>'; return; }
+      if (!rows.length){ attemptsBox.innerHTML='<p class="muted">尚無交卷紀錄</p>'; return; }
+      attemptsBox.innerHTML = '<div class="list">' + rows.map(r => {
+        const score = `\${r.score} / \${r.total}`;
+        const url   = '../player.html?slug=' + encodeURIComponent(r.video_slug||'');
+        return `<a class="rowlink" href="\${url}"><div class="title">\${esc(r.video_slug)}</div><div class="meta">分數：\${score}　時間：\${fmt(r.submitted_at)}</div></a>`;
+      }).join('') + '</div>';
+    }
+
+    async function renderWatches() {
+      watchesBox.innerHTML = '<p class="muted">載入中…</p>';
+      let rows=[]; try { rows = await getWatches(); } catch(e){ console.error(e); watchesBox.innerHTML='<p>讀取失敗</p>'; return; }
+      if (!rows.length){ watchesBox.innerHTML='<p class="muted">尚無觀看紀錄</p>'; return; }
+      watchesBox.innerHTML = '<div class="list">' + rows.map(r => {
+        const sec  = Math.floor((r.position_ms||0)/1000);
+        const url  = '../player.html?slug=' + encodeURIComponent(r.video_slug||'');
+        return `<a class="rowlink" href="\${url}"><div class="title">\${esc(r.video_slug)}</div><div class="meta">上次看到：\${fmt(r.last_seen_at)}　（約 \${sec}s）</div></a>`;
+      }).join('') + '</div>';
+    }
+
+    try {
+      await renderBasic();
+      await renderAttempts();
+      await renderWatches();
+    } catch (e) {
+      console.error(e);
+    }
+  })();
+  </script>
+</body>
+</html>
