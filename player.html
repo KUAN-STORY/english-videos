@@ -9,11 +9,11 @@
 <!-- Player patched V20251007-14: cues format protection added; no other changes -->
 <!-- Player patched V20251007-13: cues observer patch added; no other changes -->
 <!-- Player patched V20251007-12: cues vertical stack + Supabase protection; no other changes -->
-!doctype html>
+!doctype html&gt;
 <html lang="zh-Hant">
 <head>
 <meta charset="utf-8"/>
-<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<meta content="width=device-width,initial-scale=1" name="viewport"/>
 <title>英語影片播放器</title>
 <style>
   :root{ --bg:#0b1324; --panel:#0f172a; --border:#1f2a44; --ink:#e6efff; --muted:#9fb0c9; --accent:#3c7cff; }
@@ -96,13 +96,10 @@
   #phScore{font-size:24px;font-weight:900}
   #phFeedback{font-size:12px;color:#444}
 </style>
-
 <style id="patch-20251007-09">
 .auth-locked { pointer-events:none; filter: grayscale(.05); opacity:.75; }
 @media print { #authVersionBadge { display:none !important; } }
 </style>
-
-
 <!-- BEGIN Patch V20251007-11 (rebuilt): cues English/Chinese vertical stack -->
 <style>
 .cues-table { width: 100%; border-collapse: collapse; table-layout: fixed; }
@@ -120,15 +117,6 @@
 .cues-table tbody tr:hover { background: rgba(255,255,255,.04); }
 </style>
 <!-- END Patch V20251007-11 -->
-
-
-
-
-
-
-
-
-
 <!-- BEGIN Lite Styles · V20251007-20 -->
 <style>
 /* Keep login hidden (player page only) */
@@ -148,7 +136,6 @@
 }
 </style>
 <!-- END Lite Styles · V20251007-20 -->
-
 <!-- BEGIN Mobile 2-Page Pager (from player(2).html style) · V20251007-21 -->
 <style>
 @media (max-width:860px) and (orientation:portrait){
@@ -176,10 +163,7 @@
 }
 </style>
 <!-- END Mobile 2-Page Pager · V20251007-21 -->
-
 <!-- removed uni-actions-css (mobile overlay bar) -->
-
-
 <style id="print-up-3lines">
 /* 只影響列印：把題目區往上移動約 3 行，並隱藏標題列與版本膠囊 */
 @media print{
@@ -194,8 +178,6 @@
   }
 }
 </style>
-
-
 <style id="mobile-bottom-gap-fix">
 /* 讓最底下的「交卷」可自然捲上，不會被 Safari/瀏覽器工具列擋住 */
 @media (max-width: 768px){
@@ -215,8 +197,6 @@
   }
 }
 </style>
-
-
 <style id="print-full-content-fix">
 /* iOS Safari：列印只出現部分內容，多半是因為容器被設成固定高度 + overflow/transform。
    這裡在列印時把所有可疑容器打開，並把左欄與影片隱藏，只留測驗區完整輸出。 */
@@ -265,8 +245,6 @@
   }
 }
 </style>
-
-
 <style id="ios-print-full-fix-strong">
 @media print {
   html, body {
@@ -308,127 +286,139 @@
   @page { margin: 10mm; }
 }
 </style>
-
-  <link rel="stylesheet" href="assets/css/ai-interactive.css">
+<link href="assets/css/ai-interactive.css" rel="stylesheet"/>
 </head>
 <body>
-
 <!-- Version badge: V20251007-09 -->
 <div id="authVersionBadge" style="position:fixed;top:10px;right:12px;z-index:99999;background:#fff;color:#111;font-weight:700;border-radius:10px;padding:4px 10px;box-shadow:0 2px 10px rgba(0,0,0,.15);font-family:ui-sans-serif,system-ui,-apple-system,'Segoe UI',Roboto,'Noto Sans TC',Arial;font-size:12px;">
   V20251007-09
   <span id="userBadgeEmail" style="margin-left:8px;opacity:.85;"></span>
 </div>
-
 <header>
-  <h1>英語影片播放器</h1>
-  <div id="authArea" style="display:flex;gap:10px;align-items:center">
-    <button id="btnLogin" class="btn">登入</button>
-    <button id="btnLogout" class="btn" style="display:none">登出</button>
-    <span id="userNameBadge" class="muted"></span>
-  </div>
-</header>
-
-<div class="wrap">
-  <div class="layout">
-    <section class="left" id="videoContainer">
-      <div id="videoWrap" class="videoWrap">
-        <video id="player" playsinline controls></video>
-      </div>
-
-      <div class="controls" id="controlsDrawer">
-        <div class="drawer-grab" id="drawerGrab">
-          <div class="grab-bar" style="width:44px;height:4px;border-radius:4px;margin:0 auto 4px;background:#2b4a78;"></div>
-          <div class="drawer-title" style="font-size:12px;color:#9fb0c9;">播放工具列（點擊展開/收合）</div>
-        </div>
-        <div class="row">
-          <button id="btnPrev" class="btn">⏮ 上一句</button>
-          <button id="btnPlay" class="btn">▶️ 播放 / 暫停</button>
-          <button id="btnNext" class="btn">⏭ 下一句</button>
-          <button id="btnReplay" class="btn">🔁 重複本句</button>
-        </div>
-        <div class="row">
-          <label class="chip"><input id="chkFollow" type="checkbox"/> 跟隨</label>
-          <span class="chip">偏移 <span id="offsetVal">0.0s</span></span>
-          <button id="btnOffsetMinus" class="btn">-0.5s</button>
-          <button id="btnOffsetPlus" class="btn">+0.5s</button>
-          <button id="btnAutoSync" class="btn">🧭 簡易校準</button>
-        </div>
-        <div class="row speed">
-          <span class="muted">速度</span>
-          <input id="speedRange" type="range" min="0.5" max="2" step="0.05" value="1"/>
-          <span id="speedVal">1.00x</span>
-        </div>
-      </div>
-    </section>
-
-    <section class="right" id="studyContainer">
-      <div class="tabs">
-        <div class="tab active" data-tab="sub" id="tabSub">字幕</div>
-        <div class="tab" data-tab="quiz">測驗</div>
-        <div class="tab" data-tab="vocab">單字</div>
-  <button class="btn tab-ai" data-tab="ai">AI互動</button>
-      </div>
-
-      <!-- 列印頁首（列印時顯示） -->
-      <div id="printHeader" aria-hidden="true">
-        <div id="phLeft">
-          <!-- 內嵌 SVG Logo -->
-          <svg id="phLogo" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-            <circle cx="12" cy="12" r="10" stroke="#111" stroke-width="2"></circle>
-            <path d="M7 13h10M7 9h10M7 17h6" stroke="#111" stroke-width="2" stroke-linecap="round"/>
-          </svg>
-          <div>
-            <div id="phTitle">BookWide · 英語影片測驗成績單</div>
-            <div id="phMeta">
-              影片：<span id="phSlug">-</span>　分區：<span id="phSection">-</span>　列印：<span id="phTime">-</span>
-            </div>
-          </div>
-        </div>
-        <div id="phRight">
-          <div id="phScore">0 / 100</div>
-          <div id="phFeedback">（0%）</div>
-        </div>
-      </div>
-
-      <div class="pane">
-        <div id="pane-sub">
-          <div id="cuesStatus" class="muted" style="padding:10px 14px">（字幕載入中…）</div>
-          <table>
-            <thead><tr><th style="width:80px">時間</th><th>英文</th><th style="width:40%">中文</th></tr></thead>
-            <tbody id="cuesBody"></tbody>
-          </table>
-        </div>
-
-        <div id="pane-quiz" style="display:none">
-          <div class="quiz-shell">
-            <div id="quizTabs" class="q-tabs" style="margin:6px 0 10px 0;">
-              <button class="qtab on" data-sec="Vocabulary">單字</button>
-              <button class="qtab" data-sec="Grammar">文法</button>
-              <button class="qtab" data-sec="Reading">閱讀</button>
-              <button class="qtab" data-sec="Mixed">綜合</button>
-              <span id="quizMeta" class="muted" style="margin-left:12px">（測驗載入中…）</span>
-            </div>
-            <ol id="quizList" style="line-height:1.6"></ol>
-            <div class="q-actions" style="margin:14px 0 6px; display:flex; gap:8px; align-items:center;">
-              <button class="btn" id="btnSubmitQuiz">交卷</button>
-              <button class="btn" id="btnShowAnswer" style="display:none">顯示答案</button>
-              <!-- 列印按鈕（常駐顯示於測驗區） -->
-              <button class="btn" id="btnPrint" style="display:none">列印成績單</button>
-              <span id="quizScore" style="margin-left:8px"></span>
-            </div>
-            <div id="quizResult" style="display:none;margin-top:10px"></div>
-          </div>
-        </div>
-
-        <div id="pane-vocab" style="display:none">
-          <div id="vocabStatus" class="muted" style="padding:10px 14px">( 單字載入中… )</div>
-          <div id="vocabBox" style="padding:0 14px 14px"></div>
-        </div>
-      </div>
-    </section>
-  </div>
+<h1>英語影片播放器</h1>
+<div id="authArea" style="display:flex;gap:10px;align-items:center">
+<button class="btn" id="btnLogin">登入</button>
+<button class="btn" id="btnLogout" style="display:none">登出</button>
+<span class="muted" id="userNameBadge"></span>
 </div>
-
+</header>
+<div class="wrap">
+<div class="layout">
+<section class="left" id="videoContainer">
+<div class="videoWrap" id="videoWrap">
+<video controls="" id="player" playsinline=""></video>
+</div>
+<div class="controls" id="controlsDrawer">
+<div class="drawer-grab" id="drawerGrab">
+<div class="grab-bar" style="width:44px;height:4px;border-radius:4px;margin:0 auto 4px;background:#2b4a78;"></div>
+<div class="drawer-title" style="font-size:12px;color:#9fb0c9;">播放工具列（點擊展開/收合）</div>
+</div>
+<div class="row">
+<button class="btn" id="btnPrev">⏮ 上一句</button>
+<button class="btn" id="btnPlay">▶️ 播放 / 暫停</button>
+<button class="btn" id="btnNext">⏭ 下一句</button>
+<button class="btn" id="btnReplay">🔁 重複本句</button>
+</div>
+<div class="row">
+<label class="chip"><input id="chkFollow" type="checkbox"/> 跟隨</label>
+<span class="chip">偏移 <span id="offsetVal">0.0s</span></span>
+<button class="btn" id="btnOffsetMinus">-0.5s</button>
+<button class="btn" id="btnOffsetPlus">+0.5s</button>
+<button class="btn" id="btnAutoSync">🧭 簡易校準</button>
+</div>
+<div class="row speed">
+<span class="muted">速度</span>
+<input id="speedRange" max="2" min="0.5" step="0.05" type="range" value="1"/>
+<span id="speedVal">1.00x</span>
+</div>
+</div>
+</section>
+<section class="right" id="studyContainer">
+<div class="tabs">
+<div class="tab active" data-tab="sub" id="tabSub">字幕</div>
+<div class="tab" data-tab="quiz">測驗</div>
+<div class="tab" data-tab="vocab">單字</div>
+<button class="btn tab-ai" data-tab="ai">AI互動</button>
+</div>
+<!-- 列印頁首（列印時顯示） -->
+<div aria-hidden="true" id="printHeader">
+<div id="phLeft">
+<!-- 內嵌 SVG Logo -->
+<svg aria-hidden="true" fill="none" id="phLogo" viewbox="0 0 24 24">
+<circle cx="12" cy="12" r="10" stroke="#111" stroke-width="2"></circle>
+<path d="M7 13h10M7 9h10M7 17h6" stroke="#111" stroke-linecap="round" stroke-width="2"></path>
+</svg>
+<div>
+<div id="phTitle">BookWide · 英語影片測驗成績單</div>
+<div id="phMeta">
+              影片：<span id="phSlug">-</span>　分區：<span id="phSection">-</span>　列印：<span id="phTime">-</span>
+</div>
+</div>
+</div>
+<div id="phRight">
+<div id="phScore">0 / 100</div>
+<div id="phFeedback">（0%）</div>
+</div>
+</div>
+<div class="pane">
+<div id="pane-sub">
+<div class="muted" id="cuesStatus" style="padding:10px 14px">（字幕載入中…）</div>
+<table>
+<thead><tr><th style="width:80px">時間</th><th>英文</th><th style="width:40%">中文</th></tr></thead>
+<tbody id="cuesBody"></tbody>
+</table>
+</div>
+<div id="pane-quiz" style="display:none">
+<div class="quiz-shell">
+<div class="q-tabs" id="quizTabs" style="margin:6px 0 10px 0;">
+<button class="qtab on" data-sec="Vocabulary">單字</button>
+<button class="qtab" data-sec="Grammar">文法</button>
+<button class="qtab" data-sec="Reading">閱讀</button>
+<button class="qtab" data-sec="Mixed">綜合</button>
+<span class="muted" id="quizMeta" style="margin-left:12px">（測驗載入中…）</span>
+</div>
+<ol id="quizList" style="line-height:1.6"></ol>
+<div class="q-actions" style="margin:14px 0 6px; display:flex; gap:8px; align-items:center;">
+<button class="btn" id="btnSubmitQuiz">交卷</button>
+<button class="btn" id="btnShowAnswer" style="display:none">顯示答案</button>
+<!-- 列印按鈕（常駐顯示於測驗區） -->
+<button class="btn" id="btnPrint" style="display:none">列印成績單</button>
+<span id="quizScore" style="margin-left:8px"></span>
+</div>
+<div id="quizResult" style="display:none;margin-top:10px"></div>
+</div>
+</div>
+<div id="pane-vocab" style="display:none">
+<div class="muted" id="vocabStatus" style="padding:10px 14px">( 單字載入中… )</div>
+<div id="vocabBox" style="padding:0 14px 14px"></div>
+</div><section class="pane-ai" id="pane-ai" style="display:none">
+<div class="ai-box">
+<div class="ai-row">
+<div class="ai-hint">允許麥克風後可以口說練習（建議 Chrome / Edge）。網址請帶 <code>?slug=mid-autumn / houyi / lantern</code></div>
+</div>
+<div class="ai-row">
+<select class="btn" id="aiTopic"></select>
+<button class="btn" id="btnNextTopic">下一題</button>
+<button class="btn" id="btnTts">朗讀</button>
+<button class="btn" id="btnRec">開始說</button>
+<button class="btn" disabled="" id="btnStop">停止</button>
+<label style="margin-left:8px;font-size:13px;opacity:.8"><input id="aiAutoNext" type="checkbox"/> 作答後自動下一題</label> <span class="ai-hint" id="aiStatus"></span>
+</div>
+<div class="ai-row">
+<textarea class="ai-out" id="aiPrompt" placeholder="Prompt" rows="3" style="width:100%"></textarea>
+</div>
+<div class="ai-row">
+<div style="width:100%">
+<div class="ai-hint">AI：</div>
+<div class="ai-out" id="aiReply">（等待載入題目…）</div>
+</div>
+</div>
+</div>
+</section>
+</div>
+</section>
+</div>
+</div>
 <!-- ===== 播放器主程式 ===== -->
 <script>
 /* ---------- 小工具 ---------- */
@@ -589,7 +579,7 @@ async function loadVocab(){
   vBox.addEventListener('click',e=>{
     const act=e.target?.dataset?.act; if(!act)return;
     if(act==='jump')go(e.target.dataset.time||0);
-    if(act==='speak'){ try{ const u=new SpeechSynthesisUtterance(e.target.dataset.text||''); u.lang='en-US'; speechSynthesis.cancel(); speechSynthesis.speak(u);}catch{} }
+    if(act==='speak'){ try{ const u=new SpeechSynthesisUtterance(e.target.dataset.text||''); u.lang='en-US'; speechSynthesis.cancel(); speakPrompt();}catch{} }
   });
 }
 
@@ -624,7 +614,6 @@ $$('.tabs .tab').forEach(t=>t.addEventListener('click',()=>showTab(t.dataset.tab
   showTab('sub');
 })();
 </script>
-
 <!-- ===== Supabase 守門 & 觀看紀錄 ===== -->
 <script type="module">
   import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm";
@@ -662,7 +651,6 @@ $$('.tabs .tab').forEach(t=>t.addEventListener('click',()=>showTab(t.dataset.tab
     document.getElementById("player")?.addEventListener("play", logOnce, { once: true });
   }
 </script>
-
 <!-- Supabase Auth Gate + PDF Export (player_v20251007-09, non-invasive) -->
 <script>
 (function(){
@@ -859,10 +847,8 @@ $$('.tabs .tab').forEach(t=>t.addEventListener('click',()=>showTab(t.dataset.tab
   }
 })();
 </script>
-
-
 <!-- 🔐 Supabase Gate · V20251007-10 (append-only) -->
-<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+<link crossorigin="" href="https://cdn.jsdelivr.net" rel="preconnect"/>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
 (() => {
@@ -934,8 +920,6 @@ $$('.tabs .tab').forEach(t=>t.addEventListener('click',()=>showTab(t.dataset.tab
 })();
 </script>
 <!-- /Supabase Gate · V20251007-10 -->
-
-
 <!-- BEGIN Patch V20251007-11 (rebuilt): cues English/Chinese vertical stack -->
 <script>
 (function stackBilingualUnderEnglish() {
@@ -972,7 +956,6 @@ $$('.tabs .tab').forEach(t=>t.addEventListener('click',()=>showTab(t.dataset.tab
 })();
 </script>
 <!-- END Patch V20251007-11 -->
-
 <!-- BEGIN Supabase Protection Patch · V20251007-12 -->
 <script>
 (function protectSupabaseBlocks(){
@@ -1015,7 +998,6 @@ $$('.tabs .tab').forEach(t=>t.addEventListener('click',()=>showTab(t.dataset.tab
 })();
 </script>
 <!-- END Supabase Protection Patch · V20251007-12 -->
-
 <!-- BEGIN Cues Stack Observer Patch · V20251007-13 -->
 <script>
 (function cuesStackObserverPatch(){
@@ -1092,7 +1074,6 @@ $$('.tabs .tab').forEach(t=>t.addEventListener('click',()=>showTab(t.dataset.tab
 })();
 </script>
 <!-- END Cues Stack Observer Patch · V20251007-13 -->
-
 <!-- BEGIN Cues Format Protection Patch · V20251007-14 -->
 <script>
 (function protectCuesFormat(){
@@ -1175,21 +1156,6 @@ $$('.tabs .tab').forEach(t=>t.addEventListener('click',()=>showTab(t.dataset.tab
 })();
 </script>
 <!-- END Cues Format Protection Patch · V20251007-14 -->
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 <!-- BEGIN Lite Scripts · V20251007-20 -->
 <script>
 (function(){
@@ -1286,7 +1252,6 @@ $$('.tabs .tab').forEach(t=>t.addEventListener('click',()=>showTab(t.dataset.tab
 })();
 </script>
 <!-- END Lite Scripts · V20251007-20 -->
-
 <!-- BEGIN Mobile 2-Page Pager (from player(2).html style) · V20251007-21 -->
 <script>
 (function(){
@@ -1362,7 +1327,6 @@ $$('.tabs .tab').forEach(t=>t.addEventListener('click',()=>showTab(t.dataset.tab
 })();
 </script>
 <!-- END Mobile 2-Page Pager · V20251007-21 -->
-
 <!-- BEGIN Quiz Submit Compatibility · V20251007-22 -->
 <script>
 (function ensureQuizSubmitWorks(){
@@ -1438,13 +1402,7 @@ $$('.tabs .tab').forEach(t=>t.addEventListener('click',()=>showTab(t.dataset.tab
 })();
 </script>
 <!-- END Quiz Submit Compatibility · V20251007-22 -->
-
 <!-- removed uni-actions-js (mobile overlay bar logic) -->
-
-
-
-
-
 <script id="version-badge-patcher">
 (function(){
   var NEW = 'V2025V002';
@@ -1469,8 +1427,6 @@ $$('.tabs .tab').forEach(t=>t.addEventListener('click',()=>showTab(t.dataset.tab
   });
 })();
 </script>
-
-
 <script id="line-print-banner">
 (function(){
   var ua = navigator.userAgent || '';
@@ -1490,36 +1446,6 @@ $$('.tabs .tab').forEach(t=>t.addEventListener('click',()=>showTab(t.dataset.tab
   };
 })();
 </script>
-
-
-<section id="pane-ai" class="pane-ai" style="display:none">
-  <div class="ai-box">
-    <div class="ai-row">
-      <div class="ai-hint">允許麥克風後可以口說練習（建議 Chrome / Edge）。網址請帶 <code>?slug=mid-autumn / houyi / lantern</code></div>
-    </div>
-
-    <div class="ai-row">
-      <select id="aiTopic" class="btn"></select>
-      <button id="btnNextTopic" class="btn">下一題</button>
-      <button id="btnTts" class="btn">朗讀</button>
-      <button id="btnRec" class="btn">開始說</button>
-      <button id="btnStop" class="btn" disabled>停止</button>
-      <span id="aiStatus" class="ai-hint"></span>
-    </div>
-
-    <div class="ai-row">
-      <textarea id="aiPrompt" class="ai-out" rows="3" style="width:100%" placeholder="Prompt"></textarea>
-    </div>
-
-    <div class="ai-row">
-      <div style="width:100%">
-        <div class="ai-hint">AI：</div>
-        <div id="aiReply" class="ai-out">（等待載入題目…）</div>
-      </div>
-    </div>
-  </div>
-</section>
-
 
 <!-- ============ AI Interactive (script) ============ -->
 <script src="assets/js/ai-interactive.js"></script>
@@ -1563,10 +1489,27 @@ $$('.tabs .tab').forEach(t=>t.addEventListener('click',()=>showTab(t.dataset.tab
 
   async function loadAI(){
     try{
-      const res = await fetch(`data/ai-${slug}.json`, {cache:'no-cache'});
-      aiData = await res.json();
+      let aiJson=null;
+      const paths = [
+        `/english-videos/data/ai-${slug}.json`,
+        `data/ai-${slug}.json`,
+        `./ai-${slug}.json`
+      ];
+      for(const p of paths){
+        try{
+          const r = await fetch(p, {cache:'no-cache'});
+          if(r.ok){ aiJson = await r.json(); break; }
+        }catch(e){}
+      }
+      if(!aiJson) throw new Error('AI bank not found for slug '+slug);
+      aiData = aiJson;
+      // Normalize schema: accept array or {topics:[{title?,prompt,hint?}]}
+      if(Array.isArray(aiData)){
+        aiData = { topics: aiData.map(x => (x && (x.prompt||x.title)) ? x : {prompt:String(x||'')}) };
+      }
       if(!aiData.topics || !aiData.topics.length){
-        aiData.topics = [{title:'Warm-up', prompt:'Introduce yourself briefly.'}];
+        aiData.topics = [{title:'Warm-up', prompt:'Introduce yourself briefly.', hint:'name / hobby'}];
+      }];
       }
       aiTopicSel.innerHTML = '';
       aiData.topics.forEach((t,i)=>{
@@ -1583,9 +1526,14 @@ $$('.tabs .tab').forEach(t=>t.addEventListener('click',()=>showTab(t.dataset.tab
     }
   }
   function setTopic(i){
-    idx = (i+aiData.topics.length)%aiData.topics.length;
-    aiTopicSel.value = idx;
-    const t = aiData.topics[idx] || {};
+      if(!aiData || !aiData.topics) return;
+      const t = aiData.topics[i] || aiData.topics[0];
+      aiTopicSel.value = String(i);
+      aiPrompt.value = t.prompt || (t.title||'').trim();
+      const h = t.hint || t.tips || '—';
+      const hintEl = document.getElementById('aiHint'); if(hintEl) hintEl.textContent = h;
+      aiReply.textContent = '（等待你的作答…）';
+    };
     aiPrompt.value = (t.prompt || '').trim();
     aiReply.textContent = (t.example || 'Ready. Say something about it!');
   }
@@ -1597,7 +1545,7 @@ $$('.tabs .tab').forEach(t=>t.addEventListener('click',()=>showTab(t.dataset.tab
     if(!window.speechSynthesis) return alert('此瀏覽器不支援語音合成');
     const u = new SpeechSynthesisUtterance(text || aiReply.textContent || aiPrompt.value);
     u.lang = 'en-US';
-    window.speechSynthesis.cancel(); window.speechSynthesis.speak(u);
+    window.speechSynthesis.cancel(); window.speakPrompt();
   }
   btnTts && btnTts.addEventListener('click', ()=> speak());
 
@@ -1607,19 +1555,42 @@ $$('.tabs .tab').forEach(t=>t.addEventListener('click',()=>showTab(t.dataset.tab
       return alert('此瀏覽器不支援語音辨識，請改用 Chrome / Edge');
     }
     const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-    rec = new SR(); rec.lang='en-US'; rec.interimResults=true; rec.continuous=false;
-    btnRec.disabled = true; btnStop.disabled = false; aiStatus.textContent = '🎙️ 說話中…';
+    rec = new SR(); rec.lang='en-US'; rec.interimResults=true; rec.continuous=true;
+    btnRec.disabled = true; btnStop.disabled = false; aiStatus.textContent = '🎙️ 說話中…（Alt+M 停止）';
+    let interim='';
     rec.onresult = (e)=>{
-      let txt=''; for(let i=0;i<e.results.length;i++){ txt += e.results[i][0].transcript; }
-      aiReply.textContent = txt;
+      let finalText='';
+      for(let i=e.resultIndex;i<e.results.length;i++){
+        const r = e.results[i];
+        if(r.isFinal){ finalText += r[0].transcript; } else { interim += r[0].transcript; }
+      }
+      if(finalText){
+        aiReply.textContent = (aiReply.textContent && aiReply.textContent!=='（等待你的作答…）' ? aiReply.textContent + ' ' : '') + finalText.trim();
+        interim='';
+        const auto = document.getElementById('aiAutoNext');
+        if(auto && auto.checked){
+          const words = aiReply.textContent.trim().split(/\s+/);
+          if(words.length >= 8){
+            const i = parseInt(aiTopicSel.value||'0',10)||0;
+            setTopic((i+1) % aiData.topics.length);
+          }
+        }
+      }
     };
     rec.onend = ()=>{ btnRec.disabled=false; btnStop.disabled=true; aiStatus.textContent=''; };
     rec.onerror = ()=>{ btnRec.disabled=false; btnStop.disabled=true; aiStatus.textContent=''; };
-    rec.start();
+    try{ rec.start(); }catch(e){};
   });
   btnStop && btnStop.addEventListener('click', ()=>{ try{ rec && rec.stop(); }catch(e){} });
 
   loadAI();
+  window.addEventListener('keydown', (e)=>{
+    if(!e.altKey) return;
+    if(e.key==='ArrowRight'){ const i=parseInt(aiTopicSel.value||'0',10)||0; setTopic((i+1)%aiData.topics.length); e.preventDefault(); }
+    if(e.key==='ArrowLeft'){ const i=parseInt(aiTopicSel.value||'0',10)||0; setTopic((i-1+aiData.topics.length)%aiData.topics.length); e.preventDefault(); }
+    if(e.key==='m' || e.key==='M'){ if(btnStop.disabled){ btnRec.click(); } else { btnStop.click(); } e.preventDefault(); }
+    if(e.key==='s' || e.key==='S'){ speakPrompt(); e.preventDefault(); }
+  });
 })();
 </script>
 <!-- ============ /AI Interactive (script) ============ -->
