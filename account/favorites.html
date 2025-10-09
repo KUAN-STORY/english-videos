@@ -1,46 +1,168 @@
-<!doctype html><meta charset="utf-8">
-<title>我的收藏影片</title>
-<link rel="stylesheet" href="./account.css">
-<script>
-  // Ensure Supabase keys exist even if not injected globally
-  window.SUPABASE_URL = window.SUPABASE_URL || 'https://YOUR-PROJECT.supabase.co';
-  window.SUPABASE_ANON_KEY = window.SUPABASE_ANON_KEY || 'YOUR-ANON-KEY';
-</script>
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>收藏影片</title>
+<style>
+:root{--bg:#0b1324;--panel:#0f172a;--muted:#93a4bf;--ink:#e6efff;--accent:#3c7cff}
+*{box-sizing:border-box}html,body{height:100%;margin:0}
+body{background:var(--bg);color:var(--ink);font-family:ui-sans-serif,system-ui,"Noto Sans TC";}
+header{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:14px 18px;background:var(--panel);border-bottom:1px solid #0e2038;position:sticky;top:0;z-index:5}
+h1{font-size:22px;margin:0}
+.btn{background:#12335f;border:1px solid #24446f;border-radius:10px;padding:8px 12px;color:#fff;cursor:pointer}
+.btn.blue{background:#173bff1a;border-color:#2b5cff}
+.btn.red{background:#7f1d1d33;border-color:#ef4444}
+.btn.muted{background:#112237;border-color:#1f3347;color:var(--muted)}
+.wrap{max-width:980px;margin:18px auto;padding:0 16px}
+.card{background:#0e2038;border:1px solid #183459;border-radius:12px;padding:14px;margin:12px 0}
+.card h2{margin:4px 0 10px 0;font-size:18px}
+.row{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+.input{background:#0b1a2e;border:1px solid #1b3354;border-radius:10px;color:#fff;padding:10px 12px;min-width:220px}
+.list{display:grid;grid-template-columns:1fr auto auto;gap:10px;align-items:center}
+.list>div{padding:10px;border-bottom:1px dashed #17324d}
+.badge{background:#10233e;border:1px solid #24446f;border-radius:24px;padding:4px 10px;font-size:12px;color:#cfe4ff}
+.empty{color:var(--muted);padding:16px}
+table{width:100%;border-collapse:collapse}
+th,td{padding:10px;border-bottom:1px dashed #17324d;text-align:left}
+th{color:#cfe4ff;font-weight:700}
+.small{font-size:12px;color:var(--muted)}
+.center{display:flex;justify-content:center;align-items:center}
+canvas{width:100%;height:220px;background:#07111f;border:1px solid #183459;border-radius:10px}
+a{color:#a7c3ff;text-decoration:none}
+a:hover{text-decoration:underline}
+</style>
+</head>
+<body>
+<header>
+  <div class="row">
+    <a class="btn muted" href="../index.html">← 回首頁</a>
+    <h1>收藏影片</h1>
+  </div>
+  <div class="badge">v2025V002</div>
+</header>
 
-<header class="bar"><a href="/" class="link">← 回首頁</a><h1>我的收藏影片</h1></header>
+<div class="wrap">
 
-<main class="wrap">
-  <div id="grid" class="grid"></div>
-</main>
+  <div class="card">
+    <h2>快速新增</h2>
+    <div class="row">
+      <input id="slugInput" class="input" placeholder="輸入影片 slug，例如：houyi"/>
+      <button class="btn blue" id="btnAdd">加入收藏</button>
+      <button class="btn muted" id="btnFromQS">從網址 ?slug= 讀取並加入</button>
+    </div>
+    <div class="small" id="addHint"></div>
+  </div>
+
+  <div class="card">
+    <div class="row" style="justify-content:space-between">
+      <h2>我的收藏</h2>
+      <div class="row">
+        <button class="btn muted" id="btnExport">匯出 CSV</button>
+        <button class="btn red" id="btnClear">清空全部</button>
+      </div>
+    </div>
+    <div id="favList" class="empty">載入中…</div>
+  </div>
+
+</div>
 
 <script type="module" src="./_shared.js"></script>
 <script type="module">
-import { supa, requireUser } from './_shared.js'
-const grid = document.getElementById('grid')
+const supa = window.supa;
 
-;(async () => {
-  await requireUser()
-  const { data } = await supa.from('favorites')
-    .select('video_slug, created_at')
-    .order('created_at', { ascending: false })
+const ui = (sel)=>document.querySelector(sel);
+let currentUser=null, rows=[];
 
-  if (!data?.length) { grid.innerHTML = '<p class="muted">尚未收藏。</p>'; return }
+async function needLogin() { 
+  const { data:{ user } } = await supa.auth.getUser();
+  if(!user) { 
+    document.body.innerHTML = `
+      <div class='wrap'>
+        <div class='card center' style='min-height:40vh;flex-direction:column;gap:16px'>
+          <div>請先登入後再查看收藏影片。</div>
+          <a class='btn blue' href="../index.html">回首頁登入</a>
+        </div>
+      </div>`; 
+    return null;
+  }
+  currentUser = user;
+  return user;
+}
 
-  grid.innerHTML = data.map(x => `
-    <div class="card">
-      <div class="title">${x.video_slug}</div>
-      <div class="row gap">
-        <a class="btn" href="/english-videos/player.html?slug=${encodeURIComponent(x.video_slug)}">播放</a>
-        <button class="btn btn-outline" data-slug="${x.video_slug}">取消收藏</button>
-      </div>
-    </div>
-  `).join('')
+function renderList() { 
+  const box = ui("#favList");
+  if(!rows.length) { box.className='empty'; box.textContent='目前尚未收藏任何影片。'; return; }
+  box.className=''; 
+  box.innerHTML = "";
+  const grid = document.createElement('div');
+  grid.style.display = "grid";
+  grid.style.gridTemplateColumns = "1fr auto auto";
+  grid.style.gap = "8px";
+  rows.forEach(r=>{
+    const slugCell = document.createElement('div');
+    slugCell.innerHTML = `<b>${r.video_slug}</b><div class="small">${new Date(r.created_at).toLocaleString()}</div>`;
+    const open = document.createElement('a');
+    open.className='btn';
+    open.href = `../player.html?slug=${encodeURIComponent(r.video_slug)}`;
+    open.textContent='播放';
+    const del = document.createElement('button');
+    del.className='btn red';
+    del.textContent='移除';
+    del.onclick = async ()=>{ 
+      await supa.from('favorites').delete().eq('id', r.id); 
+      rows = rows.filter(x=>x.id!==r.id); 
+      renderList();
+    };
+    grid.append(slugCell, open, del);
+  });
+  box.append(grid);
+}
 
-  grid.addEventListener('click', async (e) => {
-    const b = e.target.closest('button[data-slug]'); if (!b) return
-    await supa.from('favorites').delete().eq('video_slug', b.dataset.slug)
-    b.closest('.card')?.remove()
-    if (!grid.children.length) grid.innerHTML = '<p class="muted">尚未收藏。</p>'
-  })
-})()
+async function loadList() { 
+  const { data, error } = await supa.from('favorites').select('*').order('created_at', { descending:true });
+  if(error) { ui("#favList").textContent = '讀取失敗：'+error.message; return; }
+  rows = data || [];
+  renderList();
+}
+
+async function addSlug(slug) { 
+  slug = (slug||"").trim();
+  if(!slug) return;
+  ui("#addHint").textContent="處理中…";
+  const { error } = await supa.from('favorites').insert({ video_slug: slug, user_id: currentUser.id });
+  if(error) { ui("#addHint").textContent='加入失敗：'+error.message; return; }
+  ui("#addHint").textContent='已加入：'+slug;
+  await loadList();
+}
+
+async function clearAll() { 
+  if(!confirm('確定要刪除所有收藏？')) return;
+  const ids = rows.map(r=>r.id);
+  if(!ids.length) return;
+  const { error } = await supa.from('favorites').delete().in('id', ids);
+  if(error) alert(error.message);
+  rows = [];
+  renderList();
+}
+
+function exportCSV() { 
+  if(!rows.length) return;
+  const lines = ['id,video_slug,created_at'];
+  rows.forEach(r=>lines.push([r.id, r.video_slug, r.created_at].join(',')));
+  const blob = new Blob([lines.join('\n')], {type:'text/csv'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a'); a.href=url; a.download='favorites.csv'; a.click();
+  URL.revokeObjectURL(url);
+}
+
+document.addEventListener('DOMContentLoaded', async ()=>{
+  const user = await needLogin(); if(!user) return;
+  ui('#btnAdd').onclick = ()=>addSlug(ui('#slugInput').value);
+  ui('#btnFromQS').onclick = ()=>{ const s=new URLSearchParams(location.search).get('slug'); if(s) addSlug(s); };
+  ui('#btnClear').onclick = clearAll;
+  ui('#btnExport').onclick = exportCSV;
+  await loadList();
+});
 </script>
+</body></html>
