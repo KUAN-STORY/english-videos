@@ -1,79 +1,217 @@
-<!doctype html><meta charset="utf-8">
-<title>我的學習曲線</title>
-<link rel="stylesheet" href="./account.css">
-<script>
-  // Ensure Supabase keys exist even if not injected globally
-  window.SUPABASE_URL = window.SUPABASE_URL || 'https://YOUR-PROJECT.supabase.co';
-  window.SUPABASE_ANON_KEY = window.SUPABASE_ANON_KEY || 'YOUR-ANON-KEY';
-</script>
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>學習曲線</title>
+<style>
+:root{--bg:#0b1324;--panel:#0f172a;--muted:#93a4bf;--ink:#e6efff;--accent:#3c7cff}
+*{box-sizing:border-box}html,body{height:100%;margin:0}
+body{background:var(--bg);color:var(--ink);font-family:ui-sans-serif,system-ui,"Noto Sans TC";}
+header{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:14px 18px;background:var(--panel);border-bottom:1px solid #0e2038;position:sticky;top:0;z-index:5}
+h1{font-size:22px;margin:0}
+.btn{background:#12335f;border:1px solid #24446f;border-radius:10px;padding:8px 12px;color:#fff;cursor:pointer}
+.btn.blue{background:#173bff1a;border-color:#2b5cff}
+.btn.red{background:#7f1d1d33;border-color:#ef4444}
+.btn.muted{background:#112237;border-color:#1f3347;color:var(--muted)}
+.wrap{max-width:980px;margin:18px auto;padding:0 16px}
+.card{background:#0e2038;border:1px solid #183459;border-radius:12px;padding:14px;margin:12px 0}
+.card h2{margin:4px 0 10px 0;font-size:18px}
+.row{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+.input{background:#0b1a2e;border:1px solid #1b3354;border-radius:10px;color:#fff;padding:10px 12px;min-width:220px}
+.list{display:grid;grid-template-columns:1fr auto auto;gap:10px;align-items:center}
+.list>div{padding:10px;border-bottom:1px dashed #17324d}
+.badge{background:#10233e;border:1px solid #24446f;border-radius:24px;padding:4px 10px;font-size:12px;color:#cfe4ff}
+.empty{color:var(--muted);padding:16px}
+table{width:100%;border-collapse:collapse}
+th,td{padding:10px;border-bottom:1px dashed #17324d;text-align:left}
+th{color:#cfe4ff;font-weight:700}
+.small{font-size:12px;color:var(--muted)}
+.center{display:flex;justify-content:center;align-items:center}
+canvas{width:100%;height:220px;background:#07111f;border:1px solid #183459;border-radius:10px}
+a{color:#a7c3ff;text-decoration:none}
+a:hover{text-decoration:underline}
 
-<header class="bar"><a href="/" class="link">← 回首頁</a><h1>我的學習曲線</h1></header>
+.tabbar{display:flex;gap:8px;margin-bottom:10px}
+.tab{padding:8px 12px;border:1px solid #24446f;border-radius:10px;background:#0b1a2e;color:#cfe4ff;cursor:pointer}
+.tab.active{background:#12335f}
+.section{display:none} .section.active{display:block}
+.summary{display:flex;gap:14px;flex-wrap:wrap;margin:8px 0}
+.summary .card{flex:1 1 240px}
+</style>
+</head>
+<body>
+<header>
+  <div class="row">
+    <a class="btn muted" href="../index.html">← 回首頁</a>
+    <h1>學習曲線</h1>
+  </div>
+  <div class="badge">v2025V002</div>
+</header>
 
-<main class="wrap">
-  <section class="card">
-    <canvas id="chart" height="120"></canvas>
-    <div id="stats" class="muted" style="margin-top:8px"></div>
-  </section>
+<div class="wrap">
 
-  <section class="card">
-    <h2>交卷明細</h2>
-    <table class="tbl" id="tbl">
-      <thead><tr><th>日期</th><th>影片</th><th>正確率</th></tr></thead>
-      <tbody></tbody>
-    </table>
-    <div class="row gap" style="margin-top:10px">
-      <button id="btnCsv" class="btn btn-outline">匯出 CSV</button>
+  <div class="card">
+    <div class="tabbar">
+      <button class="tab active" data-tab="attempts">交卷紀錄</button>
+      <button class="tab" data-tab="watch">看片紀錄</button>
     </div>
-  </section>
-</main>
 
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+    <section id="attempts" class="section active">
+      <div class="summary" id="sumAttempts"></div>
+      <div class="card">
+        <h2>分數走勢</h2>
+        <canvas id="scoreChart" width="900" height="240"></canvas>
+      </div>
+      <div class="row" style="justify-content:space-between">
+        <h2>全部交卷</h2>
+        <div class="row">
+          <button class="btn muted" id="btnCsvAttempts">匯出 CSV</button>
+        </div>
+      </div>
+      <table id="tblAttempts">
+        <thead><tr><th>時間</th><th>影片</th><th>分數</th><th>動作</th></tr></thead>
+        <tbody><tr><td class="small" colspan="4">載入中…</td></tr></tbody>
+      </table>
+    </section>
+
+    <section id="watch" class="section">
+      <div class="row" style="justify-content:space-between">
+        <h2>我的看片紀錄</h2>
+        <div class="row">
+          <button class="btn muted" id="btnCsvWatch">匯出 CSV</button>
+        </div>
+      </div>
+      <table id="tblWatch">
+        <thead><tr><th>時間</th><th>影片</th><th>看到位置</th><th>動作</th></tr></thead>
+        <tbody><tr><td class="small" colspan="4">載入中…</td></tr></tbody>
+      </table>
+    </section>
+  </div>
+
+</div>
+
 <script type="module" src="./_shared.js"></script>
 <script type="module">
-import { supa, requireUser, fmtDate } from './_shared.js'
+const supa = window.supa;
+let user=null, attempts=[], watch=[];
 
-function toCSV(rows){
-  const header = 'date,video_slug,percent\n'
-  return header + rows.map(r=>`${r.date},${r.slug},${r.pct}`).join('\n')
+function $(s){return document.querySelector(s)}
+function fmtTime(t){return new Date(t).toLocaleString()}
+function fmtPos(ms){ if(!ms) return '—'; const s=Math.floor(ms/1000); const m=Math.floor(s/60); const ss=s%60; return m+':' + String(ss).padStart(2,'0'); }
+
+async function needLogin(){
+  const { data:{ user:U } } = await supa.auth.getUser();
+  if(!U){
+    document.body.innerHTML = `
+      <div class='wrap'>
+        <div class='card center' style='min-height:40vh;flex-direction:column;gap:16px'>
+          <div>請先登入後再查看學習曲線。</div>
+          <a class='btn blue' href="../index.html">回首頁登入</a>
+        </div>
+      </div>`;
+    return null;
+  }
+  user = U; return U;
 }
 
-;(async () => {
-  await requireUser()
-  const { data: atts } = await supa.from('quiz_attempts')
-    .select('video_slug, score, total, submitted_at')
-    .order('submitted_at', { ascending: true }).limit(500)
+async function loadAttempts(){
+  const { data, error } = await supa.from('quiz_attempts')
+        .select('id, video_slug, score, total, submitted_at')
+        .order('submitted_at', { descending:true }).limit(300);
+  if(error) { console.error(error); }
+  attempts = data||[];
+  renderAttempts();
+}
 
-  const rows = (atts || []).map(a => ({
-    date: fmtDate(a.submitted_at),
-    slug: a.video_slug,
-    pct: Math.round((a.score / a.total) * 100)
-  }))
+function renderAttempts(){
+  const tb = $('#tblAttempts tbody'); tb.innerHTML='';
+  if(!attempts.length){ tb.innerHTML = `<tr><td class="small" colspan="4">尚無交卷紀錄</td></tr>`; }
+  let sum=0;
+  attempts.forEach(r=>{ 
+    sum += (r.score/r.total);
+    const tr=document.createElement('tr');
+    tr.innerHTML = `<td class="small">${fmtTime(r.submitted_at)}</td>
+                    <td>${r.video_slug}</td>
+                    <td>${r.score} / ${r.total}</td>
+                    <td><a class="btn" href="../player.html?slug=${encodeURIComponent(r.video_slug)}">前往</a></td>`;
+    tb.append(tr);
+  });
+  const avg = attempts.length? Math.round((sum/attempts.length)*1000)/10 : 0;
+  $('#sumAttempts').innerHTML = `
+    <div class="card"><div>交卷次數</div><div style="font-size:24px;font-weight:700">${attempts.length}</div></div>
+    <div class="card"><div>平均分數百分比</div><div style="font-size:24px;font-weight:700">${avg}%</div></div>`;
+  drawChart();
+}
 
-  // Chart
-  const ctx = document.getElementById('chart')
-  new Chart(ctx, {
-    type: 'line',
-    data: { labels: rows.map(r => r.date), datasets: [{ label: '正確率(%)', data: rows.map(r => r.pct) }] },
-    options: { responsive: true, scales: { y: { min: 0, max: 100 } }, plugins: { legend: { display: false } } }
-  })
+function drawChart(){
+  const c = document.getElementById('scoreChart'); const ctx = c.getContext('2d');
+  ctx.clearRect(0,0,c.width,c.height);
+  if(!attempts.length) return;
+  const padding=28, w=c.width-padding*2, h=c.height-padding*2;
+  const points = attempts.slice().reverse().map((r,i)=>({ x: i, y: r.score/r.total }));
+  const maxX = Math.max(points.length-1, 1);
+  ctx.strokeStyle='#24446f'; ctx.lineWidth=1;
+  ctx.strokeRect(padding,padding,w,h);
+  ctx.beginPath(); ctx.strokeStyle='#7aa2ff'; ctx.lineWidth=2;
+  points.forEach((p,i)=>{ 
+    const x = padding + (p.x/maxX)*w;
+    const y = padding + (1-p.y)*h;
+    if(i===0) ctx.moveTo(x,y); else ctx.lineTo(x,y);
+  });
+  ctx.stroke();
+  ctx.fillStyle='#a7c3ff';
+  points.forEach(p=>{ 
+    const x = padding + (p.x/maxX)*w;
+    const y = padding + (1-p.y)*h;
+    ctx.beginPath(); ctx.arc(x,y,3,0,Math.PI*2); ctx.fill();
+  });
+}
 
-  // Stats
-  const avg = rows.length ? Math.round(rows.reduce((s, r) => s + r.pct, 0) / rows.length) : 0
-  const best = rows.length ? Math.max(...rows.map(r => r.pct)) : 0
-  const worst = rows.length ? Math.min(...rows.map(r => r.pct)) : 0
-  document.getElementById('stats').textContent =
-    `作答次數：${rows.length}，平均：${avg}%，最高：${best}%，最低：${worst}%`
+async function loadWatch(){
+  const { data, error } = await supa.from('watch_logs')
+       .select('id, video_slug, position_ms, last_seen_at')
+       .order('last_seen_at', { descending:true }).limit(300);
+  watch = data||[]; renderWatch();
+}
 
-  // Table
-  document.querySelector('#tbl tbody').innerHTML =
-    rows.map(r => `<tr><td>${r.date}</td><td>${r.slug}</td><td>${r.pct}%</td></tr>`).join('')
+function renderWatch(){
+  const tb = $('#tblWatch tbody'); tb.innerHTML='';
+  if(!watch.length){ tb.innerHTML=`<tr><td class="small" colspan="4">尚無紀錄</td></tr>`; return; }
+  watch.forEach(r=>{ 
+    const tr=document.createElement('tr');
+    tr.innerHTML = `<td class="small">${fmtTime(r.last_seen_at)}</td>
+                    <td>${r.video_slug}</td>
+                    <td>${fmtPos(r.position_ms)}</td>
+                    <td><a class="btn" href="../player.html?slug=${encodeURIComponent(r.video_slug)}">播放</a></td>`;
+    tb.append(tr);
+  });
+}
 
-  // CSV
-  document.getElementById('btnCsv').onclick = () => {
-    const blob = new Blob([toCSV(rows)], { type: 'text/csv' })
-    const url = URL.createObjectURL(blob)
-    const a = Object.assign(document.createElement('a'), { href: url, download: 'learning.csv' })
-    a.click(); setTimeout(() => URL.revokeObjectURL(url), 1000)
-  }
-})()
+function exportCSV(list, cols, name){
+  if(!list.length) return;
+  const header = cols.join(',');
+  const lines = [header];
+  list.forEach(r=>{ lines.push(cols.map(k=>r[k]!==undefined?r[k]:'').join(',')); });
+  const blob = new Blob([lines.join('\n')], {type:'text/csv'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a'); a.href=url; a.download=name; a.click();
+  URL.revokeObjectURL(url);
+}
+
+document.addEventListener('click', (e)=>{
+  const btn = e.target.closest('.tab'); if(!btn) return;
+  document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));
+  document.querySelectorAll('.section').forEach(x=>x.classList.remove('active'));
+  btn.classList.add('active'); document.getElementById(btn.dataset.tab).classList.add('active');
+});
+
+document.addEventListener('DOMContentLoaded', async ()=>{
+  if(!(await needLogin())) return;
+  await loadAttempts();
+  await loadWatch();
+  $('#btnCsvAttempts').onclick = ()=>exportCSV(attempts, ['submitted_at','video_slug','score','total'],'quiz_attempts.csv');
+  $('#btnCsvWatch').onclick = ()=>exportCSV(watch, ['last_seen_at','video_slug','position_ms'],'watch_logs.csv');
+});
 </script>
+</body></html>
