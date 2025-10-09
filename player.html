@@ -1598,6 +1598,23 @@ $$('.tabs .tab').forEach(t=>t.addEventListener('click',()=>showTab(t.dataset.tab
 })();
 </script>
 <!-- ============ /AI Interactive (script) ============ -->
+
+<!-- Player patched V2025V004-AI-inline (with top-right badge) -->
+<script>
+(function(){
+  try{
+    const qs = new URLSearchParams(location.search);
+    const slug = (qs.get('slug')||'mid-autumn').trim();
+    const ver = 'V2025V004-AI-inline';
+    const b = document.createElement('div');
+    b.id='buildBadge';
+    b.textContent = ver + ' | ' + slug;
+    b.style.cssText = 'position:fixed;right:14px;top:14px;z-index:99999;background:#0d223d;color:#e7f0ff;border:1px solid #2b4a70;padding:6px 10px;border-radius:999px;font:12px/1 system-ui;opacity:.9;';
+    document.addEventListener('DOMContentLoaded', ()=> document.body.appendChild(b));
+  }catch(e){}
+})();
+</script>
+
 </body>
 </html>
 
