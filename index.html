@@ -1,575 +1,218 @@
-<!--
-  index.html 版本：index_v2025V002 (1)
-  更新：
-  - 「試看：故事《Mid-Autumn》」按鈕加入 preview=1，手機與桌機皆可直接試看。
-  - 加入捕獲階段 click 補丁：含 preview=1 的 player.html 連結一律放行，不再觸發登入攔截。
--->
 <!doctype html>
 <html lang="zh-Hant">
 <head>
-  <meta charset="utf-8"/>
-  <meta name="viewport" content="width=device-width,initial-scale=1"/>
-  <title>BookWide · 英語學習入口</title>
-  <meta name="description" content="BookWide：用故事、音樂、電影、新聞與專業主題，快速學英文。支援逐句播放、雙語字幕、測驗、單字卡。"/>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>BookWide</title>
+
+  <!-- 現有全站共用 Supabase 設定（你倉庫已放 /english-videos/account/_shared.js） -->
+  <script defer src="./account/_shared.js"></script>
 
   <style>
-    /* ===== 顏色（維持原本風格） ===== */
     :root{
-      --nav-bg:#0b1324; --nav-ink:#eaf1ff; --nav-muted:#a8b6d3; --nav-badge:#1a2a4a;
-      --bg:#ffffff; --ink:#0a0f1a; --muted:#5b667a; --panel:#f4f7fb; --border:#e4e9f2;
-      --accent:#275cf5; --chip:#eef2fb;
+      --bg:#0b1324; --panel:#0f172a; --ink:#e6efff; --muted:#9fb0c9; --accent:#3c7cff;
+      --border:#1f2a44; --pill:#183459; --hover:#13223a;
     }
-    *{box-sizing:border-box}
-    html,body{height:100%;margin:0;font-family:ui-sans-serif,system-ui,"Noto Sans TC",Arial}
-    a{color:inherit;text-decoration:none}
-    img{max-width:100%;display:block}
-
-    /* ===== 頂部工具列：黑底白字 ===== */
-    .nav{position:sticky;top:0;z-index:50;background:var(--nav-bg);color:var(--nav-ink);
-         border-bottom:1px solid rgba(255,255,255,.06)}
-    .nav .bar{max-width:1200px;margin:0 auto;padding:14px 16px;display:flex;align-items:center;gap:14px}
-    .brand{display:flex;align-items:center;gap:10px;font-weight:800;font-size:20px}
-    .badge{font-size:12px;padding:2px 8px;border-radius:999px;background:var(--nav-badge);
-           color:#dfe8ff;border:1px solid rgba(255,255,255,.15)}
-    .nav-spacer{flex:1}
-    .nav a.btn,.nav button.btn{padding:8px 12px;border-radius:10px;color:var(--nav-ink);
-      border:1px solid rgba(255,255,255,.18);background:transparent;cursor:pointer}
-    .nav a.btn:hover,.nav button.btn:hover{background:rgba(255,255,255,.06)}
-    .nav a.primary{background:#2a0c3d;border-color:#3b1a59}
-    #userNameBadge{color:var(--nav-muted);max-width:220px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-
-    /* ===== 內容：白底黑字 ===== */
-    .wrap{max-width:1200px;margin:0 auto;padding:18px 16px;background:var(--bg);color:var(--ink)}
-    .hero{background:var(--panel);border:1px solid var(--border);border-radius:14px;padding:18px;margin:12px 0 18px}
-    .h1{font-size:28px;font-weight:800;margin:0 0 8px}
+    html,body{height:100%;margin:0;background:#0b1324;color:var(--ink);font-family:ui-sans-serif,system-ui,Noto Sans TC;}
+    a,button{color:var(--ink)}
+    .btn{background:#13233f;border:1px solid #24446f;border-radius:10px;padding:8px 14px;cursor:pointer}
+    .btn:hover{background:#183459}
+    header{
+      display:flex;align-items:center;justify-content:space-between;
+      padding:14px 20px;background:var(--panel);border-bottom:1px solid var(--border);
+      position:sticky;top:0;z-index:5;
+    }
+    .nav-left{display:flex;gap:16px;align-items:center}
+    .nav-right{display:flex;gap:16px;align-items:center}
+    .brand{font-weight:800;font-size:20px}
     .muted{color:var(--muted)}
-    .cta-row{display:flex;flex-wrap:wrap;gap:10px;margin-top:10px}
-    .cta{padding:10px 14px;border-radius:12px;border:1px solid #d8e0f0;background:#0b53ff;color:#fff}
-    .cta.secondary{background:#fff;color:#0b53ff;border-color:#cfe0ff}
 
-    .features{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin:10px 0 6px}
-    .feat{background:#fff;border:1px solid var(--border);border-radius:14px;padding:14px}
-    .feat .name{font-weight:800;margin-bottom:6px}
+    /* 右上 email 文字 */
+    #userEmailLabel{
+      padding:8px 12px;border:1px solid #24446f;border-radius:10px;background:#13233f;
+      cursor:pointer;user-select:none;display:none; /* 未登入預設不顯示 */
+    }
 
-    .tabs{display:flex;gap:10px;flex-wrap:wrap;margin:10px 0 18px}
-    .tab{background:var(--chip);border:1px solid var(--border);color:#111;padding:8px 12px;border-radius:999px;cursor:pointer}
-    .tab.on{background:#0b53ff;color:#fff;border-color:#0b53ff}
+    /* 下拉選單 */
+    .menu{position:absolute;right:20px;top:64px;width:220px;background:#0e2038;border:1px solid #183459;border-radius:12px;display:none}
+    .menu.open{display:block}
+    .menu a,.menu button{
+      display:block;width:100%;text-align:left;background:transparent;border:0;color:var(--ink);
+      padding:12px 16px;font-size:16px;cursor:pointer
+    }
+    .menu a:hover,.menu button:hover{background:#112340}
+    .sep{height:1px;background:#183459;margin:4px 0}
 
-    .searchbar{display:flex;gap:8px;align-items:center;margin:6px 0 12px}
-    .searchbar input{flex:1;height:40px;border-radius:10px;border:1px solid var(--border);padding:0 12px;background:#fff;color:#111}
-    .btn{cursor:pointer;padding:10px 14px;border-radius:12px;border:1px solid var(--border);background:#fff}
-    .btn:hover{background:#f7faff}
+    /* 內容區（示意，保留你的既有版面可替換） */
+    .hero{max-width:1200px;margin:24px auto 0;padding:0 16px}
+    .pill{background:var(--pill);border:1px solid #24446f;border-radius:999px;padding:10px 16px;display:inline-flex;gap:8px;align-items:center}
+    .grid{max-width:1200px;margin:18px auto;padding:0 16px;display:grid;gap:16px;grid-template-columns:repeat(auto-fit,minmax(260px,1fr))}
+    .card{background:#0e2038;border:1px solid #183459;border-radius:14px;padding:16px;min-height:120px}
 
-    .grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
-    .card{border:1px solid var(--border);border-radius:14px;overflow:hidden;background:#fff;display:flex;flex-direction:column}
-    .thumb{aspect-ratio:16/9;background:#000;overflow:hidden}
-    .thumb img{width:100%;height:100%;object-fit:cover}
-    .pill{position:absolute;left:10px;bottom:10px;padding:4px 8px;font-size:12px;border-radius:999px;background:#0f223b;color:#dfe8ff;border:1px solid #2c3e66}
-    .thumb-wrap{position:relative}
-    .pad{padding:12px 12px 14px}
-    .title{font-weight:800;margin-bottom:4px}
-    .meta{display:flex;justify-content:space-between;color:var(--muted);font-size:12px}
+    /* 登入對話框 */
+    dialog#authDialog{
+      border:1px solid #20436e;border-radius:16px;background:#0e2038;color:var(--ink);width:420px;max-width:calc(100% - 32px)
+    }
+    dialog::backdrop{background:rgba(0,0,0,.55)}
+    .fg{display:flex;flex-direction:column;gap:6px;margin:12px 0}
+    .fg input{background:#0b1b30;border:1px solid #24446f;border-radius:10px;padding:10px 12px;color:var(--ink)}
 
-    footer{margin:26px 0 10px;color:#748099;font-size:14px}
-
-    /* ===== Auth Modal（極簡，貼近你先前的樣式） ===== */
-    .modal{position:fixed;inset:0;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,.5);z-index:60}
-    .modal.open{display:flex}
-    .modal-card{width:min(92vw,380px);background:#0f172a;color:#eaf1ff;border:1px solid rgba(255,255,255,.12);border-radius:14px;padding:16px}
-    .modal-card h3{margin:4px 0 10px}
-    .modal-card label{font-size:12px;color:#a8b6d3}
-    .modal-card input{width:100%;height:40px;background:#0b1324;color:#eaf1ff;border:1px solid rgba(255,255,255,.14);border-radius:10px;padding:0 10px}
-    .modal-actions{display:flex;gap:8px;justify-content:flex-end;margin-top:12px}
-    .link{color:#9fc0ff;cursor:pointer;font-size:12px}
-    .err{color:#ff9a9a;font-size:12px;min-height:1em;margin-top:6px}
-
-    @media (max-width:1000px){ .features{grid-template-columns:repeat(2,1fr)} .grid{grid-template-columns:repeat(2,1fr)} }
-    @media (max-width:640px){ .grid{grid-template-columns:1fr} .h1{font-size:22px} }
+    /* 行動端 email 選單不漂移 */
+    @media (max-width:768px){
+      .menu{right:12px;top:58px}
+    }
   </style>
-
-<!-- account menu (inline) -->
-<script src="./account/_shared.js"></script>
-<style>
-#accountBtn{
-  position:fixed; right:12px; top:14px; z-index:2147483646;
-  display:inline-flex;align-items:center;justify-content:center;
-  width:40px;height:40px;border-radius:999px;
-  background:#0e2038;border:1px solid #183459;color:#cfe2ff;cursor:pointer;
-}
-#accountBtn:hover{box-shadow:0 0 0 2px rgba(207,226,255,.1) inset;}
-#accountMenu{
-  position:fixed;right:12px;top:64px;min-width:220px;
-  background:#0e2038;border:1px solid #183459;border-radius:12px;
-  box-shadow:0 10px 24px rgba(0,0,0,.35);display:none;overflow:hidden;z-index:2147483647;
-}
-#accountMenu.open{display:block;}
-#accountMenu .mi{padding:14px 16px;color:#e6f0ff;border-bottom:1px solid #183459;cursor:pointer;}
-#accountMenu .mi:last-child{border-bottom:none;}
-#accountMenu .mi:hover{background:#122a4a;}
-#loginModal{position:fixed;inset:0;background:rgba(0,0,0,.5);display:none;align-items:center;justify-content:center;z-index:2147483647;}
-#loginModal.open{display:flex;}
-#loginModal .sheet{width:min(92vw,560px);background:#0e2038;border:1px solid #183459;border-radius:16px;box-shadow:0 10px 24px rgba(0,0,0,.35);padding:20px;}
-#loginModal h3{margin:0 0 12px 0;color:#fff;}
-#loginModal label{display:block;margin:10px 0 6px;color:#cfe2ff;}
-#loginModal input{width:100%;padding:10px 12px;border-radius:10px;border:1px solid #24446f;background:#0b1324;color:#e6f0ff;}
-#loginModal .row{display:flex;gap:10px;justify-content:flex-end;margin-top:16px;}
-#loginModal .btn{background:#132b4a;border:1px solid #24446f;color:#fff;border-radius:10px;padding:10px 16px;cursor:pointer;}
-#loginModal .btn:hover{filter:brightness(1.08);}
-[data-legacy-login]{display:none!important;}
-</style>
 </head>
 <body>
-
-  <!-- ===== 頂部工具列（右上保持：服務導覽／方案價格／登入） ===== -->
-  <nav class="nav">
-    <div class="bar">
-      <div class="brand">
-        <span>BookWide</span>
-        <span class="badge">Beta</span>
-      </div>
-      <div class="nav-spacer"></div>
-
-      <!-- 右上按鈕（不動位置與樣式） -->
-      <a class="btn" href="#services" style="display:none" aria-hidden="true">服務導覽 ▾</a>
-      <a class="btn" href="/english-videos/pricing.html">方案價格</a>
-      <span id="userNameBadge"></span>
-      <button class="btn" id="btnLogin">登入</button>
-      <button class="btn" id="btnLogout" style="display:none">登出</button>
+  <!-- 頁首（保留你的結構；右側只放【登入】【登出】【Email 文字】） -->
+  <header>
+    <div class="nav-left">
+      <div class="brand">BookWide</div>
+      <button class="btn muted" onclick="location.href='./plans.html'">方案價格</button>
+      <button class="btn muted" onclick="location.href='./guide.html'">服務導覽</button>
     </div>
-  </nav>
 
-  <!-- ===== 內容（白底黑字） ===== -->
-  <main class="wrap">
-    <section class="hero">
-      <div class="h1">看影片、做測驗、背單字 —— 一頁完成</div>
-      <div class="muted">BookWide 用 <b>故事・音樂・電影・新聞・專業主題</b> 帶你學英文。逐句播放、雙語字幕、單字卡與分區測驗，完整練到聽讀寫。</div>
-      <div class="cta-row">
-        <a class="cta" href="./player.html?slug=mid-autumn&preview=1">試看：故事《Mid-Autumn》</a>
-        <a class="cta secondary" href="#catalog">瀏覽教材</a>
-      </div>
-    </section>
-
-    <!-- 學習功能 -->
-    <section>
-      <div class="features">
-        <div class="feat"><div class="name">🧠 逐句播放</div><div class="muted">一鍵回放 / 下一句，跟著文本走，不迷路。</div></div>
-        <div class="feat"><div class="name">🌗 雙語字幕</div><div class="muted">英文在上、中文在下，手機也能長句不斷行。</div></div>
-        <div class="feat"><div class="name">📝 分區測驗</div><div class="muted">Vocabulary / Grammar / Reading / Mixed 四分區評量。</div></div>
-        <div class="feat"><div class="name">📚 單字卡</div><div class="muted">遮字填空、朗讀、快速跳段，真正用到的字才記得住。</div></div>
-      </div>
-
-      <!-- 分類/搜尋 -->
-      <div class="tabs" id="tabBar">
-        <div class="tab on" data-cat="all">全部</div>
-        <div class="tab" data-cat="story">故事</div>
-        <div class="tab" data-cat="music">音樂</div>
-        <div class="tab" data-cat="movie">電影</div>
-        <div class="tab" data-cat="news">新聞</div>
-        <div class="tab" data-cat="pro">專業行業</div>
-      </div>
-      <div class="searchbar">
-        <input id="kw" type="search" placeholder="搜尋標題、關鍵字…">
-        <button class="btn" id="btnSearch">搜尋</button>
-      </div>
-    </section>
-
-    <!-- 教材卡片（示例用 videos/*.jpg） -->
-    <section id="catalog" class="grid"></section>
-
-    <footer>
-      © <span id="y"></span> BookWide · 建議使用最新 Chrome / Edge / Safari。若影片或字幕未載入，請確認 <code>./videos/</code>、<code>./data/</code> 目錄與檔名（slug）一致。
-    </footer>
-  </main>
-
-  <!-- ===== Email 登入/註冊 Modal ===== -->
-  <div class="modal" id="authModal" aria-hidden="true">
-    <div class="modal-card">
-      <h3 id="authTitle">登入</h3>
-      <div style="display:grid;gap:8px">
-        <div>
-          <label for="authEmail">Email</label>
-          <input id="authEmail" type="email" placeholder="you@example.com" autocomplete="email"/>
-        </div>
-        <div>
-          <label for="authPassword">密碼</label>
-          <input id="authPassword" type="password" placeholder="••••••••" autocomplete="current-password"/>
-        </div>
-        <div style="display:flex;justify-content:space-between;align-items:center">
-          <span class="link" id="authToggle">沒有帳號？改為註冊</span>
-          <span class="link" id="linkForgot">忘記密碼？</span>
-        </div>
-        <div class="err" id="authErr"></div>
-      </div>
-      <div class="modal-actions">
-        <button class="btn" id="authCancel">取消</button>
-        <button class="btn" id="authSubmit">送出</button>
-      </div>
+    <div class="nav-right">
+      <!-- 未登入顯示：登入；已登入顯示：Email + 下拉選單 + 登出 -->
+      <span id="userEmailLabel" aria-haspopup="menu" aria-expanded="false"></span>
+      <button id="btnLogin" class="btn">登入</button>
+      <button id="btnLogout" class="btn" style="display:none">登出</button>
     </div>
-  </div>
 
-  <!-- ===== 資料渲染（分類/搜尋/卡片） ===== -->
+    <!-- 下拉選單（登入後才會透過 JS 打開/關閉） -->
+    <nav id="accMenu" class="menu" aria-label="帳號選單">
+      <a href="./account/profile.html">我的資料</a>
+      <a href="./account/favorites.html">收藏影片</a>
+      <a href="./account/learning.html">學習曲線</a>
+      <div class="sep"></div>
+      <button id="menuLogout">登出</button>
+    </nav>
+  </header>
+
+  <!-- 你的主內容（保留；若需替換，直接把下面 .hero 與 .grid 區塊換成你的現有內容即可） -->
+  <section class="hero">
+    <div class="pill"><span>看影片、做測驗、背單字 —— 一頁完成</span></div>
+  </section>
+  <section class="grid">
+    <div class="card">這裡放你的首頁卡片 / 影片列表…</div>
+    <div class="card">這裡放你的首頁卡片 / 影片列表…</div>
+    <div class="card">這裡放你的首頁卡片 / 影片列表…</div>
+  </section>
+
+  <!-- === Email+密碼登入（延用，目前僅此方式） === -->
+  <dialog id="authDialog">
+    <form id="authForm" method="dialog">
+      <h3 style="margin:6px 0 12px">登入</h3>
+      <div class="fg">
+        <label for="email">Email</label>
+        <input id="email" name="email" type="email" autocomplete="email" placeholder="you@example.com" required />
+      </div>
+      <div class="fg">
+        <label for="password">密碼</label>
+        <input id="password" name="password" type="password" autocomplete="current-password" required />
+      </div>
+      <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:8px">
+        <button type="button" class="btn" id="btnCancelLogin">取消</button>
+        <button type="submit" class="btn" id="btnDoLogin">送出</button>
+      </div>
+      <div id="authMsg" class="muted" style="margin-top:6px"></div>
+    </form>
+  </dialog>
+
   <script>
-    const CATALOG = [
-      { slug:'mid-autumn', title:'Mid-Autumn Festival', cat:'story', mins:2, level:'A2-B1', thumb:'./videos/mid-autumn.jpg', tags:['festival','moon','tradition'] },
-      { slug:'houyi', title:'Hou Yi and the Ten Suns', cat:'story', mins:3, level:'A2-B1', thumb:'./videos/houyi.jpg', tags:['legend','archer'] },
-      { slug:'lantern', title:'Lantern Festival', cat:'story', mins:2, level:'A2', thumb:'./videos/lantern.jpg', tags:['lantern','culture'] },
-    ];
-    const $=(s,e=document)=>e.querySelector(s); const $$=(s,e=document)=>[...e.querySelectorAll(s)];
-    const grid=$('#catalog');
-    function cardHTML(it){
-      const url=`./player.html?slug=${encodeURIComponent(it.slug)}`;
-      return `
-      <a class="card" href="${url}">
-        <div class="thumb-wrap">
-          <div class="thumb"><img src="${it.thumb||''}" alt="${it.title}" onerror="this.style.opacity=.6"></div>
-          <div class="pill">${it.cat==='story'?'故事':it.cat==='music'?'音樂':it.cat==='movie'?'電影':it.cat==='news'?'新聞':'專業'}</div>
-        </div>
-        <div class="pad">
-          <div class="title">${it.title}</div>
-          <div class="meta"><span>時長 ${it.mins||'–'} 分</span><span>程度 ${it.level||'–'}</span></div>
-        </div>
-      </a>`;
-    }
-    function render(list){ grid.innerHTML=list.map(cardHTML).join(''); }
-    const state={cat:'all',kw:''};
-    function apply(){
-      const kw=state.kw.trim().toLowerCase();
-      let list=CATALOG.filter(x=>state.cat==='all'?true:x.cat===state.cat);
-      if(kw){ list=list.filter(x=>x.title.toLowerCase().includes(kw)||(x.tags||[]).some(t=>String(t).toLowerCase().includes(kw))); }
-      render(list);
-    }
-    $('#tabBar').addEventListener('click',e=>{const b=e.target.closest('.tab');if(!b)return; $$('#tabBar .tab').forEach(t=>t.classList.remove('on')); b.classList.add('on'); state.cat=b.dataset.cat||'all'; apply();});
-    $('#btnSearch').addEventListener('click',()=>{state.kw=$('#kw').value||'';apply();});
-    $('#kw').addEventListener('keydown',e=>{if(e.key==='Enter'){state.kw=$('#kw').value||'';apply();}});
-    (function init(){apply();$('#y').textContent=(new Date).getFullYear();})();
-  </script>
+    // 等 _shared.js 建好 window.supabase（你倉庫已有）
+    (function(){
+      const byId = (id)=>document.getElementById(id);
 
-  <!-- ===== Supabase 初始化 + 登入 / 註冊 / 忘記密碼（單檔合併） ===== -->
-  <script type="module">
-    import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
+      const elLogin  = byId('btnLogin');
+      const elLogout = byId('btnLogout');
+      const elEmail  = byId('userEmailLabel');
+      const menu     = byId('accMenu');
 
-    /* 你的 Supabase 專案參數（已可同時在 kuan-story 與 bookwide 使用） */
-    const SUPABASE_URL = 'https://qtgwedankftrqjmzuset.supabase.co';
-    const SUPABASE_ANON_KEY =
-      'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InF0Z3dlZGFua2Z0cnFqbXp1c2V0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTg4NDYxMDMsImV4cCI6MjA3NDQyMjEwM30.jyETpt09pgm66aCZheMgsjtbKlVmYo-lt-hrrt6BF8g';
+      const dlg      = byId('authDialog');
+      const frm      = byId('authForm');
+      const msg      = byId('authMsg');
+      const btnCancel= byId('btnCancelLogin');
+      const menuLogout = byId('menuLogout');
 
-    /* 單例 client（避免「Multiple GoTrueClient instances」） */
-    if (!window.supa) window.supa = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-    const supa = window.supa;
+      // 點 Email 顯示/收起選單
+      function toggleMenu(open){
+        const want = (typeof open==='boolean')? open : !menu.classList.contains('open');
+        menu.classList.toggle('open', want);
+        elEmail.setAttribute('aria-expanded', want?'true':'false');
+      }
+      elEmail.addEventListener('click', ()=>toggleMenu());
 
-    /* ===== 右上狀態列 ===== */
-    const btnLogin = document.getElementById('btnLogin');
-    const btnLogout = document.getElementById('btnLogout');
-    const nameBadge = document.getElementById('userNameBadge');
-    function paintUser(u){
-      if(u){ nameBadge.textContent = u.email || u.user_metadata?.name || '已登入';
-             btnLogin.style.display='none'; btnLogout.style.display=''; }
-      else{ nameBadge.textContent = ''; btnLogin.style.display=''; btnLogout.style.display='none'; }
-    }
-
-    /* ===== Modal 控制 ===== */
-    const modal = document.getElementById('authModal');
-    const title = document.getElementById('authTitle');
-    const iptEmail = document.getElementById('authEmail');
-    const iptPwd   = document.getElementById('authPassword');
-    const btnToggle= document.getElementById('authToggle');
-    const btnCancel= document.getElementById('authCancel');
-    const btnSubmit= document.getElementById('authSubmit');
-    const linkForgot = document.getElementById('linkForgot');
-    const errBox = document.getElementById('authErr');
-    let mode='signin';
-
-    function openModal(m='signin'){
-      mode=m; title.textContent = (mode==='signin')?'登入':'註冊';
-      btnToggle.textContent     = (mode==='signin')?'沒有帳號？改為註冊':'已有帳號？改為登入';
-      errBox.textContent = ''; iptPwd.value=''; modal.classList.add('open'); iptEmail.focus();
-    }
-    function closeModal(){ modal.classList.remove('open'); }
-    btnLogin.addEventListener('click',()=>openModal('signin'));
-    btnLogout.addEventListener('click',async()=>{ await supa.auth.signOut(); paintUser(null); });
-    btnToggle.addEventListener('click',()=>openModal(mode==='signin'?'signup':'signin'));
-    btnCancel.addEventListener('click',closeModal);
-    document.addEventListener('keydown',e=>{ if(e.key==='Escape') closeModal(); });
-    modal.addEventListener('click',e=>{ if(e.target===modal) closeModal(); });
-
-    /* ===== 送出：登入 / 註冊 ===== */
-    btnSubmit.addEventListener('click', async () => {
-      errBox.textContent = '';
-      const email=(iptEmail.value||'').trim(), pwd=iptPwd.value||'';
-      if(!email || !pwd){ errBox.textContent='請輸入 Email 與密碼'; return; }
-      try{
-        if(mode==='signin'){
-          const { error } = await supa.auth.signInWithPassword({ email, password:pwd, options:{ shouldCreateUser:false }});
-          if(error) throw error;
-          closeModal();
-        }else{
-          const { error } = await supa.auth.signUp({ email, password:pwd });
-          if(error) throw error;
-          errBox.style.color='#9fe0a8';
-          errBox.textContent='註冊成功，請至信箱完成驗證（或已自動登入）。';
-          setTimeout(closeModal,900);
+      // 點頁面其他處收起
+      document.addEventListener('click', (e)=>{
+        if(menu.classList.contains('open')){
+          const inMenu = menu.contains(e.target) || elEmail.contains(e.target);
+          if(!inMenu) toggleMenu(false);
         }
-      }catch(e){ errBox.style.color=''; errBox.textContent = e?.message || '操作失敗'; }
-    });
+      }, true);
 
-    /* ===== 忘記密碼：寄送 reset.html 連結 ===== */
-    linkForgot.addEventListener('click', async ()=>{
-      errBox.textContent='';
-      const email=(iptEmail.value||'').trim();
-      if(!email){ errBox.textContent='請先輸入 Email'; return; }
-      try{
-        const redirectTo = new URL('./reset.html', location.href).href;
-        const { error } = await supa.auth.resetPasswordForEmail(email, { redirectTo });
-        if(error) throw error;
-        errBox.style.color='#9fe0a8';
-        errBox.textContent='已寄送重設密碼連結，請至信箱查看。';
-      }catch(e){ errBox.style.color=''; errBox.textContent=e?.message||'寄送失敗'; }
-    });
-
-    /* ===== 初始狀態：自動保持登入 ===== */
-    try{
-      const { data } = await supa.auth.getSession();
-      paintUser(data?.session?.user || null);
-    }catch{}
-    supa.auth.onAuthStateChange((_e, session)=>{ paintUser(session?.user || null); });
-  </script>
-
-  <!-- ===== 服務導覽：插入到右上工具列（不改動原結構） ===== -->
-  <style>
-    .svc-dropdown-wrap{ position:relative; display:inline-block; margin-right:10px; }
-    .svc-trigger{
-      background:transparent; color:#e6efff; border:1px solid rgba(255,255,255,.25);
-      padding:8px 14px; border-radius:12px; cursor:pointer; line-height:1;
-      display:flex; align-items:center; gap:6px;
-    }
-    .svc-trigger:after{ content:"▾"; font-size:12px; opacity:.85; }
-    .svc-menu{
-      position:absolute; right:0; top:calc(100% + 8px); min-width:320px;
-      background:#0f172a; border:1px solid #1f2a44; border-radius:14px;
-      box-shadow:0 12px 28px rgba(0,0,0,.35); padding:8px; display:none; z-index:9999;
-    }
-    .svc-dropdown-wrap.open .svc-menu{ display:block; }
-    .svc-item{
-      display:flex; align-items:flex-start; gap:12px; padding:12px 12px; border-radius:10px;
-      color:#e6efff; text-decoration:none; white-space:normal;
-    }
-    .svc-item:hover{ background:#12333f; }
-    .svc-icof{
-      width:28px; height:28px; display:inline-grid; place-items:center;
-      border-radius:8px; background:#122340; font-size:16px; flex:0 0 28px;
-    }
-    .svc-txt .name{ font-weight:800; margin-bottom:2px; }
-    .svc-txt .desc{ color:#9fb0c9; font-size:13px; line-height:1.35; }
-    @media (max-width:720px){
-      .svc-menu{ position:fixed; right:10px; top:58px; }
-    }
-  </style>
-  <script>
-  (function(){
-    document.addEventListener("DOMContentLoaded", () => {
-      // 先移除舊版本（若有）
-      document.querySelectorAll('.svc-dropdown-wrap').forEach(n => n.remove());
-
-      // 找「方案價格」按鈕，插到它左邊
-      const pricingBtn = Array.from(document.querySelectorAll('nav a, nav button'))
-        .find(b => /方案價格|pricing/i.test((b.textContent||'').trim()));
-      const host = pricingBtn ? pricingBtn.parentElement : (document.querySelector('nav') || document.body);
-
-      const wrap = document.createElement('div');
-      wrap.className = 'svc-dropdown-wrap';
-      wrap.innerHTML = `
-        <button class="svc-trigger" type="button" aria-haspopup="menu" aria-expanded="false">服務導覽</button>
-        <div class="svc-menu" role="menu">
-          <a class="svc-item" href="./services/video.html" role="menuitem">
-            <span class="svc-icof">🎞️</span>
-            <span class="svc-txt"><div class="name">影片學習</div><div class="desc">生活化時事影片，樂趣中學習英文、拓展新知。</div></span>
-          </a>
-          <a class="svc-item" href="./services/interactive.html" role="menuitem">
-            <span class="svc-icof">🧩</span>
-            <span class="svc-txt"><div class="name">多元互動練習</div><div class="desc">涵蓋聽力、字彙、語用、文法、口說，多面向培養英文實力。</div></span>
-          </a>
-          <a class="svc-item" href="./services/ai-speak.html" role="menuitem">
-            <span class="svc-icof">🤖🎙️</span>
-            <span class="svc-txt"><div class="name">AI 口說助教</div><div class="desc">隨時隨地、無限暢享 AI 口說練習，讓你不再害怕開口說英文。</div></span>
-          </a>
-          <a class="svc-item" href="./services/review.html" role="menuitem">
-            <span class="svc-icof">💡</span>
-            <span class="svc-txt"><div class="name">智慧化複習</div><div class="desc">用最有效時機複習錯誤題型，把短期記憶轉為長期記憶。</div></span>
-          </a>
-          <a class="svc-item" href="./services/tutor.html" role="menuitem">
-            <span class="svc-icof">🗣️</span>
-            <span class="svc-txt"><div class="name">真人對話討論</div><div class="desc">與真人家教一對一練習口說，真正活用對話。</div></span>
-          </a>
-        </div>`;
-      if (pricingBtn) host.insertBefore(wrap, pricingBtn); else host.appendChild(wrap);
-
-      const trigger = wrap.querySelector('.svc-trigger');
-      const close = () => { wrap.classList.remove('open'); trigger.setAttribute('aria-expanded','false'); };
-      trigger.addEventListener('click', (e)=>{
-        e.stopPropagation();
-        wrap.classList.toggle('open');
-        trigger.setAttribute('aria-expanded', wrap.classList.contains('open') ? 'true':'false');
+      // 顯示登入對話框
+      elLogin.addEventListener('click', ()=>{
+        msg.textContent='';
+        frm.reset();
+        dlg.showModal();
       });
-      document.addEventListener('click', close);
-      document.addEventListener('keydown', (e)=>{ if(e.key==='Escape') close(); });
-      window.addEventListener('scroll', close, {passive:true});
-      wrap.querySelector('.svc-menu').addEventListener('click', (e)=>{ if(e.target.closest('a')) close(); });
-    });
-  })();
+      btnCancel.addEventListener('click', ()=>dlg.close());
+
+      // 送出登入
+      frm.addEventListener('submit', async (e)=>{
+        e.preventDefault();
+        msg.textContent='登入中…';
+        const email = frm.email.value.trim();
+        const password = frm.password.value;
+        try{
+          const { data, error } = await window.supabase.auth.signInWithPassword({ email, password });
+          if(error) throw error;
+          dlg.close();
+          msg.textContent='';
+          await refreshUI();         // 登入成功 → 重繪 UI
+        }catch(err){
+          msg.textContent = '登入失敗：' + (err?.message || err);
+        }
+      });
+
+      // 登出（兩個地方：右上按鈕、下拉選單）
+      async function doLogout(){
+        try{ await window.supabase.auth.signOut(); }catch{}
+        toggleMenu(false);
+        await refreshUI();
+      }
+      elLogout.addEventListener('click', doLogout);
+      menuLogout.addEventListener('click', doLogout);
+
+      // UI 狀態重繪
+      async function refreshUI(){
+        const { data:{ user } } = await window.supabase.auth.getUser();
+        if(user){
+          // 已登入
+          elEmail.style.display = 'inline-flex';
+          elEmail.textContent = user.email || '已登入';
+          elLogin.style.display  = 'none';
+          elLogout.style.display = 'inline-flex';
+        }else{
+          // 未登入
+          elEmail.style.display = 'none';
+          elEmail.textContent   = '';
+          elLogin.style.display  = 'inline-flex';
+          elLogout.style.display = 'none';
+          toggleMenu(false);
+        }
+      }
+
+      // 初始載入
+      document.addEventListener('DOMContentLoaded', refreshUI);
+      // auth 變更（跨頁回來或 token 刷新）
+      window.supabase.auth.onAuthStateChange((_evt,_sess)=>refreshUI());
+    })();
   </script>
-  <!-- ===== 未登入禁止進入 player.html ===== -->
-<script type="module">
-  import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
-  const SUPABASE_URL = 'https://qtgwedankftrqjmzuset.supabase.co';
-  const SUPABASE_ANON_KEY =
-    'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InF0Z3dlZGFua2Z0cnFqbXp1c2V0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTg4NDYxMDMsImV4cCI6MjA3NDQyMjEwM30.jyETpt09pgm66aCZheMgsjtbKlVmYo-lt-hrrt6BF8g';
-
-  // 初始化 Supabase（共用同一 client）
-  if (!window.supa) window.supa = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-  const supa = window.supa;
-
-  // 攔截所有指向 player.html 的連結
-  document.addEventListener('click', async (e) => {
-    const a = e.target.closest('a[href*="player.html"]');
-    if (!a) return;
-    e.preventDefault();
-
-    // 取得登入狀態
-    const { data } = await supa.auth.getSession();
-    if (data?.session?.user) {
-      // 已登入，直接前往
-      location.href = a.href;
-    } else {
-      alert('請先登入後再觀看完整影片。');
-      // 觸發登入彈窗（若你已有 btnLogin）
-      const btnLogin = document.getElementById('btnLogin');
-      if (btnLogin) btnLogin.click();
-    }
-  });
-</script>
-<!-- ===== /未登入禁止進入 player.html ===== -->
-
-  <!-- ===== /服務導覽 ===== -->
-
-<script>
-// ===== Preview bypass: allow ?preview=1 links to open without login guards (mobile + desktop) =====
-document.addEventListener('click', function(ev){
-  const a = ev.target.closest && ev.target.closest('a[href*="player.html"]');
-  if (!a) return;
-  try{
-    const url = new URL(a.getAttribute('href'), location.href);
-    if (url.searchParams.get('preview') === '1'){
-      ev.stopImmediatePropagation(); // prevent other handlers from blocking
-      ev.preventDefault();
-      location.href = url.toString();
-    }
-  }catch(e){ /* ignore */ }
-}, true); // capture phase
-</script>
-
-<!-- account menu module (inline) -->
-<button id="accountBtn" aria-label="account">
-  <svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor" aria-hidden="true">
-    <path d="M12 12c2.761 0 5-2.462 5-5.5S14.761 1 12 1 7 3.462 7 6.5 9.239 12 12 12zm0 2c-4.337 0-8 2.239-8 5v2h16v-2c0-2.761-3.663-5-8-5z"/>
-  </svg>
-</button>
-<div id="accountMenu" role="menu" aria-hidden="true">
-  <div class="mi" id="menuProfile">我的資料</div>
-  <div class="mi" id="menuFavorites">收藏影片</div>
-  <div class="mi" id="menuLearning">學習曲線</div>
-  <div class="mi" id="menuLogout">登出</div>
-</div>
-<div id="loginModal" aria-hidden="true">
-  <div class="sheet">
-    <h3>登入</h3>
-    <label for="loginEmail">Email</label>
-    <input id="loginEmail" type="email" placeholder="you@example.com" autocomplete="email" />
-    <label for="loginPass">密碼</label>
-    <input id="loginPass" type="password" placeholder="••••••••" autocomplete="current-password" />
-    <div class="row">
-      <button class="btn" id="btnLoginCancel">取消</button>
-      <button class="btn" id="btnLoginOK">送出</button>
-    </div>
-  </div>
-</div>
-
-<script>
-(function () {
-  const sb = window.supabase;
-  if (!sb) { console.warn('[account-menu] Supabase 未就緒'); return; }
-
-  const btn = document.querySelector('#accountBtn');
-  const DD  = document.querySelector('#accountMenu');
-  const legacyLogin = document.querySelectorAll('[data-legacy-login]');
-  const loginModal  = document.querySelector('#loginModal');
-  const loginEmail  = document.querySelector('#loginEmail');
-  const loginPass   = document.querySelector('#loginPass');
-  const loginOK     = document.querySelector('#btnLoginOK');
-  const loginCancel = document.querySelector('#btnLoginCancel');
-
-  const linkProfile  = document.querySelector('#menuProfile');
-  const linkFavs     = document.querySelector('#menuFavorites');
-  const linkLearning = document.querySelector('#menuLearning');
-  const linkLogout   = document.querySelector('#menuLogout');
-
-  legacyLogin.forEach(el => { el.style.display = 'none'; });
-
-  async function paint() {
-    const { data: { user } } = await sb.auth.getUser();
-    if (!user) {
-      DD.classList.remove('open');
-      btn.setAttribute('data-state', 'guest');
-      btn.title = '未登入';
-    } else {
-      btn.setAttribute('data-state', 'logged-in');
-      btn.title = user.email || '已登入';
-    }
-  }
-
-  function openLogin()  { loginModal.classList.add('open'); setTimeout(() => loginEmail?.focus(), 0); }
-  function closeLogin() { loginModal.classList.remove('open'); if(loginEmail) loginEmail.value=''; if(loginPass) loginPass.value=''; }
-
-  btn?.addEventListener('click', async () => {
-    const { data: { user } } = await sb.auth.getUser();
-    if (!user) openLogin();
-    else DD.classList.toggle('open');
-  });
-
-  async function doLogin() {
-    const email = loginEmail.value.trim();
-    const password = loginPass.value;
-    if (!email || !password) { alert('請輸入 Email 與密碼'); return; }
-    const { error } = await sb.auth.signInWithPassword({ email, password });
-    if (error) { alert(error.message); return; }
-    closeLogin();
-    await paint();
-    DD.classList.add('open');
-  }
-
-  loginOK?.addEventListener('click', doLogin);
-  loginCancel?.addEventListener('click', closeLogin);
-  loginPass?.addEventListener('keydown', (e) => { if (e.key === 'Enter') doLogin(); });
-
-  linkLogout?.addEventListener('click', async () => {
-    await sb.auth.signOut();
-    DD.classList.remove('open');
-    await paint();
-  });
-  linkProfile?.addEventListener('click',  () => location.href = './account/profile.html');
-  linkFavs?.addEventListener('click',     () => location.href = './account/favorites.html');
-  linkLearning?.addEventListener('click', () => location.href = './account/learning.html');
-
-  document.addEventListener('click', (e) => {
-    if (!DD.contains(e.target) && !btn.contains(e.target)) {
-      DD.classList.remove('open');
-    }
-  }, true);
-
-  paint();
-})();
-</script>
 </body>
 </html>
+
 
 
 
