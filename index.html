@@ -1,9 +1,3 @@
-<!--
-  index.html 版本：2025.10.10V1.0
-  更新：
-  - 「試看：故事《Mid-Autumn》」按鈕加入 preview=1，手機與桌機皆可直接試看。
-  - 加入捕獲階段 click 補丁：含 preview=1 的 player.html 連結一律放行，不再觸發登入攔截。
--->
 <!doctype html>
 <html lang="zh-Hant">
 <head>
@@ -36,7 +30,20 @@
       border:1px solid rgba(255,255,255,.18);background:transparent;cursor:pointer}
     .nav a.btn:hover,.nav button.btn:hover{background:rgba(255,255,255,.06)}
     .nav a.primary{background:#2a0c3d;border-color:#3b1a59}
-    #userNameBadge{color:var(--nav-muted);max-width:220px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+
+    /* ===== 帳號下拉（掛在 email 文字下） ===== */
+    .acct-wrap{ position:relative; display:none; }
+    .acct-trigger{ padding:8px 12px; border-radius:10px; color:var(--nav-ink);
+      border:1px solid rgba(255,255,255,.18); background:transparent; cursor:pointer; }
+    .acct-trigger:hover{ background:rgba(255,255,255,.06); }
+    .acct-trigger .name{ max-width:220px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; color:var(--nav-muted); }
+    .acct-trigger:after{ content:"▾"; margin-left:6px; font-size:12px; opacity:.85; }
+    .acct-menu{ position:absolute; right:0; top:calc(100% + 8px); min-width:200px;
+      background:#0f172a; border:1px solid #1f2a44; border-radius:14px;
+      box-shadow:0 12px 28px rgba(0,0,0,.35); padding:8px; display:none; }
+    .acct-wrap.open .acct-menu{ display:block; }
+    .acct-item{ display:block; padding:12px; color:#e6efff; border-radius:10px; }
+    .acct-item:hover{ background:#12333f; }
 
     /* ===== 內容：白底黑字 ===== */
     .wrap{max-width:1200px;margin:0 auto;padding:18px 16px;background:var(--bg);color:var(--ink)}
@@ -85,12 +92,6 @@
 
     @media (max-width:1000px){ .features{grid-template-columns:repeat(2,1fr)} .grid{grid-template-columns:repeat(2,1fr)} }
     @media (max-width:640px){ .grid{grid-template-columns:1fr} .h1{font-size:22px} }
-  
-    /* 版本徽章 */
-    .ver-badge{position:fixed;top:10px;right:10px;z-index:9999;background:#1a2a4a;color:#dfe8ff;
-      border:1px solid rgba(255,255,255,.2);padding:6px 12px;border-radius:999px;font:600 12px/1 ui-sans-serif,system-ui,'Noto Sans TC'}
-    @media (max-width:640px){.ver-badge{top:auto;bottom:10px;right:10px}}
-    
   </style>
 </head>
 <body>
@@ -107,7 +108,19 @@
       <!-- 右上按鈕（不動位置與樣式） -->
       <a class="btn" href="#services" style="display:none" aria-hidden="true">服務導覽 ▾</a>
       <a class="btn" href="/english-videos/pricing.html">方案價格</a>
-      <span id="userNameBadge"></span>
+
+      <!-- 新：帳號下拉（只在已登入後顯示；無圓形大頭貼） -->
+      <div id="accountWrap" class="acct-wrap">
+        <button class="acct-trigger" id="btnAccount" type="button" aria-haspopup="menu" aria-expanded="false">
+          <span class="name" id="userNameBadge"></span>
+        </button>
+        <div class="acct-menu" role="menu" aria-label="帳號選單">
+          <a class="acct-item" href="./account/profile.html" role="menuitem">我的資料</a>
+          <a class="acct-item" href="./account/favorites.html" role="menuitem">收藏影片</a>
+          <a class="acct-item" href="./account/learning.html" role="menuitem">學習曲線</a>
+        </div>
+      </div>
+
       <button class="btn" id="btnLogin">登入</button>
       <button class="btn" id="btnLogout" style="display:none">登出</button>
     </div>
@@ -156,7 +169,7 @@
     </footer>
   </main>
 
-  <!-- ===== Email 登入/註冊 Modal ===== -->
+  <!-- ===== Email 登入/註冊 Modal（沿用你原本） ===== -->
   <div class="modal" id="authModal" aria-hidden="true">
     <div class="modal-card">
       <h3 id="authTitle">登入</h3>
@@ -223,7 +236,7 @@
   <script type="module">
     import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
 
-    /* 你的 Supabase 專案參數（已可同時在 kuan-story 與 bookwide 使用） */
+    /* 你的 Supabase 專案參數 */
     const SUPABASE_URL = 'https://qtgwedankftrqjmzuset.supabase.co';
     const SUPABASE_ANON_KEY =
       'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InF0Z3dlZGFua2Z0cnFqbXp1c2V0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTg4NDYxMDMsImV4cCI6MjA3NDQyMjEwM30.jyETpt09pgm66aCZheMgsjtbKlVmYo-lt-hrrt6BF8g';
@@ -232,15 +245,33 @@
     if (!window.supa) window.supa = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     const supa = window.supa;
 
-    /* ===== 右上狀態列 ===== */
+    /* ===== 右上狀態列 & 帳號下拉 ===== */
     const btnLogin = document.getElementById('btnLogin');
     const btnLogout = document.getElementById('btnLogout');
+    const acctWrap  = document.getElementById('accountWrap');
     const nameBadge = document.getElementById('userNameBadge');
-    function paintUser(u){
-      if(u){ nameBadge.textContent = u.email || u.user_metadata?.name || '已登入';
-             btnLogin.style.display='none'; btnLogout.style.display=''; }
-      else{ nameBadge.textContent = ''; btnLogin.style.display=''; btnLogout.style.display='none'; }
-    }
+    const btnAccount= document.getElementById('btnAccount');
+    const paintUser = (u) => {
+      if(u){
+        nameBadge.textContent = u.email || u.user_metadata?.name || '已登入';
+        btnLogin.style.display='none'; btnLogout.style.display='';
+        acctWrap.style.display='inline-block';
+      }else{
+        nameBadge.textContent = '';
+        btnLogin.style.display=''; btnLogout.style.display='none';
+        acctWrap.style.display='none'; acctWrap.classList.remove('open');
+      }
+    };
+
+    // 下拉開合
+    const toggleMenu = () => {
+      const open = !acctWrap.classList.contains('open');
+      acctWrap.classList.toggle('open', open);
+      btnAccount.setAttribute('aria-expanded', String(open));
+    };
+    btnAccount.addEventListener('click', (e)=>{ e.stopPropagation(); toggleMenu(); });
+    document.addEventListener('click', ()=>{ acctWrap.classList.remove('open'); btnAccount.setAttribute('aria-expanded','false'); });
+    document.addEventListener('keydown', (e)=>{ if(e.key==='Escape'){ acctWrap.classList.remove('open'); btnAccount.setAttribute('aria-expanded','false'); } });
 
     /* ===== Modal 控制 ===== */
     const modal = document.getElementById('authModal');
@@ -274,7 +305,7 @@
       if(!email || !pwd){ errBox.textContent='請輸入 Email 與密碼'; return; }
       try{
         if(mode==='signin'){
-          const { error } = await supa.auth.signInWithPassword({ email, password:pwd, options:{ shouldCreateUser:false }});
+          const { error } = await supa.auth.signInWithPassword({ email, password:pwd, options:{ shouldCreateUser:false } });
           if(error) throw error;
           closeModal();
         }else{
@@ -392,57 +423,39 @@
     });
   })();
   </script>
-  <!-- ===== 未登入禁止進入 player.html ===== -->
-<script type="module">
-  import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
-  const SUPABASE_URL = 'https://qtgwedankftrqjmzuset.supabase.co';
-  const SUPABASE_ANON_KEY =
-    'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InF0Z3dlZGFua2Z0cnFqbXp1c2V0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTg4NDYxMDMsImV4cCI6MjA3NDQyMjEwM30.jyETpt09pgm66aCZheMgsjtbKlVmYo-lt-hrrt6BF8g';
 
-  // 初始化 Supabase（共用同一 client）
-  if (!window.supa) window.supa = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-  const supa = window.supa;
+  <!-- ===== 未登入禁止進入 player.html（但允許 ?preview=1 直接試看） ===== -->
+  <script type="module">
+    import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
+    const SUPABASE_URL = 'https://qtgwedankftrqjmzuset.supabase.co';
+    const SUPABASE_ANON_KEY =
+      'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InF0Z3dlZGFua2Z0cnFqbXp1c2V0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTg4NDYxMDMsImV4cCI6MjA3NDQyMjEwM30.jyETpt09pgm66aCZheMgsjtbKlVmYo-lt-hrrt6BF8g';
+    if (!window.supa) window.supa = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    const supa = window.supa;
 
-  // 攔截所有指向 player.html 的連結
-  document.addEventListener('click', async (e) => {
-    const a = e.target.closest('a[href*="player.html"]');
-    if (!a) return;
-    e.preventDefault();
+    document.addEventListener('click', async (e) => {
+      const a = e.target.closest('a[href*="player.html"]');
+      if (!a) return;
 
-    // 取得登入狀態
-    const { data } = await supa.auth.getSession();
-    if (data?.session?.user) {
-      // 已登入，直接前往
-      location.href = a.href;
-    } else {
-      alert('請先登入後再觀看完整影片。');
-      // 觸發登入彈窗（若你已有 btnLogin）
-      const btnLogin = document.getElementById('btnLogin');
-      if (btnLogin) btnLogin.click();
-    }
-  });
-</script>
-<!-- ===== /未登入禁止進入 player.html ===== -->
+      // 允許 preview=1 直接開啟
+      try{
+        const url = new URL(a.getAttribute('href'), location.href);
+        if(url.searchParams.get('preview') === '1') return; // 不攔截
+      }catch{}
 
-  <!-- ===== /服務導覽 ===== -->
-
-<script>
-// ===== Preview bypass: allow ?preview=1 links to open without login guards (mobile + desktop) =====
-document.addEventListener('click', function(ev){
-  const a = ev.target.closest && ev.target.closest('a[href*="player.html"]');
-  if (!a) return;
-  try{
-    const url = new URL(a.getAttribute('href'), location.href);
-    if (url.searchParams.get('preview') === '1'){
-      ev.stopImmediatePropagation(); // prevent other handlers from blocking
-      ev.preventDefault();
-      location.href = url.toString();
-    }
-  }catch(e){ /* ignore */ }
-}, true); // capture phase
-</script>
+      e.preventDefault();
+      const { data } = await supa.auth.getSession();
+      if (data?.session?.user) location.href = a.href;
+      else {
+        alert('請先登入後再觀看完整影片。');
+        const btnLogin = document.getElementById('btnLogin');
+        if (btnLogin) btnLogin.click();
+      }
+    }, true);
+  </script>
 </body>
 </html>
+
 
 
 
