@@ -86,7 +86,21 @@
     @media (max-width:1000px){ .features{grid-template-columns:repeat(2,1fr)} .grid{grid-template-columns:repeat(2,1fr)} }
     @media (max-width:640px){ .grid{grid-template-columns:1fr} .h1{font-size:22px} }
   </style>
-  <link rel="stylesheet" href="./account/account-menu.css?v=2025V002">
+
+  <!-- injected: account menu + badge (V2025V002) -->
+  <link rel="stylesheet" href="./account/account-menu.css" />
+  <style>
+    .kw-version-badge{
+      position: fixed; right: 18px; bottom: 18px;
+      background: rgba(0,0,0,.75); color:#fff;
+      padding: 6px 12px; border-radius: 16px;
+      font: 600 13px/1.1 ui-sans-serif,system-ui,"Noto Sans TC",Segoe UI,Helvetica,Arial;
+      z-index: 99999; box-shadow: 0 6px 18px rgba(0,0,0,.25);
+      user-select: none; -webkit-user-select:none; pointer-events: none;
+    }
+    .kw-acc-anchor{ display:inline-flex; align-items:center; margin-left:8px; }
+  </style>
+
 </head>
 <body>
 
@@ -437,69 +451,56 @@ document.addEventListener('click', function(ev){
 }, true); // capture phase
 </script>
 
-  <!-- Account Menu + Version (V2025V002) -->
+  <!-- injected: supabase shared + account menu + glue -->
   <script type="module">
-    import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
-    const SUPABASE_URL = 'https://qtgwedankftrqjmzuset.supabase.co';
-    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InF0Z3dlZGFua2Z0cnFqbXp1c2V0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTg4NDYxMDMsImV4cCI6MjA3NDQyMjEwM30.jyETpt09pgm66aCZheMgsjtbKlVmYo-lt-hrrt6BF8g';
-    const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-    (function renderVersionBadge(){
-      const b = document.createElement('div');
-      b.textContent = 'V2025V002';
-      b.style.cssText = 'position:fixed;right:16px;bottom:16px;z-index:9999;padding:6px 12px;border-radius:999px;background:#101826;color:#fff;font-weight:700;border:1px solid #2a3f6a;box-shadow:0 2px 10px rgba(0,0,0,.25)';
-      document.body.appendChild(b);
-    })();
-    (function ensureMount(){
-      if(!document.getElementById('accountMenuMount')){
-        const mount=document.createElement('div');
-        mount.id='accountMenuMount';
-        mount.style.cssText='display:inline-block;margin-left:12px;';
-        const right = document.querySelector('header .container, header nav, .topbar, header')||document.body;
-        right.appendChild(mount);
+    import { supabase } from './account/_shared.js';
+    window.supabase = supabase;
+    (function mountAccountAnchor(){
+      const hdr = document.querySelector('header, .header, nav, .topbar, .navbar') || document.body;
+      let anchor = document.getElementById('kw-acc-anchor');
+      if(!anchor){
+        anchor = document.createElement('span');
+        anchor.id = 'kw-acc-anchor';
+        anchor.className = 'kw-acc-anchor';
+        hdr.appendChild(anchor);
       }
+      window.__KW_ACC_MOUNT__ = anchor;
     })();
-    function findLegacyLoginBtn(){
-      const byId=document.getElementById('legacyLoginBtn');
-      if(byId) return byId;
-      return Array.from(document.querySelectorAll('a,button')).find(el=>el.textContent.trim()==='登入');
+    function hideOldLogin(){
+      document.querySelectorAll('a,button,[role="button"]').forEach(el => {
+        const t = (el.textContent || el.value || '').trim().toLowerCase();
+        if(t === '登入' || t === '登录' || t === 'login' || t.includes('登入')){
+          if(!t.includes('登出')) el.style.display = 'none';
+        }
+      });
     }
-    function renderMenu(user){
-      const mount=document.getElementById('accountMenuMount');
-      if(!mount) return;
-      mount.innerHTML=`
-        <div class="acc-menu">
-          <button class="acc-toggle">${user.email}</button>
-          <div class="acc-panel">
-            <a href="./account/profile.html">我的資料</a>
-            <a href="./account/favorites.html">我的收藏影片</a>
-            <a href="./account/learning.html">我的學習曲線</a>
-            <button type="button" id="btnSignOut">登出</button>
-          </div>
-        </div>`;
-      const toggle=mount.querySelector('.acc-toggle');
-      const panel=mount.querySelector('.acc-panel');
-      toggle.addEventListener('click',()=>panel.classList.toggle('open'));
-      mount.querySelector('#btnSignOut').addEventListener('click',async()=>{await supabase.auth.signOut();location.reload();});
-    }
-    function clearMenu(){const m=document.getElementById('accountMenuMount');if(m) m.innerHTML='';}
-    async function syncUI(){
-      const { data:{ session } } = await supabase.auth.getSession();
-      const legacy=findLegacyLoginBtn();
-      if(session?.user){ if(legacy) legacy.style.display='none'; renderMenu(session.user); }
-      else{ clearMenu(); if(!legacy){ const b=document.createElement('button'); b.id='legacyLoginBtn'; b.textContent='登入'; document.getElementById('accountMenuMount')?.appendChild(b);} }
-    }
-    supabase.auth.onAuthStateChange(()=>{ syncUI() }); syncUI();
-    document.addEventListener('click', async (e)=>{
-      const legacy=findLegacyLoginBtn();
-      if(e.target===legacy){
-        try{ await supabase.auth.signInWithOAuth({ provider:'google', options:{ redirectTo: location.href } });}
-        catch(err){ console.error(err); alert('登入失敗，請稍後再試'); }
-      }
-    });
+    hideOldLogin();
+    new MutationObserver(hideOldLogin).observe(document.body, {childList:true,subtree:true});
   </script>
+  <script type="module" src="./account/account-menu.js"></script>
+  <div class="kw-version-badge">V2025V002</div>
 
 </body>
 </html>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
