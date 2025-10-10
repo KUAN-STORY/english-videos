@@ -395,6 +395,33 @@
 </div>
 <div id="pane-vocab" style="display:none">
 <div class="muted" id="vocabStatus" style="padding:10px 14px">( 單字載入中… )</div>
+<section id="pane-ai" style="display:none">
+  <div class="pane-ai">
+    <div class="ai-row" style="margin:6px 0 10px">
+      <span class="ai-hint">允許麥克風後可進行口說練習（建議 Chrome / Edge）。網址帶 <code>?slug=mid-autumn / houyi / lantern</code></span>
+    </div>
+    <div class="ai-row" style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+      <select id="aiTopic" class="btn" style="min-width:200px"></select>
+      <button id="btnPrevTopic" class="btn">◀ 上一題</button>
+      <button id="btnNextTopic" class="btn">下一題 ▶</button>
+      <button id="btnTts" class="btn">🔈 朗讀</button>
+      <button id="btnRec" class="btn">🎙️ 開始說</button>
+      <button id="btnStop" class="btn" disabled>⏹ 停止</button>
+      <label style="font-size:13px;opacity:.9"><input id="aiAutoNext" type="checkbox"> 作答後自動下一題</label>
+      <span id="aiStatus" class="ai-hint"></span>
+    </div>
+    <div class="ai-row" style="margin-top:6px">
+      <textarea id="aiPrompt" rows="3" placeholder="題目會顯示在這裡…" readonly style="width:100%"></textarea>
+    </div>
+    <div class="ai-row" style="margin:6px 0 8px">
+      <span class="ai-hint">提示：<span id="aiHint">—</span></span>
+    </div>
+    <div class="ai-row">
+      <div class="ai-out" id="aiReply" style="min-height:54px">（等待你的作答…）</div>
+    </div>
+  </div>
+</section>
+
 <div id="vocabBox" style="padding:0 14px 14px"></div>
 </div><section class="pane-ai" id="pane-ai" style="display:none">
 <div class="ai-box">
@@ -1615,8 +1642,164 @@ $$('.tabs .tab').forEach(t=>t.addEventListener('click',()=>showTab(t.dataset.tab
 })();
 </script>
 
+
+<!-- V2025V005 · AI pane script (additive, non-invasive) -->
+<script>
+(function(){
+  const $ = (s, el=document)=> el.querySelector(s);
+  const $$ = (s, el=document)=> Array.from(el.querySelectorAll(s));
+  const qs = new URLSearchParams(location.search);
+  const slug = (qs.get('slug')||'mid-autumn').trim();
+
+  (function(){
+    if(document.getElementById('buildBadge')) return;
+    const tag = document.createElement('div');
+    tag.id='buildBadge';
+    tag.textContent = 'V2025V005 | ' + slug;
+    tag.style.cssText = 'position:fixed;right:14px;top:14px;z-index:99999;background:#0d223d;color:#e7f0ff;border:1px solid #2b4a70;padding:6px 10px;border-radius:999px;font:12px/1 system-ui;opacity:.9;';
+    document.addEventListener('DOMContentLoaded',()=>document.body.appendChild(tag));
+  })();
+
+  const paneAI = document.getElementById('pane-ai');
+  const tabs = document.querySelector('.tabs');
+  if(tabs){
+    const aiBtn = tabs.querySelector('[data-tab="ai"]');
+    if(aiBtn){
+      aiBtn.addEventListener('click', ()=>{
+        const container = document.getElementById('content') || document;
+        $$('#content section[id^="pane-"], #content > div[id^="pane-"], section[id^="pane-"], div[id^="pane-"]').forEach(s=> s.style.display = 'none');
+        paneAI.style.display = 'block';
+        $$('.tabs .tab').forEach(t=> t.classList.toggle('active', t===aiBtn));
+      });
+    }
+  }
+
+  const ui = {
+    topic: document.getElementById('aiTopic'),
+    prev: document.getElementById('btnPrevTopic'),
+    next: document.getElementById('btnNextTopic'),
+    tts : document.getElementById('btnTts'),
+    rec : document.getElementById('btnRec'),
+    stop: document.getElementById('btnStop'),
+    auto: document.getElementById('aiAutoNext'),
+    prompt: document.getElementById('aiPrompt'),
+    hint : document.getElementById('aiHint'),
+    reply: document.getElementById('aiReply'),
+    status: document.getElementById('aiStatus')
+  };
+
+  async function loadBank(){
+    const paths = [
+      `/english-videos/data/ai-${slug}.json`,
+      `data/ai-${slug}.json`,
+      `./ai-${slug}.json`
+    ];
+    let raw=null;
+    for(const p of paths){
+      try{ const r=await fetch(p,{cache:'no-store'}); if(r.ok){ raw=await r.json(); break; } }catch{}
+    }
+    let topics=[];
+    if(Array.isArray(raw)) topics=raw;
+    else if(raw && Array.isArray(raw.topics)) topics=raw.topics;
+    else if(raw && Array.isArray(raw.scenes)){
+      raw.scenes.forEach(sc => (sc.turns||[]).forEach(t => topics.push({title:t.role||'', prompt:t.en||'', hint:t.goal||t.zh||''})));
+    }
+    if(!topics.length) topics=[{title:'Warm-up', prompt:'Introduce yourself briefly.', hint:'name / hobby'}];
+    return topics;
+  }
+
+  function speak(text){
+    if(!('speechSynthesis' in window)) return;
+    try{
+      speechSynthesis.cancel();
+      const u=new SpeechSynthesisUtterance(text||'');
+      const vs=speechSynthesis.getVoices(); const en=vs.find(v=>/en/i.test(v.lang)); if(en) u.voice=en;
+      u.rate=1; u.pitch=1; speechSynthesis.speak(u);
+    }catch{}
+  }
+
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  let rec=null, recognizing=false;
+  function toggleRec(){
+    if(!SR){ alert('此瀏覽器不支援語音辨識，請改用 Chrome 或 Edge'); return; }
+    if(!recognizing){
+      rec=new SR(); rec.lang='en-US'; rec.interimResults=true; rec.continuous=true;
+      recognizing=true; ui.rec&&(ui.rec.disabled=true); ui.stop&&(ui.stop.disabled=false); ui.status&&(ui.status.textContent='🎙️ 說話中…');
+      rec.onresult=(e)=>{
+        let final='';
+        for(let i=e.resultIndex;i<e.results.length;i++){ const r=e.results[i]; if(r.isFinal) final+=r[0].transcript; }
+        if(final){
+          const prev=(ui.reply?.textContent||'').trim();
+          if(ui.reply) ui.reply.textContent=(prev && prev!=='（等待你的作答…）'? prev+' ' : '') + final.trim();
+          if(ui.auto && ui.auto.checked){
+            const words=ui.reply.textContent.trim().split(/\s+/);
+            if(words.length>=8) show(idx+1);
+          }
+        }
+      };
+      rec.onend=()=>{ recognizing=false; ui.rec&&(ui.rec.disabled=false); ui.stop&&(ui.stop.disabled=true); ui.status&&(ui.status.textContent=''); };
+      rec.onerror=()=>{ recognizing=false; ui.rec&&(ui.rec.disabled=false); ui.stop&&(ui.stop.disabled=true); ui.status&&(ui.status.textContent=''); };
+      try{ rec.start(); }catch{}
+    }else{
+      try{ rec && rec.stop(); }catch{}
+    }
+  }
+
+  let topics=[], idx=0;
+  function renderSel(){
+    if(!ui.topic) return;
+    ui.topic.innerHTML='';
+    topics.forEach((t,i)=>{
+      const op=document.createElement('option');
+      op.value=String(i); op.textContent=t.title||`Topic ${i+1}`;
+      ui.topic.appendChild(op);
+    });
+  }
+  function show(i){
+    if(!topics.length) return;
+    idx=Math.max(0, Math.min(i, topics.length-1));
+    renderSel(); if(ui.topic) ui.topic.value=String(idx);
+    const t=topics[idx];
+    if(ui.prompt) ui.prompt.value=t.prompt||t.title||'';
+    if(ui.hint) ui.hint.textContent=t.hint||'—';
+    if(ui.reply) ui.reply.textContent='（等待你的作答…）';
+    if(ui.status) ui.status.textContent=`第 ${idx+1}/${topics.length} 題`;
+  }
+
+  ui.next && ui.next.addEventListener('click', ()=> show(idx+1));
+  ui.prev && ui.prev.addEventListener('click', ()=> show(idx-1));
+  ui.tts  && ui.tts.addEventListener('click', ()=> speak(ui.prompt?.value||''));
+  ui.rec  && ui.rec.addEventListener('click', toggleRec);
+  ui.stop && ui.stop.addEventListener('click', toggleRec);
+  ui.topic&& ui.topic.addEventListener('change', e=> show(parseInt(e.target.value||'0',10)||0));
+
+  window.addEventListener('keydown', (e)=>{
+    if(!e.altKey) return;
+    if(e.key==='ArrowRight'){ show(idx+1); e.preventDefault(); }
+    if(e.key==='ArrowLeft'){ show(idx-1); e.preventDefault(); }
+    if(e.key==='m'||e.key==='M'){ toggleRec(); e.preventDefault(); }
+    if(e.key==='s'||e.key==='S'){ speak(ui.prompt?.value||''); e.preventDefault(); }
+  });
+
+  (async function init(){
+    try{ topics = await loadBank(); show(0); }
+    catch(e){ console.warn('[AI] load error', e); if(ui.status) ui.status.textContent='無法載入題庫，請檢查 /english-videos/data/ai-*.json'; }
+  })();
+})();
+</script>
+
 </body>
 </html>
+
+
+
+
+
+
+
+
+
+
 
 
 
