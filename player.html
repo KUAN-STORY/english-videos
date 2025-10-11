@@ -1787,6 +1787,74 @@ $$('.tabs .tab').forEach(t=>t.addEventListener('click',()=>showTab(t.dataset.tab
   })();
 })();
 </script>
+<script id="hotfix-ai-tab-move-v2025v006">
+(function(){
+  const $  = (s, r=document)=>r.querySelector(s);
+  const $$ = (s, r=document)=>Array.from(r.querySelectorAll(s));
+
+  // 1) 取得三個原面板 + 既有的頂層 AI 面板（若沒有就建立一個空殼）
+  const paneSub   = $('#pane-sub');
+  const paneQuiz  = $('#pane-quiz');
+  const paneVocab = $('#pane-vocab');
+
+  let paneAI = document.getElementById('pane-ai');
+  if (!paneAI) {
+    paneAI = document.createElement('section');
+    paneAI.id = 'pane-ai';
+    paneAI.style.display = 'none';
+    // 放在右側學習容器中（與其它 pane 並列）
+    const right = document.getElementById('studyContainer') || document.querySelector('.right') || document.body;
+    right.appendChild(paneAI);
+  }
+
+  // 2) 若單字面板裡面藏著另一個 id="pane-ai"（重複 id），把它的內容搬到頂層 pane-ai，然後移除舊節點
+  (function moveInnerAI(){
+    const nested = $('#pane-vocab #pane-ai');
+    if (!nested) return;
+    // 把實際 UI 內容搬過來（保留既有 DOM，不重渲染）
+    while (nested.firstChild) paneAI.appendChild(nested.firstChild);
+    try { nested.remove(); } catch(e) {}
+  })();
+
+  // 3) 讓「AI互動」分頁能像其它分頁一樣切換
+  //    你的 HTML 裡是 <button class="btn tab-ai" data-tab="ai">AI互動</button>
+  const aiTabBtn = document.querySelector('.tabs [data-tab="ai"]');
+  const allTabs  = $$('.tabs .tab, .tabs .tab-ai');
+
+  // 統一的顯示切換器（保留原三面板，額外加入 AI）
+  function showTab(name){
+    if (paneSub)   paneSub.style.display   = (name==='sub')   ? '' : 'none';
+    if (paneQuiz)  paneQuiz.style.display  = (name==='quiz')  ? '' : 'none';
+    if (paneVocab) paneVocab.style.display = (name==='vocab') ? '' : 'none';
+    if (paneAI)    paneAI.style.display    = (name==='ai')    ? '' : 'none';
+
+    allTabs.forEach(t => t.classList.toggle('active', (t.dataset.tab===name)));
+  }
+
+  // 把原來三個分頁也掛上新的切換器（不覆蓋你原本的 click 行為；我們用 capture 優先處理一次）
+  $$('.tabs [data-tab]').forEach(el=>{
+    if (el.dataset.__aiWired) return;
+    el.dataset.__aiWired = '1';
+    el.addEventListener('click', (ev)=>{
+      const tab = ev.currentTarget?.dataset?.tab;
+      if (!tab) return;
+      // 阻止其它處理把它又切回單字（避免爭用）
+      ev.stopPropagation();
+      ev.preventDefault();
+      showTab(tab);
+    }, true);
+  });
+
+  // 4) 首次載入時：如果目前顯示的是單字，但 AI 分頁被點了，就切到 AI
+  //    （安全起見，我們也把 AI 分頁標成 .tab 樣式，視覺一致）
+  if (aiTabBtn && !aiTabBtn.classList.contains('tab')) {
+    aiTabBtn.classList.add('tab'); // 只加樣式，不改你原本的 btn
+  }
+
+  // 5) 若頁面上原本就顯示在單字面板裡的 AI，搬家後預設還是顯示「字幕」；不主動改你目前的預設分頁
+  //    你要看 AI 時，點「AI互動」就會只顯示頂層 pane-ai。
+})();
+</script>
 
 </body>
 </html>
