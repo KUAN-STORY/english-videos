@@ -1,18 +1,14 @@
 {
-  "meta": {
-    "title": "Lantern (sample)",
-    "level": "A2"
-  },
-  "scenes": [
-    {
-      "turns": [
-        {
-          "role": "Host",
-          "en": "Describe a lantern you like.",
-          "zh": "描述一個你喜歡的花燈。",
-          "goal": "shape / color"
-        }
-      ]
-    }
+  "topics": [
+    { "title": "Types", "prompt": "List different types of lanterns you have seen.", "hint": "paper / sky / animal-shaped" },
+    { "title": "Colors & Shapes", "prompt": "Describe the colors and shapes that make a lantern beautiful.", "hint": "pattern / symbol / meaning" },
+    { "title": "Make One", "prompt": "Explain how to make a simple paper lantern.", "hint": "materials / steps / safety" },
+    { "title": "Parade", "prompt": "Describe a lantern parade you joined or would like to join.", "hint": "music / crowd / atmosphere" },
+    { "title": "Riddles", "prompt": "Share a lantern riddle or make one yourself.", "hint": "question / clue / answer" },
+    { "title": "Wish", "prompt": "If you could hang a wish on a lantern, what would it be and why?", "hint": "hope / future / family" },
+    { "title": "Design", "prompt": "Design a lantern for your school. What theme and materials will you use?", "hint": "theme / eco-friendly / safe" },
+    { "title": "Safety", "prompt": "How can we enjoy lanterns safely?", "hint": "fire / crowd / environment" },
+    { "title": "Culture", "prompt": "What do lanterns symbolize in your culture?", "hint": "light / guidance / reunion" },
+    { "title": "Compare", "prompt": "Compare sky lanterns and handheld lanterns.", "hint": "pros & cons / occasions" }
   ]
 }
