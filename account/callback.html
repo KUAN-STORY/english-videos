@@ -1,0 +1,23 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>登入回呼 | English Videos</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="./_sb-config.js"></script>
+<div id="msg" style="font-family:system-ui;max-width:680px;margin:8vh auto;padding:16px;border-radius:10px;background:#0f172a;color:#e6f0ff">
+  正在處理登入，請稍候…
+</div>
+<script>
+  (async () => {
+    if (!window.SB){ document.getElementById('msg').textContent='缺少 _sb-config.js'; return; }
+    const sb = supabase.createClient(SB.url, SB.anon, { auth:{ persistSession:true, autoRefreshToken:true }});
+    try{
+      const { error } = await sb.auth.exchangeCodeForSession(window.location.href);
+      if (error) throw error;
+      // 登入成功 → 回到 profile
+      location.replace("./profile.html");
+    }catch(e){
+      document.getElementById('msg').innerHTML = "<b>登入回呼失敗：</b> " + (e.message||e) +
+        "<div style='margin-top:10px'><a style='color:#4f8cff' href='./profile.html'>返回我的資料</a></div>";
+    }
+  })();
+</script>

@@ -1,0 +1,267 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>我的資料 | English Videos</title>
+  <link rel="preconnect" href="https://cdn.jsdelivr.net" />
+  <style>
+    :root {
+      --bg:#0b1220;
+      --card:#0f172a;
+      --muted:#8aa4c5;
+      --text:#e6f0ff;
+      --accent:#4f8cff;
+      --border:#1e293b;
+      --ok:#22c55e;
+      --err:#ef4444;
+      --radius:14px;
+    }
+    html,body{background:var(--bg);color:var(--text);margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,"Noto Sans TC","PingFang TC","Microsoft JhengHei",sans-serif;}
+    a{color:var(--accent);text-decoration:none}
+    .wrap{max-width:1100px;margin:24px auto;padding:0 16px;}
+    .back{display:inline-flex;align-items:center;gap:.5rem;background:rgba(255,255,255,.04);padding:.5rem .8rem;border-radius:10px}
+    h1{margin:18px 0 14px;font-size:28px;letter-spacing:.5px}
+    .card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:18px 20px;margin:14px 0}
+    .card h2{margin:0 0 8px;font-size:20px}
+    .muted{color:var(--muted)}
+    .grid{display:grid;gap:10px}
+    .two{grid-template-columns:repeat(2,minmax(0,1fr))}
+    .input,.textarea,.pwd{width:100%;background:#0b1324;border:1px solid var(--border);color:var(--text);border-radius:10px;padding:.7rem .9rem;box-sizing:border-box}
+    .textarea{min-height:96px;resize:vertical}
+    label{display:block;margin:.2rem 0 .2rem;color:#cfe3ff;font-size:14px}
+    .row{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+    .btn{background:var(--accent);border:0;color:#fff;padding:.6rem 1rem;border-radius:10px;cursor:pointer}
+    .btn[disabled]{opacity:.6;cursor:not-allowed}
+    .btn-outline{background:transparent;border:1px solid var(--border);color:var(--text)}
+    .pill{display:inline-block;border:1px solid var(--border);border-radius:999px;padding:.25rem .6rem;color:var(--muted);font-size:12px}
+    .msg{font-size:14px;margin-left:10px}
+    .ok{color:var(--ok)} .err{color:var(--err)}
+    pre.debug{white-space:pre-wrap;background:#0b1324;border:1px dashed var(--border);padding:8px;border-radius:10px;color:#bcd7ff}
+    .hint{font-size:12px;color:var(--muted)}
+    @media (max-width:860px){ .two{grid-template-columns:1fr} }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <a class="back" href="../index.html">← 回首頁</a>
+    <h1>我的資料</h1>
+
+    <div class="card">
+      <h2>基本資料</h2>
+      <div id="base-info" class="muted">載入中…</div>
+    </div>
+
+    <div class="card">
+      <h2>編輯個人檔案 <span class="pill">profiles 表</span></h2>
+      <form id="profile-form" class="grid two" style="display:none">
+        <div>
+          <label>暱稱</label>
+          <input id="nickname" class="input" type="text" placeholder="您的暱稱（可留白）" />
+        </div>
+        <div>
+          <label>頭像網址</label>
+          <input id="avatar_url" class="input" type="url" placeholder="https://example.com/me.png" />
+        </div>
+        <div style="grid-column:1/-1">
+          <label>自我介紹</label>
+          <textarea id="bio" class="textarea" placeholder="一句話介紹你自己（可留白）"></textarea>
+        </div>
+        <div class="row" style="grid-column:1/-1">
+          <button id="saveProfile" class="btn" type="submit">儲存</button>
+          <span id="saveMsg" class="msg muted"></span>
+        </div>
+      </form>
+
+      <!-- 未登入：顯示 Email/Password 登入表單 -->
+      <div id="auth-panel">
+        <div class="muted" style="margin:6px 0 10px">尚未登入。請使用 Email / 密碼登入（或註冊新帳號）。</div>
+        <div class="grid two" style="max-width:560px">
+          <div style="grid-column:1/-1">
+            <label>Email</label>
+            <input id="login_email" class="input" type="email" placeholder="you@example.com" autocomplete="email" />
+          </div>
+          <div style="grid-column:1/-1">
+            <label>密碼</label>
+            <input id="login_password" class="pwd" type="password" placeholder="至少 6 個字元" autocomplete="current-password" />
+          </div>
+          <div class="row" style="grid-column:1/-1">
+            <button class="btn" id="btnSignIn">登入</button>
+            <button class="btn-outline" id="btnSignUp" type="button">註冊</button>
+            <button class="btn-outline" id="btnReset" type="button">忘記密碼？</button>
+            <span id="authMsg" class="msg muted"></span>
+          </div>
+          <div class="hint" style="grid-column:1/-1">註冊與重設密碼的郵件會寄到你輸入的 Email；請於 15 分鐘內完成。</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>最近交卷</h2>
+      <div id="recent-submits" class="muted">（之後接 submissions 表）</div>
+    </div>
+
+    <div class="card">
+      <h2>最近看片</h2>
+      <div id="recent-watches" class="muted">（之後接 watch_logs 表）</div>
+    </div>
+
+    <div class="card">
+      <h2>除錯</h2>
+      <pre id="debug" class="debug muted">初始化中…</pre>
+    </div>
+  </div>
+
+  <!-- Supabase v2 & config -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="./_sb-config.js"></script>
+  <script>
+  (async () => {
+    const debug = (m)=>{
+      const el=document.getElementById('debug');
+      el.textContent += "\\n" + m;
+    };
+    if (!window.SB){ document.getElementById('debug').textContent="❌ 缺少 _sb-config.js"; return; }
+
+    const sb = supabase.createClient(SB.url, SB.anon, {
+      auth:{ persistSession:true, autoRefreshToken:true }
+    });
+
+    const $ = (id)=>document.getElementById(id);
+    const base = $('base-info');
+    const form = $('profile-form');
+    const saveBtn = $('saveProfile');
+    const saveMsg = $('saveMsg');
+    const panel = $('auth-panel');
+    const authMsg = $('authMsg');
+
+    function showAuthUser(user){
+      base.innerHTML = `
+        <div><b>Email：</b>${user.email}</div>
+        <div><b>UID：</b>${user.id}</div>
+        <div><b>建立時間：</b>${new Date(user.created_at).toLocaleString()}</div>
+      `;
+    }
+
+    async function load(){
+      const { data:{ user } } = await sb.auth.getUser();
+      debug('getUser → ' + (user? user.id : 'null'));
+      if (!user){
+        base.textContent = '尚未登入';
+        panel.style.display = 'block';
+        form.style.display = 'none';
+        return;
+      }
+      panel.style.display = 'none';
+      form.style.display = 'grid';
+      showAuthUser(user);
+
+      try{
+        const { data, error } = await sb.from('profiles')
+          .select('nickname,bio,avatar_url')
+          .eq('user_id', user.id)
+          .maybeSingle();
+        if (error) debug('profiles 查詢錯誤：' + (error.message||error));
+        if (data){
+          $('nickname').value = data.nickname ?? '';
+          $('bio').value = data.bio ?? '';
+          $('avatar_url').value = data.avatar_url ?? '';
+        } else {
+          debug('profiles：尚無資料（首次登入為正常狀況）');
+        }
+      }catch(e){ debug('profiles 例外：' + e.message); }
+    }
+
+    // Sign in with email/password
+    $('btnSignIn').addEventListener('click', async (e)=>{
+      e.preventDefault();
+      authMsg.textContent = '登入中…';
+      const email = $('login_email').value.trim();
+      const password = $('login_password').value;
+      try{
+        const { error } = await sb.auth.signInWithPassword({ email, password });
+        if (error) throw error;
+        authMsg.textContent = '登入成功 ✅';
+        await load();
+      }catch(err){
+        authMsg.textContent = '登入失敗：' + (err.message||err);
+        authMsg.className = 'msg err';
+      }
+    });
+
+    // Sign up
+    $('btnSignUp').addEventListener('click', async ()=>{
+      authMsg.textContent = '送出註冊…';
+      const email = $('login_email').value.trim();
+      const password = $('login_password').value;
+      try{
+        const { error } = await sb.auth.signUp({
+          email, password,
+          options: { emailRedirectTo: location.origin + '/english-videos/account/reset.html' }
+        });
+        if (error) throw error;
+        authMsg.textContent = '註冊信已寄出，請到信箱收信並完成驗證。';
+        authMsg.className = 'msg ok';
+      }catch(err){
+        authMsg.textContent = '註冊失敗：' + (err.message||err);
+        authMsg.className = 'msg err';
+      }
+    });
+
+    // Reset password
+    $('btnReset').addEventListener('click', async ()=>{
+      authMsg.textContent = '寄送重設密碼信…';
+      const email = $('login_email').value.trim();
+      if (!email){ authMsg.textContent='請先輸入 Email'; return; }
+      try{
+        const { error } = await sb.auth.resetPasswordForEmail(email, {
+          redirectTo: location.origin + '/english-videos/account/reset.html'
+        });
+        if (error) throw error;
+        authMsg.textContent = '已寄出重設密碼連結，請到信箱收信。';
+        authMsg.className = 'msg ok';
+      }catch(err){
+        authMsg.textContent = '寄送失敗：' + (err.message||err);
+        authMsg.className = 'msg err';
+      }
+    });
+
+    // Save profile
+    form.addEventListener('submit', async (e)=>{
+      e.preventDefault();
+      saveBtn.disabled = true; saveMsg.textContent = '儲存中…';
+      const { data:{ user } } = await sb.auth.getUser();
+      if (!user){ saveMsg.textContent='尚未登入'; saveBtn.disabled=false; return; }
+      const payload = {
+        user_id: user.id,
+        nickname: $('nickname').value || null,
+        bio: $('bio').value || null,
+        avatar_url: $('avatar_url').value || null,
+        updated_at: new Date().toISOString()
+      };
+      const { error } = await sb.from('profiles').upsert(payload, { onConflict:'user_id' });
+      if (error){ saveMsg.textContent = '保存失敗：' + error.message; saveMsg.className='msg err'; }
+      else { saveMsg.textContent = '已儲存 ✅'; saveMsg.className='msg ok'; }
+      saveBtn.disabled = false;
+    });
+
+    // Auth state listener
+    sb.auth.onAuthStateChange((event)=>{
+      debug('auth event: ' + event);
+      if (['SIGNED_IN','TOKEN_REFRESHED','INITIAL_SESSION'].includes(event)){
+        load();
+      }
+      if (event === 'SIGNED_OUT'){
+        base.textContent = '已登出';
+        panel.style.display = 'block';
+        form.style.display = 'none';
+      }
+    });
+
+    // initial
+    document.getElementById('debug').textContent = '就緒，開始偵測登入狀態…';
+    load();
+  })();
+  </script>
+</body>
+</html>
