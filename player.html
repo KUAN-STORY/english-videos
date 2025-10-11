@@ -2443,32 +2443,33 @@ $$('.tabs .tab').forEach(t=>t.addEventListener('click',()=>showTab(t.dataset.tab
   })();
 })();
 </script>
-<!-- Cue Hover – No-Wrap / Caret HitTest · v2025V041 -->
+<!-- Cue Hover – Super-Throttled / No-Wrap · v2025V042 -->
 <style>
   #hoverTip {
     position: fixed; z-index: 9999; display: none;
     max-width: 48ch; padding: 10px 12px; border-radius: 10px;
     background: rgba(10,15,25,.98); color: #e8f0ff;
-    border: 1px solid rgba(140,160,255,.35); box-shadow: 0 8px 28px rgba(0,0,0,.4);
+    border: 1px solid rgba(140,160,255,.35); box-shadow: 0 8px 28px rgba(0,0,0,.25);
     font-size: 14px; line-height: 1.45; pointer-events: auto;
+    will-change: transform, left, top;  /* 提前排程，降低重繪成本 */
   }
   #hoverTip .row { display:flex; gap:8px; align-items:center; margin-bottom:6px; }
   #hoverTip .tag { font-weight:700; color:#bcd1ff; }
   #hoverTip .tts { cursor:pointer; user-select:none; }
-  /* 裝飾：命中字加虛線（不改 DOM，用 selection 高亮不穩定，故僅泡泡） */
 </style>
 <div id="hoverTip" role="tooltip" aria-hidden="true"></div>
 
 <script>
 (function(){
-  if (window.__CUE_CARET_V041__) return;
-  window.__CUE_CARET_V041__ = true;
+  if (window.__CUE_HOVER_V042__) return;
+  window.__CUE_HOVER_V042__ = true;
 
+  const HOVER_DELAY = 450;   // 游標靜止多久才觸發，可調 600–800 更順
   const $  = (s,r=document)=>r.querySelector(s);
   const $$ = (s,r=document)=>Array.from(r.querySelectorAll(s));
   const tip = $('#hoverTip');
 
-  /* ---------- 字典（外部 -> 單字頁 fallback） ---------- */
+  /* ---------- 字典（外部檔優先，無則從「單字」分頁抓） ---------- */
   const dict = new Map();
   window.__CUE_DICT__ = dict;
 
@@ -2482,11 +2483,11 @@ $$('.tabs .tab').forEach(t=>t.addEventListener('click',()=>showTab(t.dataset.tab
   }
   async function loadDict(){
     try{
-      const r = await fetch('./data/dict-en-zh.json', {cache:'no-store'});
+      const r = await fetch('./data/dict-en-zh.json',{cache:'no-store'});
       if(!r.ok) throw 0;
       const data = await r.json();
       for (const [en,zh] of Object.entries(data)) dict.set(norm(en), zh);
-      console.log('[cue-caret] external dict', dict.size);
+      console.log('[cue-hover v042] external dict', dict.size);
     }catch(_){
       const rows = $$('#pane-vocab .voc, #pane-vocab .card, #pane-vocab li');
       rows.forEach(r=>{
@@ -2494,11 +2495,11 @@ $$('.tabs .tab').forEach(t=>t.addEventListener('click',()=>showTab(t.dataset.tab
         const zh=r.querySelector('.voc-zh,.zh,.cn')?.textContent?.trim();
         if(en && zh) dict.set(norm(en), zh);
       });
-      console.log('[cue-caret] vocab dict', dict.size);
+      console.log('[cue-hover v042] vocab dict', dict.size);
     }
   }
 
-  /* ---------- 朗讀 ---------- */
+  /* ---------- 朗讀：不呼叫 cancel()，避免卡頓 ---------- */
   function tts(text, lang='en-US'){
     try{
       if(!('speechSynthesis' in window)) return;
@@ -2507,12 +2508,11 @@ $$('.tabs .tab').forEach(t=>t.addEventListener('click',()=>showTab(t.dataset.tab
       const v = speechSynthesis.getVoices().find(v=>/en/i.test(v.lang)) || null;
       if (v) u.voice = v;
       u.lang = v?.lang || lang; u.rate=1; u.pitch=1;
-      try{ speechSynthesis.cancel(); }catch(_){}
       speechSynthesis.speak(u);
     }catch(_){}
   }
 
-  /* ---------- 由座標取得「該位置的字」(不改 DOM) ---------- */
+  /* ---------- 由座標抓「那個字」(只在觸發時跑一次) ---------- */
   function caretRangeFromPoint(x,y){
     if (document.caretRangeFromPoint) return document.caretRangeFromPoint(x,y);
     if (document.caretPositionFromPoint){
@@ -2527,51 +2527,36 @@ $$('.tabs .tab').forEach(t=>t.addEventListener('click',()=>showTab(t.dataset.tab
     return null;
   }
   const CHAR = /[A-Za-z'\-]/;
-
   function getWordAt(td, x, y){
     const r = caretRangeFromPoint(x, y);
     if (!r) return null;
-
     let node = r.startContainer;
-    // 找到文字節點
-    if (node.nodeType !== 3){ // 非 Text
-      // 試著往內或往前找到文字
-      node = (function dfs(n){
-        if (!n) return null;
-        if (n.nodeType===3) return n;
-        for (let i=0;i<n.childNodes.length;i++){
-          const got = dfs(n.childNodes[i]);
-          if (got) return got;
-        }
-        return null;
-      })(node);
-      if (!node) return null;
+    if (node.nodeType!==3){
+      // 嘗試向內找到文字節點（只處理此 td 節點，避免跨格）
+      const walker=document.createTreeWalker(node, NodeFilter.SHOW_TEXT, null);
+      node = walker.nextNode();
+      if(!node) return null;
     }
-
-    const text = node.data || '';
+    const text = node.data||'';
+    // 若命中空白，往左找最近的字母
     let i = Math.min(r.startOffset, text.length);
-    // 若點到空白，往左找最近的字元
-    let l=i-1, rgt=i;
+    let l=i-1;
     while (l>=0 && !CHAR.test(text[l])) l--;
-    if (l<0) return null; // 附近沒有字
+    if (l<0) return null;
 
-    // 以 l 為種子，向左右擴張
-    let start=l, end=l+1;
-    while (start-1>=0 && CHAR.test(text[start-1])) start--;
-    while (end<text.length && CHAR.test(text[end])) end++;
+    let s=l, e=l+1;
+    while (s-1>=0 && CHAR.test(text[s-1])) s--;
+    while (e<text.length && CHAR.test(text[e])) e++;
 
-    const token = text.slice(start, end);
+    const token = text.slice(s,e);
     const key = norm(token);
     const zh = dict.get(key);
-    if (!zh) return null;
+    if(!zh) return null;
 
-    // 取該字的矩形
-    const wordRange = document.createRange();
-    wordRange.setStart(node, start);
-    wordRange.setEnd(node, end);
-    const rect = wordRange.getBoundingClientRect();
-
-    return { word: token, zh, rect };
+    const rg = document.createRange();
+    rg.setStart(node, s); rg.setEnd(node, e);
+    const rect = rg.getBoundingClientRect();
+    return {word: token, zh, rect};
   }
 
   /* ---------- 泡泡 ---------- */
@@ -2582,11 +2567,10 @@ $$('.tabs .tab').forEach(t=>t.addEventListener('click',()=>showTab(t.dataset.tab
     const btn=document.createElement('span'); btn.className='tts'; btn.textContent='🔈 朗讀';
     btn.onclick=(e)=>{ e.stopPropagation(); tts(word); };
     row.append(tag, btn);
-
     const body=document.createElement('div'); body.textContent=zh;
     tip.append(row, body);
   }
-  function showTipNear(rect){
+  function showTipAt(rect){
     const x = rect.left + rect.width/2;
     const y = rect.top  - 8;
     tip.style.left = x+'px';
@@ -2600,10 +2584,10 @@ $$('.tabs .tab').forEach(t=>t.addEventListener('click',()=>showTab(t.dataset.tab
     tip.setAttribute('aria-hidden','true');
   }
 
-  /* ---------- 主邏輯（極簡、無 DOM 改寫） ---------- */
+  /* ---------- 事件：只在游標停住才觸發 ---------- */
   const paneSub = $('#pane-sub');
   if (paneSub){
-    // 阻止點擊字幕格觸發影片
+    // 擋字幕點擊啟播
     paneSub.addEventListener('click', (e)=>{
       if (e.target.closest('td.cue-time, td.cue-en, td.cue-zh')){
         e.stopImmediatePropagation();
@@ -2611,41 +2595,40 @@ $$('.tabs .tab').forEach(t=>t.addEventListener('click',()=>showTab(t.dataset.tab
       }
     }, {capture:true});
 
-    let rafId = null, lastTs = 0, lastKey = '';
-    let cached = null; // {word, zh, rect}
+    let hoverTimer=null;
+    let lastTd=null, lastX=0, lastY=0;
+
+    function schedule(td, x, y){
+      if (hoverTimer) { clearTimeout(hoverTimer); hoverTimer=null; }
+      hideTip();
+      lastTd=td; lastX=x; lastY=y;
+      hoverTimer = setTimeout(()=>{
+        hoverTimer=null;
+        if (!lastTd || dict.size===0) return;
+        const info = getWordAt(lastTd, lastX, lastY);
+        if (!info){ hideTip(); return; }
+        buildTip(info.zh, info.word);
+        showTipAt(info.rect);
+      }, HOVER_DELAY);
+    }
 
     paneSub.addEventListener('pointermove', (e)=>{
       const td = e.target.closest('td.cue-en');
-      if (!td){ hideTip(); lastKey=''; cached=null; return; }
-
-      // rAF + 節流 (每 ~90ms)
-      if (rafId) return;
-      rafId = requestAnimationFrame((ts)=>{
-        rafId=null;
-        if (ts - lastTs < 90) return;  // 節流
-        lastTs = ts;
-
-        const info = getWordAt(td, e.clientX, e.clientY);
-        if (!info){ hideTip(); lastKey=''; cached=null; return; }
-
-        const key = info.word + '@' + Math.round(info.rect.left) + 'x' + Math.round(info.rect.top);
-        if (key === lastKey && cached){ return; } // 同一個字不重畫
-
-        buildTip(info.zh, info.word);
-        showTipNear(info.rect);
-        lastKey = key;
-        cached = info;
-      });
+      if (!td) { if(hoverTimer){clearTimeout(hoverTimer);hoverTimer=null;} hideTip(); return; }
+      schedule(td, e.clientX, e.clientY);
     }, {passive:true});
 
-    paneSub.addEventListener('pointerleave', ()=>{ hideTip(); lastKey=''; cached=null; });
+    paneSub.addEventListener('pointerleave', ()=>{
+      if(hoverTimer){clearTimeout(hoverTimer);hoverTimer=null;}
+      hideTip();
+    });
     tip.addEventListener('pointerleave', hideTip);
-    tip.addEventListener('pointerenter', ()=>{/* 保留泡泡可點按鈕 */});
+    tip.addEventListener('pointerenter', ()=>{/* 讓泡泡可以點按鈕 */});
   }
 
   (async function boot(){
     await loadDict();
-    console.log('[cue-caret] ready');
+    console.log('[cue-hover v042] ready (dict:', dict.size, ')');
   })();
 })();
 </script>
