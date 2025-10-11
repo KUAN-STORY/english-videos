@@ -2645,6 +2645,103 @@ $$('.tabs .tab').forEach(t=>t.addEventListener('click',()=>showTab(t.dataset.tab
   wrapAllCueEn();
 })();
 </script>
+<!-- Cue hover performance hotfix · v2025V039-perf -->
+<script>
+(function(){
+  if (window.__CUE_PERF_FIX_V039__) return;
+  window.__CUE_PERF_FIX_V039__ = true;
+
+  const $  = (s,r=document)=>r.querySelector(s);
+  const $$ = (s,r=document)=>Array.from(r.querySelectorAll(s));
+
+  /* A) 擋掉舊 hover 用的 document mousemove（只限字幕區） */
+  document.addEventListener('mousemove', (e)=>{
+    // 如果滑鼠事件發生在字幕分頁 #pane-sub 裡，就阻斷其他 mousemove 監聽
+    if (e.target && e.target.closest && e.target.closest('#pane-sub')) {
+      // 只擋 bubble 階段註冊的 listener；本監聽在 capture 階段
+      e.stopImmediatePropagation();
+    }
+  }, {capture:true, passive:true});
+
+  /* B) 限縮/降頻 wrap 監聽，避免大量 reflow 造成卡頓 */
+  // 1. 只針對 .cue-en 單元 wrap（若你的主程式已有 __wrapped__ 旗標，此段會自動跳過）
+  function wrapOne(td){
+    if (!td || td.__wrapped__) return;
+    const WORD = /([A-Za-z][A-Za-z'\-]*)/g;
+    const dict = window.__CUE_DICT__ || null; // 若前面有建立可用，否則略過
+    if (!dict) { td.__wrapped__ = true; return; }
+
+    const raw = td.textContent || '';
+    const frag = document.createDocumentFragment();
+    let changed = false;
+
+    raw.split(WORD).forEach(tok=>{
+      if (!tok) return;
+      if (WORD.test(tok)) {
+        const key = (tok||'').trim().toLowerCase()
+                      .replace(/^[^a-z]+|[^a-z]+$/gi,'')
+                      .replace(/'s$/,'')
+                      .replace(/ies$/,'y')
+                      .replace(/(xes|ses|zes|ches|shes)$/,'')
+                      .replace(/([^s])s$/,'$1');
+        const zh = dict.get ? dict.get(key) : null;
+        if (zh) {
+          const sp = document.createElement('span');
+          sp.className = 'wordtip';
+          sp.textContent = tok;
+          sp.dataset.zh = zh;
+          frag.appendChild(sp);
+          changed = true;
+          return;
+        }
+      }
+      frag.appendChild(document.createTextNode(tok));
+    });
+
+    if (changed) { td.innerHTML = ''; td.appendChild(frag); }
+    td.__wrapped__ = true;
+  }
+
+  // 2. 啟動時批次處理（避免多次重算）
+  function initialWrap(){
+    const list = $$('#pane-sub .cue-en');
+    for (const td of list) wrapOne(td);
+  }
+
+  // 3. 監看新增的 cues：使用微節流（50ms）且僅針對新增節點內的 .cue-en
+  const cuesBody = $('#pane-sub tbody');
+  if (cuesBody) {
+    let pTimer = null, pendings = new Set();
+    const obs = new MutationObserver(muts=>{
+      for (const m of muts) {
+        m.addedNodes && m.addedNodes.forEach(n=>{
+          if (n.nodeType !== 1) return;
+          if (n.matches && n.matches('.cue-en')) pendings.add(n);
+          $$ ('.cue-en', n).forEach(td=> pendings.add(td));
+        });
+      }
+      if (!pTimer) {
+        pTimer = setTimeout(()=>{
+          pendings.forEach(td=> wrapOne(td));
+          pendings.clear(); pTimer = null;
+        }, 50);
+      }
+    });
+    obs.observe(cuesBody, {childList:true, subtree:true});
+    // 初次包一遍
+    initialWrap();
+  }
+
+  // 4) 安全網：避免舊程式持續定位氣泡引起 layout thrash
+  //    若舊程式每幀在改 style，我們固定 #hoverTip 的 left/top 只在需要時更新
+  const tip = document.getElementById('hoverTip');
+  if (tip) {
+    tip.style.willChange = 'opacity, transform';
+  }
+
+  console.log('[cue-perf] hotfix applied');
+})();
+</script>
 
 </body>
 </html>
