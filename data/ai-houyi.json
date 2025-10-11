@@ -1,18 +1,14 @@
 {
-  "meta": {
-    "title": "Houyi (sample)",
-    "level": "A2"
-  },
-  "scenes": [
-    {
-      "turns": [
-        {
-          "role": "Guide",
-          "en": "Who is Houyi in the legend?",
-          "zh": "后羿是誰？",
-          "goal": "archer / hero"
-        }
-      ]
-    }
+  "topics": [
+    { "title": "Who is Houyi?", "prompt": "Who is Houyi in the legend?", "hint": "archer / hero" },
+    { "title": "Ten Suns", "prompt": "Why did Houyi shoot down the suns?", "hint": "too hot / save people / crops" },
+    { "title": "After the Shot", "prompt": "What happened after Houyi shot the suns?", "hint": "one sun left / balance" },
+    { "title": "Character Traits", "prompt": "What qualities does Houyi show? Give examples.", "hint": "brave / skilled / responsible" },
+    { "title": "Dialogue", "prompt": "Make a short dialogue between Houyi and the villagers.", "hint": "thanks / promise / protection" },
+    { "title": "Cause & Effect", "prompt": "Explain the cause and effect in the story of Houyi.", "hint": "cause → action → result" },
+    { "title": "Setting", "prompt": "Describe the world when ten suns were in the sky.", "hint": "drought / heat / danger" },
+    { "title": "Moral", "prompt": "What is a possible lesson from the legend?", "hint": "courage / balance / sacrifice" },
+    { "title": "Compare Heroes", "prompt": "Compare Houyi with another hero you know.", "hint": "similarities / differences" },
+    { "title": "Retell", "prompt": "Retell the story in 5 sentences using your own words.", "hint": "beginning / problem / action / result / ending" }
   ]
 }
