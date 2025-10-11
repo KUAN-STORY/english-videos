@@ -2116,6 +2116,88 @@ $$('.tabs .tab').forEach(t=>t.addEventListener('click',()=>showTab(t.dataset.tab
   try{ mount(); }catch(e){ console.warn('[AI sample patch] init error', e); }
 })();
 </script>
+<!-- AI Sample relocate + Show Button · v2025v008-move (append-only) -->
+<script>
+(function(){
+  if (window.__AI_SAMPLE_RELOCATE_V008__) return;
+  window.__AI_SAMPLE_RELOCATE_V008__ = true;
+
+  const $  = (s, r=document)=> r.querySelector(s);
+  const $$ = (s, r=document)=> Array.from(r.querySelectorAll(s));
+
+  function getAIPane(){
+    // 以唯一的 #pane-ai 為準；找不到就不動作
+    return document.getElementById('pane-ai') || null;
+  }
+  function getAIReply(){
+    // AI 區塊的回答容器（會插在它下面）
+    return $('#aiReply') || $('#pane-ai .ai-out') || null;
+  }
+
+  function ensureSampleWrap(){
+    // 如果已被前一版建立，就直接拿來移位；否則新建一個空殼，之後由你現有的程式填內容
+    let wrap = document.getElementById('aiSampleWrap');
+    if (!wrap){
+      wrap = document.createElement('div');
+      wrap.id = 'aiSampleWrap';
+      wrap.style.marginTop = '10px';
+      const label = document.createElement('label');
+      label.textContent = 'AI 示範：';
+      label.style.cssText = 'font-weight:bold;display:block;margin:6px 0;';
+      const box = document.createElement('div');
+      box.id = 'aiSample';
+      box.style.cssText = 'border:1px solid #444;padding:6px;border-radius:6px;min-height:60px;';
+      wrap.appendChild(label);
+      wrap.appendChild(box);
+    }else{
+      // 從原位置拔掉，準備重新插入
+      wrap.remove();
+    }
+    // 預設先隱藏，按鈕點了才顯示
+    wrap.style.display = 'none';
+    return wrap;
+  }
+
+  function ensureShowBtn(pane, wrap){
+    // 放在 AI 按鈕列（有 #btnStop 的那一列）旁邊；找不到就放在 AI pane 最上層
+    let row = $('#btnStop')?.closest('.ai-row') || $('#pane-ai .ai-row') || pane;
+    let btn = document.getElementById('btnSample');
+    if (!btn){
+      btn = document.createElement('button');
+      btn.id = 'btnSample';
+      btn.className = 'btn';
+      btn.textContent = '示範句';
+      btn.title = '顯示 / 隱藏 AI 示範句';
+      btn.addEventListener('click', ()=>{
+        wrap.style.display = (wrap.style.display === 'none' ? '' : 'none');
+      });
+      row.appendChild(btn);
+    }
+  }
+
+  function relocate(){
+    const pane  = getAIPane();
+    const reply = getAIReply();
+    if (!pane) return;
+
+    const wrap = ensureSampleWrap();
+
+    if (reply && reply.parentElement){
+      reply.parentElement.insertAdjacentElement('afterend', wrap);
+    }else{
+      pane.appendChild(wrap);
+    }
+
+    ensureShowBtn(pane, wrap);
+  }
+
+  if (document.readyState === 'loading'){
+    document.addEventListener('DOMContentLoaded', relocate, {once:true});
+  }else{
+    relocate();
+  }
+})();
+</script>
 
 </body>
 </html>
