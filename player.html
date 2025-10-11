@@ -2463,6 +2463,129 @@ $$('.tabs .tab').forEach(t=>t.addEventListener('click',()=>showTab(t.dataset.tab
   }
 })();
 </script>
+<script id="ai-sample-ui-v009">
+/* AI Sample UI + Show Button + TTS + Vocab TTS Fix · v009 (append-only) */
+(function(){
+  if (window.__AI_SAMPLE_UI_V009__) return;
+  window.__AI_SAMPLE_UI_V009__ = true;
+
+  const $  = (s, r=document)=>r.querySelector(s);
+  const $$ = (s, r=document)=>Array.from(r.querySelectorAll(s));
+
+  /* ---------- 共用：安全 TTS ---------- */
+  function tts(text){
+    try{
+      if(!('speechSynthesis' in window)) { alert('此瀏覽器不支援語音合成'); return; }
+      const raw = (text||'').toString().trim(); if(!raw) return;
+      const u = new SpeechSynthesisUtterance(raw);
+      const voices = speechSynthesis.getVoices();
+      const v = voices.find(v=>/en/i.test(v.lang)) || voices[0];
+      if (v) u.voice = v;
+      u.lang = v?.lang || 'en-US'; u.rate = 1; u.pitch = 1;
+      try{ speechSynthesis.cancel(); }catch(_){}
+      speechSynthesis.speak(u);
+    }catch(_){}
+  }
+
+  /* ---------- 1) 只把示範放到 AI 分頁，並提供「示範句」＋「朗讀」 ---------- */
+  function ensureAISampleUI(){
+    const pane = $('#pane-ai'); if(!pane) return;
+
+    // 若過去誤插到單字分頁，清除
+    $('#pane-vocab #aiSampleWrap')?.remove();
+
+    // 包裝塊
+    let wrap = $('#aiSampleWrap', pane);
+    if(!wrap){
+      wrap = document.createElement('div');
+      wrap.id = 'aiSampleWrap';
+      wrap.style.cssText = 'margin:10px 0 6px;';
+      // 標題＋按鈕列
+      const head = document.createElement('div');
+      head.style.cssText = 'display:flex;gap:8px;align-items:center;margin-bottom:6px;';
+      const label = document.createElement('label');
+      label.textContent = 'AI 示範：';
+      label.style.cssText = 'font-weight:700';
+      const btnShow = document.createElement('button');
+      btnShow.id = 'btnSampleToggle';
+      btnShow.className = 'btn';
+      btnShow.textContent = '示範句';
+      btnShow.title = '顯示 / 隱藏 AI 示範句';
+      const btnTts = document.createElement('button');
+      btnTts.id = 'btnSampleTts';
+      btnTts.className = 'btn';
+      btnTts.textContent = '🔈 朗讀';
+      head.appendChild(label); head.appendChild(btnShow); head.appendChild(btnTts);
+
+      // 內容框
+      const box = document.createElement('div');
+      box.id = 'aiSample';
+      box.style.cssText = 'border:1px solid #445;min-height:60px;padding:8px;border-radius:8px;background:#0b1320;color:#e6f0ff';
+
+      wrap.appendChild(head);
+      wrap.appendChild(box);
+
+      // 放在 AI 輸出之後（找不到就放分頁末端）
+      const reply = $('#pane-ai #aiReply') || $('#pane-ai #aiPrompt');
+      if (reply?.parentElement) reply.parentElement.insertAdjacentElement('afterend', wrap);
+      else pane.appendChild(wrap);
+
+      // 行為
+      btnShow.addEventListener('click', ()=>{
+        const isHidden = getComputedStyle(box).display==='none';
+        box.style.display = isHidden ? '' : 'none';
+      });
+      btnTts.addEventListener('click', ()=> tts(box.textContent||''));
+      // 預設先隱藏內容，讓你按「示範句」才打開
+      box.style.display = 'none';
+    }
+  }
+
+  /* ---------- 2) 同步示範內容（沿用你原本載入題庫的結果） ---------- */
+  function hookSampleRender(){
+    const box = $('#aiSample'); if(!box) return;
+
+    // 兩種來源：(#aiSample 既有文字) 或 舊補丁/主程式放在 aiReply 下方的同名區塊
+    let last = '';
+    setInterval(()=>{
+      const neighbour = $('.ai-out + #aiSample, .ai-out + div[id^="aiSample"]');
+      const text = (neighbour?.textContent || $('#aiSample')?.textContent || '').trim();
+      if(text && text !== last){
+        box.textContent = text;
+        last = text;
+      }
+    }, 500);
+  }
+
+  /* ---------- 3) 修復「單字」分頁的朗讀按鈕沒聲音 ---------- */
+  function fixVocabTTS(){
+    const vbox = $('#pane-vocab') || document; // 委派在 vocab 區或整頁
+    vbox.addEventListener('click', (e)=>{
+      const btn = e.target.closest('[data-act="speak"], .btn-tts');
+      if(!btn) return;
+      const text =
+        btn.dataset.text ||
+        btn.getAttribute('data-text') ||
+        btn.closest('.voc')?.querySelector('.voc-word, .voc-en')?.textContent ||
+        btn.closest('.card')?.querySelector('.en, .word')?.textContent ||
+        '';
+      if(!text) return;
+      e.preventDefault(); e.stopPropagation();
+      tts(text);
+    }, true);
+  }
+
+  /* ---------- 啟動 ---------- */
+  function boot(){
+    ensureAISampleUI();
+    hookSampleRender();
+    fixVocabTTS();
+  }
+  (document.readyState==='loading')
+    ? document.addEventListener('DOMContentLoaded', boot, {once:true})
+    : boot();
+})();
+</script>
 
 </body>
 </html>
