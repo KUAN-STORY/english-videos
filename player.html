@@ -2637,6 +2637,111 @@ $$('.tabs .tab').forEach(t=>t.addEventListener('click',()=>showTab(t.dataset.tab
 })();
 </script>
 
+<!-- FIX: unfreeze video + scope observers · cue-hover hotfix v034a (append-only) -->
+<script>
+(function(){
+  if (window.__CUE_HOTFIX_V034A__) return;
+  window.__CUE_HOTFIX_V034A__ = true;
+
+  const $  = (s,r=document)=>r.querySelector(s);
+  const $$ = (s,r=document)=>Array.from(r.querySelectorAll(s));
+
+  /* 1) 解除舊觀察器過度監看（若上一段有把 observer 存起來就斷開） */
+  try{
+    if (window.__CUE_OBSERVER__) {
+      window.__CUE_OBSERVER__.disconnect();
+      window.__CUE_OBSERVER__ = null;
+    }
+  }catch(_){}
+
+  /* 2) 只監看關鍵節點，並節流 wrapAll */
+  function throttle(fn, wait){
+    let t=0, lastArgs=null;
+    return function(...args){
+      lastArgs=args;
+      const now=Date.now();
+      if (now-t>wait){ t=now; fn.apply(this,lastArgs); lastArgs=null; }
+      else {
+        clearTimeout(fn.__t);
+        fn.__t=setTimeout(()=>{ t=Date.now(); fn.apply(this,lastArgs); lastArgs=null; }, wait);
+      }
+    };
+  }
+
+  // 若上一段有提供 wrapAll() 就拿來用
+  const wrapAll = window.__CUE_WRAP_ALL__ || (function(){
+    // 後備：重新包裝 cue-en 的詞，僅在需要時使用
+    const WORD=/([A-Za-z][A-Za-z'\-]*)/g;
+    const dict = window.__CUE_DICT__ || new Map();
+    function norm(s){
+      let k=(s||'').trim().replace(/^[^A-Za-z]+|[^A-Za-z]+$/g,'').toLowerCase();
+      if(!k) return '';
+      if(/'s$/.test(k))k=k.replace(/'s$/,'');
+      if(/ies$/.test(k))return k.replace(/ies$/,'y');
+      if(/(xes|ses|zes|ches|shes)$/i.test(k))return k.replace(/es$/,'');
+      if(/s$/.test(k)&&!/ss$/.test(k))return k.replace(/s$/,'');
+      return k;
+    }
+    function wrap(el){
+      if(!el) return;
+      if (el.__wrapped__) return;
+      const txt=el.innerText||'';
+      const fr=document.createDocumentFragment();
+      let changed=false;
+      txt.split(WORD).forEach(tok=>{
+        if(!tok) return;
+        if(WORD.test(tok)){
+          const k=norm(tok);
+          const zh=dict.get(k);
+          if(zh){
+            const sp=document.createElement('span');
+            sp.className='wordtip';
+            sp.textContent=tok;
+            sp.dataset.en=tok;
+            sp.dataset.zh=zh;
+            fr.appendChild(sp);
+            changed=true; return;
+          }
+        }
+        fr.appendChild(document.createTextNode(tok));
+      });
+      if(changed){ el.innerHTML=''; el.appendChild(fr); el.__wrapped__=true; }
+    }
+    return function(){ $$('#pane-sub .cue-en').forEach(wrap); };
+  })();
+
+  const safeWrapAll = throttle(()=>{ try{ wrapAll(); }catch(_){} }, 200);
+
+  const paneSub = $('#pane-sub');
+  const cuesBody = $('#pane-sub #cuesBody') || $('#pane-sub tbody');
+  const paneVocab = $('#pane-vocab');
+
+  if (cuesBody || paneVocab){
+    const obs = new MutationObserver(()=> safeWrapAll());
+    if (cuesBody)  obs.observe(cuesBody,  {childList:true, subtree:true});
+    if (paneVocab) obs.observe(paneVocab, {childList:true, subtree:true});
+    window.__CUE_OBSERVER__ = obs;
+  }
+  // 初始跑一次
+  safeWrapAll();
+
+  /* 3) 僅攔截字幕表格內的點擊，不影響影片 */
+  if (paneSub && !paneSub.__cueClickBound){
+    paneSub.__cueClickBound = true;
+    paneSub.addEventListener('click', (e)=>{
+      const table = e.target.closest('table.cues-table');
+      if (!table) return; // 只處理字幕表格
+      // 只攔截 3 欄：時間/英文/中文
+      if (e.target.closest('td.cue-time, td.cue-en, td.cue-zh')) {
+        e.stopImmediatePropagation();
+        e.preventDefault();
+      }
+    }, {capture:true});
+  }
+
+  console.log('[cue-hotfix] applied: scoped observer & click filter');
+})();
+</script>
 
 </body>
 </html>
