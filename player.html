@@ -2262,6 +2262,54 @@ $$('.tabs .tab').forEach(t=>t.addEventListener('click',()=>showTab(t.dataset.tab
     : boot();
 })();
 </script>
+<!-- AI layout cleanup · V2025V-KILL -->
+<script id="ai-cleanup-v2025vKILL">
+(function(){
+  if (window.__AI_CLEANUP_KILL__) return;
+  window.__AI_CLEANUP_KILL__ = true;
+
+  const $  = (s, r=document)=> r.querySelector(s);
+  const $$ = (s, r=document)=> Array.from(r.querySelectorAll(s));
+
+  // 1) 從【字幕/測驗/單字】清掉任何誤嵌的 AI 區塊/元件
+  ['#pane-sub', '#pane-quiz', '#pane-vocab'].forEach(rootSel=>{
+    const root = $(rootSel);
+    if (!root) return;
+    $$('#pane-ai, #aiPrompt, #aiReply, #aiStatus, #aiHint, #aiSampleWrap, #btnSampleToggle, #btnSampleTts', root)
+      .forEach(n=> n.remove());
+  });
+
+  // 2) 確保只有一個 #pane-ai，且與其他面板同層（避免跑到單字裡）
+  const paneAI = document.getElementById('pane-ai');
+  const aPane  = $('#pane-vocab') || $('#pane-sub') || $('#pane-quiz');
+  if (paneAI && aPane && paneAI.parentElement !== aPane.parentElement) {
+    try { aPane.parentElement.appendChild(paneAI); } catch(_) {}
+  }
+
+  // 3) 通用分頁切換：點哪個分頁，就只顯示對應面板
+  const panes = ['sub','quiz','vocab','ai']
+    .map(name => $('#pane-'+name))
+    .filter(Boolean);
+
+  function show(which){
+    panes.forEach(p => p.style.display = (p.id === 'pane-'+which) ? 'block' : 'none');
+    $$('.tabs .tab').forEach(t => t.classList.toggle('active', t.dataset.tab === which));
+  }
+
+  $$('.tabs [data-tab]').forEach(btn=>{
+    if (btn.dataset.bound === '1') return;
+    btn.dataset.bound = '1';
+    btn.addEventListener('click', ()=> show(btn.dataset.tab));
+  });
+
+  // 預設顯示目前 active 的分頁；若沒有，優先顯示單字
+  const current = $('.tabs .tab.active')?.dataset.tab || 'vocab';
+  show(current);
+
+  // 4) 嘗試停止舊補丁可能留下的輪詢
+  if (window.__ai_timers) { try{ window.__ai_timers.forEach(clearInterval); }catch(_){ } }
+})();
+</script>
 
 </body>
 </html>
