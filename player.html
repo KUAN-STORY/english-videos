@@ -2463,25 +2463,44 @@ $$('.tabs .tab').forEach(t=>t.addEventListener('click',()=>showTab(t.dataset.tab
   const $=(s,r=document)=>r.querySelector(s);
   const $$=(s,r=document)=>Array.from(r.querySelectorAll(s));
 
+ <!-- Subtitles Hover-Translate (from Vocab) + Click Suppress · v2025V025 -->
+<style>
+  #wordTip{position:fixed;z-index:9999;display:none;max-width:360px;
+    padding:8px 10px;border-radius:10px;background:#0b1320;color:#e6f0ff;
+    border:1px solid #445;box-shadow:0 8px 22px rgba(0,0,0,.45);font-size:14px}
+  #wordTip .row{display:flex;align-items:center;gap:8px}
+  #wordTip .en{font-weight:700}
+  #pane-sub .wordtip{cursor:help;border-bottom:1px dashed rgba(255,255,255,.3)}
+  #pane-sub .wordtip:hover{background:rgba(255,255,255,.08)}
+  #pane-vocab .hilite{outline:2px solid #ffd166;border-radius:10px;
+    box-shadow:0 0 0 3px rgba(255,209,102,.25) inset;}
+</style>
+<script id="sub-hover-dict-v2025V025">
+(function(){
+  if (window.__SUB_HOVER_DICT_V025__) return;
+  window.__SUB_HOVER_DICT_V025__ = true;
+
+  const $=(s,r=document)=>r.querySelector(s);
+  const $$=(s,r=document)=>Array.from(r.querySelectorAll(s));
+
   /* ---------- TTS ---------- */
   function tts(t){
     try{
-      if(!('speechSynthesis'in window))return;
-      t=(t||'').trim(); if(!t)return;
+      if(!('speechSynthesis'in window)) return;
+      t=(t||'').trim(); if(!t) return;
       const u=new SpeechSynthesisUtterance(t);
       const vs=speechSynthesis.getVoices();
       const v=vs.find(v=>/en/i.test(v.lang))||vs[0];
-      if(v)u.voice=v; u.lang=v?.lang||'en-US'; u.rate=1; u.pitch=1;
+      if(v) u.voice=v; u.lang=v?.lang||'en-US'; u.rate=1; u.pitch=1;
       try{speechSynthesis.cancel();}catch(_){}
       speechSynthesis.speak(u);
     }catch(_){}
   }
 
-  /* ---------- 字典（取自單字分頁） ---------- */
-  let D=new Map();        // key -> zh
-  let CARD=new Map();     // key -> dom (for hilite)
-  function pick(el,sels){for(const s of sels){const n=el.querySelector(s); if(n&&n.textContent.trim()) return n.textContent.trim();} return '';}
-  function baseKey(s){
+  /* ---------- 字典：從「單字」分頁抓英文→中文 ---------- */
+  const dict=new Map();          // key(en base) -> zh
+  const cardByKey=new Map();     // key -> DOM(單字卡) 供反向高亮
+  function norm(s){
     let k=(s||'').trim().replace(/^[^A-Za-z]+|[^A-Za-z]+$/g,'').toLowerCase();
     if(!k) return '';
     if(/'s$/.test(k)) k=k.replace(/'s$/,'');
@@ -2490,134 +2509,178 @@ $$('.tabs .tab').forEach(t=>t.addEventListener('click',()=>showTab(t.dataset.tab
     if(/s$/.test(k) && !/ss$/.test(k)) return k.replace(/s$/,'');
     return k;
   }
+  function grab(el, arr){ for(const sel of arr){ const n=el.querySelector(sel); if(n && n.textContent.trim()) return n.textContent.trim(); } return ''; }
+
   function rebuildDict(){
-    D.clear(); CARD.clear();
-    const root=$('#pane-vocab')||document;
-    $$('#pane-vocab .voc, #pane-vocab .card', root).forEach(c=>{
-      const en=pick(c,['.voc-word','.voc-en','.en','.word']);
-      const zh=pick(c,['.voc-zh','.zh','.def','.meaning']);
-      const k=baseKey(en);
-      if(k){ D.set(k,zh); CARD.set(k,c); }
+    dict.clear(); cardByKey.clear();
+    const pv = $('#pane-vocab') || document;
+    const cards = $$('#pane-vocab .voc, #pane-vocab .card', pv);
+    cards.forEach(c=>{
+      const en = grab(c, ['.voc-word', '.voc-en', '.en', '.word']) || c.getAttribute('data-word') || '';
+      const zh = grab(c, ['.voc-zh', '.zh', '.def', '.meaning']);
+      const k = norm(en);
+      if(k){
+        if(zh) dict.set(k, zh);  // 只有有中文才當可翻譯
+        cardByKey.set(k, c);
+      }
     });
-    // console.info('[hover-dict] vocab size:', D.size);
-  }
-  let vocabObs=null;
-  function watchVocab(){
-    const pv=$('#pane-vocab'); if(!pv) return;
-    if(vocabObs) vocabObs.disconnect();
-    vocabObs=new MutationObserver(()=>{ rebuildDict(); wrapAll(); });
-    vocabObs.observe(pv,{childList:true,subtree:true});
-    rebuildDict();
+    if(dict.size===0){
+      console.warn('[hover-dict] 字典為空：請確認單字分頁內英文/中文的 class 是否符合（voc-word / voc-zh 等）');
+    } else {
+      console.log('[hover-dict] 單字筆數:', dict.size);
+    }
   }
 
-  /* ---------- 包裝字幕英文節點 ---------- */
-  const WORD_RX=/([A-Za-z][A-Za-z'\-]*|[^A-Za-z]+)/g;
-  const EN_SELECTORS=[
-    // 常見英文字容器（請按你站的實際 class 增刪）：
-    '#pane-sub .en','#pane-sub .eng','#pane-sub .line-en','#pane-sub .caption-en',
-    '#pane-sub .sub-en','#pane-sub .text-en',
-    // 後備：每一條字幕行（若行本身只有純文字）
-    '#pane-sub .sub-line','#pane-sub .line','#pane-sub [data-time]'
-  ];
-  function englishNodes(){
-    let nodes=[];
-    EN_SELECTORS.forEach(s=> nodes=nodes.concat($$(s)));
-    // 去重
-    return Array.from(new Set(nodes)).filter(n=> n && (n.childElementCount===0));
-  }
-  function wrapNode(n){
-    if(!n || n.dataset.wordWrapped==='1') return;
-    const raw=n.textContent||'';
-    const parts=raw.match(WORD_RX)||[raw];
+  /* ---------- 包裝字幕純文字節點（只包字典中出現的字） ---------- */
+  const WORD=/([A-Za-z][A-Za-z'\-]*)/g;
+
+  function wrapTextNode(tn){
+    if(!tn || !tn.parentNode) return;
+    const txt = tn.nodeValue;
+    if(!/[A-Za-z]/.test(txt)) return;
+
+    const parts = txt.split(WORD);
+    let changed=false;
     const frag=document.createDocumentFragment();
-    parts.forEach(tok=>{
-      if(/^[A-Za-z]/.test(tok)){
-        const key=baseKey(tok);
-        if(key && D.has(key)){
-          const sp=document.createElement('span');
-          sp.className='word'; sp.textContent=tok;
-          sp.dataset.en=tok; sp.dataset.key=key; sp.dataset.zh=D.get(key)||'';
-          frag.appendChild(sp); return;
+
+    for(let i=0;i<parts.length;i++){
+      const tok=parts[i];
+      if(!tok) continue;
+      if (WORD.test(tok)) {
+        const key = norm(tok);
+        const zh = dict.get(key);
+        if(zh){
+          const sp = document.createElement('span');
+          sp.className='wordtip';
+          sp.textContent=tok;
+          sp.dataset.key=key;
+          sp.dataset.en=tok;
+          sp.dataset.zh=zh;
+          frag.appendChild(sp);
+          changed=true;
+          continue;
         }
       }
       frag.appendChild(document.createTextNode(tok));
-    });
-    n.innerHTML=''; n.appendChild(frag);
-    n.dataset.wordWrapped='1';
-  }
-  function wrapAll(){ englishNodes().forEach(wrapNode); }
+    }
 
-  /* ---------- Tooltip + 同步高亮 ---------- */
+    if(changed){
+      tn.parentNode.replaceChild(frag, tn);
+    }
+  }
+
+  function walkAndWrap(root){
+    if(!root) return;
+    // 避免重複大量處理：若節點已經包含 .wordtip 就跳過其子孫
+    const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, {
+      acceptNode(node){
+        if(!node.nodeValue || !/[A-Za-z]/.test(node.nodeValue)) return NodeFilter.FILTER_REJECT;
+        // 已經包過的：近祖先含 .wordtip 則跳過
+        let p=node.parentNode;
+        for(let d=0; p && d<3; d++, p=p.parentNode){
+          if(p.classList && p.classList.contains('wordtip')) return NodeFilter.FILTER_REJECT;
+        }
+        return NodeFilter.FILTER_ACCEPT;
+      }
+    });
+    const texts=[];
+    while(walker.nextNode()) texts.push(walker.currentNode);
+    texts.forEach(wrapTextNode);
+  }
+
+  function wrapAllSubtitles(){
+    const ps = $('#pane-sub');
+    if(!ps) return;
+    walkAndWrap(ps);
+  }
+
+  /* ---------- Tooltip + 高亮對應單字卡 ---------- */
   const tip=document.createElement('div');
   tip.id='wordTip';
-  tip.innerHTML=`<div class="row"><div class="en"></div><button class="s-tts" title="朗讀">🔈</button></div><div class="zh"></div>`;
+  tip.innerHTML=`
+    <div class="row">
+      <div class="en"></div>
+      <button class="tts" title="朗讀">🔈</button>
+    </div>
+    <div class="zh"></div>`;
   document.body.appendChild(tip);
   tip.addEventListener('mousedown',e=>e.preventDefault());
-  tip.querySelector('.s-tts').addEventListener('click',()=>tts(tip.querySelector('.en').textContent||''));
+  tip.querySelector('.tts').addEventListener('click',()=>tts(tip.querySelector('.en').textContent||''));
+
   let hoverTimer=null, current=null, hiliteTimer=null;
-  function showTip(w,x,y){
+
+  function showTip(w, x, y){
     const en=w.dataset.en||w.textContent||'';
-    const zh=w.dataset.zh||''; if(!zh) return;
+    const zh=w.dataset.zh||'';
+    if(!zh) return;
     tip.querySelector('.en').textContent=en;
     tip.querySelector('.zh').textContent=zh;
-    tip.style.left=(x+12)+'px'; tip.style.top=(y+12)+'px'; tip.style.display='block';
-    const card=CARD.get(w.dataset.key||'');
-    if(card){ card.classList.add('hilite'); clearTimeout(hiliteTimer); hiliteTimer=setTimeout(()=>card.classList.remove('hilite'),800); }
+    tip.style.left=(x+12)+'px';
+    tip.style.top=(y+12)+'px';
+    tip.style.display='block';
+    const card = cardByKey.get(w.dataset.key||'');
+    if(card){
+      card.classList.add('hilite');
+      clearTimeout(hiliteTimer);
+      hiliteTimer=setTimeout(()=>card.classList.remove('hilite'), 900);
+    }
   }
   function hideTip(){ tip.style.display='none'; current=null; }
 
   function bindHover(){
     const ps=$('#pane-sub'); if(!ps) return;
     ps.addEventListener('mousemove',e=>{
-      const w=e.target.closest?.('.word'); if(!w){ clearTimeout(hoverTimer); hideTip(); return; }
+      const w=e.target.closest?.('.wordtip');
+      if(!w){ clearTimeout(hoverTimer); hideTip(); return; }
       if(current===w) return;
       clearTimeout(hoverTimer);
-      hoverTimer=setTimeout(()=>{ current=w; showTip(w,e.clientX,e.clientY); },500);
+      hoverTimer=setTimeout(()=>{ current=w; showTip(w, e.clientX, e.clientY); }, 500);
     });
     ps.addEventListener('mouseleave',()=>{ clearTimeout(hoverTimer); hideTip(); });
-    document.addEventListener('scroll',hideTip,true);
+    document.addEventListener('scroll', hideTip, true);
   }
 
-  /* ---------- 關閉字幕行的點擊跳播/播放 ---------- */
-  function suppressClickOnSub(){
+  /* ---------- 關閉字幕「整行點了就跳播/播放」 ---------- */
+  function suppressClicks(){
     const ps=$('#pane-sub'); if(!ps) return;
-    const stop=(e)=>{
-      // 真正的按鈕/連結放行
-      if (e.target.closest('button,[role="button"],a,[data-act],[data-action],.btn')) return;
-      if (e.target.closest('.word,.sub-line,.line,[data-time],.caption,.en,.eng,.line-en')) {
-        e.stopImmediatePropagation(); e.preventDefault();
+    const blocker=(e)=>{
+      // 真正按鈕/連結放行
+      if (e.target.closest('button,a,[role="button"],[data-act],[data-action],.btn')) return;
+      // 其餘在字幕容器裡的點擊全面阻擋
+      if (ps.contains(e.target)){
+        e.stopImmediatePropagation();
+        e.preventDefault();
       }
     };
     ['click','mousedown','mouseup','pointerdown','pointerup','touchstart','touchend']
-      .forEach(ev=> ps.addEventListener(ev, stop, true));
+      .forEach(ev=> document.addEventListener(ev, blocker, true));
   }
 
-  /* ---------- 監看字幕內容動態變化 ---------- */
-  let subObs=null;
-  function watchSub(){
-    const ps=$('#pane-sub'); if(!ps) return;
-    if(subObs) subObs.disconnect();
-    subObs=new MutationObserver(muts=>{
-      muts.forEach(m=>{
-        (m.addedNodes||[]).forEach(n=>{
-          if(n.nodeType===1){
-            if(n.matches?.('.sub-line,.line,[data-time],.en,.eng,.line-en')) wrapAll();
-            n.querySelectorAll?.('.sub-line,.line,[data-time],.en,.eng,.line-en').forEach(()=>wrapAll());
-          }
-        });
-      });
-    });
-    subObs.observe(ps,{childList:true,subtree:true});
+  /* ---------- 監看兩個區塊變化 ---------- */
+  let obsSub=null, obsVoc=null;
+  function watch(){
+    const ps=$('#pane-sub');
+    const pv=$('#pane-vocab');
+    if(ps){
+      if(obsSub) obsSub.disconnect();
+      obsSub=new MutationObserver(()=>wrapAllSubtitles());
+      obsSub.observe(ps,{childList:true,subtree:true});
+    }
+    if(pv){
+      if(obsVoc) obsVoc.disconnect();
+      obsVoc=new MutationObserver(()=>{ rebuildDict(); wrapAllSubtitles(); });
+      obsVoc.observe(pv,{childList:true,subtree:true});
+    }
   }
 
   /* ---------- BOOT ---------- */
   function boot(){
-    watchVocab();
-    wrapAll();
-    bindHover();
-    suppressClickOnSub();
-    watchSub();
-    // console.info('[hover-dict] booted');
+    rebuildDict();         // 從單字頁抓字典
+    wrapAllSubtitles();    // 包字幕中的匹配字
+    bindHover();           // 懸停顯示
+    suppressClicks();      // 關閉整行點擊
+    watch();               // 動態監看
+    console.log('[hover-dict] ready');
   }
   (document.readyState==='loading')
     ? document.addEventListener('DOMContentLoaded', boot, {once:true})
