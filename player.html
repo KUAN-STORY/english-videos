@@ -2443,6 +2443,221 @@ $$('.tabs .tab').forEach(t=>t.addEventListener('click',()=>showTab(t.dataset.tab
   })();
 })();
 </script>
+<!-- Word Mode for Subtitles · v2025V017 (append-only, non-invasive) -->
+<style>
+  /* 簡單 tooltip */
+  #wordTip {
+    position: fixed; z-index: 9999; display: none;
+    max-width: 360px; padding: 8px 10px; border-radius: 8px;
+    background: #0b1320; color: #e6f0ff; border: 1px solid #445;
+    box-shadow: 0 6px 20px rgba(0,0,0,.4); font-size: 14px;
+  }
+  #wordTip .row { display: flex; align-items: center; gap: 8px }
+  #wordTip .en { font-weight: 700 }
+  #wordTip .zh { opacity: .95 }
+  #wordTip .btn-tts { cursor: pointer; border: 0; border-radius: 6px; padding: 4px 8px }
+  /* 單字高亮（開啟模式時） */
+  #pane-sub .word { cursor: help; border-bottom: 1px dashed rgba(255,255,255,.25) }
+  #pane-sub .word:hover { background: rgba(255,255,255,.06) }
+  /* 開關樣式 */
+  #btnWordMode.btn { margin-left: 8px }
+  #btnWordMode.active { outline: 2px solid #6ea8fe }
+</style>
+
+<script id="word-mode-patch-v2025V017">
+(function(){
+  if (window.__WORD_MODE_V017__) return;
+  window.__WORD_MODE_V017__ = true;
+
+  const $  = (s,r=document)=>r.querySelector(s);
+  const $$ = (s,r=document)=>Array.from(r.querySelectorAll(s));
+
+  /* ---------- 安全 TTS（朗讀單字） ---------- */
+  function speak(text){
+    try{
+      if(!('speechSynthesis' in window)) return;
+      const t=(text||'').trim(); if(!t) return;
+      const u=new SpeechSynthesisUtterance(t);
+      const vs=speechSynthesis.getVoices(); const v=vs.find(v=>/en/i.test(v.lang))||vs[0];
+      if(v) u.voice=v; u.lang=v?.lang||'en-US'; u.rate=1; u.pitch=1;
+      try{ speechSynthesis.cancel(); }catch(_){}
+      speechSynthesis.speak(u);
+    }catch(_){}
+  }
+
+  /* ---------- 詞典載入（可客製路徑；找不到就空表） ---------- */
+  let DICT=null;                // Map<string,string>
+  let dictLoaded=false;
+  async function loadDict(){
+    if (dictLoaded) return DICT||new Map();
+    dictLoaded=true;
+    const candidates=[
+      '/english-videos/data/dict-en-zh.json',
+      'data/dict-en-zh.json',
+      './dict-en-zh.json'
+    ];
+    for (const url of candidates){
+      try{
+        const r=await fetch(url,{cache:'no-store'});
+        if(r.ok){
+          const json=await r.json();
+          DICT=new Map(Object.entries(json||{}).map(([k,v])=>[k.toLowerCase(), String(v)]));
+          break;
+        }
+      }catch(_){}
+    }
+    if (!DICT) DICT=new Map();
+    return DICT;
+  }
+
+  /* ---------- 將一行字幕拆成 <span class="word"> ---------- */
+  const WORD_RX = /([A-Za-z][A-Za-z'\-]*|[^A-Za-z]+)/g; // 單字與非字元保留
+  function wrapLine(lineEl, dict){
+    if (!lineEl || lineEl.dataset.wordWrapped==='1') return;
+    const raw = lineEl.textContent||'';
+    const parts = raw.match(WORD_RX) || [raw];
+
+    const fr=document.createDocumentFragment();
+    parts.forEach(tok=>{
+      if (/^[A-Za-z]/.test(tok)){           // 單字
+        const w=tok; const span=document.createElement('span');
+        span.className='word';
+        span.dataset.en=w;
+        span.dataset.zh=dict.get(w.toLowerCase())||'';
+        span.textContent=w;
+        fr.appendChild(span);
+      }else{
+        fr.appendChild(document.createTextNode(tok));
+      }
+    });
+    lineEl.innerHTML='';
+    lineEl.appendChild(fr);
+    lineEl.dataset.wordWrapped='1';
+  }
+
+  /* ---------- 遍歷字幕面板，套用 wrap ---------- */
+  async function applyWordMode(){
+    const pane = $('#pane-sub'); if(!pane) return;
+    const dict = await loadDict();
+    $$('#pane-sub .sub-line').forEach(el=>wrapLine(el, dict));
+  }
+
+  /* ---------- 恢復原狀（移除包裹） ---------- */
+  function unwrapAll(){
+    $$('#pane-sub .sub-line').forEach(line=>{
+      if (line.dataset.wordWrapped==='1'){
+        line.textContent = line.textContent;    // 去 span，保留純文字
+        delete line.dataset.wordWrapped;
+      }
+    });
+  }
+
+  /* ---------- Tooltip（0.5s 懸停顯示） ---------- */
+  const tip = document.createElement('div');
+  tip.id='wordTip';
+  tip.innerHTML = `
+    <div class="row">
+      <div class="en"></div>
+      <button class="btn-tts">🔈</button>
+    </div>
+    <div class="zh"></div>
+  `;
+  document.body.appendChild(tip);
+  tip.addEventListener('mousedown', e=> e.preventDefault());
+  tip.querySelector('.btn-tts').addEventListener('click', ()=>{
+    speak(tip.querySelector('.en').textContent||'');
+  });
+
+  let hoverTimer=null, currentWord=null;
+  function showTipFor(wordEl, x, y){
+    const en = wordEl.dataset.en||wordEl.textContent||'';
+    const zh = wordEl.dataset.zh||'';
+    tip.querySelector('.en').textContent=en;
+    tip.querySelector('.zh').textContent=zh || '(無詞庫翻譯)';
+    tip.style.left = Math.max(8, x+12) + 'px';
+    tip.style.top  = Math.max(8, y+12) + 'px';
+    tip.style.display='block';
+  }
+  function hideTip(){ tip.style.display='none'; currentWord=null; }
+
+  function bindHover(){
+    const pane = $('#pane-sub'); if(!pane) return;
+    pane.addEventListener('mousemove', (e)=>{
+      const word = e.target.closest && e.target.closest('.word');
+      if (!$('#pane-sub').dataset.wordModeOn){ hideTip(); return; }
+      if (!word){ clearTimeout(hoverTimer); hideTip(); return; }
+      if (currentWord===word) return;
+      clearTimeout(hoverTimer);
+      hoverTimer=setTimeout(()=>{
+        currentWord=word;
+        showTipFor(word, e.clientX, e.clientY);
+      }, 500); // 停 0.5 秒
+    });
+    pane.addEventListener('mouseleave', ()=>{ clearTimeout(hoverTimer); hideTip(); });
+    document.addEventListener('scroll', hideTip, true);
+  }
+
+  /* ---------- 監聽字幕內容變動（例如換片段時重新包裹） ---------- */
+  let subObserver=null;
+  function observeSubtitles(){
+    const pane = $('#pane-sub'); if(!pane) return;
+    if (subObserver) subObserver.disconnect();
+    subObserver = new MutationObserver(async (mts)=>{
+      if (!pane.dataset.wordModeOn) return;
+      const dict = await loadDict();
+      mts.forEach(m=>{
+        (m.addedNodes||[]).forEach(n=>{
+          if (n.nodeType===1){
+            if (n.matches && n.matches('.sub-line')) wrapLine(n, dict);
+            n.querySelectorAll && n.querySelectorAll('.sub-line').forEach(el=>wrapLine(el, dict));
+          }
+        });
+      });
+    });
+    subObserver.observe(pane, {childList:true, subtree:true});
+  }
+
+  /* ---------- UI：在字幕分頁加一個開關按鈕 ---------- */
+  function ensureToggle(){
+    const pane = $('#pane-sub'); if(!pane) return;
+    let bar = $('#pane-sub .sub-tools') || $('#pane-sub .tabs') || pane; // 嘗試找工具列；沒有就掛在 pane 裡
+    let btn = $('#btnWordMode');
+    if (!btn){
+      btn=document.createElement('button');
+      btn.id='btnWordMode';
+      btn.className='btn';
+      btn.textContent='單字學習模式';
+      btn.title='啟用後：滑鼠停 0.5 秒顯示單字中文與朗讀';
+      bar.appendChild(btn);
+      btn.addEventListener('click', async ()=>{
+        const on = pane.dataset.wordModeOn==='1';
+        if (on){
+          pane.dataset.wordModeOn='';
+          btn.classList.remove('active');
+          unwrapAll();
+          hideTip();
+        }else{
+          pane.dataset.wordModeOn='1';
+          btn.classList.add('active');
+          await applyWordMode();
+        }
+      });
+    }
+  }
+
+  /* ---------- 啟動 ---------- */
+  function boot(){
+    ensureToggle();
+    bindHover();
+    observeSubtitles();
+  }
+  if (document.readyState==='loading') {
+    document.addEventListener('DOMContentLoaded', boot, {once:true});
+  } else {
+    boot();
+  }
+})();
+</script>
 
 </body>
 </html>
