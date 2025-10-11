@@ -2443,32 +2443,29 @@ $$('.tabs .tab').forEach(t=>t.addEventListener('click',()=>showTab(t.dataset.tab
   })();
 })();
 </script>
-<!-- Subtitles Word-Mode (uses Vocab tab as dictionary) · v2025V018 -->
+<!-- Subtitles Word-Mode (hover-only, no button; uses Vocab tab as dict) · v2025V020 -->
 <style>
   #wordTip{position:fixed;z-index:9999;display:none;max-width:360px;padding:8px 10px;border-radius:8px;background:#0b1320;color:#e6f0ff;border:1px solid #445;box-shadow:0 6px 20px rgba(0,0,0,.4);font-size:14px}
   #wordTip .row{display:flex;align-items:center;gap:8px}
   #wordTip .en{font-weight:700}
-  #wordTip .zh{opacity:.95}
-  #pane-sub .word{cursor:help;border-bottom:1px dashed rgba(255,255,255,.25)}
-  #pane-sub .word:hover{background:rgba(255,255,255,.06)}
-  #wmTopRight{display:flex;justify-content:flex-end;gap:8px;margin:6px 0}
-  #btnWordMode.active{outline:2px solid #6ea8fe}
-  /* 單字卡同步高亮 */
+  #pane-sub .word{cursor:help;border-bottom:1px dashed rgba(255,255,255,.28)}
+  #pane-sub .word:hover{background:rgba(255,255,255,.08)}
+  /* 單字卡同步高亮（單字分頁） */
   #pane-vocab .voc.hilite, #pane-vocab .card.hilite{
     outline:2px solid #ffd166; border-radius:10px;
     box-shadow:0 0 0 3px rgba(255,209,102,.25) inset;
   }
 </style>
 
-<script id="word-mode-from-vocab-v2025V018">
+<script id="word-mode-hover-v2025V020">
 (function(){
-  if (window.__WORD_MODE_FROM_VOCAB_V018__) return;
-  window.__WORD_MODE_FROM_VOCAB_V018__=true;
+  if (window.__WORD_MODE_HOVER_V020__) return;
+  window.__WORD_MODE_HOVER_V020__=true;
 
   const $=(s,r=document)=>r.querySelector(s);
   const $$=(s,r=document)=>Array.from(r.querySelectorAll(s));
 
-  /* ---------- TTS ---------- */
+  /* ---------- 安全 TTS ---------- */
   function speak(text){
     try{
       if(!('speechSynthesis'in window))return;
@@ -2483,58 +2480,61 @@ $$('.tabs .tab').forEach(t=>t.addEventListener('click',()=>showTab(t.dataset.tab
   }
 
   /* ---------- 從〈單字〉分頁建立字典 ---------- */
-  let VOCAB_MAP=new Map();      // en(lower) -> zh
-  let VOCAB_ELEM=new Map();     // en(lower) -> DOM 元素（用於同步高亮）
-  function pickText(el, sels){
-    for(const sel of sels){
-      const n = el.querySelector(sel);
+  let VOCAB_MAP=new Map();      // en(lower/base) -> zh
+  let VOCAB_ELEM=new Map();     // en(lower/base) -> DOM（單字卡）
+  function pick(el, sels){
+    for(const s of sels){
+      const n=el.querySelector(s);
       if(n && n.textContent && n.textContent.trim()) return n.textContent.trim();
     }
     return '';
   }
-  function normalizeWord(s){
-    return (s||'').trim().replace(/^[^A-Za-z]+|[^A-Za-z]+$/g,'').toLowerCase();
+  function baseKey(s){
+    // 規範化 + very light stemming（解 moon / moons、girl's、cities…）
+    let k=(s||'').trim().replace(/^[^A-Za-z]+|[^A-Za-z]+$/g,'').toLowerCase();
+    if(!k) return '';
+    if(/'s$/.test(k)) k=k.replace(/'s$/,'');
+    if(/ies$/.test(k)) return k.replace(/ies$/,'y');
+    if(/xes$|ses$|zes$|ches$|shes$/i.test(k)) return k.replace(/es$/,'');
+    if(/s$/.test(k) && !/ss$/.test(k)) return k.replace(/s$/,'');
+    return k;
   }
   function buildDictFromVocab(){
     VOCAB_MAP.clear(); VOCAB_ELEM.clear();
-    const root = $('#pane-vocab')||document;
-    // 常見卡片容器 class：.voc 或 .card（依你舊頁面而定）
+    const root=$('#pane-vocab')||document;
     $$('#pane-vocab .voc, #pane-vocab .card', root).forEach(card=>{
-      const en = pickText(card, ['.voc-word','.voc-en','.en','.word']) || '';
-      const zh = pickText(card, ['.voc-zh','.zh','.def','.meaning']) || '';
-      const key = normalizeWord(en);
-      if(key){
-        VOCAB_MAP.set(key, zh);
-        VOCAB_ELEM.set(key, card);
+      const en = pick(card, ['.voc-word','.voc-en','.en','.word']);
+      const zh = pick(card, ['.voc-zh','.zh','.def','.meaning']);
+      const k = baseKey(en);
+      if(k){
+        VOCAB_MAP.set(k, zh);
+        VOCAB_ELEM.set(k, card);
       }
     });
   }
-  // 單字分頁變動就重建
   let vocabObs=null;
   function observeVocab(){
-    const paneV = $('#pane-vocab'); if(!paneV) return;
+    const paneV=$('#pane-vocab'); if(!paneV) return;
     if(vocabObs) vocabObs.disconnect();
-    vocabObs = new MutationObserver(()=>{
+    vocabObs=new MutationObserver(()=>{
       buildDictFromVocab();
-      // 如果字幕字模式開著，更新新加入的字幕行
-      if(($('#pane-sub')||{}).dataset.wordModeOn==='1'){ wrapAllSubLines(); }
+      wrapAllSubLines(); // 自動套用到新字幕
     });
-    vocabObs.observe(paneV, {childList:true,subtree:true});
+    vocabObs.observe(paneV,{childList:true,subtree:true});
     buildDictFromVocab();
   }
 
-  /* ---------- 斷詞與包裝 ---------- */
+  /* ---------- 斷詞 + 只包在字典內的單字 ---------- */
   const WORD_RX=/([A-Za-z][A-Za-z'\-]*|[^A-Za-z]+)/g;
-
-  function wrapLineIfNeeded(line){
+  function wrapLine(line){
     if(!line || line.dataset.wordWrapped==='1') return;
-    const raw = line.textContent || '';
-    const parts = raw.match(WORD_RX) || [raw];
-    const fr = document.createDocumentFragment();
+    const raw=line.textContent||'';
+    const parts=raw.match(WORD_RX)||[raw];
+    const fr=document.createDocumentFragment();
     parts.forEach(tok=>{
       if(/^[A-Za-z]/.test(tok)){
-        const key = normalizeWord(tok);
-        if(VOCAB_MAP.has(key)){                 // 只包裝出現在單字分頁的單字
+        const key=baseKey(tok);
+        if(key && VOCAB_MAP.has(key)){
           const span=document.createElement('span');
           span.className='word';
           span.dataset.en=tok;
@@ -2542,56 +2542,43 @@ $$('.tabs .tab').forEach(t=>t.addEventListener('click',()=>showTab(t.dataset.tab
           span.dataset.zh=VOCAB_MAP.get(key)||'';
           span.textContent=tok;
           fr.appendChild(span);
-        }else{
-          fr.appendChild(document.createTextNode(tok));
+          return;
         }
-      }else{
-        fr.appendChild(document.createTextNode(tok));
       }
+      fr.appendChild(document.createTextNode(tok));
     });
     line.innerHTML=''; line.appendChild(fr);
     line.dataset.wordWrapped='1';
   }
-
   function wrapAllSubLines(){
-    $$('#pane-sub .sub-line').forEach(wrapLineIfNeeded);
+    $$('#pane-sub .sub-line').forEach(wrapLine);
   }
 
-  function unwrapAll(){
-    $$('#pane-sub .sub-line').forEach(line=>{
-      if(line.dataset.wordWrapped==='1'){
-        // 還原成純文字：把所有子節點的 textContent 串回去
-        const text = line.textContent || '';
-        line.textContent = text;
-        delete line.dataset.wordWrapped;
-      }
-    });
-  }
-
-  /* ---------- Tooltip 與同步高亮 ---------- */
+  /* ---------- Tooltip + 單字卡同步高亮 ---------- */
   const tip=document.createElement('div');
   tip.id='wordTip';
-  tip.innerHTML=`<div class="row"><div class="en"></div><button class="btn-tts">🔈</button></div><div class="zh"></div>`;
+  tip.innerHTML=`<div class="row"><div class="en"></div><button class="btn-tts" title="朗讀">🔈</button></div><div class="zh"></div>`;
   document.body.appendChild(tip);
   tip.addEventListener('mousedown',e=>e.preventDefault());
   tip.querySelector('.btn-tts').addEventListener('click',()=>speak(tip.querySelector('.en').textContent||''));
 
   let hoverTimer=null,currentWord=null,hiliteTimer=null;
-  function showTipFor(word,x,y){
-    const en = word.dataset.en || word.textContent || '';
-    const zh = word.dataset.zh || '';
+  function showTip(word,x,y){
+    const en=word.dataset.en||word.textContent||'';
+    const zh=word.dataset.zh||'';
+    if(!zh) return; // 字典沒有就不顯示（依你的規則）
     tip.querySelector('.en').textContent=en;
-    tip.querySelector('.zh').textContent=zh||'(未於單字頁設定)';
+    tip.querySelector('.zh').textContent=zh;
     tip.style.left=Math.max(8,x+12)+'px';
     tip.style.top =Math.max(8,y+12)+'px';
     tip.style.display='block';
 
-    // 同步高亮單字卡
-    if(hiliteTimer) { clearTimeout(hiliteTimer); hiliteTimer=null; }
-    const card = VOCAB_ELEM.get(word.dataset.key||'');
+    // 單字卡同步高亮
+    if(hiliteTimer){clearTimeout(hiliteTimer);hiliteTimer=null;}
+    const card=VOCAB_ELEM.get(word.dataset.key||'');
     if(card){
       card.classList.add('hilite');
-      hiliteTimer = setTimeout(()=>card.classList.remove('hilite'), 800);
+      hiliteTimer=setTimeout(()=>card.classList.remove('hilite'),800);
     }
   }
   function hideTip(){ tip.style.display='none'; currentWord=null; }
@@ -2599,29 +2586,37 @@ $$('.tabs .tab').forEach(t=>t.addEventListener('click',()=>showTab(t.dataset.tab
   function bindHover(){
     const pane=$('#pane-sub'); if(!pane) return;
     pane.addEventListener('mousemove',e=>{
-      if(!pane.dataset.wordModeOn){clearTimeout(hoverTimer);hideTip();return;}
       const w=e.target.closest?.('.word');
       if(!w){clearTimeout(hoverTimer);hideTip();return;}
       if(currentWord===w)return;
       clearTimeout(hoverTimer);
-      hoverTimer=setTimeout(()=>{currentWord=w;showTipFor(w,e.clientX,e.clientY);},500);
+      hoverTimer=setTimeout(()=>{currentWord=w;showTip(w,e.clientX,e.clientY);},500);
     });
     pane.addEventListener('mouseleave',()=>{clearTimeout(hoverTimer);hideTip();});
     document.addEventListener('scroll',hideTip,true);
   }
 
-  /* ---------- 監看字幕變動（只在模式開時包新行） ---------- */
+  /* ---------- 關閉字幕行的「點一下跳播/播放」 ---------- */
+  function suppressSeekOnSub(){
+    const pane=$('#pane-sub'); if(!pane) return;
+    const stop=(e)=>{ if(e.target.closest('.sub-line')){ e.stopPropagation(); e.preventDefault(); } };
+    // 捕獲階段攔下常見事件
+    ['click','mousedown','mouseup','pointerdown','pointerup','touchstart','touchend'].forEach(ev=>{
+      pane.addEventListener(ev, stop, true);
+    });
+  }
+
+  /* ---------- 監看字幕動態新增 ---------- */
   let subObs=null;
   function observeSub(){
     const pane=$('#pane-sub'); if(!pane) return;
     if(subObs) subObs.disconnect();
-    subObs=new MutationObserver((muts)=>{
-      if(pane.dataset.wordModeOn!=='1') return;
+    subObs=new MutationObserver(muts=>{
       muts.forEach(m=>{
         (m.addedNodes||[]).forEach(n=>{
           if(n.nodeType===1){
-            if(n.matches?.('.sub-line')) wrapLineIfNeeded(n);
-            n.querySelectorAll?.('.sub-line').forEach(wrapLineIfNeeded);
+            if(n.matches?.('.sub-line')) wrapLine(n);
+            n.querySelectorAll?.('.sub-line').forEach(wrapLine);
           }
         });
       });
@@ -2629,59 +2624,20 @@ $$('.tabs .tab').forEach(t=>t.addEventListener('click',()=>showTab(t.dataset.tab
     subObs.observe(pane,{childList:true,subtree:true});
   }
 
-  /* ---------- 置頂右側開關按鈕 ---------- */
-  function ensureTopRightButton(){
-    const pane=$('#pane-sub'); if(!pane) return;
-
-    const anchor = $('#pane-sub .sub-head')
-                || $('#pane-sub h2')
-                || $('#pane-sub .section-title')
-                || $('#pane-sub .tabs');
-
-    let holder=$('#wmTopRight');
-    if(!holder){
-      holder=document.createElement('div');
-      holder.id='wmTopRight';
-      if(anchor) anchor.insertAdjacentElement('afterend', holder);
-      else pane.insertBefore(holder, pane.firstChild);
-    }
-
-    let btn=$('#btnWordMode');
-    if(!btn){
-      btn=document.createElement('button');
-      btn.id='btnWordMode';
-      btn.className='btn';
-      btn.textContent='單字學習模式';
-      btn.title='僅以〈單字〉分頁的詞彙為字典來源';
-      holder.appendChild(btn);
-
-      btn.addEventListener('click', async ()=>{
-        const on = pane.dataset.wordModeOn==='1';
-        if(on){
-          pane.dataset.wordModeOn='';
-          btn.classList.remove('active');
-          unwrapAll(); hideTip();
-        }else{
-          pane.dataset.wordModeOn='1';
-          btn.classList.add('active');
-          buildDictFromVocab();   // 以單字分頁為字典
-          wrapAllSubLines();
-        }
-      });
-    }
-  }
-
   /* ---------- 啟動 ---------- */
   function boot(){
-    ensureTopRightButton();
-    observeVocab();
-    bindHover();
-    observeSub();
+    observeVocab();      // 從單字分頁建立字典
+    wrapAllSubLines();   // 立即包裝現有字幕
+    bindHover();         // 懸停 0.5 秒顯示
+    suppressSeekOnSub(); // 關閉字幕行點擊播放/跳播
+    observeSub();        // 新增字幕時自動包裝
   }
   (document.readyState==='loading')
     ? document.addEventListener('DOMContentLoaded', boot, {once:true})
     : boot();
 })();
+</script>
+
 </script>
 
 </body>
