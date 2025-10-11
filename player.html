@@ -2443,190 +2443,152 @@ $$('.tabs .tab').forEach(t=>t.addEventListener('click',()=>showTab(t.dataset.tab
   })();
 })();
 </script>
-<!-- Hover Translation (cue-en only, use Vocab words) · v2025V034 -->
+<!-- Hover Translation for cue-en (外部字典支援版) · v2025V037 -->
 <style>
-  /* 浮窗 */
   #hoverTip {
     position: fixed;
     z-index: 9999;
     display: none;
-    max-width: 48ch;
+    max-width: 46ch;
     padding: 8px 10px;
     border-radius: 8px;
-    background: rgba(12,16,28,.96);
-    color: #e9f1ff;
-    box-shadow: 0 6px 20px rgba(0,0,0,.35);
-    font-size: 14px; line-height: 1.45;
-    border: 1px solid rgba(120,160,255,.25);
+    background: rgba(10,15,25,0.96);
+    color: #e8f0ff;
+    box-shadow: 0 4px 18px rgba(0,0,0,0.35);
+    font-size: 14px;
+    line-height: 1.4;
+    border: 1px solid rgba(140,160,255,0.3);
     pointer-events: none;
   }
-  /* cue-en 內被標記的單字外觀 */
   #pane-sub .cue-en .wordtip {
     border-bottom: 1px dotted rgba(190,210,255,.7);
     cursor: help;
   }
 </style>
-<div id="hoverTip" aria-hidden="true"></div>
+<div id="hoverTip"></div>
 
-<script id="cue-en-hover-v2025v034">
-(function(){
-  if (window.__CUE_EN_HOVER_V034__) return;
-  window.__CUE_EN_HOVER_V034__ = true;
+<script>
+(async function(){
+  if (window.__CUE_DICT_V037__) return;
+  window.__CUE_DICT_V037__ = true;
 
   const $  = (s,r=document)=>r.querySelector(s);
   const $$ = (s,r=document)=>Array.from(r.querySelectorAll(s));
   const tip = $('#hoverTip');
-
-  /* ---------------- 1) 從【單字】分頁建立字典 ---------------- */
   const dict = new Map();
 
+  /* ---------- 1. 載入外部字典 (dict-en-zh.json) ---------- */
+  async function loadExternalDict(){
+    try{
+      const res = await fetch('./data/dict-en-zh.json');
+      if (!res.ok) throw new Error('no external dict');
+      const data = await res.json();
+      for (const [en, zh] of Object.entries(data)) {
+        dict.set(norm(en), zh);
+      }
+      console.log('[cue-hover] loaded external dict, size:', dict.size);
+    }catch(err){
+      console.warn('[cue-hover] external dict not found, fallback to vocab');
+      rebuildDictFromVocab();
+    }
+  }
+
+  /* ---------- 2. 若無外部檔案則從單字頁抓 ---------- */
   function norm(w){
-    let k=(w||'').toString().trim().replace(/^[^A-Za-z]+|[^A-Za-z]+$/g,'').toLowerCase();
-    if(!k) return '';
-    if(/'s$/.test(k)) k = k.replace(/'s$/,'');
-    if(/ies$/.test(k)) return k.replace(/ies$/,'y');
-    if(/(xes|ses|zes|ches|shes)$/i.test(k)) return k.replace(/es$/,'');
-    if(/s$/.test(k) && !/ss$/.test(k)) return k.replace(/s$/,'');
+    let k=(w||'').trim().replace(/^[^A-Za-z]+|[^A-Za-z]+$/g,'').toLowerCase();
+    if(/'s$/.test(k))k=k.replace(/'s$/,'');
+    if(/ies$/.test(k))return k.replace(/ies$/,'y');
+    if(/(xes|ses|zes|ches|shes)$/i.test(k))return k.replace(/es$/,'');
+    if(/s$/.test(k)&&!/ss$/.test(k))return k.replace(/s$/,'');
     return k;
   }
 
-  function rebuildDict(){
+  function rebuildDictFromVocab(){
     dict.clear();
-    // 盡量相容多種單字頁 DOM 結構
-    const rows = $$('#pane-vocab .voc, #pane-vocab .card, #pane-vocab [data-voc], #pane-vocab li');
-    rows.forEach(row=>{
-      const en = row.querySelector('.voc-word, .voc-en, .en, .word')?.textContent || row.getAttribute('data-en') || '';
-      const zh = row.querySelector('.voc-zh, .zh, .cn, .tw')?.textContent || row.getAttribute('data-zh') || '';
-      const k  = norm(en);
-      if (k && zh) dict.set(k, zh.trim());
+    const rows = $$('#pane-vocab .voc, #pane-vocab .card, #pane-vocab li');
+    rows.forEach(r=>{
+      const en = r.querySelector('.voc-word,.voc-en,.word,.en')?.textContent?.trim();
+      const zh = r.querySelector('.voc-zh,.zh,.cn')?.textContent?.trim();
+      if (en && zh) dict.set(norm(en), zh);
     });
-    // 也支援單字頁頂部下拉清單（若存在）
-    $$('#pane-vocab option').forEach(op=>{
-      const k = norm(op.textContent||''); if(!k) return;
-      const zh = op.getAttribute('data-zh') || '';
-      if (zh) dict.set(k, zh.trim());
-    });
-    // 外部其它補丁若有提供 window.__VOCAB_DICT__（物件/Map）也合併
-    try{
-      const ext = window.__VOCAB_DICT__;
-      if (ext) {
-        if (ext instanceof Map) { ext.forEach((v,k)=> dict.set(norm(k), (v||'').toString())); }
-        else if (typeof ext==='object') { Object.entries(ext).forEach(([k,v])=> dict.set(norm(k),(v||'').toString())); }
-      }
-    }catch(_){}
-    // console.log('[cue-hover] dict size:', dict.size);
+    console.log('[cue-hover] built vocab dict size:', dict.size);
   }
 
-  /* ---------------- 2) 在字幕英文欄為可翻譯的單字加標 ---------------- */
+  /* ---------- 3. 包裝 cue-en 文字 ---------- */
   const WORD = /([A-Za-z][A-Za-z'\-]*)/g;
-
-  function wrapCueEnCell(td){
+  function wrapCueEn(td){
     if (!td || td.__wrapped__) return;
-    // 只處理純文字/簡單結構；避免重複包裝
     const raw = td.textContent || '';
     const fr  = document.createDocumentFragment();
-    let changed = false;
+    let changed=false;
     raw.split(WORD).forEach(tok=>{
-      if (!tok) return;
-      if (WORD.test(tok)) {
-        const k  = norm(tok);
-        const zh = dict.get(k);
-        if (zh) {
-          const sp = document.createElement('span');
-          sp.className = 'wordtip';
-          sp.textContent = tok;
-          sp.dataset.en = tok;
-          sp.dataset.zh = zh;
+      if(!tok) return;
+      if(WORD.test(tok)){
+        const zh=dict.get(norm(tok));
+        if(zh){
+          const sp=document.createElement('span');
+          sp.className='wordtip';
+          sp.textContent=tok;
+          sp.dataset.zh=zh;
           fr.appendChild(sp);
-          changed = true;
-          return;
+          changed=true; return;
         }
       }
       fr.appendChild(document.createTextNode(tok));
     });
-    if (changed){
-      td.innerHTML = '';
-      td.appendChild(fr);
-      td.__wrapped__ = true;
-    }
+    if(changed){ td.innerHTML=''; td.appendChild(fr); td.__wrapped__=true; }
   }
 
-  function wrapAllCueEn(){
-    $$('#pane-sub .cue-en').forEach(wrapCueEnCell);
-  }
+  function wrapAll(){ $$('#pane-sub .cue-en').forEach(wrapCueEn); }
 
-  /* ---------------- 3) 懸停 0.5s 顯示小浮窗 ---------------- */
-  let hoverTimer = null;
-
-  function showTip(x,y, text){
-    tip.textContent = text;
-    tip.style.left = (x+12) + 'px';
-    tip.style.top  = (y+14) + 'px';
-    tip.style.display = 'block';
+  /* ---------- 4. 滑鼠懸停顯示翻譯 ---------- */
+  let timer=null;
+  function showTip(x,y,zh){
+    tip.textContent=zh;
+    tip.style.left=(x+14)+'px';
+    tip.style.top =(y+14)+'px';
+    tip.style.display='block';
   }
-  function hideTip(){
-    tip.style.display = 'none';
-    tip.textContent = '';
-  }
+  function hideTip(){ tip.style.display='none'; }
 
-  document.addEventListener('mousemove', (e)=>{
-    const t = e.target.closest('#pane-sub .cue-en .wordtip');
-    if (t){
-      if (hoverTimer) clearTimeout(hoverTimer);
-      const en = t.dataset.en || t.textContent || '';
-      const zh = t.dataset.zh || '';
-      const x = e.clientX, y = e.clientY;
-      hoverTimer = setTimeout(()=> showTip(x,y, `${en} ＝ ${zh}`), 500);
+  document.addEventListener('mousemove', e=>{
+    const t=e.target.closest('#pane-sub .cue-en .wordtip');
+    if(t){
+      if(timer)clearTimeout(timer);
+      const zh=t.dataset.zh||'';
+      const x=e.clientX,y=e.clientY;
+      timer=setTimeout(()=>showTip(x,y,zh),500);
     }else{
-      if (hoverTimer) { clearTimeout(hoverTimer); hoverTimer=null; }
+      if(timer){clearTimeout(timer);timer=null;}
       hideTip();
     }
-  }, {passive:true});
+  },{passive:true});
 
-  /* ---------------- 4) 僅在字幕表格內攔截點擊（避免誤觸影片） ---------------- */
-  const paneSub = $('#pane-sub');
-  if (paneSub && !paneSub.__cueClickFiltered){
-    paneSub.__cueClickFiltered = true;
-    paneSub.addEventListener('click', (e)=>{
-      const table = e.target.closest('table.cues-table');
-      if (!table) return;
-      if (e.target.closest('td.cue-time, td.cue-en, td.cue-zh')) {
+  /* ---------- 5. 阻止點擊觸發影片 ---------- */
+  const paneSub=$('#pane-sub');
+  if(paneSub&&!paneSub.__bound__){
+    paneSub.__bound__=true;
+    paneSub.addEventListener('click',e=>{
+      if(e.target.closest('td.cue-time,td.cue-en,td.cue-zh')){
         e.stopImmediatePropagation();
         e.preventDefault();
       }
-    }, {capture:true});
+    },{capture:true});
   }
 
-  /* ---------------- 5) 監聽變化：單字/字幕載入後自動重建 ---------------- */
-  function throttle(fn, wait){
-    let t=0, timer=null, last=null;
-    return function(...args){
-      last=args;
-      const now=Date.now();
-      if (now-t>wait){ t=now; fn.apply(this,last); last=null; }
-      else { clearTimeout(timer); timer=setTimeout(()=>{ t=Date.now(); fn.apply(this,last); last=null; }, wait); }
-    };
-  }
-  const safeRebuild = throttle(()=>{ rebuildDict(); wrapAllCueEn(); }, 200);
-
-  const cuesBody  = $('#pane-sub #cuesBody') || $('#pane-sub tbody');
-  const vocabPane = $('#pane-vocab');
-  if (cuesBody){
-    const ob1 = new MutationObserver(()=> throttle(wrapAllCueEn,150)());
-    ob1.observe(cuesBody, {childList:true, subtree:true});
-  }
-  if (vocabPane){
-    const ob2 = new MutationObserver(()=> safeRebuild());
-    ob2.observe(vocabPane, {childList:true, subtree:true});
+  /* ---------- 6. 動態監聽字幕變化 ---------- */
+  const cuesBody=$('#pane-sub tbody');
+  if(cuesBody){
+    const obs=new MutationObserver(()=>wrapAll());
+    obs.observe(cuesBody,{childList:true,subtree:true});
   }
 
-  // 初始跑一次
-  rebuildDict();
-  wrapAllCueEn();
-
-  console.log('[cue-en hover v034] ready, dict size:', dict.size);
+  /* ---------- 7. 初始化 ---------- */
+  await loadExternalDict();
+  wrapAll();
 })();
 </script>
+
 
 </body>
 </html>
