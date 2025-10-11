@@ -2310,6 +2310,121 @@ $$('.tabs .tab').forEach(t=>t.addEventListener('click',()=>showTab(t.dataset.tab
   if (window.__ai_timers) { try{ window.__ai_timers.forEach(clearInterval); }catch(_){ } }
 })();
 </script>
+<!-- AI Slow Mode + Reset Button · v2025V013 -->
+<script>
+(function(){
+  if (window.__AI_SLOWMODE_RESET__) return;
+  window.__AI_SLOWMODE_RESET__ = true;
+
+  const $  = (s,r=document)=>r.querySelector(s);
+
+  const pane = $('#pane-ai');
+  if (!pane) return;
+
+  /* ========== 慢速朗讀功能 ========== */
+  const SLOW_RATE = 0.85;
+  const EXTRA_PAUSE_MS = 1200;
+
+  const ORIGINAL_SPEAK = window.speak || null;
+  function slowSpeak(text){
+    try{
+      if(!('speechSynthesis' in window)) return;
+      const raw = (text||'').trim();
+      if(!raw) return;
+      const u = new SpeechSynthesisUtterance(raw);
+      const vs = speechSynthesis.getVoices();
+      const v  = vs.find(v=>/en/i.test(v.lang)) || vs[0];
+      if (v) u.voice = v;
+      u.lang = v?.lang || 'en-US';
+      u.rate = SLOW_RATE;
+      u.pitch = 1;
+      try{ speechSynthesis.cancel(); }catch(_){}
+      speechSynthesis.speak(u);
+      u.onend = ()=> setTimeout(()=>{}, EXTRA_PAUSE_MS);
+    }catch(_){}
+  }
+
+  let delegatedTtsHandler = null;
+  function attachDelegatedTts(){
+    if (delegatedTtsHandler) return;
+    delegatedTtsHandler = (e)=>{
+      const btn = e.target.closest('#btnTts, [data-act="tts"], .btn-tts');
+      if (!btn) return;
+      const prompt = $('#aiPrompt')?.value || $('#aiPrompt')?.textContent || '';
+      slowSpeak(prompt);
+      e.stopPropagation();
+      e.preventDefault();
+    };
+    document.addEventListener('click', delegatedTtsHandler, true);
+  }
+  function detachDelegatedTts(){
+    if (!delegatedTtsHandler) return;
+    document.removeEventListener('click', delegatedTtsHandler, true);
+    delegatedTtsHandler = null;
+  }
+
+  /* ========== Reset 重練功能 ========== */
+  function resetAI(){
+    const reply = $('#aiReply');
+    if (reply){
+      reply.textContent = '';
+      reply.value = '';
+    }
+    const status = $('#aiStatus');
+    if (status) status.textContent = '( 等待你的作答… )';
+    try{ speechSynthesis.cancel(); }catch(_){}
+  }
+
+  /* ========== UI 建立 ========== */
+  const ctrlRow = $('#btnTts')?.closest('.ai-row') || pane;
+
+  const btnSlow = document.createElement('button');
+  btnSlow.id = 'btnSlowMode';
+  btnSlow.className = 'btn';
+  btnSlow.style.marginLeft = '8px';
+  btnSlow.textContent = '慢速模式：OFF';
+
+  const btnReset = document.createElement('button');
+  btnReset.id = 'btnAiReset';
+  btnReset.className = 'btn';
+  btnReset.style.marginLeft = '8px';
+  btnReset.textContent = '🔄 重練';
+
+  ctrlRow.appendChild(btnSlow);
+  ctrlRow.appendChild(btnReset);
+
+  /* ========== 狀態切換 ========== */
+  const autoChk = $('#aiAutoNext');
+  let autoPrev = null;
+  let slowOn = false;
+
+  function applySlow(on){
+    slowOn = on;
+    btnSlow.textContent = '慢速模式：' + (slowOn ? 'ON' : 'OFF');
+    if (slowOn){
+      window.speak = slowSpeak;
+      attachDelegatedTts();
+      if (autoChk){
+        autoPrev = {checked:autoChk.checked, disabled:autoChk.disabled};
+        autoChk.checked = false;
+        autoChk.disabled = true;
+      }
+    } else {
+      if (ORIGINAL_SPEAK) window.speak = ORIGINAL_SPEAK;
+      else delete window.speak;
+      detachDelegatedTts();
+      if (autoChk && autoPrev){
+        autoChk.checked = autoPrev.checked;
+        autoChk.disabled = autoPrev.disabled;
+      }
+    }
+  }
+
+  btnSlow.addEventListener('click', ()=> applySlow(!slowOn));
+  btnReset.addEventListener('click', ()=> resetAI());
+
+})();
+</script>
 
 </body>
 </html>
