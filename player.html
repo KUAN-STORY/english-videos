@@ -1948,6 +1948,174 @@ $$('.tabs .tab').forEach(t=>t.addEventListener('click',()=>showTab(t.dataset.tab
   })();
 })();
 </script>
+<script id="ai-sample-patch-v2025v007">
+/* Append-only, non-invasive patch that adds an "AI 示範" 區塊到 AI 分頁，
+   並從 /data/ai-*.json 讀入當前 slug 的題庫，將每題的 sample/example/demo
+   顯示在 AI 輸出區下面。*/
+(function(){
+  const $  = (s,r=document)=>r.querySelector(s);
+  const $$ = (s,r=document)=>Array.from(r.querySelectorAll(s));
+  const qs = new URLSearchParams(location.search);
+  const slug = (qs.get('slug')||'mid-autumn').trim();
+
+  function ensurePane(){
+    const pane = document.getElementById('pane-ai') || $('#pane-ai') || document;
+    if (!pane) return null;
+    if ($('#aiSampleWrap', pane)) return $('#aiSampleWrap', pane);
+
+    // 在「AI：」區塊之後插入
+    const wrap = document.createElement('div');
+    wrap.id = 'aiSampleWrap';
+    wrap.style.cssText = 'margin-top:10px';
+    const label = document.createElement('label');
+    label.style.cssText = 'font-weight:bold;display:block;margin:6px 0 4px;';
+    label.textContent = 'AI 示範：';
+    const box = document.createElement('div');
+    box.id = 'aiSample';
+    box.style.cssText = 'border:1px solid #444;padding:6px;border-radius:6px;min-height:60px;';
+    wrap.appendChild(label); wrap.appendChild(box);
+
+    // 盡量放在 AI 輸出(aiReply)之後；退而求其次放在 aiPrompt 之後；再不行就加在面板尾端
+    const reply = $('#aiReply', pane);
+    const prompt = $('#aiPrompt', pane);
+    if (reply && reply.parentElement) {
+      reply.parentElement.insertAdjacentElement('afterend', wrap);
+    } else if (prompt && prompt.parentElement) {
+      prompt.parentElement.insertAdjacentElement('afterend', wrap);
+    } else {
+      pane.appendChild(wrap);
+    }
+    return wrap;
+  }
+
+  async function loadBank(){
+    const paths = [
+      `/english-videos/data/ai-${slug}.json`,
+      `data/ai-${slug}.json`,
+      `./ai-${slug}.json`
+    ];
+    let raw=null;
+    for(const p of paths){
+      try{
+        const r = await fetch(p, {cache:'no-cache'});
+        if(r.ok){ raw = await r.json(); break; }
+      }catch(_){}
+    }
+    return raw;
+  }
+
+  // 把多種 schema 正規化為 topics 陣列，每題包含 {title?, prompt, hint?, sample?}
+  function normalize(raw){
+    if (!raw) return [];
+    // 1) 直接是陣列
+    if (Array.isArray(raw)) {
+      return raw.map(x => ({
+        title: x.title || x.role || '',
+        prompt: x.prompt || x.en || String(x||''),
+        hint: x.hint || x.goal || x.zh || '',
+        sample: x.sample || x.example || x.demo || x.answer || ''
+      }));
+    }
+    // 2) {topics:[...]}
+    if (raw.topics && Array.isArray(raw.topics)) {
+      return raw.topics.map(x => ({
+        title: x.title || x.role || '',
+        prompt: x.prompt || x.en || '',
+        hint: x.hint || x.goal || x.zh || '',
+        sample: x.sample || x.example || x.demo || x.answer || ''
+      }));
+    }
+    // 3) 會話式 {scenes:[{turns:[...]}]}
+    if (raw.scenes && Array.isArray(raw.scenes)) {
+      const out=[];
+      raw.scenes.forEach(sc=>{
+        (sc.turns||[]).forEach(t=>{
+          out.push({
+            title: t.title || t.role || '',
+            prompt: t.prompt || t.en || '',
+            hint: t.hint || t.goal || t.zh || '',
+            sample: t.sample || t.example || t.demo || t.answer || ''
+          });
+        });
+      });
+      return out;
+    }
+    return [];
+  }
+
+  function pickSample(t){
+    return t.sample || t.example || t.demo || t.answer || '';
+  }
+
+  function mount(){
+    const pane = ensurePane();
+    if(!pane) return;
+
+    const sel     = $('#aiTopic');
+    const btnNext = $('#btnNextTopic');
+    const btnPrev = $('#btnPrevTopic');
+    const box     = $('#aiSample');
+    if (!sel || !box) return;
+
+    let topics = [];
+    let idx = 0;
+
+    function render(){
+      if (!topics.length) { box.textContent = '（本題無示範或尚未建立）'; return; }
+      const t = topics[idx] || topics[0];
+      const s = pickSample(t);
+      box.textContent = s ? s : '（本題無示範或尚未建立）';
+    }
+
+    // 綁定事件
+    sel.addEventListener('change', ()=>{
+      const v = parseInt(sel.value||'0',10); idx = isNaN(v)?0:v; render();
+    });
+    btnNext && btnNext.addEventListener('click', ()=>{
+      setTimeout(()=>{ // 等主程式切換完
+        const v = parseInt(sel.value||'0',10); idx = isNaN(v)?0:v; render();
+      }, 30);
+    });
+    btnPrev && btnPrev.addEventListener('click', ()=>{
+      setTimeout(()=>{
+        const v = parseInt(sel.value||'0',10); idx = isNaN(v)?0:v; render();
+      }, 30);
+    });
+
+    // 等主程式把題目塞進下拉選單，再載入題庫並渲染
+    async function boot(){
+      // 等待 aiTopic 有 options
+      let tries=0;
+      const t = setInterval(async ()=>{
+        tries++;
+        if (sel.options && sel.options.length){
+          clearInterval(t);
+          const raw = await loadBank();
+          topics = normalize(raw);
+          if (!topics.length) {
+            box.textContent = '（本題無示範或尚未建立）';
+            return;
+          }
+          const v = parseInt(sel.value||'0',10); idx = isNaN(v)?0:v;
+          render();
+        } else if (tries > 40){ // ~1.2s 容錯
+          clearInterval(t);
+          box.textContent = '（無法取得題庫或下拉選單）';
+        }
+      }, 30);
+    }
+
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', boot, {once:true});
+    } else {
+      boot();
+    }
+  }
+
+  // 啟動
+  try{ mount(); }catch(e){ console.warn('[AI sample patch] init error', e); }
+})();
+</script>
 
 </body>
 </html>
