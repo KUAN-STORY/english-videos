@@ -2443,47 +2443,34 @@ $$('.tabs .tab').forEach(t=>t.addEventListener('click',()=>showTab(t.dataset.tab
   })();
 })();
 </script>
-<!-- Cue-hover Lite (no-mousemove) · v2025V040 -->
+<!-- Cue Hover – No-Wrap / Caret HitTest · v2025V041 -->
 <style>
   #hoverTip {
-    position: fixed;
-    z-index: 9999;
-    display: none;
-    max-width: 48ch;
-    padding: 10px 12px;
-    border-radius: 10px;
-    background: rgba(10,15,25,.98);
-    color: #e8f0ff;
-    border: 1px solid rgba(140,160,255,.35);
-    box-shadow: 0 8px 28px rgba(0,0,0,.4);
-    font-size: 14px;
-    line-height: 1.45;
-    pointer-events: auto;     /* 允許滑到泡泡內按按鈕 */
+    position: fixed; z-index: 9999; display: none;
+    max-width: 48ch; padding: 10px 12px; border-radius: 10px;
+    background: rgba(10,15,25,.98); color: #e8f0ff;
+    border: 1px solid rgba(140,160,255,.35); box-shadow: 0 8px 28px rgba(0,0,0,.4);
+    font-size: 14px; line-height: 1.45; pointer-events: auto;
   }
-  #hoverTip .row {
-    display: flex; gap: 8px; align-items: center; margin-bottom: 6px;
-  }
-  #hoverTip .tag { font-weight: 700; color: #bcd1ff; }
-  #hoverTip .tts { cursor: pointer; user-select: none; }
-  #pane-sub .cue-en .wordtip {
-    border-bottom: 1px dotted rgba(190,210,255,.7);
-    cursor: help;
-  }
+  #hoverTip .row { display:flex; gap:8px; align-items:center; margin-bottom:6px; }
+  #hoverTip .tag { font-weight:700; color:#bcd1ff; }
+  #hoverTip .tts { cursor:pointer; user-select:none; }
+  /* 裝飾：命中字加虛線（不改 DOM，用 selection 高亮不穩定，故僅泡泡） */
 </style>
 <div id="hoverTip" role="tooltip" aria-hidden="true"></div>
 
 <script>
 (function(){
-  if (window.__CUE_LITE_V040__) return;
-  window.__CUE_LITE_V040__ = true;
+  if (window.__CUE_CARET_V041__) return;
+  window.__CUE_CARET_V041__ = true;
 
   const $  = (s,r=document)=>r.querySelector(s);
   const $$ = (s,r=document)=>Array.from(r.querySelectorAll(s));
   const tip = $('#hoverTip');
 
-  /* ---------- 字典載入（外部 -> 單字頁 fallback） ---------- */
+  /* ---------- 字典（外部 -> 單字頁 fallback） ---------- */
   const dict = new Map();
-  window.__CUE_DICT__ = dict; // 讓其他小工具也能共用
+  window.__CUE_DICT__ = dict;
 
   function norm(w){
     let k=(w||'').trim().replace(/^[^A-Za-z]+|[^A-Za-z]+$/g,'').toLowerCase();
@@ -2493,13 +2480,13 @@ $$('.tabs .tab').forEach(t=>t.addEventListener('click',()=>showTab(t.dataset.tab
     if(/s$/.test(k)&&!/ss$/.test(k))return k.replace(/s$/,'');
     return k;
   }
-  async function loadExternalDict(){
+  async function loadDict(){
     try{
       const r = await fetch('./data/dict-en-zh.json', {cache:'no-store'});
       if(!r.ok) throw 0;
       const data = await r.json();
       for (const [en,zh] of Object.entries(data)) dict.set(norm(en), zh);
-      console.log('[cue-lite] external dict', dict.size);
+      console.log('[cue-caret] external dict', dict.size);
     }catch(_){
       const rows = $$('#pane-vocab .voc, #pane-vocab .card, #pane-vocab li');
       rows.forEach(r=>{
@@ -2507,7 +2494,7 @@ $$('.tabs .tab').forEach(t=>t.addEventListener('click',()=>showTab(t.dataset.tab
         const zh=r.querySelector('.voc-zh,.zh,.cn')?.textContent?.trim();
         if(en && zh) dict.set(norm(en), zh);
       });
-      console.log('[cue-lite] vocab dict', dict.size);
+      console.log('[cue-caret] vocab dict', dict.size);
     }
   }
 
@@ -2525,130 +2512,144 @@ $$('.tabs .tab').forEach(t=>t.addEventListener('click',()=>showTab(t.dataset.tab
     }catch(_){}
   }
 
-  /* ---------- 只在需要時包裝該格（不掃整頁，不用 mousemove） ---------- */
-  const WORD = /([A-Za-z][A-Za-z'\-]*)/g;
-  function wrapCell(td){
-    if (!td || td.__wrapped__) return;
-    const raw = td.textContent || '';
-    const frag = document.createDocumentFragment();
-    let changed = false;
-
-    raw.split(WORD).forEach(tok=>{
-      if(!tok) return;
-      if(WORD.test(tok)){
-        const zh = dict.get(norm(tok));
-        if(zh){
-          const sp = document.createElement('span');
-          sp.className = 'wordtip';
-          sp.textContent = tok;
-          sp.dataset.zh = zh;
-          frag.appendChild(sp);
-          changed = true; return;
-        }
+  /* ---------- 由座標取得「該位置的字」(不改 DOM) ---------- */
+  function caretRangeFromPoint(x,y){
+    if (document.caretRangeFromPoint) return document.caretRangeFromPoint(x,y);
+    if (document.caretPositionFromPoint){
+      const pos = document.caretPositionFromPoint(x,y);
+      if (pos){
+        const r = document.createRange();
+        r.setStart(pos.offsetNode, Math.min(pos.offset, pos.offsetNode.length||0));
+        r.collapse(true);
+        return r;
       }
-      frag.appendChild(document.createTextNode(tok));
-    });
+    }
+    return null;
+  }
+  const CHAR = /[A-Za-z'\-]/;
 
-    if(changed){ td.innerHTML=''; td.appendChild(frag); }
-    td.__wrapped__ = true;
+  function getWordAt(td, x, y){
+    const r = caretRangeFromPoint(x, y);
+    if (!r) return null;
+
+    let node = r.startContainer;
+    // 找到文字節點
+    if (node.nodeType !== 3){ // 非 Text
+      // 試著往內或往前找到文字
+      node = (function dfs(n){
+        if (!n) return null;
+        if (n.nodeType===3) return n;
+        for (let i=0;i<n.childNodes.length;i++){
+          const got = dfs(n.childNodes[i]);
+          if (got) return got;
+        }
+        return null;
+      })(node);
+      if (!node) return null;
+    }
+
+    const text = node.data || '';
+    let i = Math.min(r.startOffset, text.length);
+    // 若點到空白，往左找最近的字元
+    let l=i-1, rgt=i;
+    while (l>=0 && !CHAR.test(text[l])) l--;
+    if (l<0) return null; // 附近沒有字
+
+    // 以 l 為種子，向左右擴張
+    let start=l, end=l+1;
+    while (start-1>=0 && CHAR.test(text[start-1])) start--;
+    while (end<text.length && CHAR.test(text[end])) end++;
+
+    const token = text.slice(start, end);
+    const key = norm(token);
+    const zh = dict.get(key);
+    if (!zh) return null;
+
+    // 取該字的矩形
+    const wordRange = document.createRange();
+    wordRange.setStart(node, start);
+    wordRange.setEnd(node, end);
+    const rect = wordRange.getBoundingClientRect();
+
+    return { word: token, zh, rect };
   }
 
-  /* ---------- 泡泡顯示（mouseenter/leave，不用 mousemove） ---------- */
-  let showTimer=null, hideTimer=null, currentWord=null;
+  /* ---------- 泡泡 ---------- */
+  function buildTip(zh, word){
+    tip.innerHTML='';
+    const row=document.createElement('div'); row.className='row';
+    const tag=document.createElement('span'); tag.className='tag'; tag.textContent='中文';
+    const btn=document.createElement('span'); btn.className='tts'; btn.textContent='🔈 朗讀';
+    btn.onclick=(e)=>{ e.stopPropagation(); tts(word); };
+    row.append(tag, btn);
 
-  function buildTip(zh, enText){
-    tip.innerHTML = '';
-    const topRow = document.createElement('div');
-    topRow.className='row';
-    const tag = document.createElement('span'); tag.className='tag'; tag.textContent='中文';
-    const btn = document.createElement('span'); btn.className='tts'; btn.textContent='🔈 朗讀';
-    btn.onclick = (e)=>{ e.stopPropagation(); tts(enText); };
-    topRow.append(tag, btn);
-
-    const body = document.createElement('div');
-    body.textContent = zh;
-
-    tip.append(topRow, body);
+    const body=document.createElement('div'); body.textContent=zh;
+    tip.append(row, body);
   }
-
-  function showTip(el){
-    const zh = el.dataset.zh||'';
-    const en = el.textContent||'';
-    if(!zh) return;
-    buildTip(zh, en);
-
-    const rect = el.getBoundingClientRect();
+  function showTipNear(rect){
     const x = rect.left + rect.width/2;
-    const y = Math.max(10, rect.top  - 12);
-
-    tip.style.left = (x) + 'px';
-    tip.style.top  = (y) + 'px';
+    const y = rect.top  - 8;
+    tip.style.left = x+'px';
+    tip.style.top  = y+'px';
     tip.style.transform = 'translate(-50%, -100%)';
-    tip.style.display = 'block';
+    tip.style.display='block';
     tip.setAttribute('aria-hidden','false');
   }
   function hideTip(){
     tip.style.display='none';
     tip.setAttribute('aria-hidden','true');
-    currentWord=null;
   }
 
-  // 事件代理：只在滑進 td.cue-en 時才包裝該格；滑到 .wordtip 才顯示泡泡
+  /* ---------- 主邏輯（極簡、無 DOM 改寫） ---------- */
   const paneSub = $('#pane-sub');
-  if (paneSub) {
-    // 阻止點擊字幕格促動影片
+  if (paneSub){
+    // 阻止點擊字幕格觸發影片
     paneSub.addEventListener('click', (e)=>{
-      if (e.target.closest('td.cue-time, td.cue-en, td.cue-zh')) {
+      if (e.target.closest('td.cue-time, td.cue-en, td.cue-zh')){
         e.stopImmediatePropagation();
         e.preventDefault();
       }
     }, {capture:true});
 
-    // 需要時才包裝
-    paneSub.addEventListener('mouseover', (e)=>{
+    let rafId = null, lastTs = 0, lastKey = '';
+    let cached = null; // {word, zh, rect}
+
+    paneSub.addEventListener('pointermove', (e)=>{
       const td = e.target.closest('td.cue-en');
-      if (td) wrapCell(td);
+      if (!td){ hideTip(); lastKey=''; cached=null; return; }
+
+      // rAF + 節流 (每 ~90ms)
+      if (rafId) return;
+      rafId = requestAnimationFrame((ts)=>{
+        rafId=null;
+        if (ts - lastTs < 90) return;  // 節流
+        lastTs = ts;
+
+        const info = getWordAt(td, e.clientX, e.clientY);
+        if (!info){ hideTip(); lastKey=''; cached=null; return; }
+
+        const key = info.word + '@' + Math.round(info.rect.left) + 'x' + Math.round(info.rect.top);
+        if (key === lastKey && cached){ return; } // 同一個字不重畫
+
+        buildTip(info.zh, info.word);
+        showTipNear(info.rect);
+        lastKey = key;
+        cached = info;
+      });
     }, {passive:true});
 
-    // 顯示泡泡
-    paneSub.addEventListener('mouseenter', (e)=>{
-      const sp = e.target.closest('.wordtip');
-      if (!sp) return;
-      if (hideTimer){ clearTimeout(hideTimer); hideTimer=null; }
-      currentWord = sp;
-      if (showTimer) clearTimeout(showTimer);
-      showTimer = setTimeout(()=> showTip(sp), 350); // 0.35s 延遲
-    }, {capture:true});
-
-    // 隱藏泡泡（從詞或泡泡移開都會關，但容許短暫滑動）
-    paneSub.addEventListener('mouseleave', (e)=>{
-      const sp = e.target.closest('.wordtip');
-      if (!sp) return;
-      if (showTimer){ clearTimeout(showTimer); showTimer=null; }
-      hideTimer = setTimeout(()=>{
-        // 若滑到泡泡上就不關
-        if (tip.matches(':hover')) return;
-        hideTip();
-      }, 180);
-    }, {capture:true});
+    paneSub.addEventListener('pointerleave', ()=>{ hideTip(); lastKey=''; cached=null; });
+    tip.addEventListener('pointerleave', hideTip);
+    tip.addEventListener('pointerenter', ()=>{/* 保留泡泡可點按鈕 */});
   }
 
-  // 泡泡本身也要控制隱藏（可點按鈕不會消失）
-  tip.addEventListener('mouseleave', ()=>{
-    hideTimer = setTimeout(()=> hideTip(), 120);
-  });
-  tip.addEventListener('mouseenter', ()=>{
-    if (hideTimer){ clearTimeout(hideTimer); hideTimer=null; }
-  });
-
-  /* ---------- 初始載入 ---------- */
   (async function boot(){
-    await loadExternalDict();
-    // 不預先掃整頁，等用到時再 wrap，避免大頁卡頓
-    console.log('[cue-lite] ready');
+    await loadDict();
+    console.log('[cue-caret] ready');
   })();
 })();
 </script>
+
 
 </body>
 </html>
