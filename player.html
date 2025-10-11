@@ -1787,46 +1787,55 @@ $$('.tabs .tab').forEach(t=>t.addEventListener('click',()=>showTab(t.dataset.tab
   })();
 })();
 </script>
-</script>
-
-<!-- ===== AI 分頁補釘：移出單字分頁，改為獨立分頁 ===== -->
-<script id="ai-tab-fix-append-only">
+<script id="ai-tab-fix-v2025v005">
 (function(){
-  const tabs = document.querySelector('.tabs'); if(!tabs) return;
-  const aiBtn = tabs.querySelector('[data-tab="ai"]'); if(!aiBtn) return;
+  const $=(s,r=document)=>r.querySelector(s);
+  const $$=(s,r=document)=>Array.from(r.querySelectorAll(s));
 
-  aiBtn.classList.add('tab');
-
-  const paneVocab = document.getElementById('pane-vocab');
-  let paneAI = document.getElementById('pane-ai');
-
-  const dup = document.querySelectorAll('#pane-ai');
-  if (dup.length > 1) {
-    dup.forEach((el, i) => {
-      if (i < dup.length - 1) { el.id = 'pane-ai-ghost'; el.hidden = true; }
+  function showTab(name){
+    const map={sub:'#pane-sub', quiz:'#pane-quiz', vocab:'#pane-vocab', ai:'#pane-ai'};
+    Object.entries(map).forEach(([k,sel])=>{
+      const el=$(sel); if(el) el.style.display=(k===name)?'':'none';
     });
-    paneAI = dup[dup.length - 1];
+    $$('.tabs .tab, .tabs [data-tab]').forEach(t=>{
+      const key=t.dataset.tab; t.classList.toggle('active', key===name);
+    });
   }
 
-  if (paneVocab && paneAI && paneVocab.contains(paneAI)) {
-    paneVocab.parentNode.insertBefore(paneAI, paneVocab.nextSibling);
-  }
+  document.addEventListener('DOMContentLoaded', ()=>{
+    // 1) 只保留一個 #pane-ai：若存在 vocab 內的複本就移除它
+    const aiPanes = $$('#pane-ai');
+    if (aiPanes.length > 1){
+      const inVocab = aiPanes.find(p=>p.closest('#pane-vocab'));
+      if (inVocab) inVocab.remove();
+    } else if (aiPanes[0] && aiPanes[0].closest('#pane-vocab')){
+      // 如果唯一一個在 vocab 裡，就搬到右側內容區外層
+      const host = $('#studyContainer .pane') || $('#studyContainer') || document.body;
+      host.appendChild(aiPanes[0]);
+    }
 
-  const origShowTab = window.showTab || function(){};
-  window.showTab = function(name){
-    try { origShowTab(name); } catch(e){}
-    if (paneAI) paneAI.style.display = (name === 'ai') ? '' : 'none';
-    document.querySelectorAll('.tabs .tab, .tabs .tab-ai').forEach(t=>{
-      t.classList.toggle('active', t.dataset.tab === name);
+    // 2) 確保有 AI 分頁按鈕（若沒有就加一顆）
+    const tabs = $('.tabs');
+    if (tabs && !tabs.querySelector('[data-tab="ai"]')){
+      const btn = document.createElement('div');
+      btn.className = 'tab';
+      btn.dataset.tab = 'ai';
+      btn.textContent = 'AI互動';
+      tabs.appendChild(btn);
+    }
+
+    // 3) 重新綁定分頁點擊，AI 只在自己的分頁顯示
+    $$('.tabs [data-tab]').forEach(b=>{
+      b.onclick = (e)=>{ e.preventDefault(); showTab(b.dataset.tab); };
     });
-  };
 
-  aiBtn.addEventListener('click', () => window.showTab('ai'), {passive:true});
+    // 初始維持目前選中的分頁；若沒有則預設顯示字幕
+    const cur = $('.tabs .tab.active,[data-tab].active')?.dataset.tab || 'sub';
+    showTab(cur);
+  });
 })();
 </script>
 
-</body>
-</html>
 
 </body>
 </html>
