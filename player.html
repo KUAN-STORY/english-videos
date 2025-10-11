@@ -1788,152 +1788,197 @@ $$('.tabs .tab').forEach(t=>t.addEventListener('click',()=>showTab(t.dataset.tab
 })();
 </script>
 
-<!-- AI Pane Hotfix · V2025V006 (append-only, non-invasive) -->
-<script id="ai-pane-hotfix-v2025v006">
+<!-- AI Interaction Rebuild + Sample & TTS · V2025V011 -->
+<script id="ai-interact-v2025v011">
 (function(){
-  if (window.__aiPaneHotfixV006) return;  // 防重複
-  window.__aiPaneHotfixV006 = true;
+  if (window.__AI_INTERACT_V2025V011__) return;
+  window.__AI_INTERACT_V2025V011__ = true;
 
-  const $  = (s, r=document)=>r.querySelector(s);
-  const $$ = (s, r=document)=>Array.from(r.querySelectorAll(s));
+  const $  = (s,r=document)=>r.querySelector(s);
+  const $$ = (s,r=document)=>Array.from(r.querySelectorAll(s));
 
-  const paneAI = $('#pane-ai');
-  if (!paneAI) return;              // 沒有 AI 區就不做
-
- <script id="ai-relocate-and-sample-v2025v010">
-(function(){
-  if (window.__AI_PATCH_V010__) return;
-  window.__AI_PATCH_V010__ = true;
-
-  const $  = (s, r=document)=> r.querySelector(s);
-  const $$ = (s, r=document)=> Array.from(r.querySelectorAll(s));
-
-  /* A) 分頁切換：點「AI互動」只顯示 #pane-ai */
+  /* 1️⃣ 分頁切換：按「AI互動」只顯示 AI 分頁 */
   function bindTab(){
-    const aiTabBtn = $('.tabs [data-tab="ai"]');
-    if (!aiTabBtn || aiTabBtn.dataset.bound) return;
-    aiTabBtn.dataset.bound = '1';
-    aiTabBtn.addEventListener('click', ()=>{
+    const aiTab = $('.tabs [data-tab="ai"]');
+    if (!aiTab || aiTab.dataset.bound) return;
+    aiTab.dataset.bound = '1';
+    aiTab.addEventListener('click', ()=>{
       ['#pane-sub','#pane-quiz','#pane-vocab','#pane-ai'].forEach(id=>{
         const el = $(id); if(!el) return;
         el.style.display = (id==='#pane-ai') ? 'block' : 'none';
       });
-      $$('.tabs .tab').forEach(t=> t.classList.toggle('active', t===aiTabBtn));
+      $$('.tabs .tab').forEach(t=>t.classList.toggle('active', t===aiTab));
     });
   }
 
-  /* B) 把 AI 區塊從「單字」搬回「AI互動」 */
-  function moveAIBlock(){
-    const paneAI = $('#pane-ai');
-    const p = $('#pane-vocab #aiPrompt');
-    const r = $('#pane-vocab #aiReply');
-    if (!paneAI || (!p && !r)) return;
-
-    function ancestors(el){
-      const set = new Set();
-      for(let x=el; x && x!==document; x=x.parentElement) set.add(x);
-      return set;
+  /* 2️⃣ 載入題庫（ai-mid-autumn.json） */
+  async function loadBank(){
+    const slug = (new URLSearchParams(location.search).get('slug') || 'mid-autumn').trim();
+    const paths = [
+      `data/ai-${slug}.json`,
+      `./ai-${slug}.json`,
+      `/english-videos/data/ai-${slug}.json`
+    ];
+    for (const p of paths){
+      try{
+        const r = await fetch(p, {cache:'no-store'});
+        if (r.ok) return normalize(await r.json());
+      }catch(_){}
     }
-    let block = null;
-    if (p && r){
-      const as = ancestors(p);
-      let x = r;
-      while (x && !as.has(x)) x = x.parentElement;
-      block = x;
-    }
-    if (!block) block = (p && p.parentElement) || (r && r.parentElement);
-    if (!block) return;
-
-    if (!paneAI.contains(block)) paneAI.appendChild(block);
-    $('#pane-vocab #aiSampleWrap')?.remove();
-    $('#pane-vocab #pane-ai')?.remove();
+    return [{prompt:"Describe yourself briefly.", hint:"name / hobby"}];
   }
 
-  /* C) AI 示範 + 朗讀（只放在 AI 分頁） */
+  function normalize(raw){
+    if (!raw) return [];
+    if (Array.isArray(raw)){
+      return raw.map(x=>({
+        title:x.title||'',
+        prompt:x.prompt||x.en||x.q||x.text||String(x),
+        hint:x.hint||x.zh||x.tips||x.goal||'',
+        sample:x.sample||x.example||x.demo||x.answer||''
+      }));
+    }
+    if (raw.topics) return normalize(raw.topics);
+    if (raw.scenes){
+      const out=[];
+      raw.scenes.forEach(sc=>(sc.turns||[]).forEach(t=>{
+        out.push({
+          title:t.role||sc.title||'',
+          prompt:t.prompt||t.en||t.text||'',
+          hint:t.hint||t.zh||'',
+          sample:t.sample||t.example||t.demo||t.answer||''
+        });
+      }));
+      return out;
+    }
+    return [];
+  }
+
+  /* 3️⃣ 建立 AI 互動區 UI */
+  function ensureAIPane(){
+    let pane = $('#pane-ai');
+    if (!pane){
+      pane = document.createElement('div');
+      pane.id = 'pane-ai';
+      pane.style.display = 'none';
+      document.body.appendChild(pane);
+    }
+
+    pane.innerHTML = `
+      <div class="ai-row" style="margin-bottom:8px;display:flex;gap:6px;align-items:center;flex-wrap:wrap">
+        <select id="aiTopic" class="btn"></select>
+        <button id="btnPrevTopic" class="btn">◀ 上一題</button>
+        <button id="btnNextTopic" class="btn">下一題 ▶</button>
+        <button id="btnTts" class="btn">🔈 朗讀題目</button>
+        <button id="btnRec" class="btn">🎤 開始說</button>
+        <button id="btnStop" class="btn" disabled>⏹ 停止</button>
+        <label><input type="checkbox" id="aiAutoNext"> 作答後自動下一題</label>
+      </div>
+      <div style="margin-bottom:4px;">題目：</div>
+      <textarea id="aiPrompt" style="width:100%;height:60px;"></textarea>
+      <div id="aiHint" style="color:#9cf;margin:6px 0;"></div>
+      <div id="aiReply" style="border:1px solid #334;padding:8px;border-radius:8px;min-height:50px;background:#0b1320;color:#e6f0ff">（等待你的作答…）</div>
+      <div id="aiStatus" style="margin-top:4px;color:#ccc"></div>
+      <hr style="margin:10px 0;border-color:#223">
+      <div id="aiSampleWrap" style="margin-top:8px;">
+        <div style="display:flex;gap:8px;align-items:center;margin-bottom:6px;">
+          <label style="font-weight:700;">AI 示範：</label>
+          <button id="btnSampleToggle" class="btn">示範句</button>
+          <button id="btnSampleTts" class="btn">🔈 朗讀</button>
+        </div>
+        <div id="aiSample" style="border:1px solid #445;padding:8px;border-radius:8px;background:#0b1320;color:#e6f0ff;min-height:60px;display:none;"></div>
+      </div>
+    `;
+  }
+
+  /* 4️⃣ 朗讀 + 錄音 */
   function tts(text){
-    try{
-      if(!('speechSynthesis' in window)) { alert('此瀏覽器不支援語音合成'); return; }
-      const raw = (text||'').toString().trim(); if(!raw) return;
-      const u = new SpeechSynthesisUtterance(raw);
-      const v = speechSynthesis.getVoices().find(v=>/en/i.test(v.lang)) || speechSynthesis.getVoices()[0];
-      if (v) u.voice = v; u.lang = v?.lang || 'en-US'; u.rate = 1; u.pitch = 1;
-      try{ speechSynthesis.cancel(); }catch(_){}
-      speechSynthesis.speak(u);
-    }catch(_){}
+    if(!('speechSynthesis' in window)) return alert('此瀏覽器不支援朗讀');
+    const msg = new SpeechSynthesisUtterance((text||'').trim());
+    msg.lang='en-US'; msg.rate=1; msg.pitch=1;
+    try{speechSynthesis.cancel();}catch(_){}
+    speechSynthesis.speak(msg);
   }
 
-  function ensureAISampleUI(){
-    const pane = $('#pane-ai'); if(!pane) return;
-    $('#pane-vocab #aiSampleWrap')?.remove();
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  let rec=null;
 
-    let wrap = $('#aiSampleWrap', pane);
-    if (!wrap){
-      wrap = document.createElement('div');
-      wrap.id = 'aiSampleWrap';
-      wrap.style.cssText = 'margin:10px 0 6px;';
-
-      const head = document.createElement('div');
-      head.style.cssText = 'display:flex;gap:8px;align-items:center;margin-bottom:6px;';
-      const label = document.createElement('label');
-      label.textContent = 'AI 示範：';
-      label.style.cssText = 'font-weight:700';
-
-      const btnShow = document.createElement('button');
-      btnShow.id = 'btnSampleToggle';
-      btnShow.className = 'btn';
-      btnShow.textContent = '示範句';
-      btnShow.title = '顯示 / 隱藏 AI 示範句';
-
-      const btnTts = document.createElement('button');
-      btnTts.id = 'btnSampleTts';
-      btnTts.className = 'btn';
-      btnTts.textContent = '🔈 朗讀';
-
-      const box = document.createElement('div');
-      box.id = 'aiSample';
-      box.style.cssText = 'border:1px solid #445;min-height:60px;padding:8px;border-radius:8px;background:#0b1320;color:#e6f0ff';
-
-      head.appendChild(label); head.appendChild(btnShow); head.appendChild(btnTts);
-      wrap.appendChild(head); wrap.appendChild(box);
-
-      const reply = $('#pane-ai #aiReply') || $('#pane-ai #aiPrompt');
-      if (reply?.parentElement) reply.parentElement.insertAdjacentElement('afterend', wrap);
-      else pane.appendChild(wrap);
-
-      btnShow.addEventListener('click', ()=>{
-        const isHidden = getComputedStyle(box).display==='none';
-        box.style.display = isHidden ? '' : 'none';
-      });
-      btnTts.addEventListener('click', ()=> tts($('#aiSample')?.textContent||''));
-      box.style.display = 'none';
-    }
+  function startRec(ui){
+    if(!SR){ alert('請使用 Chrome / Edge'); return; }
+    if(rec && !ui.stop.disabled){ rec.stop(); return; }
+    rec = new SR(); rec.lang='en-US'; rec.continuous=true;
+    ui.rec.disabled=true; ui.stop.disabled=false;
+    ui.status.textContent='🎙️ 說話中…（Alt+M 停止）';
+    rec.onresult=e=>{
+      let text=''; for(let i=e.resultIndex;i<e.results.length;i++){ const r=e.results[i]; if(r.isFinal) text+=r[0].transcript; }
+      if(text){
+        ui.reply.textContent = (ui.reply.textContent==='（等待你的作答…）'?'':ui.reply.textContent+' ')+text.trim();
+        if(ui.auto.checked && ui.reply.textContent.split(/\s+/).length>8) showNext(ui,1);
+      }
+    };
+    rec.onend=()=>{ ui.rec.disabled=false; ui.stop.disabled=true; ui.status.textContent=''; };
+    rec.onerror=rec.onend;
+    rec.start();
   }
 
-  function hookSampleSync(){
-    const box = $('#aiSample'); if(!box) return;
-    let last = '';
-    setInterval(()=>{
-      const neighbour = $('.ai-out + #aiSample, .ai-out + div[id^="aiSample"]');
-      const text = (neighbour?.textContent || $('#aiSample')?.textContent || '').trim();
-      if (text && text !== last){ box.textContent = text; last = text; }
-    }, 500);
+  /* 5️⃣ 題目顯示邏輯 */
+  let topics=[], idx=0;
+  function show(ui,i){
+    if(!topics.length) return;
+    idx = (i<0)?topics.length-1:(i>=topics.length?0:i);
+    ui.topic.value=String(idx);
+    const t = topics[idx];
+    ui.prompt.value=t.prompt||'';
+    ui.hint.textContent=t.hint||'';
+    ui.reply.textContent='（等待你的作答…）';
+    ui.status.textContent=`第 ${idx+1}/${topics.length} 題`;
+    const sbox = $('#aiSample');
+    if(sbox) sbox.textContent=t.sample||'（本題無示範）';
   }
+  function showNext(ui,dir){ show(ui,idx+dir); }
 
-  /* D) 啟動 */
-  function boot(){
+  /* 6️⃣ 啟動 */
+  async function boot(){
+    ensureAIPane();
     bindTab();
-    moveAIBlock();
-    ensureAISampleUI();
-    hookSampleSync();
+    const ui = {
+      topic:$('#aiTopic'),
+      prev:$('#btnPrevTopic'),
+      next:$('#btnNextTopic'),
+      tts:$('#btnTts'),
+      rec:$('#btnRec'),
+      stop:$('#btnStop'),
+      auto:$('#aiAutoNext'),
+      prompt:$('#aiPrompt'),
+      hint:$('#aiHint'),
+      reply:$('#aiReply'),
+      status:$('#aiStatus')
+    };
+    topics = await loadBank();
+    ui.topic.innerHTML = topics.map((t,i)=>`<option value="${i}">${t.title||('Topic '+(i+1))}</option>`).join('');
+    show(ui,0);
+
+    ui.next.onclick = ()=>showNext(ui,1);
+    ui.prev.onclick = ()=>showNext(ui,-1);
+    ui.tts.onclick  = ()=>tts(ui.prompt.value);
+    ui.rec.onclick  = ()=>startRec(ui);
+    ui.stop.onclick = ()=>{ try{rec&&rec.stop();}catch(_){};
+      ui.rec.disabled=false;ui.stop.disabled=true;ui.status.textContent=''; };
+    ui.topic.onchange = e=>show(ui,parseInt(e.target.value||'0',10));
+
+    $('#btnSampleToggle').onclick = ()=>{
+      const b=$('#aiSample'); b.style.display=(b.style.display==='none')?'':'none';
+    };
+    $('#btnSampleTts').onclick = ()=>tts($('#aiSample').textContent||'');
   }
 
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', boot, {once:true});
-  } else {
-    boot();
-  }
+  (document.readyState==='loading')?document.addEventListener('DOMContentLoaded',boot):boot();
 })();
 </script>
+
+</body>
+</html>
+
 
 </body>
 </html>
