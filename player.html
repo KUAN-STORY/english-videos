@@ -1787,6 +1787,46 @@ $$('.tabs .tab').forEach(t=>t.addEventListener('click',()=>showTab(t.dataset.tab
   })();
 })();
 </script>
+</script>
+
+<!-- ===== AI 分頁補釘：移出單字分頁，改為獨立分頁 ===== -->
+<script id="ai-tab-fix-append-only">
+(function(){
+  const tabs = document.querySelector('.tabs'); if(!tabs) return;
+  const aiBtn = tabs.querySelector('[data-tab="ai"]'); if(!aiBtn) return;
+
+  aiBtn.classList.add('tab');
+
+  const paneVocab = document.getElementById('pane-vocab');
+  let paneAI = document.getElementById('pane-ai');
+
+  const dup = document.querySelectorAll('#pane-ai');
+  if (dup.length > 1) {
+    dup.forEach((el, i) => {
+      if (i < dup.length - 1) { el.id = 'pane-ai-ghost'; el.hidden = true; }
+    });
+    paneAI = dup[dup.length - 1];
+  }
+
+  if (paneVocab && paneAI && paneVocab.contains(paneAI)) {
+    paneVocab.parentNode.insertBefore(paneAI, paneVocab.nextSibling);
+  }
+
+  const origShowTab = window.showTab || function(){};
+  window.showTab = function(name){
+    try { origShowTab(name); } catch(e){}
+    if (paneAI) paneAI.style.display = (name === 'ai') ? '' : 'none';
+    document.querySelectorAll('.tabs .tab, .tabs .tab-ai').forEach(t=>{
+      t.classList.toggle('active', t.dataset.tab === name);
+    });
+  };
+
+  aiBtn.addEventListener('click', () => window.showTab('ai'), {passive:true});
+})();
+</script>
+
+</body>
+</html>
 
 </body>
 </html>
