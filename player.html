@@ -2198,6 +2198,123 @@ $$('.tabs .tab').forEach(t=>t.addEventListener('click',()=>showTab(t.dataset.tab
   }
 })();
 </script>
+<script>
+/* ===== AI Sample + TTS patch · v2025v008-tts ===== */
+(function(){
+  const $  = (s, r=document)=>r.querySelector(s);
+  const $$ = (s, r=document)=>Array.from(r.querySelectorAll(s));
+
+  /* ---------- 安全的 TTS ---------- */
+  function tts(text){
+    if(!('speechSynthesis' in window)) { alert('此瀏覽器不支援語音合成'); return; }
+    const msg = new SpeechSynthesisUtterance((text||'').trim());
+    if(!msg.text) return;
+    const voices = speechSynthesis.getVoices();
+    const v = voices.find(v=>/en/i.test(v.lang)) || voices[0];
+    if (v) msg.voice = v;
+    msg.lang  = v?.lang || 'en-US';
+    msg.rate  = 1;
+    msg.pitch = 1;
+    try{ speechSynthesis.cancel(); }catch(_){}
+    speechSynthesis.speak(msg);
+  }
+
+  /* ---------- 1) 在 AI 分頁建立「AI 示範 + 朗讀」 ---------- */
+  function ensureAISampleUI(){
+    const paneAI = $('#pane-ai');                 // 只找 AI 分頁
+    if(!paneAI) return;
+
+    // 若誤插到「單字」頁面，先清掉
+    const wrong = $('#pane-vocab #aiSampleWrap');
+    if (wrong) wrong.remove();
+
+    let wrap = $('#aiSampleWrap', paneAI);
+    if(!wrap){
+      wrap = document.createElement('div');
+      wrap.id = 'aiSampleWrap';
+      wrap.style.cssText = 'margin:10px 0 4px;display:flex;gap:8px;align-items:center;flex-wrap:wrap';
+
+      const label = document.createElement('label');
+      label.textContent = 'AI 示範：';
+      label.style.cssText = 'font-weight:700';
+
+      const box = document.createElement('div');
+      box.id = 'aiSample';
+      box.style.cssText = 'flex:1;border:1px solid #445;min-height:60px;padding:8px;border-radius:8px;background:#0b1320;color:#e6f0ff';
+
+      const btn = document.createElement('button');
+      btn.id = 'btnSampleTts';
+      btn.className = 'btn';
+      btn.style.cssText = 'white-space:nowrap';
+      btn.innerHTML = '🔈 朗讀';
+      btn.addEventListener('click', ()=> tts($('#aiSample')?.textContent||''));
+
+      wrap.appendChild(label);
+      wrap.appendChild(btn);
+      wrap.appendChild(box);
+
+      // 放在 AI：輸入框（#aiReply）後面；若找不到就附在分頁最末
+      const reply = $('#aiReply', paneAI) || $('#aiPrompt', paneAI);
+      if (reply && reply.parentElement) reply.parentElement.insertAdjacentElement('afterend', wrap);
+      else paneAI.appendChild(wrap);
+    }
+  }
+
+  /* ---------- 讓舊補丁或主程式更新示範文字時，顯示到 #aiSample ---------- */
+  function hookSampleRender(){
+    const box = $('#aiSample');
+    if(!box) return;
+
+    // 若頁面其他補丁把示範字串放在元素 data-sample 裡，這裡每 500ms 同步一次
+    let last = '';
+    setInterval(()=>{
+      // 常見容器：#aiSample（本段）、或其他補丁塞在 .ai-out 下方
+      const fallback = $('.ai-out + div[id^="aiSample"]') || $('#aiSample');
+      const text = (fallback?.textContent || '').trim();
+      if(text && text !== last){
+        box.textContent = text;
+        last = text;
+      }
+    }, 500);
+  }
+
+  /* ---------- 2) 修復「單字」分頁的朗讀 ---------- */
+  function fixVocabTTS(){
+    const vbox = $('#pane-vocab #vocabBox') || $('#vocabBox');
+    if(!vbox) return;
+
+    // 以事件代理攔截任何朗讀按鈕（避免原程式誤呼叫 speakPrompt() 造成沒聲音）
+    vbox.addEventListener('click', (e)=>{
+      const btn = e.target.closest('[data-act="speak"], .btn-tts');
+      if(!btn) return;
+
+      const text =
+        btn.dataset.text ||
+        btn.getAttribute('data-text') ||
+        btn.closest('.voc')?.querySelector('.voc-word, .voc-en')?.textContent ||
+        '';
+
+      if (!text) return;
+      e.preventDefault();
+      e.stopPropagation();
+      tts(text);
+    }, true);
+  }
+
+  /* ---------- 啟動 ---------- */
+  function boot(){
+    ensureAISampleUI();
+    hookSampleRender();
+    fixVocabTTS();
+  }
+
+  if (document.readyState === 'loading'){
+    document.addEventListener('DOMContentLoaded', boot, {once:true});
+  } else {
+    boot();
+  }
+})();
+</script>
 
 </body>
 </html>
