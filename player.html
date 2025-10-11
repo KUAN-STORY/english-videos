@@ -2443,57 +2443,55 @@ $$('.tabs .tab').forEach(t=>t.addEventListener('click',()=>showTab(t.dataset.tab
   })();
 })();
 </script>
-<!-- Hover Translation for cue-en (外部字典支援版) · v2025V037 -->
+<!-- Hover Translation for cue-en + TTS · v2025V038 -->
 <style>
   #hoverTip {
-    position: fixed;
-    z-index: 9999;
-    display: none;
-    max-width: 46ch;
-    padding: 8px 10px;
-    border-radius: 8px;
-    background: rgba(10,15,25,0.96);
-    color: #e8f0ff;
-    box-shadow: 0 4px 18px rgba(0,0,0,0.35);
-    font-size: 14px;
-    line-height: 1.4;
-    border: 1px solid rgba(140,160,255,0.3);
+    position: fixed; z-index: 9999; display: none;
+    max-width: 48ch; padding: 8px 10px; border-radius: 8px;
+    background: rgba(10,15,25,0.96); color: #e8f0ff;
+    box-shadow: 0 4px 18px rgba(0,0,0,.35);
+    font-size: 14px; line-height: 1.4;
+    border: 1px solid rgba(140,160,255,.3);
     pointer-events: none;
   }
-  #pane-sub .cue-en .wordtip {
-    border-bottom: 1px dotted rgba(190,210,255,.7);
+  #pane-sub .cue-en .wordtip{
+    border-bottom: 1px dotted rgba(190,210,255,.75);
     cursor: help;
   }
+  #hoverTip .row { display:flex; align-items:center; gap:8px; }
+  #hoverTip .zh  { font-weight:700; }
+  #hoverTip .tts { cursor:pointer; user-select:none; opacity:.9 }
+  #hoverTip .ex  { margin-top:4px; opacity:.8; font-size: 12px; }
 </style>
 <div id="hoverTip"></div>
 
 <script>
 (async function(){
-  if (window.__CUE_DICT_V037__) return;
-  window.__CUE_DICT_V037__ = true;
+  if (window.__CUE_DICT_V038__) return;
+  window.__CUE_DICT_V038__ = true;
 
-  const $  = (s,r=document)=>r.querySelector(s);
-  const $$ = (s,r=document)=>Array.from(r.querySelectorAll(s));
+  const $  = (s,r=document)=> (r||document).querySelector(s);
+  const $$ = (s,r=document)=> Array.from((r||document).querySelectorAll(s));
   const tip = $('#hoverTip');
-  const dict = new Map();
+  const dict = new Map();   // key: lemma(小寫) -> {zh, ex?, word}
+  let ttsVoice = null;
 
-  /* ---------- 1. 載入外部字典 (dict-en-zh.json) ---------- */
-  async function loadExternalDict(){
+  /* ---------- 0. TTS ---------- */
+  function speak(text){
     try{
-      const res = await fetch('./data/dict-en-zh.json');
-      if (!res.ok) throw new Error('no external dict');
-      const data = await res.json();
-      for (const [en, zh] of Object.entries(data)) {
-        dict.set(norm(en), zh);
-      }
-      console.log('[cue-hover] loaded external dict, size:', dict.size);
-    }catch(err){
-      console.warn('[cue-hover] external dict not found, fallback to vocab');
-      rebuildDictFromVocab();
-    }
+      if(!('speechSynthesis' in window)) return;
+      const raw=(text||'').trim(); if(!raw) return;
+      const u=new SpeechSynthesisUtterance(raw);
+      const voices=speechSynthesis.getVoices();
+      if(!ttsVoice) ttsVoice = voices.find(v=>/en/i.test(v.lang)) || voices[0] || null;
+      if(ttsVoice) u.voice=ttsVoice;
+      u.lang = ttsVoice?.lang || 'en-US'; u.rate=1; u.pitch=1;
+      try{ speechSynthesis.cancel(); }catch(_){}
+      speechSynthesis.speak(u);
+    }catch(_){}
   }
 
-  /* ---------- 2. 若無外部檔案則從單字頁抓 ---------- */
+  /* ---------- 1. 載入外部字典（支援兩種格式） ---------- */
   function norm(w){
     let k=(w||'').trim().replace(/^[^A-Za-z]+|[^A-Za-z]+$/g,'').toLowerCase();
     if(/'s$/.test(k))k=k.replace(/'s$/,'');
@@ -2503,89 +2501,148 @@ $$('.tabs .tab').forEach(t=>t.addEventListener('click',()=>showTab(t.dataset.tab
     return k;
   }
 
-  function rebuildDictFromVocab(){
+  function addDictEntry(en, val){
+    if(!en) return;
+    const key = norm(en);
+    if(!key) return;
+    if(typeof val === 'string'){
+      dict.set(key, { zh: val, ex: '', word: en });
+    }else if(val && typeof val === 'object'){
+      dict.set(key, { zh: val.zh || val.cn || '', ex: val.example || val.ex || '', word: en });
+    }
+  }
+
+  async function loadExternalDict(){
+    const candidates = [
+      '/english-videos/data/dict-en-zh.json',
+      './data/dict-en-zh.json',
+      './dict-en-zh.json'
+    ];
+    for (const url of candidates){
+      try{
+        const r = await fetch(url, {cache:'no-store'});
+        if(!r.ok) continue;
+        const data = await r.json();
+        Object.entries(data||{}).forEach(([en,val])=> addDictEntry(en,val));
+        if (dict.size) return true;
+      }catch(_){}
+    }
+    return false;
+  }
+
+  /* ---------- 2. 若無外部字典則用「單字」分頁自建 ---------- */
+  function rebuildFromVocab(){
     dict.clear();
     const rows = $$('#pane-vocab .voc, #pane-vocab .card, #pane-vocab li');
     rows.forEach(r=>{
       const en = r.querySelector('.voc-word,.voc-en,.word,.en')?.textContent?.trim();
       const zh = r.querySelector('.voc-zh,.zh,.cn')?.textContent?.trim();
-      if (en && zh) dict.set(norm(en), zh);
+      if(en && zh) addDictEntry(en, zh);
     });
-    console.log('[cue-hover] built vocab dict size:', dict.size);
   }
 
-  /* ---------- 3. 包裝 cue-en 文字 ---------- */
+  /* ---------- 3. 包裝字幕英文（只包字典中有的字） ---------- */
   const WORD = /([A-Za-z][A-Za-z'\-]*)/g;
-  function wrapCueEn(td){
+
+  function wrapCueEnCell(td){
     if (!td || td.__wrapped__) return;
     const raw = td.textContent || '';
-    const fr  = document.createDocumentFragment();
-    let changed=false;
-    raw.split(WORD).forEach(tok=>{
+    const parts = raw.split(WORD);
+    let changed = false;
+    const frag = document.createDocumentFragment();
+
+    parts.forEach(tok=>{
       if(!tok) return;
       if(WORD.test(tok)){
-        const zh=dict.get(norm(tok));
-        if(zh){
-          const sp=document.createElement('span');
-          sp.className='wordtip';
-          sp.textContent=tok;
-          sp.dataset.zh=zh;
-          fr.appendChild(sp);
-          changed=true; return;
+        const item = dict.get(norm(tok));
+        if(item && item.zh){
+          const sp = document.createElement('span');
+          sp.className = 'wordtip';
+          sp.textContent = tok;
+          sp.dataset.zh = item.zh || '';
+          sp.dataset.en = tok;
+          sp.dataset.ex = item.ex || '';
+          frag.appendChild(sp);
+          changed = true;
+          return;
         }
       }
-      fr.appendChild(document.createTextNode(tok));
+      frag.appendChild(document.createTextNode(tok));
     });
-    if(changed){ td.innerHTML=''; td.appendChild(fr); td.__wrapped__=true; }
+
+    if (changed){
+      td.innerHTML = '';
+      td.appendChild(frag);
+      td.__wrapped__ = true;
+    }
   }
 
-  function wrapAll(){ $$('#pane-sub .cue-en').forEach(wrapCueEn); }
-
-  /* ---------- 4. 滑鼠懸停顯示翻譯 ---------- */
-  let timer=null;
-  function showTip(x,y,zh){
-    tip.textContent=zh;
-    tip.style.left=(x+14)+'px';
-    tip.style.top =(y+14)+'px';
-    tip.style.display='block';
+  function wrapAllCueEn(){
+    $$('#pane-sub .cue-en').forEach(wrapCueEnCell);
   }
-  function hideTip(){ tip.style.display='none'; }
 
-  document.addEventListener('mousemove', e=>{
-    const t=e.target.closest('#pane-sub .cue-en .wordtip');
-    if(t){
-      if(timer)clearTimeout(timer);
-      const zh=t.dataset.zh||'';
-      const x=e.clientX,y=e.clientY;
-      timer=setTimeout(()=>showTip(x,y,zh),500);
+  /* ---------- 4. 懸停 0.5s 顯示 tooltip（含朗讀鈕） ---------- */
+  let hoverTimer = null;
+  function hideTip(){ tip.style.display='none'; tip.innerHTML=''; }
+  function showTip(x,y, en, zh, ex){
+    tip.innerHTML = '';
+    const row = document.createElement('div'); row.className='row';
+    const zhElm = document.createElement('span'); zhElm.className='zh'; zhElm.textContent = zh||'';
+    const ttsElm = document.createElement('span'); ttsElm.className='tts'; ttsElm.textContent='🔈';
+    ttsElm.title = '朗讀英文';
+    ttsElm.addEventListener('click', (e)=>{ e.stopPropagation(); speak(en); });
+
+    row.appendChild(zhElm); row.appendChild(ttsElm);
+    tip.appendChild(row);
+
+    if (ex){
+      const exElm = document.createElement('div'); exElm.className='ex';
+      exElm.textContent = ex;
+      tip.appendChild(exElm);
+    }
+    tip.style.left = (x+14)+'px';
+    tip.style.top  = (y+14)+'px';
+    tip.style.display = 'block';
+  }
+
+  document.addEventListener('mousemove', (e)=>{
+    const target = e.target.closest('#pane-sub .cue-en .wordtip');
+    if (target){
+      if(hoverTimer) clearTimeout(hoverTimer);
+      const en = target.dataset.en || target.textContent || '';
+      const zh = target.dataset.zh || '';
+      const ex = target.dataset.ex || '';
+      const {clientX:x, clientY:y} = e;
+      hoverTimer = setTimeout(()=> showTip(x,y,en,zh,ex), 500);
     }else{
-      if(timer){clearTimeout(timer);timer=null;}
+      if(hoverTimer){ clearTimeout(hoverTimer); hoverTimer=null; }
       hideTip();
     }
-  },{passive:true});
+  }, {passive:true});
 
-  /* ---------- 5. 阻止點擊觸發影片 ---------- */
-  const paneSub=$('#pane-sub');
-  if(paneSub&&!paneSub.__bound__){
-    paneSub.__bound__=true;
-    paneSub.addEventListener('click',e=>{
-      if(e.target.closest('td.cue-time,td.cue-en,td.cue-zh')){
+  /* ---------- 5. 阻止點字幕行就播放影片 ---------- */
+  const paneSub = $('#pane-sub');
+  if (paneSub && !paneSub.__blockedClick__){
+    paneSub.__blockedClick__ = true;
+    paneSub.addEventListener('click', (e)=>{
+      if (e.target.closest('td.cue-time, td.cue-en, td.cue-zh')){
         e.stopImmediatePropagation();
         e.preventDefault();
       }
-    },{capture:true});
+    }, {capture:true});
   }
 
-  /* ---------- 6. 動態監聽字幕變化 ---------- */
-  const cuesBody=$('#pane-sub tbody');
-  if(cuesBody){
-    const obs=new MutationObserver(()=>wrapAll());
-    obs.observe(cuesBody,{childList:true,subtree:true});
+  /* ---------- 6. 動態監看字幕變化 ---------- */
+  const tbody = $('#pane-sub tbody');
+  if (tbody){
+    const mo = new MutationObserver(()=> wrapAllCueEn());
+    mo.observe(tbody, {childList:true, subtree:true});
   }
 
   /* ---------- 7. 初始化 ---------- */
-  await loadExternalDict();
-  wrapAll();
+  const ok = await loadExternalDict();
+  if (!ok) rebuildFromVocab();
+  wrapAllCueEn();
 })();
 </script>
 
