@@ -1,18 +1,14 @@
 {
-  "meta": {
-    "title": "Mid-Autumn (sample)",
-    "level": "A2"
-  },
-  "scenes": [
-    {
-      "turns": [
-        {
-          "role": "Host",
-          "en": "Please introduce yourself briefly.",
-          "zh": "簡單自我介紹。",
-          "goal": "name / hobby"
-        }
-      ]
-    }
+  "topics": [
+    { "title": "Festival Overview", "prompt": "What is the Mid-Autumn Festival and when is it celebrated?", "hint": "full moon / lunar calendar / family" },
+    { "title": "Family Reunion", "prompt": "Describe how your family might celebrate the Mid-Autumn Festival.", "hint": "gather / dinner / share stories" },
+    { "title": "Mooncakes", "prompt": "What mooncake flavors do you know or want to try? Why?", "hint": "lotus / red bean / egg yolk" },
+    { "title": "Lanterns", "prompt": "Describe a lantern you like. What shape and color is it?", "hint": "shape / color / pattern" },
+    { "title": "Legend of Chang’e", "prompt": "Summarize the legend of Chang’e in 3–4 sentences.", "hint": "immortal / moon / Houyi" },
+    { "title": "Festival Food", "prompt": "Besides mooncakes, what other foods are popular during the festival?", "hint": "pomelo / tea / fruit" },
+    { "title": "Compare Festivals", "prompt": "Compare the Mid-Autumn Festival with another festival you know.", "hint": "similarities / differences / activities" },
+    { "title": "Night Scene", "prompt": "Describe the night sky on the Mid-Autumn Festival.", "hint": "bright / full moon / clear sky" },
+    { "title": "Personal Plan", "prompt": "What will you do this year on the Mid-Autumn Festival?", "hint": "plan / invite / location" },
+    { "title": "Idioms & Feelings", "prompt": "Share a phrase or idiom about the moon and explain your feelings.", "hint": "reunion / homesick / blessing" }
   ]
 }
