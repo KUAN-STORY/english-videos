@@ -2443,112 +2443,64 @@ $$('.tabs .tab').forEach(t=>t.addEventListener('click',()=>showTab(t.dataset.tab
   })();
 })();
 </script>
-<!-- Hover Word Translation + TTS for cue-en · v2025V041 -->
+<!-- Hover Translate + TTS · v2025V045 -->
 <style>
   #hoverTip {
     position: fixed;
-    z-index: 9999;
     display: none;
-    max-width: 50ch;
-    padding: 8px 10px;
-    border-radius: 8px;
-    background: rgba(10,15,25,0.96);
-    color: #e8f0ff;
-    box-shadow: 0 4px 18px rgba(0,0,0,0.35);
+    z-index: 9999;
+    background: rgba(0,0,0,0.85);
+    color: #fff;
+    padding: 6px 10px;
+    border-radius: 6px;
     font-size: 14px;
     line-height: 1.4;
-    border: 1px solid rgba(140,160,255,0.3);
-    pointer-events: none;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.3);
   }
   #hoverTip button {
-    margin-left: 8px;
-    background: #2b3b7a;
+    background: #1e3a8a;
     color: #fff;
     border: none;
-    border-radius: 6px;
-    padding: 2px 6px;
+    margin-left: 8px;
+    border-radius: 4px;
+    padding: 2px 5px;
     cursor: pointer;
   }
   #pane-sub .cue-en .wordtip {
-    border-bottom: 1px dotted rgba(190,210,255,.7);
+    border-bottom: 1px dotted rgba(200,230,255,.7);
     cursor: help;
   }
 </style>
 <div id="hoverTip"></div>
-
 <script>
 (async function(){
-  if (window.__CUE_DICT_V041__) return;
-  window.__CUE_DICT_V041__ = true;
-
+  if (window.__HOVER_DICT_V045__) return;
+  window.__HOVER_DICT_V045__ = true;
   const $ = (s,r=document)=>r.querySelector(s);
   const $$= (s,r=document)=>Array.from(r.querySelectorAll(s));
   const tip=$('#hoverTip');
   const dict=new Map();
-  let voicesReady=false;
 
-  // --- TTS ---
-  function speak(text){
-    if(!('speechSynthesis' in window)) return alert('瀏覽器不支援語音');
-    const u=new SpeechSynthesisUtterance(text);
-    const voices=speechSynthesis.getVoices();
-    const v=voices.find(v=>/en/i.test(v.lang))||voices[0];
-    if(v)u.voice=v;
-    u.lang=v?.lang||'en-US';
-    u.rate=0.9;
-    speechSynthesis.cancel();
-    speechSynthesis.speak(u);
-  }
-  window.speechSynthesis.onvoiceschanged=()=>{voicesReady=true};
-
-  // --- Load Dictionary ---
-  async function loadDict(){
-    try{
-      const res=await fetch('./data/dict-en-zh.json');
-      if(!res.ok) throw new Error('no dict');
-      const data=await res.json();
-      for(const [en,v] of Object.entries(data)){
-        const zh=typeof v==='string'?v:v.zh;
-        dict.set(en.toLowerCase(),{zh,ex:v.example||''});
-      }
-      console.log('[hover] dict loaded:',dict.size);
-    }catch(e){
-      console.warn('[hover] dict load fail',e);
+  // --- Load dictionary ---
+  try {
+    const res=await fetch('./data/dict-en-zh.json');
+    const data=await res.json();
+    for (const [en,v] of Object.entries(data)){
+      dict.set(en.toLowerCase(), typeof v==='string'?v:v.zh);
     }
+  } catch(e){ console.warn('[dict] load fail',e); }
+
+  // --- Speech ---
+  function speak(text){
+    if(!('speechSynthesis' in window)) return;
+    const u=new SpeechSynthesisUtterance(text);
+    const v=speechSynthesis.getVoices().find(v=>/en/i.test(v.lang))||null;
+    if(v) u.voice=v;
+    u.lang=v?.lang||'en-US'; u.rate=0.9;
+    speechSynthesis.cancel(); speechSynthesis.speak(u);
   }
 
-  function norm(w){
-    return (w||'').toLowerCase().replace(/^[^a-z]+|[^a-z]+$/gi,'');
-  }
-
-  // --- Wrap words ---
-  const WORD=/[A-Za-z][A-Za-z'\-]*/g;
-  function wrapCue(td){
-    if(td.__wrapped__) return;
-    const raw=td.textContent;
-    const fr=document.createDocumentFragment();
-    raw.split(WORD).forEach(tok=>{
-      if(!tok) return;
-      if(WORD.test(tok)){
-        const info=dict.get(norm(tok));
-        if(info){
-          const sp=document.createElement('span');
-          sp.className='wordtip';
-          sp.textContent=tok;
-          sp.dataset.zh=info.zh;
-          sp.dataset.en=tok;
-          fr.appendChild(sp);
-          return;
-        }
-      }
-      fr.appendChild(document.createTextNode(tok));
-    });
-    td.innerHTML=''; td.appendChild(fr); td.__wrapped__=true;
-  }
-
-  function wrapAll(){ $$('#pane-sub .cue-en').forEach(wrapCue); }
-
-  // --- Hover Tip with TTS ---
+  // --- Tooltip ---
   let timer=null;
   function showTip(x,y,en,zh){
     tip.innerHTML=`<b>${en}</b>：${zh} <button>🔊</button>`;
@@ -2564,40 +2516,58 @@ $$('.tabs .tab').forEach(t=>t.addEventListener('click',()=>showTab(t.dataset.tab
     const t=e.target.closest('#pane-sub .cue-en .wordtip');
     if(t){
       if(timer)clearTimeout(timer);
-      const zh=t.dataset.zh;
-      const en=t.dataset.en;
+      const zh=t.dataset.zh, en=t.textContent.trim();
       const x=e.clientX,y=e.clientY;
       timer=setTimeout(()=>showTip(x,y,en,zh),500);
-    }else{
-      if(timer){clearTimeout(timer);timer=null;}
+    } else {
+      if(timer)clearTimeout(timer);
       hideTip();
     }
-  },{passive:true});
+  });
 
-  // --- Prevent video click ---
-  const sub=$('#pane-sub');
-  if(sub&&!sub.__bound__){
-    sub.__bound__=true;
-    sub.addEventListener('click',e=>{
-      if(e.target.closest('td.cue-time,td.cue-en,td.cue-zh')){
-        e.stopImmediatePropagation();
-        e.preventDefault();
+  // --- Wrap words ---
+  const WORD=/[A-Za-z][A-Za-z'\-]*/g;
+  function norm(w){return w.toLowerCase().replace(/[^a-z]+$/,'');}
+  function wrap(td){
+    if(td.__done__)return;
+    const text=td.textContent;
+    const frag=document.createDocumentFragment();
+    let last=0;
+    text.replace(WORD,(w,i)=>{
+      if(i>last) frag.appendChild(document.createTextNode(text.slice(last,i)));
+      const zh=dict.get(norm(w));
+      if(zh){
+        const sp=document.createElement('span');
+        sp.className='wordtip';
+        sp.dataset.zh=zh;
+        sp.textContent=w;
+        frag.appendChild(sp);
+      }else{
+        frag.appendChild(document.createTextNode(w));
       }
-    },{capture:true});
+      last=i+w.length;
+    });
+    if(last<text.length)frag.appendChild(document.createTextNode(text.slice(last)));
+    td.innerHTML=''; td.appendChild(frag); td.__done__=true;
   }
+  function wrapAll(){$$('#pane-sub .cue-en').forEach(wrap);}
 
-  // --- Observe DOM changes ---
-  const cuesBody=$('#pane-sub tbody');
-  if(cuesBody){
-    const obs=new MutationObserver(()=>wrapAll());
-    obs.observe(cuesBody,{childList:true,subtree:true});
+  // --- Disable video click inside subtitles ---
+  $('#pane-sub')?.addEventListener('click',e=>{
+    if(e.target.closest('.cue-en, .cue-zh, .cue-time')){
+      e.stopImmediatePropagation(); e.preventDefault();
+    }
+  },true);
+
+  // --- Watch for cue reload ---
+  const tbody=$('#pane-sub tbody');
+  if(tbody){
+    const ob=new MutationObserver(()=>wrapAll());
+    ob.observe(tbody,{childList:true,subtree:true});
   }
-
-  await loadDict();
   wrapAll();
 })();
 </script>
-
 
 </body>
 </html>
