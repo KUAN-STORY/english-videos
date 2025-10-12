@@ -16,6 +16,22 @@
     .nav-spacer{flex:1}
     .nav a.btn,.nav button.btn{padding:8px 12px;border-radius:10px;color:var(--nav-ink);border:1px solid rgba(255,255,255,.18);background:transparent;cursor:pointer}
     .nav a.btn:hover,.nav button.btn:hover{background:rgba(255,255,255,.06)}
+
+    /* 服務導覽 dropdown */
+    .svc-dropdown-wrap{ position:relative; display:inline-block; }
+    .svc-trigger{ background:transparent; color:#e6efff; border:1px solid rgba(255,255,255,.25);
+      padding:8px 14px; border-radius:12px; cursor:pointer; line-height:1; display:flex; gap:6px; align-items:center;}
+    .svc-trigger:after{ content:"▾"; font-size:12px; opacity:.85; }
+    .svc-menu{ position:absolute; right:0; top:calc(100% + 8px); min-width:320px; background:#0f172a; border:1px solid #1f2a44;
+      border-radius:14px; box-shadow:0 12px 28px rgba(0,0,0,.35); padding:8px; display:none; z-index:9999;}
+    .svc-dropdown-wrap.open .svc-menu{ display:block; }
+    .svc-item{ display:flex; align-items:flex-start; gap:12px; padding:12px 12px; border-radius:10px; color:#e6efff; text-decoration:none; }
+    .svc-item:hover{ background:#12333f; }
+    .svc-icof{ width:28px; height:28px; display:inline-grid; place-items:center; border-radius:8px; background:#122340; font-size:16px; flex:0 0 28px; }
+    .svc-txt .name{ font-weight:800; margin-bottom:2px; }
+    .svc-txt .desc{ color:#9fb0c9; font-size:13px; line-height:1.35; }
+
+    /* Account menu */
     .acct-wrap{position:relative;display:none}
     .acct-trigger{padding:8px 12px;border-radius:10px;color:var(--nav-ink);border:1px solid rgba(255,255,255,.18);background:transparent;cursor:pointer}
     .acct-trigger:hover{background:rgba(255,255,255,.06)}
@@ -33,6 +49,7 @@
     .acct-info{min-width:180px}
     .acct-display{font-weight:800;color:#e6efff}
     .acct-email{color:#9fb0c9;font-size:13px;word-break:break-all}
+
     .wrap{max-width:1200px;margin:0 auto;padding:18px 16px;background:var(--bg);color:var(--ink)}
     .hero{background:var(--panel);border:1px solid var(--border);border-radius:14px;padding:18px;margin:12px 0 18px}
     .h1{font-size:28px;font-weight:800;margin:0 0 8px}
@@ -78,8 +95,37 @@
     <div class="bar">
       <div class="brand"><span>BookWide</span><span class="badge">Beta</span></div>
       <div class="nav-spacer"></div>
-      <a class="btn" href="#services" style="display:none" aria-hidden="true">服務導覽 ▾</a>
+
+      <!-- 服務導覽 -->
+      <div class="svc-dropdown-wrap" id="svc">
+        <button class="svc-trigger" type="button" aria-haspopup="menu" aria-expanded="false">服務導覽</button>
+        <div class="svc-menu" role="menu">
+          <a class="svc-item" href="./services/video.html" role="menuitem">
+            <span class="svc-icof">🎞️</span>
+            <span class="svc-txt"><div class="name">影片學習</div><div class="desc">生活化時事影片，樂趣中學習英文、拓展新知。</div></span>
+          </a>
+          <a class="svc-item" href="./services/interactive.html" role="menuitem">
+            <span class="svc-icof">🧩</span>
+            <span class="svc-txt"><div class="name">多元互動練習</div><div class="desc">涵蓋聽力、字彙、語用、文法、口說，多面向培養英文實力。</div></span>
+          </a>
+          <a class="svc-item" href="./services/ai-speak.html" role="menuitem">
+            <span class="svc-icof">🤖🎙️</span>
+            <span class="svc-txt"><div class="name">AI 口說助教</div><div class="desc">隨時隨地、無限暢享 AI 口說練習，讓你不再害怕開口說英文。</div></span>
+          </a>
+          <a class="svc-item" href="./services/review.html" role="menuitem">
+            <span class="svc-icof">💡</span>
+            <span class="svc-txt"><div class="name">智慧化複習</div><div class="desc">抓住最佳時機複習，把短期記憶轉為長期記憶。</div></span>
+          </a>
+          <a class="svc-item" href="./services/tutor.html" role="menuitem">
+            <span class="svc-icof">🗣️</span>
+            <span class="svc-txt"><div class="name">真人對話討論</div><div class="desc">與真人家教一對一練習口說，真正活用對話。</div></span>
+          </a>
+        </div>
+      </div>
+
       <a class="btn" href="/english-videos/pricing.html">方案價格</a>
+
+      <!-- 帳號選單 -->
       <div id="accountWrap" class="acct-wrap">
         <button class="acct-trigger" id="btnAccount" type="button" aria-haspopup="menu" aria-expanded="false">
           <span class="name" id="userNameBadge"></span>
@@ -104,6 +150,7 @@
           <a class="acct-item acct-logout" href="#" role="menuitem">登出</a>
         </div>
       </div>
+
       <button class="btn" id="btnLogin">登入</button>
       <button class="btn" id="btnLogout" style="display:none">登出</button>
     </div>
@@ -145,6 +192,7 @@
     <footer>© <span id="y"></span> BookWide · 建議使用最新 Chrome / Edge / Safari。</footer>
   </main>
 
+  <!-- Auth Modal -->
   <div class="modal" id="authModal" aria-hidden="true">
     <div class="modal-card">
       <h3 id="authTitle">登入</h3>
@@ -185,10 +233,28 @@
     (function init(){apply();$('#y').textContent=(new Date).getFullYear();})();
   </script>
 
+  <script>
+    // 服務導覽開關
+    (function(){
+      const wrap = document.getElementById('svc');
+      const trigger = wrap.querySelector('.svc-trigger');
+      const close = ()=>{ wrap.classList.remove('open'); trigger.setAttribute('aria-expanded','false'); };
+      trigger.addEventListener('click', (e)=>{
+        e.stopPropagation();
+        wrap.classList.toggle('open');
+        trigger.setAttribute('aria-expanded', wrap.classList.contains('open') ? 'true':'false');
+      });
+      document.addEventListener('click', close);
+      document.addEventListener('keydown', (e)=>{ if(e.key==='Escape') close(); });
+      wrap.querySelector('.svc-menu').addEventListener('click', (e)=>{ if(e.target.closest('a')) close(); });
+    })();
+  </script>
+
   <script type="module">
     import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
+    // 使用者提供的正確鍵值
     const SUPABASE_URL='https://qtgwedankftrqjmzuset.supabase.co';
-    const SUPABASE_ANON_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiIsInF0Z3dlZGFua2Z0cnFqbXp1c2V0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTg4NDYxMDMsImV4cCI6MjA3NDQyMjEwM30.jyETpt09pgm66aCZheMgsjtbKlVmYo-lt-hrrt6BF8g';
+    const SUPABASE_ANON_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InF0Z3dlZGFua2Z0cnFqbXp1c2V0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTg4NDYxMDMsImV4cCI6MjA3NDQyMjEwM30.jyETpt09pgm66aCZheMgsjtbKlVmYo-lt-hrrt6BF8g';
     if(!window.supa) window.supa=createClient(SUPABASE_URL,SUPABASE_ANON_KEY);
     const supa=window.supa;
 
@@ -268,6 +334,7 @@
   </script>
 </body>
 </html>
+
 
 
 
