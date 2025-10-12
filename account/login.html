@@ -1,0 +1,95 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>登入 | English Videos</title>
+  <link rel="preconnect" href="https://cdn.jsdelivr.net" />
+  <style>
+    :root{
+      --bg:#0b1220; --card:#0f172a; --text:#e6f0ff; --muted:#9bb0d0;
+      --accent:#4f8cff; --border:#1e293b; --err:#ef4444; --ok:#22c55e;
+      --radius:16px;
+    }
+    html,body{height:100%;margin:0;background:radial-gradient(1200px 700px at 50% -10%,#12203a 0%,#0b1220 55%,#0b1220 100%);color:var(--text);
+      font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,"Noto Sans TC","PingFang TC","Microsoft JhengHei",sans-serif;}
+    a{color:var(--accent);text-decoration:none}
+    .center{min-height:100%;display:grid;place-items:center;padding:28px}
+    .card{width:100%;max-width:420px;background:linear-gradient(180deg,rgba(255,255,255,.03),rgba(255,255,255,0) 18%) , var(--card);
+      border:1px solid var(--border);border-radius:var(--radius);padding:26px 22px;box-shadow:0 10px 25px rgba(0,0,0,.35)}
+    h1{margin:0 0 2px;font-size:24px;letter-spacing:.3px}
+    .muted{color:var(--muted);font-size:14px;margin:0 0 14px}
+    label{display:block;font-size:13px;color:#cfe3ff;margin:.25rem 0 .35rem}
+    .input{width:100%;padding:.75rem .95rem;border-radius:12px;border:1px solid var(--border);background:#0b1324;color:var(--text);box-sizing:border-box}
+    .row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+    .btn{background:var(--accent);color:#fff;border:0;border-radius:12px;padding:.65rem 1rem;cursor:pointer}
+    .btn.secondary{background:transparent;border:1px solid var(--border);color:var(--text)}
+    .msg{font-size:13px}
+    .ok{color:var(--ok)} .err{color:var(--err)}
+    .footer{margin-top:18px;display:flex;justify-content:space-between;color:var(--muted);font-size:13px}
+  </style>
+</head>
+<body>
+  <div class="center">
+    <div class="card">
+      <h1>登入</h1>
+      <p class="muted">使用 Email／密碼登入（或註冊新帳號）。</p>
+      <div>
+        <label>Email</label>
+        <input id="email" class="input" type="email" placeholder="you@example.com" autocomplete="email">
+        <label style="margin-top:10px">密碼</label>
+        <input id="password" class="input" type="password" placeholder="至少 6 個字元" autocomplete="current-password">
+        <div class="row" style="margin-top:12px">
+          <button id="btnIn" class="btn">登入</button>
+          <button id="btnUp" class="btn secondary" type="button">註冊</button>
+          <span id="msg" class="msg"></span>
+        </div>
+      </div>
+      <div class="footer">
+        <a id="reset" href="./reset.html">忘記密碼？</a>
+        <a href="../index.html">← 回首頁</a>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="./_sb-config.js"></script>
+  <script>
+  (async()=>{
+    if(!window.SB){ document.getElementById('msg').textContent='缺少 _sb-config.js'; return; }
+    const sb = supabase.createClient(SB.url, SB.anon, { auth:{ persistSession:true, autoRefreshToken:true } });
+    const $ = id=>document.getElementById(id);
+    const next = new URLSearchParams(location.search).get('next') || './profile.html';
+    async function goProfile(){ location.replace(next); }
+
+    $('btnIn').addEventListener('click', async ()=>{
+      $('msg').textContent = '登入中…';
+      try{
+        const { error } = await sb.auth.signInWithPassword({
+          email:$('email').value.trim(), password:$('password').value
+        });
+        if (error) throw error;
+        $('msg').textContent = '登入成功 ✓'; $('msg').className='msg ok';
+        goProfile();
+      }catch(e){ $('msg').textContent='登入失敗：'+(e.message||e); $('msg').className='msg err'; }
+    });
+
+    $('btnUp').addEventListener('click', async ()=>{
+      $('msg').textContent = '送出註冊…';
+      try{
+        const { error } = await sb.auth.signUp({
+          email:$('email').value.trim(), password:$('password').value,
+          options:{ emailRedirectTo: location.origin + '/english-videos/account/reset.html' }
+        });
+        if (error) throw error;
+        $('msg').textContent='註冊信已寄出，請到信箱完成驗證。'; $('msg').className='msg ok';
+      }catch(e){ $('msg').textContent='註冊失敗：'+(e.message||e); $('msg').className='msg err'; }
+    });
+
+    // 若已經登入就直接去 profile
+    const { data:{ user } } = await sb.auth.getUser();
+    if (user) goProfile();
+  })();
+  </script>
+</body>
+</html>
