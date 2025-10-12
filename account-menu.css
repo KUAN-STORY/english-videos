@@ -1,0 +1,13 @@
+/* /english-videos/account-menu.css */
+.am-root{display:flex;align-items:center;gap:8px}
+.am-btn{padding:.45rem .85rem;border-radius:10px;border:1px solid #1e293b;background:#4f8cff;color:#fff;cursor:pointer}
+.am-user{position:relative}
+.am-trigger{display:flex;align-items:center;gap:8px;padding:.25rem .4rem;border-radius:12px;border:1px solid #1e293b;background:rgba(255,255,255,.04);cursor:pointer}
+.am-email{font-size:12px;color:#9bb0d0}
+.am-avatar-wrap{display:flex;align-items:center}
+.am-avatar{width:28px;height:28px;border-radius:999px;object-fit:cover;background:#0b1324;border:1px solid #1e293b;display:block}
+.am-fallback{display:grid;place-items:center;font-size:11px;color:#cfe3ff}
+.am-menu{position:absolute;top:110%;right:0;min-width:160px;background:#0f172a;border:1px solid #1e293b;border-radius:12px;padding:6px;display:none;box-shadow:0 10px 25px rgba(0,0,0,.35);z-index:30}
+.am-menu.open{display:block}
+.am-item{display:block;width:100%;text-align:left;background:transparent;border:0;color:#e6f0ff;padding:.55rem .7rem;border-radius:10px;cursor:pointer;text-decoration:none}
+.am-item:hover{background:rgba(255,255,255,.06)}
