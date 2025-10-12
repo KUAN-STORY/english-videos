@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>重設密碼 | BookWide</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="./_sb-config.js"></script>
+  <style>
+    :root{
+      --bg:#0b1220;--card:#0f172a;--border:#1e293b;
+      --text:#e6f0ff;--muted:#9bb0d0;--accent:#4f8cff;
+    }
+    html,body{margin:0;background:var(--bg);color:var(--text);
+      font-family:"Segoe UI","Noto Sans TC","PingFang TC","Microsoft JhengHei",sans-serif;}
+    main{max-width:400px;margin:60px auto;background:var(--card);
+      border:1px solid var(--border);border-radius:12px;padding:24px 28px;}
+    h2{text-align:center;margin-top:0}
+    label{display:block;margin-top:12px;color:var(--muted)}
+    input{width:100%;padding:10px;margin-top:4px;
+      border-radius:8px;border:1px solid var(--border);background:#111a2e;color:var(--text)}
+    button{margin-top:20px;width:100%;padding:10px 0;border:none;
+      background:var(--accent);color:#fff;border-radius:8px;font-size:16px;cursor:pointer}
+    button:hover{background:#5f99ff}
+    .msg{text-align:center;margin-top:14px;color:var(--muted)}
+  </style>
+</head>
+<body>
+  <main>
+    <h2>重設密碼</h2>
+    <div id="step-request">
+      <p>請輸入你註冊的 Email，我們會寄送重設連結給你。</p>
+      <label>Email</label>
+      <input type="email" id="email" placeholder="you@example.com" required>
+      <button id="sendLink">寄送重設連結</button>
+    </div>
+
+    <div id="step-reset" style="display:none">
+      <p>請輸入新密碼：</p>
+      <label>新密碼</label>
+      <input type="password" id="newPass" minlength="6" required>
+      <button id="updatePass">更新密碼</button>
+    </div>
+
+    <div class="msg" id="msg"></div>
+  </main>
+
+  <script>
+    const sb = window.supa;
+    const msg = document.getElementById("msg");
+    const stepRequest = document.getElementById("step-request");
+    const stepReset = document.getElementById("step-reset");
+
+    // 若URL含有 access_token 表示從信件開啟
+    const url = new URL(location.href);
+    if (url.hash.includes("access_token")) {
+      stepRequest.style.display = "none";
+      stepReset.style.display = "block";
+    }
+
+    document.getElementById("sendLink").onclick = async ()=>{
+      const email = document.getElementById("email").value.trim();
+      if(!email) return msg.textContent="請輸入 Email";
+      const { error } = await sb.auth.resetPasswordForEmail(email, {
+        redirectTo: `${location.origin}/english-videos/account/reset.html`
+      });
+      msg.textContent = error ? "寄送失敗：" + error.message : "已寄送！請於 15 分鐘內開啟信件完成重設。";
+    };
+
+    document.getElementById("updatePass").onclick = async ()=>{
+      const pw = document.getElementById("newPass").value;
+      if(pw.length<6) return msg.textContent="密碼至少 6 個字元";
+      const { error } = await sb.auth.updateUser({ password: pw });
+      msg.textContent = error ? "更新失敗：" + error.message : "密碼已更新！請重新登入。";
+      if(!error) setTimeout(()=>location.href="../login.html",1500);
+    };
+  </script>
+</body>
+</html>
