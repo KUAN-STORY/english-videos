@@ -230,45 +230,44 @@
     // 啟動
     loadProfile();
   </script>
-     <!-- … 前面原本的程式碼保持不變 … -->
-
-  <!-- 保持在同一個 <script type="module"> 區塊內 -->
-  <!-- 啟動：載入個人資料 -->
-  loadProfile();
-
-  /* 移除「學習曲線」按鈕 */
+    <script>
+  // 嘗試移除「學習曲線」按鈕，找到就回傳 true
   function removeProgressButton() {
-    // 先用 id 試試
+    // 1) 先用 id 找
     let btn = document.querySelector('#viewProgress, #btnProgress');
 
-    // 找不到再用文字比對當保底（button 或 a）
+    // 2) 找不到再用文字比對保底
     if (!btn) {
-      btn = Array.from(document.querySelectorAll('button, a'))
-        .find(el => /學習曲線/.test((el.textContent || '').trim()));
+      btn = [...document.querySelectorAll('button, a')]
+        .find(el => /學習曲線/.test(el.textContent || ''));
     }
 
     if (btn) {
-      // 如果外層有包 <li> / <div> 想整塊拿掉可用下行：
-      // btn.closest('button, a, li, div')?.remove();
+      // 如果按鈕外面還包了 <div> 或 <li>，想整塊拿掉可改用 btn.closest('button, a, li, div')?.remove()
       btn.remove();
       return true;
     }
     return false;
   }
 
-  // DOM 準備好就移除一次；若有延遲載入，再嘗試幾次
   document.addEventListener('DOMContentLoaded', () => {
-    if (!removeProgressButton()) {
-      let tries = 0;
-      const t = setInterval(() => {
-        if (removeProgressButton() || ++tries > 10) clearInterval(t);
-      }, 200);
-    }
+    // 先嘗試一次
+    if (removeProgressButton()) return;
+
+    // 持續監看，等節點被動態插入再移除，移除成功就停止監看
+    const mo = new MutationObserver(() => {
+      if (removeProgressButton()) mo.disconnect();
+    });
+    mo.observe(document.body, { childList: true, subtree: true });
+
+    // 另外用 interval 多保一層（3 秒內每 200ms 檢一次）
+    const timer = setInterval(() => {
+      if (removeProgressButton()) clearInterval(timer);
+    }, 200);
+    setTimeout(() => clearInterval(timer), 3000);
   });
 </script>
-</body>
-</html>
- 
+
 </body>
 </html>
 
