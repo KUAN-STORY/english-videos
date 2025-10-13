@@ -1,168 +1,294 @@
 <!doctype html>
 <html lang="zh-Hant">
 <head>
-<meta charset="utf-8"/>
-<meta name="viewport" content="width=device-width,initial-scale=1"/>
-<title>收藏影片</title>
-<style>
-:root{--bg:#0b1324;--panel:#0f172a;--muted:#93a4bf;--ink:#e6efff;--accent:#3c7cff}
-*{box-sizing:border-box}html,body{height:100%;margin:0}
-body{background:var(--bg);color:var(--ink);font-family:ui-sans-serif,system-ui,"Noto Sans TC";}
-header{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:14px 18px;background:var(--panel);border-bottom:1px solid #0e2038;position:sticky;top:0;z-index:5}
-h1{font-size:22px;margin:0}
-.btn{background:#12335f;border:1px solid #24446f;border-radius:10px;padding:8px 12px;color:#fff;cursor:pointer}
-.btn.blue{background:#173bff1a;border-color:#2b5cff}
-.btn.red{background:#7f1d1d33;border-color:#ef4444}
-.btn.muted{background:#112237;border-color:#1f3347;color:var(--muted)}
-.wrap{max-width:980px;margin:18px auto;padding:0 16px}
-.card{background:#0e2038;border:1px solid #183459;border-radius:12px;padding:14px;margin:12px 0}
-.card h2{margin:4px 0 10px 0;font-size:18px}
-.row{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
-.input{background:#0b1a2e;border:1px solid #1b3354;border-radius:10px;color:#fff;padding:10px 12px;min-width:220px}
-.list{display:grid;grid-template-columns:1fr auto auto;gap:10px;align-items:center}
-.list>div{padding:10px;border-bottom:1px dashed #17324d}
-.badge{background:#10233e;border:1px solid #24446f;border-radius:24px;padding:4px 10px;font-size:12px;color:#cfe4ff}
-.empty{color:var(--muted);padding:16px}
-table{width:100%;border-collapse:collapse}
-th,td{padding:10px;border-bottom:1px dashed #17324d;text-align:left}
-th{color:#cfe4ff;font-weight:700}
-.small{font-size:12px;color:var(--muted)}
-.center{display:flex;justify-content:center;align-items:center}
-canvas{width:100%;height:220px;background:#07111f;border:1px solid #183459;border-radius:10px}
-a{color:#a7c3ff;text-decoration:none}
-a:hover{text-decoration:underline}
-</style>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>學習控制台</title>
+  <style>
+    :root{
+      --bg:#0f172a; --card:#111827; --ink:#e5e7eb; --muted:#9ca3af; --accent:#60a5fa;
+      --ok:#22c55e; --warn:#f59e0b; --bad:#ef4444; --stroke:#1f2937;
+    }
+    html,body{background:var(--bg);color:var(--ink);font-family:ui-sans-serif,system-ui,
+      -apple-system,"Segoe UI",Roboto,"Helvetica Neue","Noto Sans","PingFang TC",sans-serif}
+    .wrap{max-width:1100px;margin:24px auto;padding:0 16px}
+    h1{font-size:28px;margin:8px 0 16px}
+    .grid{display:grid;gap:16px}
+    .grid.cols-2{grid-template-columns:repeat(2,minmax(0,1fr))}
+    .grid.cols-3{grid-template-columns:repeat(3,minmax(0,1fr))}
+    @media(max-width:960px){.grid.cols-3{grid-template-columns:repeat(2,1fr)}}
+    @media(max-width:640px){.grid.cols-2,.grid.cols-3{grid-template-columns:1fr}}
+    .card{background:var(--card);border:1px solid var(--stroke);border-radius:14px;padding:14px}
+    .row{display:flex;gap:14px;align-items:center}
+    .thumb{width:140px;height:84px;background:#0b1220;border-radius:10px;flex:none;
+      display:flex;align-items:center;justify-content:center;font-size:12px;color:var(--muted)}
+    .title{font-size:16px;font-weight:600;line-height:1.2;margin-bottom:6px}
+    .meta{font-size:13px;color:var(--muted)}
+    .bar{height:7px;background:#1f2937;border-radius:999px;overflow:hidden;margin:8px 0 4px}
+    .bar>i{display:block;height:100%;background:var(--accent);width:0%}
+    .actions{display:flex;gap:8px;margin-top:8px;flex-wrap:wrap}
+    button{appearance:none;border:1px solid var(--stroke);background:#0b1220;color:var(--ink);
+      padding:8px 10px;border-radius:10px;font-size:14px;cursor:pointer}
+    button.primary{background:var(--accent);border-color:var(--accent);color:#001628}
+    button.ghost{background:transparent}
+    .tag{display:inline-block;font-size:12px;color:#60a5fa;background:rgba(96,165,250,.1);
+      border:1px solid rgba(96,165,250,.35);padding:3px 8px;border-radius:999px;margin-left:6px}
+    .empty{color:var(--muted);font-size:14px;padding:10px}
+    header{display:flex;justify-content:space-between;align-items:center;margin:18px 0 10px}
+    header h2{font-size:20px;margin:0}
+    .pill{font-size:12px;color:#93c5fd;border:1px solid #1e3a8a;background:#0b1220;border-radius:999px;padding:4px 8px}
+  </style>
 </head>
 <body>
-<header>
-  <div class="row">
-    <a class="btn muted" href="../index.html">← 回首頁</a>
-    <h1>收藏影片</h1>
+  <div class="wrap">
+    <h1>學習控制台</h1>
+
+    <!-- 繼續播放 -->
+    <section class="card">
+      <header>
+        <h2>繼續播放</h2>
+        <span class="pill">未完成的影片</span>
+      </header>
+      <div id="sec-continue" class="grid cols-2"></div>
+      <div id="empty-continue" class="empty" hidden>目前沒有未看完的影片。</div>
+    </section>
+
+    <!-- 今日複習 -->
+    <section class="card" style="margin-top:16px">
+      <header>
+        <h2>今日複習</h2>
+        <span class="pill">1/3/7 日複習建議</span>
+      </header>
+      <div id="sec-review" class="grid cols-3"></div>
+      <div id="empty-review" class="empty" hidden>今天沒有到期的複習項目。</div>
+    </section>
+
+    <!-- 最近看過 -->
+    <section class="card" style="margin-top:16px">
+      <header>
+        <h2>最近看過</h2>
+        <span class="pill">依時間排序</span>
+      </header>
+      <div id="sec-history" class="grid cols-3"></div>
+      <div id="empty-history" class="empty" hidden>尚無觀看紀錄。</div>
+    </section>
+
+    <!-- 我的清單 -->
+    <section class="card" style="margin-top:16px">
+      <header>
+        <h2>我的清單</h2>
+        <span class="pill">手動收藏</span>
+      </header>
+      <div id="sec-fav" class="grid cols-3"></div>
+      <div id="empty-fav" class="empty" hidden>尚未收藏任何影片。</div>
+    </section>
   </div>
-  <div class="badge">v2025V002</div>
-</header>
 
-<div class="wrap">
+  <script type="module">
+    /* 依照你的實際階層調整路徑：
+       - 若此檔在 /services/ ：'../supa.js'
+       - 若此檔在 /account/  ：'../../supa.js' */
+    import { supabase } from '../supa.js';
 
-  <div class="card">
-    <h2>快速新增</h2>
-    <div class="row">
-      <input id="slugInput" class="input" placeholder="輸入影片 slug，例如：houyi"/>
-      <button class="btn blue" id="btnAdd">加入收藏</button>
-      <button class="btn muted" id="btnFromQS">從網址 ?slug= 讀取並加入</button>
-    </div>
-    <div class="small" id="addHint"></div>
-  </div>
-
-  <div class="card">
-    <div class="row" style="justify-content:space-between">
-      <h2>我的收藏</h2>
-      <div class="row">
-        <button class="btn muted" id="btnExport">匯出 CSV</button>
-        <button class="btn red" id="btnClear">清空全部</button>
-      </div>
-    </div>
-    <div id="favList" class="empty">載入中…</div>
-  </div>
-
-</div>
-
-<script type="module" src="./_shared.js"></script>
-<script type="module">
-const supa = window.supa;
-
-const ui = (sel)=>document.querySelector(sel);
-let currentUser=null, rows=[];
-
-async function needLogin() { 
-  const { data:{ user } } = await supa.auth.getUser();
-  if(!user) { 
-    document.body.innerHTML = `
-      <div class='wrap'>
-        <div class='card center' style='min-height:40vh;flex-direction:column;gap:16px'>
-          <div>請先登入後再查看收藏影片。</div>
-          <a class='btn blue' href="../index.html">回首頁登入</a>
-        </div>
-      </div>`; 
-    return null;
-  }
-  currentUser = user;
-  return user;
-}
-
-function renderList() { 
-  const box = ui("#favList");
-  if(!rows.length) { box.className='empty'; box.textContent='目前尚未收藏任何影片。'; return; }
-  box.className=''; 
-  box.innerHTML = "";
-  const grid = document.createElement('div');
-  grid.style.display = "grid";
-  grid.style.gridTemplateColumns = "1fr auto auto";
-  grid.style.gap = "8px";
-  rows.forEach(r=>{
-    const slugCell = document.createElement('div');
-    slugCell.innerHTML = `<b>${r.video_slug}</b><div class="small">${new Date(r.created_at).toLocaleString()}</div>`;
-    const open = document.createElement('a');
-    open.className='btn';
-    open.href = `../player.html?slug=${encodeURIComponent(r.video_slug)}`;
-    open.textContent='播放';
-    const del = document.createElement('button');
-    del.className='btn red';
-    del.textContent='移除';
-    del.onclick = async ()=>{ 
-      await supa.from('favorites').delete().eq('id', r.id); 
-      rows = rows.filter(x=>x.id!==r.id); 
-      renderList();
+    // ===== 工具 =====
+    const $ = (s, el=document) => el.querySelector(s);
+    const fmtTime = sec => {
+      if (!sec && sec !== 0) return '';
+      const m = Math.floor(sec/60).toString().padStart(2,'0');
+      const s2 = Math.floor(sec%60).toString().padStart(2,'0');
+      return `${m}:${s2}`;
     };
-    grid.append(slugCell, open, del);
-  });
-  box.append(grid);
-}
+    const daysBetween = (a, b=new Date()) =>
+      Math.floor((b - new Date(a)) / 86400000);
 
-async function loadList() { 
-  const { data, error } = await supa.from('favorites').select('*').order('created_at', { descending:true });
-  if(error) { ui("#favList").textContent = '讀取失敗：'+error.message; return; }
-  rows = data || [];
-  renderList();
-}
+    // 若沒有影片資料表，這裡先做個簡單轉換示例
+    // 你之後可改成從 DB 「videos」表 join 取縮圖/標題
+    function getVideoMeta(video_id){
+      // 假設 video_id 就是檔名或 slug
+      return {
+        title: video_id.replace(/[-_]/g,' ').replace(/\.\w+$/,'').slice(0,60),
+        thumb: `./img/video/${encodeURIComponent(video_id)}.jpg`  // 你可換成實際縮圖路徑
+      };
+    }
 
-async function addSlug(slug) { 
-  slug = (slug||"").trim();
-  if(!slug) return;
-  ui("#addHint").textContent="處理中…";
-  const { error } = await supa.from('favorites').insert({ video_slug: slug, user_id: currentUser.id });
-  if(error) { ui("#addHint").textContent='加入失敗：'+error.message; return; }
-  ui("#addHint").textContent='已加入：'+slug;
-  await loadList();
-}
+    // ===== 取得目前使用者 =====
+    async function getUser() {
+      const { data: { user }, error } = await supabase.auth.getUser();
+      if (error) throw error;
+      return user;
+    }
 
-async function clearAll() { 
-  if(!confirm('確定要刪除所有收藏？')) return;
-  const ids = rows.map(r=>r.id);
-  if(!ids.length) return;
-  const { error } = await supa.from('favorites').delete().in('id', ids);
-  if(error) alert(error.message);
-  rows = [];
-  renderList();
-}
+    // ===== 呈現卡片 =====
+    function card(video, opts={}) {
+      const meta = getVideoMeta(video.video_id);
+      const pct = Math.max(0, Math.min(100, Math.round(video.progress_percent || 0)));
+      const btns = (opts.buttons || []).map(b => 
+        `<button class="${b.primary ? 'primary':''} ${b.ghost ? 'ghost':''}" 
+                 data-action="${b.action}" data-video="${video.video_id}">
+           ${b.text}
+         </button>`).join('');
 
-function exportCSV() { 
-  if(!rows.length) return;
-  const lines = ['id,video_slug,created_at'];
-  rows.forEach(r=>lines.push([r.id, r.video_slug, r.created_at].join(',')));
-  const blob = new Blob([lines.join('\n')], {type:'text/csv'});
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a'); a.href=url; a.download='favorites.csv'; a.click();
-  URL.revokeObjectURL(url);
-}
+      const badges = (opts.badges || []).map(t => `<span class="tag">${t}</span>`).join('');
 
-document.addEventListener('DOMContentLoaded', async ()=>{
-  const user = await needLogin(); if(!user) return;
-  ui('#btnAdd').onclick = ()=>addSlug(ui('#slugInput').value);
-  ui('#btnFromQS').onclick = ()=>{ const s=new URLSearchParams(location.search).get('slug'); if(s) addSlug(s); };
-  ui('#btnClear').onclick = clearAll;
-  ui('#btnExport').onclick = exportCSV;
-  await loadList();
-});
-</script>
-</body></html>
+      return `
+        <div class="card">
+          <div class="row">
+            <div class="thumb">${meta.thumb ? `<img src="${meta.thumb}" alt="" style="width:100%;height:100%;object-fit:cover;border-radius:10px">` : 'No Image'}</div>
+            <div style="flex:1">
+              <div class="title">${meta.title} ${badges}</div>
+              ${typeof video.last_position_sec === 'number'
+                ? `<div class="bar"><i style="width:${pct}%"></i></div>
+                   <div class="meta">上次看到：${fmtTime(video.last_position_sec)}（${pct}%）</div>`
+                : `<div class="meta">最後觀看：${video.last_watched_at ? new Date(video.last_watched_at).toLocaleString() : '-'}</div>`
+              }
+              <div class="actions">${btns}</div>
+            </div>
+          </div>
+        </div>`;
+    }
+
+    function mount(list, el, emptyEl){
+      el.innerHTML = list.join('');
+      emptyEl.hidden = list.length > 0;
+    }
+
+    // ===== 查詢：繼續播放 =====
+    async function loadContinue(userId){
+      const { data, error } = await supabase
+        .from('video_progress')
+        .select('video_id,last_position_sec,duration_sec,progress_percent,last_watched_at')
+        .eq('user_id', userId)
+        .lt('progress_percent', 95)
+        .order('last_watched_at', { ascending:false })
+        .limit(4);
+
+      if (error) console.error(error);
+      const nodes = (data||[]).map(v => card(v, {
+        buttons:[
+          { text:'繼續播放', action:'resume', primary:true },
+          { text:'加入清單', action:'fav' , ghost:true }
+        ]
+      }));
+      mount(nodes, $('#sec-continue'), $('#empty-continue'));
+    }
+
+    // ===== 查詢：今日複習（1/3/7 天）=====
+    async function loadReview(userId){
+      const { data, error } = await supabase
+        .from('video_progress')
+        .select('video_id,completed_at')
+        .eq('user_id', userId)
+        .not('completed_at', 'is', null)
+        .order('completed_at', { ascending:false })
+        .limit(100);
+
+      if (error) console.error(error);
+      const now = new Date();
+      const due = (data||[])
+        .map(v => ({...v, days: daysBetween(v.completed_at, now)}))
+        .filter(v => [1,3,7].includes(v.days))           // 到期點
+        .slice(0, 6);
+
+      const nodes = due.map(v => card({ video_id:v.video_id }, {
+        badges:[`${v.days} 天複習`],
+        buttons:[
+          { text:'開始複習', action:'review', primary:true },
+          { text:'加入清單', action:'fav', ghost:true }
+        ]
+      }));
+      mount(nodes, $('#sec-review'), $('#empty-review'));
+    }
+
+    // ===== 查詢：最近看過 =====
+    async function loadHistory(userId){
+      const { data, error } = await supabase
+        .from('video_progress')
+        .select('video_id,last_watched_at,progress_percent')
+        .eq('user_id', userId)
+        .order('last_watched_at', { ascending:false })
+        .limit(12);
+
+      if (error) console.error(error);
+      const nodes = (data||[]).map(v => card(v, {
+        buttons:[
+          { text:'再次播放', action:'play', primary:true },
+          { text:'加入清單', action:'fav', ghost:true }
+        ]
+      }));
+      mount(nodes, $('#sec-history'), $('#empty-history'));
+    }
+
+    // ===== 查詢：我的清單（手動收藏）=====
+    async function loadFavorites(userId){
+      const { data, error } = await supabase
+        .from('favorites')
+        .select('video_id,created_at,note')
+        .eq('user_id', userId)
+        .order('created_at', { ascending:false })
+        .limit(24);
+
+      if (error) console.error(error);
+      const nodes = (data||[]).map(v => card({video_id:v.video_id}, {
+        buttons:[
+          { text:'播放', action:'play', primary:true },
+          { text:'移除', action:'unfav', ghost:true }
+        ]
+      }));
+      mount(nodes, $('#sec-fav'), $('#empty-fav'));
+    }
+
+    // ===== 動作處理 =====
+    async function onClick(e){
+      const btn = e.target.closest('button[data-action]');
+      if(!btn) return;
+
+      const action = btn.dataset.action;
+      const videoId = btn.dataset.video;
+
+      switch(action){
+        case 'resume':
+        case 'play':
+        case 'review':
+          // 這裡導到你的播放器頁面，querystring 帶 videoId 與(可選) resume=1
+          // 例如：/player.html?video=...&resume=1
+          location.href = `./player.html?video=${encodeURIComponent(videoId)}${action==='resume' ? '&resume=1':''}`;
+          break;
+
+        case 'fav': {
+          const user = await getUser();
+          await supabase.from('favorites').upsert({
+            user_id: user.id, video_id: videoId
+          }, { onConflict: 'user_id,video_id' });
+          await loadFavorites(user.id);
+          break;
+        }
+
+        case 'unfav': {
+          const user = await getUser();
+          await supabase.from('favorites')
+            .delete()
+            .eq('user_id', user.id)
+            .eq('video_id', videoId);
+          await loadFavorites(user.id);
+          break;
+        }
+      }
+    }
+
+    // ===== 啟動 =====
+    document.addEventListener('click', onClick);
+
+    (async () => {
+      const user = await getUser();
+      if(!user){ location.href = './login.html'; return; }
+
+      await Promise.all([
+        loadContinue(user.id),
+        loadReview(user.id),
+        loadHistory(user.id),
+        loadFavorites(user.id)
+      ]);
+    })();
+  </script>
+</body>
+</html>
