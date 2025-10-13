@@ -3,157 +3,192 @@
 <head>
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width,initial-scale=1"/>
-  <title>我的資料 · BookWide</title>
+  <title>帳號 / 個人資料</title>
   <style>
-    :root{
-      --bg:#0b1324; --panel:#0f172a; --ink:#eaf1ff; --muted:#a8b6d3;
-      --line:#1f2a44; --btn:#1e90ff; --btn-ink:#fff;
-    }
-    *{box-sizing:border-box} html,body{margin:0;background:var(--bg);color:var(--ink);font-family:ui-sans-serif,system-ui,"Noto Sans TC"}
-    a{color:inherit;text-decoration:none}
-    .wrap{max-width:1000px;margin:0 auto;padding:18px}
-    .topbar{display:flex;gap:12px;align-items:center;margin-bottom:14px}
-    .back{display:inline-flex;gap:8px;align-items:center;padding:8px 12px;border:1px solid var(--line);border-radius:10px}
-    .card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:18px;margin:12px 0}
-    h2{margin:0 0 10px}
+    :root{ --ink:#eaf1ff; --muted:#9fb0c9; --panel:#0f172a; --bg:#0b1324; --border:#1f2a44; --accent:#2b72ff; }
+    *{box-sizing:border-box}
+    html,body{height:100%;margin:0;background:var(--bg);color:var(--ink);font-family:ui-sans-serif,system-ui,"Noto Sans TC"}
+    .page{max-width:1100px;margin:0 auto;padding:18px}
+    .crumb{color:var(--muted);margin:4px 0 10px}
+    .back{display:inline-flex;align-items:center;gap:6px;padding:8px 12px;border:1px solid var(--border);border-radius:10px;background:#0b1324;cursor:pointer}
+    .card{background:var(--panel);border:1px solid var(--border);border-radius:14px;padding:16px;margin:12px 0}
+    .h{font-size:22px;font-weight:800;margin:0 0 12px}
+    .row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+    .col{display:flex;flex-direction:column;gap:6px}
+    label{font-size:13px;color:var(--muted)}
+    input{height:44px;padding:0 12px;border-radius:10px;border:1px solid var(--border);background:#0b1324;color:var(--ink)}
+    .btns{display:flex;gap:10px;margin-top:10px}
+    .btn{padding:10px 14px;border-radius:12px;border:1px solid var(--border);background:#0e1a33;color:var(--ink);cursor:pointer}
+    .btn.primary{background:var(--accent);border-color:var(--accent);color:white}
     .muted{color:var(--muted)}
-    .grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
-    .row{display:flex;flex-direction:column;gap:6px}
-    .row label{font-size:13px;color:var(--muted)}
-    input[type="text"],input[type="url"]{
-      background:#0b1324;border:1px solid var(--line);border-radius:10px;height:44px;padding:0 12px;color:var(--ink)
-    }
-    .actions{display:flex;gap:10px}
-    .btn{padding:10px 14px;border-radius:10px;border:1px solid var(--line);background:#132036;color:var(--ink);cursor:pointer}
-    .btn.primary{background:var(--btn);border-color:#2a5bff;color:var(--btn-ink)}
-    .toast{position:fixed;left:50%;bottom:18px;transform:translateX(-50%);
-      background:#0f223b;border:1px solid #2c3e66;color:#dfe8ff;padding:10px 14px;border-radius:10px;display:none}
-    @media (max-width:760px){ .grid{grid-template-columns:1fr} }
+    .pill{display:inline-block;padding:.3rem .6rem;border-radius:999px;border:1px solid var(--border);color:var(--muted)}
+    .list{margin:6px 0 0;padding:0;list-style:none}
+    .list li{padding:8px 0;border-bottom:1px dashed var(--border);color:var(--muted)}
+    .ok{color:#9fe0a8}
+    .err{color:#ff9a9a}
+    @media (max-width:820px){ .row{grid-template-columns:1fr} }
   </style>
 </head>
 <body>
-  <main class="wrap">
-    <div class="topbar">
-      <a class="back" href="../index.html">← 回首頁</a>
-      <div class="muted">帳號 / 個人資料</div>
+  <div class="page">
+    <div class="crumb">
+      <button class="back" id="btnBack">← 回首頁</button>
+      <span style="margin-left:10px">帳號 / 個人資料</span>
     </div>
 
+    <!-- 基本資料（只顯示 Email） -->
     <section class="card">
-      <h2>基本資料</h2>
-      <div id="basicEmail" class="muted">電子郵件：<span id="emailText">載入中…</span></div>
+      <div class="h">基本資料</div>
+      <div class="muted">電子郵件：<span id="emailText" class="pill">載入中…</span></div>
     </section>
 
+    <!-- 個人檔案（profiles） -->
     <section class="card">
-      <h2>編輯個人檔案（profiles）</h2>
-      <div class="grid">
-        <div class="row">
-          <label for="display_name">暱稱</label>
-          <input id="display_name" type="text" placeholder="您的暱稱（可留白）"/>
+      <div class="h">編輯個人檔案（profiles）</div>
+      <div class="row">
+        <div class="col">
+          <label for="nickname">暱稱</label>
+          <input id="nickname" type="text" placeholder="您的暱稱（可留白）">
         </div>
-        <div class="row">
-          <label for="avatar_url">頭像網址</label>
-          <input id="avatar_url" type="url" placeholder="https://example.com/me.png"/>
+        <div class="col">
+          <label for="avatar">頭像網址</label>
+          <input id="avatar" type="url" placeholder="https://example.com/me.png">
         </div>
       </div>
-      <div style="height:10px"></div>
-      <div class="actions">
+      <div class="btns">
         <button id="btnSave" class="btn primary">儲存</button>
-        <a class="btn" href="../account/learning.html">查看學習曲線</a>
+        <a class="btn" href="./learning.html">查看學習曲線</a>
       </div>
-      <div id="err" class="muted" style="margin-top:8px;min-height:1em"></div>
+      <div id="msg" class="muted" style="margin-top:8px"></div>
     </section>
-  </main>
 
-  <div id="toast" class="toast">已儲存</div>
+    <!-- 可選：最近觀看紀錄（若你想要顯示） -->
+    <section class="card" id="watchBlock" style="display:none">
+      <div class="h">最近觀看紀錄</div>
+      <ul id="watchList" class="list"></ul>
+      <div class="muted" id="watchHint"></div>
+    </section>
+  </div>
 
   <script type="module">
-    import { supabase } from '../supa.js'; // ← 依你的 repo，這個路徑是正確的
+    // 若 supa.js 在根目錄，這裡要用 ../supa.js
+    import { supabase } from '../supa.js';
 
-    const $ = (s, e=document)=>e.querySelector(s);
-    const emailText   = $('#emailText');
-    const iptName     = $('#display_name');
-    const iptAvatar   = $('#avatar_url');
-    const btnSave     = $('#btnSave');
-    const toast       = $('#toast');
-    const errBox      = $('#err');
+    const $ = (s, e=document) => e.querySelector(s);
+    const emailText = $('#emailText');
+    const nicknameI = $('#nickname');
+    const avatarI   = $('#avatar');
+    const msg       = $('#msg');
+    const watchBlock= $('#watchBlock');
+    const watchList = $('#watchList');
+    const watchHint = $('#watchHint');
 
-    function showToast(msg){
-      toast.textContent = msg || '已儲存';
-      toast.style.display='block';
-      setTimeout(()=>toast.style.display='none', 1600);
+    // 返回
+    $('#btnBack').addEventListener('click', () => {
+      if (history.length > 1) history.back();
+      else location.href = '/english-videos/index.html';
+    });
+
+    // 進頁就檢查登入狀態 + 載入資料
+    let currentUser = null;
+
+    async function ensureLogin() {
+      const { data:{ session } } = await supabase.auth.getSession();
+      if (!session?.user) {
+        alert('請先登入');
+        location.href = '/english-videos/index.html';
+        return null;
+      }
+      return session.user;
     }
 
-    // 讀取 session + profiles
-    async function loadProfile(){
-      errBox.textContent='';
-      try{
-        const { data:sessionData, error:sErr } = await supabase.auth.getSession();
-        if(sErr) throw sErr;
-
-        const user = sessionData?.session?.user;
-        if(!user){
-          emailText.textContent = '未登入（將導向登入頁）';
-          setTimeout(()=>location.href='../login-test.html', 900);
-          return;
-        }
+    async function loadProfile() {
+      try {
+        const user = await ensureLogin();
+        if (!user) return;
+        currentUser = user;
 
         // 顯示 email
         emailText.textContent = user.email || '(無)';
 
-        // 讀取 profiles
-        const { data:prof, error:pErr } = await supabase
+        // 讀 profiles（我們用 id=auth.uid()）
+        const { data, error } = await supabase
           .from('profiles')
-          .select('email, display_name, avatar_url')
+          .select('display_name, avatar_url, email')
           .eq('id', user.id)
           .single();
 
-        if(pErr){
-          // 若還沒被 trigger 建立，也不當錯，只給空白欄位
-          if(pErr.code !== 'PGRST116'){ // row not found
-            throw pErr;
-          }
-        }
+        if (error && error.code !== 'PGRST116') throw error; // 非空也非 not found 就拋出
 
-        iptName.value   = prof?.display_name || '';
-        iptAvatar.value = prof?.avatar_url   || '';
+        // 填入欄位（可能為空）
+        nicknameI.value = (data?.display_name ?? '');
+        avatarI.value   = (data?.avatar_url ?? '');
 
-      }catch(e){
-        console.error(e);
-        errBox.textContent = e?.message || '讀取失敗';
+        // 顯示最近觀看紀錄（可依你的表結構選擇 email 或 user_id）
+        // 你的 watch_logs 目前用 email 欄位，因此用 email 查。
+        showWatchLogs(user.email);
+      } catch (e) {
+        msg.className = 'err';
+        msg.textContent = '載入失敗：' + (e?.message || e);
       }
     }
 
-    // 儲存 profiles
-    btnSave.addEventListener('click', async ()=>{
-      errBox.textContent='';
-      try{
-        const { data:sessionData } = await supabase.auth.getSession();
-        const user = sessionData?.session?.user;
-        if(!user) throw new Error('請先登入');
+    async function showWatchLogs(email) {
+      try {
+        // 如果你已把 watch_logs 改成 user_id，這裡改成 .eq('user_id', currentUser.id)
+        const { data, error } = await supabase
+          .from('watch_logs')
+          .select('video_slug, viewed_at')
+          .eq('email', email)
+          .order('viewed_at', { ascending:false })
+          .limit(10);
 
-        const payload = {
-          id: user.id, // upsert 需要帶 id
-          email: user.email, // 讓資料一致
-          display_name: iptName.value?.trim() || null,
-          avatar_url:   iptAvatar.value?.trim() || null,
-        };
+        if (error) throw error;
 
-        const { error:uErr } = await supabase
-          .from('profiles')
-          .upsert(payload, { onConflict: 'id' });
-
-        if(uErr) throw uErr;
-
-        // 可選：把暱稱也同步到 Auth 的 metadata（之後登入快顯用得到）
-        await supabase.auth.updateUser({ data: { display_name: payload.display_name, avatar_url: payload.avatar_url } });
-
-        showToast('已儲存');
-      }catch(e){
-        console.error(e);
-        errBox.textContent = e?.message || '儲存失敗';
+        if (!data?.length) {
+          watchBlock.style.display = 'block';
+          watchHint.textContent = '尚無紀錄。';
+          return;
+        }
+        watchBlock.style.display = 'block';
+        watchList.innerHTML = data.map(r => {
+          const t = new Date(r.viewed_at).toLocaleString();
+          return `<li><span class="pill">${r.video_slug}</span>　${t}</li>`;
+        }).join('');
+      } catch (e) {
+        // 若你還沒要顯示紀錄，可把整段區塊刪掉
+        // 這裡容錯就好，不擋住主流程
       }
-    });
+    }
 
+    // 儲存（upsert）
+    async function saveProfile() {
+      if (!currentUser) return;
+      msg.textContent = '';
+      const display_name = nicknameI.value.trim();
+      const avatar_url   = avatarI.value.trim();
+
+      try {
+        const payload = {
+          id: currentUser.id,      // 不可改，但 upsert 需要帶
+          email: currentUser.email,// 讓觸發器能同步（存在也沒關係）
+          display_name,
+          avatar_url
+        };
+        const { error } = await supabase.from('profiles').upsert(payload, { onConflict:'id' });
+        if (error) throw error;
+
+        msg.className = 'ok';
+        msg.textContent = '已儲存。';
+      } catch (e) {
+        msg.className = 'err';
+        msg.textContent = '儲存失敗：' + (e?.message || e);
+      }
+    }
+
+    $('#btnSave').addEventListener('click', saveProfile);
+
+    // go
     loadProfile();
   </script>
 </body>
