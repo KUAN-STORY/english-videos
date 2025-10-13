@@ -1,96 +1,163 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="zh-Hant">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>我的資料</title>
-  <link rel="stylesheet" href="account-menu.css" />
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>我的資料 · BookWide</title>
   <style>
-    body { font-family: system-ui, "Noto Sans TC", sans-serif; background-color: #0b1324; color: #eaf1ff; margin: 0; }
-    .wrap { max-width: 800px; margin: 30px auto; padding: 20px; }
-    .card { background-color: #0f172a; border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; padding: 20px; margin-bottom: 20px; }
-    label { display: block; margin-top: 10px; color: #a8b6d3; }
-    input { width: 100%; padding: 10px; background-color: #0b1324; color: #fff; border: 1px solid rgba(255,255,255,0.2); border-radius: 8px; margin-top: 5px; }
-    button { margin-top: 15px; padding: 10px 16px; border-radius: 8px; border: none; background-color: #1e3a8a; color: white; cursor: pointer; }
-    button:hover { background-color: #2563eb; }
-    .muted { color: #9fb0c9; font-size: 0.9em; }
+    :root{
+      --bg:#0b1324; --panel:#0f172a; --ink:#eaf1ff; --muted:#a8b6d3;
+      --line:#1f2a44; --btn:#1e90ff; --btn-ink:#fff;
+    }
+    *{box-sizing:border-box} html,body{margin:0;background:var(--bg);color:var(--ink);font-family:ui-sans-serif,system-ui,"Noto Sans TC"}
+    a{color:inherit;text-decoration:none}
+    .wrap{max-width:1000px;margin:0 auto;padding:18px}
+    .topbar{display:flex;gap:12px;align-items:center;margin-bottom:14px}
+    .back{display:inline-flex;gap:8px;align-items:center;padding:8px 12px;border:1px solid var(--line);border-radius:10px}
+    .card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:18px;margin:12px 0}
+    h2{margin:0 0 10px}
+    .muted{color:var(--muted)}
+    .grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+    .row{display:flex;flex-direction:column;gap:6px}
+    .row label{font-size:13px;color:var(--muted)}
+    input[type="text"],input[type="url"]{
+      background:#0b1324;border:1px solid var(--line);border-radius:10px;height:44px;padding:0 12px;color:var(--ink)
+    }
+    .actions{display:flex;gap:10px}
+    .btn{padding:10px 14px;border-radius:10px;border:1px solid var(--line);background:#132036;color:var(--ink);cursor:pointer}
+    .btn.primary{background:var(--btn);border-color:#2a5bff;color:var(--btn-ink)}
+    .toast{position:fixed;left:50%;bottom:18px;transform:translateX(-50%);
+      background:#0f223b;border:1px solid #2c3e66;color:#dfe8ff;padding:10px 14px;border-radius:10px;display:none}
+    @media (max-width:760px){ .grid{grid-template-columns:1fr} }
   </style>
 </head>
 <body>
-  <div class="wrap">
-    <div class="card">
+  <main class="wrap">
+    <div class="topbar">
+      <a class="back" href="../index.html">← 回首頁</a>
+      <div class="muted">帳號 / 個人資料</div>
+    </div>
+
+    <section class="card">
       <h2>基本資料</h2>
-      <p>電子郵件：<span id="email">載入中...</span></p>
-    </div>
+      <div id="basicEmail" class="muted">電子郵件：<span id="emailText">載入中…</span></div>
+    </section>
 
-    <div class="card">
-      <h3>編輯個人檔案（profiles）</h3>
-      <label>暱稱</label>
-      <input id="display_name" type="text" placeholder="您的暱稱（可留白）">
+    <section class="card">
+      <h2>編輯個人檔案（profiles）</h2>
+      <div class="grid">
+        <div class="row">
+          <label for="display_name">暱稱</label>
+          <input id="display_name" type="text" placeholder="您的暱稱（可留白）"/>
+        </div>
+        <div class="row">
+          <label for="avatar_url">頭像網址</label>
+          <input id="avatar_url" type="url" placeholder="https://example.com/me.png"/>
+        </div>
+      </div>
+      <div style="height:10px"></div>
+      <div class="actions">
+        <button id="btnSave" class="btn primary">儲存</button>
+        <a class="btn" href="../account/learning.html">查看學習曲線</a>
+      </div>
+      <div id="err" class="muted" style="margin-top:8px;min-height:1em"></div>
+    </section>
+  </main>
 
-      <label>頭像網址</label>
-      <input id="avatar_url" type="text" placeholder="https://example.com/me.png">
+  <div id="toast" class="toast">已儲存</div>
 
-      <button id="save">儲存</button>
-      <div id="msg" class="muted"></div>
-    </div>
-  </div>
-
-  <!-- 若你的 supa.js 在根目錄，這行要改成 ../supa.js -->
   <script type="module">
-    import { supabase } from '../supa.js'; // ← 請確認路徑正確
+    import { supabase } from '../supa.js'; // ← 依你的 repo，這個路徑是正確的
 
-    const $ = (s, e=document) => e.querySelector(s);
-    const emailEl = $('#email');
-    const nameEl = $('#display_name');
-    const avatarEl = $('#avatar_url');
-    const saveBtn = $('#save');
-    const msg = $('#msg');
+    const $ = (s, e=document)=>e.querySelector(s);
+    const emailText   = $('#emailText');
+    const iptName     = $('#display_name');
+    const iptAvatar   = $('#avatar_url');
+    const btnSave     = $('#btnSave');
+    const toast       = $('#toast');
+    const errBox      = $('#err');
 
-    // 1️⃣ 檢查登入狀態
-    const { data: { session } } = await supabase.auth.getSession();
-    if (!session) {
-      alert('請先登入！');
-      location.href = 'login.html';
+    function showToast(msg){
+      toast.textContent = msg || '已儲存';
+      toast.style.display='block';
+      setTimeout(()=>toast.style.display='none', 1600);
     }
-    const user = session.user;
 
-    // 2️⃣ 載入 profiles 資料
-    async function loadProfile() {
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('email, display_name, avatar_url')
-        .eq('id', user.id)
-        .single();
+    // 讀取 session + profiles
+    async function loadProfile(){
+      errBox.textContent='';
+      try{
+        const { data:sessionData, error:sErr } = await supabase.auth.getSession();
+        if(sErr) throw sErr;
 
-      if (error) {
-        console.error('❌ Profile 載入失敗:', error);
-        msg.textContent = '讀取失敗：' + error.message;
-        return;
+        const user = sessionData?.session?.user;
+        if(!user){
+          emailText.textContent = '未登入（將導向登入頁）';
+          setTimeout(()=>location.href='../login-test.html', 900);
+          return;
+        }
+
+        // 顯示 email
+        emailText.textContent = user.email || '(無)';
+
+        // 讀取 profiles
+        const { data:prof, error:pErr } = await supabase
+          .from('profiles')
+          .select('email, display_name, avatar_url')
+          .eq('id', user.id)
+          .single();
+
+        if(pErr){
+          // 若還沒被 trigger 建立，也不當錯，只給空白欄位
+          if(pErr.code !== 'PGRST116'){ // row not found
+            throw pErr;
+          }
+        }
+
+        iptName.value   = prof?.display_name || '';
+        iptAvatar.value = prof?.avatar_url   || '';
+
+      }catch(e){
+        console.error(e);
+        errBox.textContent = e?.message || '讀取失敗';
       }
-
-      emailEl.textContent = data?.email || user.email || '(未設定)';
-      nameEl.value = data?.display_name || '';
-      avatarEl.value = data?.avatar_url || '';
     }
 
-    // 3️⃣ 儲存更新
-    saveBtn.addEventListener('click', async () => {
-      msg.textContent = '';
-      const updates = {
-        id: user.id,
-        display_name: nameEl.value || null,
-        avatar_url: avatarEl.value || null,
-        updated_at: new Date()
-      };
-      const { error } = await supabase.from('profiles').upsert(updates);
-      msg.textContent = error ? '❌ 儲存失敗：' + error.message : '✅ 已儲存！';
+    // 儲存 profiles
+    btnSave.addEventListener('click', async ()=>{
+      errBox.textContent='';
+      try{
+        const { data:sessionData } = await supabase.auth.getSession();
+        const user = sessionData?.session?.user;
+        if(!user) throw new Error('請先登入');
+
+        const payload = {
+          id: user.id, // upsert 需要帶 id
+          email: user.email, // 讓資料一致
+          display_name: iptName.value?.trim() || null,
+          avatar_url:   iptAvatar.value?.trim() || null,
+        };
+
+        const { error:uErr } = await supabase
+          .from('profiles')
+          .upsert(payload, { onConflict: 'id' });
+
+        if(uErr) throw uErr;
+
+        // 可選：把暱稱也同步到 Auth 的 metadata（之後登入快顯用得到）
+        await supabase.auth.updateUser({ data: { display_name: payload.display_name, avatar_url: payload.avatar_url } });
+
+        showToast('已儲存');
+      }catch(e){
+        console.error(e);
+        errBox.textContent = e?.message || '儲存失敗';
+      }
     });
 
-    // 初次載入
-    await loadProfile();
+    loadProfile();
   </script>
 </body>
 </html>
+
 
 
