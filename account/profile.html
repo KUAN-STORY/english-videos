@@ -230,7 +230,14 @@
     // 啟動
     loadProfile();
   </script>
-  
+   <!-- 補丁：自動移除學習曲線按鈕 -->
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const btn = document.querySelector('button#viewProgress, button#btnProgress');
+      if (btn) btn.remove();
+    });
+  </script>
+ 
 </body>
 </html>
 
