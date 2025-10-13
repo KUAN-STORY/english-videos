@@ -1,103 +1,88 @@
-// /english-videos/account-menu.js
-(function(global){
-  const AM = {};
-  const Q = (sel, root=document)=>root.querySelector(sel);
+// ===============================
+// account-menu.js (最新版 2025.10)
+// ===============================
 
-  function ensureClient(){
-    if (!global.SB) { console.warn('[AccountMenu] Missing _sb-config.js'); return null; }
-    if (global.sb) return global.sb;
-    if (!global.supabase){ console.warn('[AccountMenu] Missing supabase-js'); return null; }
-    global.sb = supabase.createClient(SB.url, SB.anon, { auth:{ persistSession:true, autoRefreshToken:true } });
-    return global.sb;
-  }
+// 版本顯示（可省略）
+const VERSION = 'v1.2';
 
-  function initialsFromEmail(email){
-    const n = (email||'').split('@')[0] || 'U';
-    return n.slice(0,2).toUpperCase();
-  }
+// 顯示登入狀態選擇器（可根據實際邏輯調整）
+const HIDE_LOGIN_SEL = '.hide-when-login';
+const HIDE_LOGOUT_SEL = '.hide-when-logout';
 
-  function avatarHTML(url, fallbackText){
-    if (url) return `<img class="am-avatar" src="${url}" alt="avatar" onerror="this.style.display='none';this.nextElementSibling.style.display='grid'">` +
-                    `<div class="am-avatar am-fallback" style="display:none">${fallbackText}</div>`;
-    return `<div class="am-avatar am-fallback">${fallbackText}</div>`;
-  }
+function mountUI(client) {
+  if (HIDE_LOGIN_SEL)
+    document.querySelectorAll(HIDE_LOGIN_SEL).forEach(el => (el.style.display = 'none'));
+  if (HIDE_LOGOUT_SEL)
+    document.querySelectorAll(HIDE_LOGOUT_SEL).forEach(el => (el.style.display = 'block'));
 
-  function mountUI(container){
-    container.innerHTML = `
-      <div class="am-root">
-        <button class="am-btn am-login" data-am="login" style="display:none">登入</button>
-        <div class="am-user" style="display:none">
-          <div class="am-trigger" data-am="trigger" aria-haspopup="menu" aria-expanded="false">
-            <span class="am-email"></span>
-            <div class="am-avatar-wrap"></div>
-          </div>
-          <div class="am-menu" role="menu">
-            <a class="am-item" href="./account/profile.html" role="menuitem">個人資料</a>
-            <button class="am-item am-logout" role="menuitem">登出</button>
-          </div>
-        </div>
-      </div>
-    `;
-  }
+  // === 主根節點 ===
+  const root = document.createElement('div');
+  root.id = 'accMenuRoot';
+  root.innerHTML = `
+    <span class="acc-badge">${VERSION}</span>
+    <button class="acc-avatar" id="accAvatarBtn" aria-label="account">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+        <path d="M12 12c2.67 0 8 1.34 8 4v2H4v-2c0-2.66 5.33-4 8-4zM12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8z"></path>
+      </svg>
+      <span id="accAvatarText" class="muted">未登入</span>
+    </button>
 
-  async function render(container){
-    const sb = ensureClient();
-    if (!sb) return;
+    <div class="acc-menu" id="accDropdown">
+      <div class="acc-item" data-link="./account/profile.html">個人資料</div>
+      <div class="acc-item" data-link="./account/learning-dashboard.html">我的學習</div>
+      <div class="acc-item" data-link="./account/learning.html">學習曲線</div>
+      <div class="acc-item" data-link="./account/subscription.html">我的訂閱</div>
+      <div class="split"></div>
+      <div class="acc-item" id="accLogout" style="display:none">登出</div>
+    </div>
+  `;
+  document.body.appendChild(root);
 
-    const { data:{ user } } = await sb.auth.getUser();
-    const loginBtn = Q('[data-am="login"]', container);
-    const userBox  = Q('.am-user', container);
-    const trig     = Q('[data-am="trigger"]', container);
-    const emailEl  = Q('.am-email', container);
-    const avWrap   = Q('.am-avatar-wrap', container);
+  // === 快速選取 ===
+  const avatarBtn = root.querySelector('#accAvatarBtn');
+  const menu = root.querySelector('#accDropdown');
+  const txt = root.querySelector('#accAvatarText');
+  const btnLogout = root.querySelector('#accLogout');
 
-    if (!user){
-      userBox.style.display = 'none';
-      loginBtn.style.display = 'inline-flex';
-      loginBtn.onclick = ()=>{
-        const here = location.pathname + location.search;
-        location.href = `./account/login.html?next=${encodeURIComponent(here)}`;
-      };
-      return;
-    }
+  // === 展開/收合選單 ===
+  avatarBtn.addEventListener('click', () => {
+    menu.classList.toggle('open');
+  });
 
-    loginBtn.style.display = 'none';
-    userBox.style.display = 'inline-block';
-    emailEl.textContent = user.email;
+  // === 點擊整列跳轉 ===
+  menu.addEventListener('click', e => {
+    const item = e.target.closest('.acc-item[data-link]');
+    if (!item) return;
+    const link = item.getAttribute('data-link');
+    if (link) location.href = link;
+  });
 
-    let avatar = user.user_metadata?.avatar_url || '';
-    try{
-      const { data } = await sb.from('profiles').select('avatar_url').eq('user_id', user.id).maybeSingle();
-      if (data?.avatar_url) avatar = data.avatar_url;
-    }catch(_){}
+  // === 登出動作 ===
+  btnLogout.addEventListener('click', async () => {
+    if (window.supabase) await supabase.auth.signOut();
+    localStorage.removeItem('sb-auth-token');
+    location.reload();
+  });
 
-    avWrap.innerHTML = avatarHTML(avatar, initialsFromEmail(user.email));
+  // === 自動高亮目前頁 ===
+  const current = location.pathname.replace(/\/+$/, '');
+  menu.querySelectorAll('.acc-item[data-link]').forEach(el => {
+    const to = new URL(el.dataset.link, location.origin).pathname;
+    if (current.endsWith(to)) el.classList.add('active');
+  });
+}
 
-    function close(){ Q('.am-menu', container).classList.remove('open'); trig.setAttribute('aria-expanded','false'); }
-    function open(){ Q('.am-menu', container).classList.add('open'); trig.setAttribute('aria-expanded','true'); }
-    trig.onclick = (e)=>{
-      e.stopPropagation();
-      const opened = Q('.am-menu', container).classList.contains('open');
-      opened ? close() : open();
-    };
-    document.addEventListener('click', close);
+// === CSS: active 狀態 ===
+const style = document.createElement('style');
+style.textContent = `
+  .acc-menu { display:none; flex-direction:column; position:absolute; background:#0e1624; border:1px solid #223; padding:6px 0; border-radius:8px; }
+  .acc-menu.open { display:flex; }
+  .acc-item { padding:8px 16px; cursor:pointer; color:#bbb; }
+  .acc-item:hover { background:#1e2533; color:#fff; }
+  .acc-item.active { color:#4da3ff; font-weight:600; }
+  .split { border-bottom:1px solid #223; margin:4px 0; }
+`;
+document.head.appendChild(style);
 
-    Q('.am-logout', container).onclick = async ()=>{
-      await sb.auth.signOut();
-      location.reload();
-    };
-  }
-
-  AM.mount = function(selector){
-    const el = Q(selector);
-    if (!el) return console.warn('[AccountMenu] mount target not found:', selector);
-    mountUI(el);
-    render(el);
-    const sb = ensureClient();
-    if (sb){
-      sb.auth.onAuthStateChange(()=>render(el));
-    }
-  };
-
-  global.AccountMenu = AM;
-})(window);
+// === 初始化 ===
+mountUI();
