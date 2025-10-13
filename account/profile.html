@@ -5,257 +5,163 @@
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>帳號／個人資料</title>
   <style>
-    :root{
-      --bg:#ffffff;
-      --card:#f8f9fb;
-      --text:#121212;
-      --muted:#6b7280;
-      --line:#e5e7eb;
-      --primary:#2563eb;
-      --primary-600:#1d4ed8;
-      --danger:#dc2626;
-      --ok:#16a34a;
-      --chip:#eef2ff;
+    body {
+      font-family: "Noto Sans TC", sans-serif;
+      background: #0b1120;
+      color: #e5e7eb;
+      margin: 0;
     }
-    *{box-sizing:border-box}
-    body{
-      margin:0;
-      font-family: system-ui, -apple-system, Segoe UI, Roboto, "Noto Sans TC", Arial, "Apple Color Emoji","Segoe UI Emoji";
-      background:var(--bg);
-      color:var(--text);
+    .container { max-width: 960px; margin: 40px auto; padding: 0 20px; }
+    a.back {
+      display: inline-block; margin-bottom: 16px;
+      background: #1e293b; color: #f8fafc;
+      text-decoration: none; padding: 8px 16px; border-radius: 8px;
     }
-    .container{max-width:1024px;margin:40px auto;padding:0 20px}
-    .back{
-      display:inline-flex;align-items:center;gap:8px;
-      background:#fff;border:1px solid var(--line);color:var(--text);
-      padding:8px 12px;border-radius:10px;text-decoration:none;
-      transition:.15s;user-select:none
+    .card {
+      background: #111827; border-radius: 12px; padding: 20px;
+      margin-bottom: 24px; border: 1px solid #1f2937;
     }
-    .back:hover{background:#fafafa}
-    .heading{margin:18px 0 10px;font-weight:800;font-size:26px}
-    .card{
-      background:var(--card);border:1px solid var(--line);
-      border-radius:16px;padding:20px;margin:14px 0
+    .heading { font-size: 1.5rem; font-weight: bold; margin-bottom: 16px; }
+    .row { display: flex; align-items: center; gap: 20px; flex-wrap: wrap; }
+    .avatar {
+      width: 80px; height: 80px; border-radius: 50%; object-fit: cover;
+      border: 2px solid #374151; background: #000;
     }
-    .row{display:flex;gap:24px;align-items:center;flex-wrap:wrap}
-    .avatar{
-      width:88px;height:88px;border-radius:50%;
-      background:#fff;border:2px solid var(--line);object-fit:cover
+    .btn {
+      background: #1d4ed8; border: none; color: white;
+      padding: 10px 18px; border-radius: 8px; cursor: pointer;
     }
-    .kv{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
-    .label{color:var(--muted)}
-    .chip{
-      display:inline-block;background:var(--chip);
-      color:#1e293b;border:1px solid #c7d2fe;
-      padding:6px 10px;border-radius:12px
+    .btn:hover { background: #2563eb; }
+    .btn.secondary { background: #374151; }
+    .btn.secondary:hover { background: #475569; }
+    input[type="text"], input[type="file"] {
+      width: 100%; padding: 10px; border-radius: 6px;
+      border: 1px solid #334155; background: #0f172a; color: #f9fafb;
     }
-    .spacer{flex:1}
-    .btn{
-      appearance:none;border:1px solid var(--line);
-      background:#fff;padding:10px 14px;border-radius:12px;
-      cursor:pointer;transition:.15s;font-size:14px
-    }
-    .btn:hover{background:#fafafa}
-    .btn.primary{
-      background:var(--primary);color:#fff;border-color:transparent
-    }
-    .btn.primary:hover{background:var(--primary-600)}
-    .btn.danger{background:#fff;border-color:#fca5a5;color:var(--danger)}
-    .grid{display:grid;gap:14px}
-    .col-2{grid-template-columns:1fr 1fr}
-    .field label{display:block;margin:8px 2px 6px;color:var(--muted)}
-    .input, .file{
-      width:100%;padding:12px 14px;border:1px solid var(--line);
-      border-radius:12px;background:#fff;font-size:15px
-    }
-    .help{color:var(--muted);font-size:13px}
-    .hidden{display:none!important}
-    .toast{
-      position:fixed;right:18px;bottom:18px;max-width:80vw;
-      background:#111827;color:#fff;padding:12px 14px;border-radius:12px;
-      opacity:0;transform:translateY(8px);transition:.18s
-    }
-    .toast.show{opacity:1;transform:translateY(0)}
+    label { color: #9ca3af; display: block; margin-top: 12px; }
   </style>
 </head>
 <body>
   <div class="container">
-    <a href="../index.html" class="back" id="btnBack">← 回首頁</a>
+    <a href="../index.html" class="back">← 回首頁</a>
 
-    <!-- 基本資料卡 -->
     <div class="card" id="viewCard">
+      <div class="heading">基本資料</div>
       <div class="row">
-        <img id="viewAvatar" class="avatar" src="../img/avatar-default.svg" alt="頭像" />
-        <div class="grid">
-          <div class="kv"><span class="label">暱稱：</span><span id="viewName" class="chip">—</span></div>
-          <div class="kv"><span class="label">電子郵件：</span><span id="viewEmail" class="chip">載入中…</span></div>
+        <img id="viewAvatar" class="avatar" src="../img/avatar-default.svg" alt="頭像">
+        <div>
+          <p>暱稱：<span id="viewName">—</span></p>
+          <p>電子郵件：<span id="viewEmail">載入中…</span></p>
         </div>
-        <div class="spacer"></div>
-        <button id="btnEdit" class="btn">編輯資料</button>
+        <div style="flex:1"></div>
+        <button id="btnEdit" class="btn secondary">編輯資料</button>
       </div>
     </div>
 
-    <!-- 編輯資料卡（同頁） -->
     <div class="card hidden" id="editCard">
       <div class="heading">編輯個人檔案（profiles）</div>
-      <div class="grid col-2" style="align-items:end">
-        <div class="field">
-          <label for="displayName">暱稱</label>
-          <input id="displayName" class="input" placeholder="您的暱稱" />
-        </div>
+      <label for="displayName">暱稱</label>
+      <input id="displayName" type="text" placeholder="您的暱稱（可留白）">
 
-        <div class="field">
-          <label for="avatarFile">大頭貼（上傳圖片）</label>
-          <input id="avatarFile" class="file" type="file" accept="image/*" />
-          <div class="help">支援 jpg / png / webp，建議 &lt; 2MB</div>
-        </div>
-      </div>
+      <label for="avatarFile">大頭貼（上傳圖片）</label>
+      <input id="avatarFile" type="file" accept="image/*">
+      <p style="font-size: 0.9rem; color:#9ca3af;">支援 jpg / png / webp，建議 &lt; 2MB。</p>
 
-      <div class="row" style="margin-top:10px">
-        <div class="spacer"></div>
-        <button id="btnCancel" class="btn">取消</button>
-        <button id="btnSave" class="btn primary">完成並儲存</button>
+      <div style="margin-top: 12px; text-align:right;">
+        <button id="btnCancel" class="btn secondary">取消</button>
+        <button id="btnSave" class="btn">完成並儲存</button>
       </div>
     </div>
   </div>
 
-  <div id="toast" class="toast">已儲存</div>
-
   <script type="module">
-    import { supabase } from '../supa.js';  // ← 依你的專案結構：account/ 相對到專案根
-
-    // 小工具
-    const $ = (s, el=document) => el.querySelector(s);
-    const toast = (msg) => {
-      const t = $('#toast');
-      t.textContent = msg || '完成';
-      t.classList.add('show');
-      setTimeout(()=>t.classList.remove('show'), 1600);
-    };
-
-    // DOM
-    const viewCard   = $('#viewCard');
+    import { supabase } from '../supa.js';
+    const $ = (s, e=document) => e.querySelector(s);
+    const viewCard = $('#viewCard');
+    const editCard = $('#editCard');
     const viewAvatar = $('#viewAvatar');
-    const viewName   = $('#viewName');
-    const viewEmail  = $('#viewEmail');
-
-    const editCard   = $('#editCard');
+    const viewName = $('#viewName');
+    const viewEmail = $('#viewEmail');
     const displayNameInput = $('#displayName');
-    const avatarFileInput  = $('#avatarFile');
-
-    const btnEdit   = $('#btnEdit');
+    const avatarFileInput = $('#avatarFile');
+    const btnEdit = $('#btnEdit');
     const btnCancel = $('#btnCancel');
-    const btnSave   = $('#btnSave');
+    const btnSave = $('#btnSave');
 
     let currentUser = null;
     let currentProfile = null;
-    let pendingAvatarPublicUrl = null;  // 上傳後暫存的 public URL
 
-    // 入口
-    init().catch(err => {
-      console.error(err);
-      toast('載入失敗');
-    });
+    init();
 
     async function init() {
-      // 1) 取得登入者
       const { data: authData, error: authErr } = await supabase.auth.getUser();
       if (authErr || !authData?.user) {
-        toast('請先登入');
-        // 回登入頁或首頁
-        setTimeout(()=>location.href='../login-test.html', 800);
+        alert('請先登入');
+        location.href = '../login-test.html';
         return;
       }
       currentUser = authData.user;
-
-      // 2) 把 email 顯示上去
       viewEmail.textContent = currentUser.email || '(無)';
-
-      // 3) 讀 profiles
       await loadProfile();
 
-      // 4) 綁定事件
-      btnEdit.addEventListener('click', () => {
+      btnEdit.onclick = () => {
         displayNameInput.value = currentProfile?.display_name ?? '';
         avatarFileInput.value = '';
         viewCard.classList.add('hidden');
         editCard.classList.remove('hidden');
-      });
-
-      btnCancel.addEventListener('click', () => {
+      };
+      btnCancel.onclick = () => {
         editCard.classList.add('hidden');
         viewCard.classList.remove('hidden');
-        pendingAvatarPublicUrl = null;
-      });
-
-      // 儲存流程：若選了圖 -> 先上傳 -> 取得 publicUrl -> update profiles
-      btnSave.addEventListener('click', onSaveClicked);
+      };
+      btnSave.onclick = onSaveClicked;
     }
 
     async function loadProfile() {
-      // 以 id（= auth uid）尋找
       const { data, error } = await supabase
         .from('profiles')
         .select('id, email, display_name, avatar_url')
         .eq('id', currentUser.id)
         .maybeSingle();
-
-      if (error) throw error;
-
-      currentProfile = data || null;
-
-      // 顯示
-      const name = currentProfile?.display_name || '—';
-      viewName.textContent = name;
-
-      const avatarUrl = currentProfile?.avatar_url || '../img/avatar-default.svg';
-      viewAvatar.src = avatarUrl;
+      if (error) console.warn(error);
+      currentProfile = data;
+      viewName.textContent = currentProfile?.display_name || '—';
+      viewAvatar.src = currentProfile?.avatar_url || '../img/avatar-default.svg';
     }
 
     async function onSaveClicked() {
       btnSave.disabled = true;
       btnSave.textContent = '儲存中…';
       try {
-        // 1) 如果有選頭像檔案，先上傳
-        const file = avatarFileInput.files?.[0] || null;
         let avatarUrl = currentProfile?.avatar_url || null;
-
+        const file = avatarFileInput.files?.[0];
         if (file) {
-          // 上傳到 avatars bucket：/userId/timestamp_filename
           const path = `${currentUser.id}/${Date.now()}_${file.name}`;
           const { error: upErr } = await supabase
             .storage.from('avatars')
-            .upload(path, file, { upsert:true, cacheControl:'3600' });
+            .upload(path, file, { upsert:true });
           if (upErr) throw upErr;
-
-          // 取得 public URL
           const { data: urlData } = supabase.storage.from('avatars').getPublicUrl(path);
-          avatarUrl = urlData?.publicUrl || avatarUrl;
+          avatarUrl = urlData.publicUrl;
         }
-
-        // 2) 更新 display_name + avatar_url
-        const displayName = displayNameInput.value?.trim() || null;
-
-        // 若 profiles 還不存在（理論上你的觸發器已建立），保險用 UPSERT
-        const payload = {
-          id: currentUser.id,
-          email: currentUser.email,
-          display_name: displayName,
-          avatar_url: avatarUrl
-        };
 
         const { error: upsertErr } = await supabase
           .from('profiles')
-          .upsert(payload, { onConflict: 'id' });
+          .upsert({
+            id: currentUser.id,
+            email: currentUser.email,
+            display_name: displayNameInput.value?.trim() || null,
+            avatar_url: avatarUrl
+          });
         if (upsertErr) throw upsertErr;
 
-        toast('已儲存');
+        alert('已儲存');
         await loadProfile();
         editCard.classList.add('hidden');
         viewCard.classList.remove('hidden');
       } catch (e) {
         console.error(e);
-        toast('儲存失敗');
+        alert('儲存失敗');
       } finally {
         btnSave.disabled = false;
         btnSave.textContent = '完成並儲存';
@@ -264,6 +170,7 @@
   </script>
 </body>
 </html>
+
 
 
 
