@@ -38,7 +38,7 @@
       </button>
       <div class="acc-menu" id="accDropdown">
         <div class="acc-item" data-link="./account/profile.html">我的資料</div>
-        <div class="acc-item" data-link="./account/favorites.html">收藏影片</div>
+        <div class="acc-item" data-link="./account/learning-dashboard.html">我的學習</div>
         <div class="acc-item" data-link="./account/learning.html">學習曲線</div>
         <div class="split"></div>
         <div class="acc-item" id="accLogin">登入</div>
