@@ -230,13 +230,44 @@
     // 啟動
     loadProfile();
   </script>
-   <!-- 補丁：自動移除學習曲線按鈕 -->
   <script>
-    document.addEventListener('DOMContentLoaded', () => {
-      const btn = document.querySelector('button#viewProgress, button#btnProgress');
-      if (btn) btn.remove();
+  // 嘗試移除「學習曲線」按鈕，找到就回傳 true
+  function removeProgressButton() {
+    // 1) 先用 id 找
+    let btn = document.querySelector('#viewProgress, #btnProgress');
+
+    // 2) 找不到再用文字比對保底
+    if (!btn) {
+      btn = [...document.querySelectorAll('button, a')]
+        .find(el => /學習曲線/.test(el.textContent || ''));
+    }
+
+    if (btn) {
+      // 如果按鈕外面還包了 <div> 或 <li>，想整塊拿掉可改用 btn.closest('button, a, li, div')?.remove()
+      btn.remove();
+      return true;
+    }
+    return false;
+  }
+
+  document.addEventListener('DOMContentLoaded', () => {
+    // 先嘗試一次
+    if (removeProgressButton()) return;
+
+    // 持續監看，等節點被動態插入再移除，移除成功就停止監看
+    const mo = new MutationObserver(() => {
+      if (removeProgressButton()) mo.disconnect();
     });
-  </script>
+    mo.observe(document.body, { childList: true, subtree: true });
+
+    // 另外用 interval 多保一層（3 秒內每 200ms 檢一次）
+    const timer = setInterval(() => {
+      if (removeProgressButton()) clearInterval(timer);
+    }, 200);
+    setTimeout(() => clearInterval(timer), 3000);
+  });
+</script>
+
  
 </body>
 </html>
