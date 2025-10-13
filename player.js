@@ -426,6 +426,19 @@
     await loadVideo(); await loadCues(); await loadVocabUI(); await bootQuizTab();
   })();
 })();
+import { initWatchLog } from './player.watchlog.js'
+
+// 假設你頁面上只有一支 <video>，或你拿到實際的播放器 <video> 節點
+const video = document.querySelector('video')
+
+// 傳入你網站用來標識影片的 slug（很重要！）
+initWatchLog(video, {
+  slug: window.videoSlug 
+     || new URLSearchParams(location.search).get('slug')
+     || location.pathname.split('/').pop(),
+  title: document.title
+})
+
 
 
 
