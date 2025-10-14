@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>推廣分潤 | Learn English with Stories</title>
+  <script type="module" src="../supa.js"></script>
+  <style>
+    body {
+      font-family: "Noto Sans TC", sans-serif;
+      background: #fafafa;
+      color: #222;
+      margin: 0;
+      padding: 0;
+    }
+    header {
+      background: #fff;
+      border-bottom: 1px solid #ddd;
+      padding: 1rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .referral-container {
+      max-width: 800px;
+      margin: 2rem auto;
+      background: #fff;
+      border-radius: 12px;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+      padding: 2rem;
+    }
+    h1 {
+      font-size: 1.5rem;
+      margin-bottom: 0.5rem;
+    }
+    .link-box {
+      background: #f7f9fc;
+      border: 1px dashed #aaa;
+      padding: 1rem;
+      margin-top: 1rem;
+      word-break: break-all;
+      border-radius: 8px;
+    }
+    .btn {
+      background: #0078ff;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      padding: 8px 14px;
+      cursor: pointer;
+    }
+    .btn:hover { background: #005ec9; }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 2rem;
+    }
+    th, td {
+      border-bottom: 1px solid #eee;
+      padding: 8px;
+      text-align: left;
+    }
+    th {
+      background: #f5f5f5;
+    }
+    .summary {
+      margin-top: 1rem;
+      font-weight: bold;
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <h2>推廣分潤</h2>
+  <a href="../index.html" class="btn">返回首頁</a>
+</header>
+
+<main class="referral-container">
+  <h1>我的推廣連結</h1>
+  <p>將此連結分享給朋友，每當他們註冊並訂閱課程，你都能獲得分潤獎勵 🎉</p>
+  <div class="link-box" id="referralLink">載入中...</div>
+  <button class="btn" id="copyBtn">複製連結</button>
+
+  <div class="summary" id="summaryBox">統計載入中...</div>
+
+  <table>
+    <thead>
+      <tr><th>受邀者 Email</th><th>註冊日期</th><th>狀態</th></tr>
+    </thead>
+    <tbody id="referralTable">
+      <tr><td colspan="3">載入中...</td></tr>
+    </tbody>
+  </table>
+</main>
+
+<script type="module">
+  import { supabase } from '../supa.js';
+
+  const linkBox = document.getElementById('referralLink');
+  const table = document.getElementById('referralTable');
+  const summary = document.getElementById('summaryBox');
+  const copyBtn = document.getElementById('copyBtn');
+
+  let referralLink = '';
+
+  async function initReferral() {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      linkBox.textContent = '請先登入帳號';
+      table.innerHTML = '<tr><td colspan="3">請登入後查看資料</td></tr>';
+      return;
+    }
+
+    // 建立推薦連結
+    const baseUrl = location.origin + '/index.html';
+    referralLink = `${baseUrl}?ref=${encodeURIComponent(user.id)}`;
+    linkBox.textContent = referralLink;
+
+    // 模擬查詢 referral 表
+    const { data, error } = await supabase
+      .from('referrals')
+      .select('*')
+      .eq('referrer_id', user.id)
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      console.error(error);
+      table.innerHTML = '<tr><td colspan="3">無法讀取資料</td></tr>';
+      summary.textContent = '載入失敗';
+      return;
+    }
+
+    if (!data || data.length === 0) {
+      table.innerHTML = '<tr><td colspan="3">尚無推廣紀錄</td></tr>';
+      summary.textContent = '尚無分潤資料';
+      return;
+    }
+
+    table.innerHTML = data.map(r => `
+      <tr>
+        <td>${r.invitee_email || '(未知)'}</td>
+        <td>${new Date(r.created_at).toLocaleDateString()}</td>
+        <td>${r.status || '已註冊'}</td>
+      </tr>
+    `).join('');
+
+    summary.textContent = `目前共有 ${data.length} 筆推薦，累積分潤 ${data.length * 100} 元`;
+  }
+
+  copyBtn.addEventListener('click', () => {
+    navigator.clipboard.writeText(referralLink);
+    copyBtn.textContent = '✅ 已複製';
+    setTimeout(() => copyBtn.textContent = '複製連結', 2000);
+  });
+
+  initReferral();
+</script>
+
+</body>
+</html>
