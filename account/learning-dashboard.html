@@ -1,294 +1,204 @@
 <!doctype html>
 <html lang="zh-Hant">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>學習控制台</title>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>學習控制台 · BookWide</title>
+  <meta name="description" content="BookWide 學習控制台：繼續播放、最近看過、今日複習與學習曲線。"/>
+  <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
   <style>
     :root{
-      --bg:#0f172a; --card:#111827; --ink:#e5e7eb; --muted:#9ca3af; --accent:#60a5fa;
-      --ok:#22c55e; --warn:#f59e0b; --bad:#ef4444; --stroke:#1f2937;
+      --ink:#0a0f1a; --muted:#667085; --border:#e5e7eb; --card:#ffffff; --bg:#fafafa;
+      --primary:#0b53ff;
     }
-    html,body{background:var(--bg);color:var(--ink);font-family:ui-sans-serif,system-ui,
-      -apple-system,"Segoe UI",Roboto,"Helvetica Neue","Noto Sans","PingFang TC",sans-serif}
-    .wrap{max-width:1100px;margin:24px auto;padding:0 16px}
-    h1{font-size:28px;margin:8px 0 16px}
-    .grid{display:grid;gap:16px}
-    .grid.cols-2{grid-template-columns:repeat(2,minmax(0,1fr))}
-    .grid.cols-3{grid-template-columns:repeat(3,minmax(0,1fr))}
-    @media(max-width:960px){.grid.cols-3{grid-template-columns:repeat(2,1fr)}}
-    @media(max-width:640px){.grid.cols-2,.grid.cols-3{grid-template-columns:1fr}}
-    .card{background:var(--card);border:1px solid var(--stroke);border-radius:14px;padding:14px}
-    .row{display:flex;gap:14px;align-items:center}
-    .thumb{width:140px;height:84px;background:#0b1220;border-radius:10px;flex:none;
-      display:flex;align-items:center;justify-content:center;font-size:12px;color:var(--muted)}
-    .title{font-size:16px;font-weight:600;line-height:1.2;margin-bottom:6px}
-    .meta{font-size:13px;color:var(--muted)}
-    .bar{height:7px;background:#1f2937;border-radius:999px;overflow:hidden;margin:8px 0 4px}
-    .bar>i{display:block;height:100%;background:var(--accent);width:0%}
-    .actions{display:flex;gap:8px;margin-top:8px;flex-wrap:wrap}
-    button{appearance:none;border:1px solid var(--stroke);background:#0b1220;color:var(--ink);
-      padding:8px 10px;border-radius:10px;font-size:14px;cursor:pointer}
-    button.primary{background:var(--accent);border-color:var(--accent);color:#001628}
-    button.ghost{background:transparent}
-    .tag{display:inline-block;font-size:12px;color:#60a5fa;background:rgba(96,165,250,.1);
-      border:1px solid rgba(96,165,250,.35);padding:3px 8px;border-radius:999px;margin-left:6px}
-    .empty{color:var(--muted);font-size:14px;padding:10px}
-    header{display:flex;justify-content:space-between;align-items:center;margin:18px 0 10px}
-    header h2{font-size:20px;margin:0}
-    .pill{font-size:12px;color:#93c5fd;border:1px solid #1e3a8a;background:#0b1220;border-radius:999px;padding:4px 8px}
+    *{box-sizing:border-box} html,body{height:100%;margin:0;font-family:ui-sans-serif,system-ui,"Noto Sans TC",Arial}
+    body{background:var(--bg);color:var(--ink)}
+    a{color:inherit;text-decoration:none}
+    .wrap{max-width:1100px;margin:0 auto;padding:18px 16px}
+    .h1{font-size:26px;font-weight:800;margin:4px 0 14px}
+    .grid{display:grid;grid-template-columns:repeat(2,1fr);gap:14px}
+    .card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:14px}
+    .card h3{margin:0 0 8px;font-size:18px}
+    .list .item{display:block;padding:10px 10px;border:1px solid var(--border);border-radius:10px;margin:8px 0;background:#fff}
+    .list .item:hover{background:#f8fbff;border-color:#cfe0ff}
+    .title{font-weight:700}
+    .meta{color:var(--muted);font-size:12px;margin-top:4px}
+    .pill{display:inline-block;font-size:12px;padding:4px 8px;border-radius:999px;background:#eef2ff;color:#334155;border:1px solid #dbe4ff}
+    .empty{color:var(--muted)}
+    .row{display:flex;gap:10px;align-items:center;justify-content:space-between}
+    .chart-wrap{background:#fff;border:1px solid var(--border);border-radius:14px;padding:12px}
+    @media (max-width:860px){ .grid{grid-template-columns:1fr} }
   </style>
 </head>
 <body>
-  <div class="wrap">
-    <h1>學習控制台</h1>
+  <main class="wrap">
+    <div class="h1">學習控制台</div>
 
-    <!-- 繼續播放 -->
-    <section class="card">
-      <header>
-        <h2>繼續播放</h2>
-        <span class="pill">未完成的影片</span>
-      </header>
-      <div id="sec-continue" class="grid cols-2"></div>
-      <div id="empty-continue" class="empty" hidden>目前沒有未看完的影片。</div>
+    <div class="grid">
+      <!-- 繼續播放 -->
+      <section class="card">
+        <div class="row">
+          <h3>繼續播放</h3>
+          <span class="pill">未完成 &lt; 90%</span>
+        </div>
+        <div id="continueBox" class="list">載入中…</div>
+      </section>
+
+      <!-- 今日複習（先預留，可之後接排程資料） -->
+      <section class="card">
+        <div class="row">
+          <h3>今日複習</h3>
+          <span class="pill">預留位</span>
+        </div>
+        <div id="reviewBox" class="list empty">今日沒有到期的複習項目。</div>
+      </section>
+
+      <!-- 最近看過 -->
+      <section class="card">
+        <h3>最近看過</h3>
+        <div id="recentBox" class="list">載入中…</div>
+      </section>
+
+      <!-- 我的清單（如未來要接 favorites） -->
+      <section class="card">
+        <div class="row">
+          <h3>我的清單</h3>
+          <span class="pill">收藏預留</span>
+        </div>
+        <div id="favBox" class="list empty">尚未收藏任何影片。</div>
+      </section>
+    </div>
+
+    <!-- 學習曲線 -->
+    <section style="margin-top:14px">
+      <div class="chart-wrap">
+        <h3 style="margin:0 0 8px">學習曲線（最近 7 天）</h3>
+        <canvas id="learningChart" height="160"></canvas>
+      </div>
     </section>
+  </main>
 
-    <!-- 今日複習 -->
-    <section class="card" style="margin-top:16px">
-      <header>
-        <h2>今日複習</h2>
-        <span class="pill">1/3/7 日複習建議</span>
-      </header>
-      <div id="sec-review" class="grid cols-3"></div>
-      <div id="empty-review" class="empty" hidden>今天沒有到期的複習項目。</div>
-    </section>
+  <!-- Chart.js（只用於學習曲線） -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
-    <!-- 最近看過 -->
-    <section class="card" style="margin-top:16px">
-      <header>
-        <h2>最近看過</h2>
-        <span class="pill">依時間排序</span>
-      </header>
-      <div id="sec-history" class="grid cols-3"></div>
-      <div id="empty-history" class="empty" hidden>尚無觀看紀錄。</div>
-    </section>
-
-    <!-- 我的清單 -->
-    <section class="card" style="margin-top:16px">
-      <header>
-        <h2>我的清單</h2>
-        <span class="pill">手動收藏</span>
-      </header>
-      <div id="sec-fav" class="grid cols-3"></div>
-      <div id="empty-fav" class="empty" hidden>尚未收藏任何影片。</div>
-    </section>
-  </div>
-
+  <!-- 主程式：讀 watch_logs，渲染四區塊 -->
   <script type="module">
-    /* 依照你的實際階層調整路徑：
-       - 若此檔在 /services/ ：'../supa.js'
-       - 若此檔在 /account/  ：'../../supa.js' */
-    import { supabase } from '../supa.js';
+    // ✅ 路徑重點：learning-dashboard.html 在 /account/ 底下，所以 supa.js 用 ../../
+    import { supabase } from '../../supa.js';
 
-    // ===== 工具 =====
-    const $ = (s, el=document) => el.querySelector(s);
-    const fmtTime = sec => {
-      if (!sec && sec !== 0) return '';
-      const m = Math.floor(sec/60).toString().padStart(2,'0');
-      const s2 = Math.floor(sec%60).toString().padStart(2,'0');
-      return `${m}:${s2}`;
+    const $=(s,e=document)=>e.querySelector(s);
+    const continueBox=$('#continueBox'), recentBox=$('#recentBox'), favBox=$('#favBox');
+    const chartEl=$('#learningChart');
+
+    const pct = x => Math.round((x||0)*100);
+    const ago = iso => {
+      const d=new Date(iso), diff=(Date.now()-d.getTime())/1000;
+      if(diff<60) return '剛剛';
+      if(diff<3600) return Math.floor(diff/60)+' 分鐘前';
+      if(diff<86400) return Math.floor(diff/3600)+' 小時前';
+      return Math.floor(diff/86400)+' 天前';
     };
-    const daysBetween = (a, b=new Date()) =>
-      Math.floor((b - new Date(a)) / 86400000);
 
-    // 若沒有影片資料表，這裡先做個簡單轉換示例
-    // 你之後可改成從 DB 「videos」表 join 取縮圖/標題
-    function getVideoMeta(video_id){
-      // 假設 video_id 就是檔名或 slug
-      return {
-        title: video_id.replace(/[-_]/g,' ').replace(/\.\w+$/,'').slice(0,60),
-        thumb: `./img/video/${encodeURIComponent(video_id)}.jpg`  // 你可換成實際縮圖路徑
-      };
+    async function me(){
+      const { data, error } = await supabase.auth.getUser();
+      if(error || !data?.user) return null;
+      return data.user;
     }
 
-    // ===== 取得目前使用者 =====
-    async function getUser() {
-      const { data: { user }, error } = await supabase.auth.getUser();
-      if (error) throw error;
-      return user;
-    }
+    // 1) 繼續播放：progress_pct < 0.9（未完成）
+    async function loadContinue(){
+      const user = await me();
+      if(!user){ continueBox.innerHTML='<div class="empty">請先登入</div>'; return; }
 
-    // ===== 呈現卡片 =====
-    function card(video, opts={}) {
-      const meta = getVideoMeta(video.video_id);
-      const pct = Math.max(0, Math.min(100, Math.round(video.progress_percent || 0)));
-      const btns = (opts.buttons || []).map(b => 
-        `<button class="${b.primary ? 'primary':''} ${b.ghost ? 'ghost':''}" 
-                 data-action="${b.action}" data-video="${video.video_id}">
-           ${b.text}
-         </button>`).join('');
-
-      const badges = (opts.badges || []).map(t => `<span class="tag">${t}</span>`).join('');
-
-      return `
-        <div class="card">
-          <div class="row">
-            <div class="thumb">${meta.thumb ? `<img src="${meta.thumb}" alt="" style="width:100%;height:100%;object-fit:cover;border-radius:10px">` : 'No Image'}</div>
-            <div style="flex:1">
-              <div class="title">${meta.title} ${badges}</div>
-              ${typeof video.last_position_sec === 'number'
-                ? `<div class="bar"><i style="width:${pct}%"></i></div>
-                   <div class="meta">上次看到：${fmtTime(video.last_position_sec)}（${pct}%）</div>`
-                : `<div class="meta">最後觀看：${video.last_watched_at ? new Date(video.last_watched_at).toLocaleString() : '-'}</div>`
-              }
-              <div class="actions">${btns}</div>
-            </div>
-          </div>
-        </div>`;
-    }
-
-    function mount(list, el, emptyEl){
-      el.innerHTML = list.join('');
-      emptyEl.hidden = list.length > 0;
-    }
-
-    // ===== 查詢：繼續播放 =====
-    async function loadContinue(userId){
       const { data, error } = await supabase
-        .from('video_progress')
-        .select('video_id,last_position_sec,duration_sec,progress_percent,last_watched_at')
-        .eq('user_id', userId)
-        .lt('progress_percent', 95)
-        .order('last_watched_at', { ascending:false })
-        .limit(4);
+        .from('watch_logs')
+        .select('video_slug, progress_pct, updated_at, position_sec, duration_sec')
+        .eq('user_id', user.id)
+        .lt('progress_pct', 0.9)
+        .order('updated_at', { ascending:false })
+        .limit(8);
 
-      if (error) console.error(error);
-      const nodes = (data||[]).map(v => card(v, {
-        buttons:[
-          { text:'繼續播放', action:'resume', primary:true },
-          { text:'加入清單', action:'fav' , ghost:true }
-        ]
-      }));
-      mount(nodes, $('#sec-continue'), $('#empty-continue'));
+      if(error){ continueBox.innerHTML='<div class="empty">讀取失敗</div>'; return; }
+      if(!data?.length){ continueBox.innerHTML='<div class="empty">目前沒有未看完的影片。</div>'; return; }
+
+      continueBox.innerHTML = data.map(r=>{
+        const slug = r.video_slug || r.slug || '';
+        const href = `../player.html?slug=${encodeURIComponent(slug)}`;
+        return `<a class="item" href="${href}">
+          <div class="title">${slug||'(未命名)'}</div>
+          <div class="meta">已看 ${pct(r.progress_pct)}% · ${ago(r.updated_at)}</div>
+        </a>`;
+      }).join('');
     }
 
-    // ===== 查詢：今日複習（1/3/7 天）=====
-    async function loadReview(userId){
+    // 2) 最近看過：最新 10 筆（同影片會重複顯示最新一次）
+    async function loadRecent(){
+      const user = await me();
+      if(!user){ recentBox.innerHTML='<div class="empty">請先登入</div>'; return; }
+
       const { data, error } = await supabase
-        .from('video_progress')
-        .select('video_id,completed_at')
-        .eq('user_id', userId)
-        .not('completed_at', 'is', null)
-        .order('completed_at', { ascending:false })
-        .limit(100);
+        .from('watch_logs')
+        .select('video_slug, progress_pct, updated_at')
+        .eq('user_id', user.id)
+        .order('updated_at', { ascending:false })
+        .limit(10);
 
-      if (error) console.error(error);
-      const now = new Date();
-      const due = (data||[])
-        .map(v => ({...v, days: daysBetween(v.completed_at, now)}))
-        .filter(v => [1,3,7].includes(v.days))           // 到期點
-        .slice(0, 6);
+      if(error){ recentBox.innerHTML='<div class="empty">讀取失敗</div>'; return; }
+      if(!data?.length){ recentBox.innerHTML='<div class="empty">尚無觀看紀錄。</div>'; return; }
 
-      const nodes = due.map(v => card({ video_id:v.video_id }, {
-        badges:[`${v.days} 天複習`],
-        buttons:[
-          { text:'開始複習', action:'review', primary:true },
-          { text:'加入清單', action:'fav', ghost:true }
-        ]
-      }));
-      mount(nodes, $('#sec-review'), $('#empty-review'));
+      recentBox.innerHTML = data.map(r=>{
+        const slug = r.video_slug || r.slug || '';
+        const href = `../player.html?slug=${encodeURIComponent(slug)}`;
+        return `<a class="item" href="${href}">
+          <div class="title">${slug||'(未命名)'}</div>
+          <div class="meta">${ago(r.updated_at)} · 進度 ${pct(r.progress_pct)}%</div>
+        </a>`;
+      }).join('');
     }
 
-    // ===== 查詢：最近看過 =====
-    async function loadHistory(userId){
+    // 3) 我的清單（預留接 favorites 表；先顯示空）
+    function loadFavorites(){
+      favBox.innerHTML = '<div class="empty">尚未收藏任何影片。</div>';
+    }
+
+    // 4) 學習曲線：統計最近 7 天的 watch_logs（以 updated_at）
+    async function loadCurve(){
+      const user = await me();
+      if(!user || !chartEl) return;
+
       const { data, error } = await supabase
-        .from('video_progress')
-        .select('video_id,last_watched_at,progress_percent')
-        .eq('user_id', userId)
-        .order('last_watched_at', { ascending:false })
-        .limit(12);
+        .from('watch_logs')
+        .select('updated_at')
+        .eq('user_id', user.id)
+        .order('updated_at', { ascending:true });
 
-      if (error) console.error(error);
-      const nodes = (data||[]).map(v => card(v, {
-        buttons:[
-          { text:'再次播放', action:'play', primary:true },
-          { text:'加入清單', action:'fav', ghost:true }
-        ]
-      }));
-      mount(nodes, $('#sec-history'), $('#empty-history'));
-    }
+      if(error || !data?.length) return;
 
-    // ===== 查詢：我的清單（手動收藏）=====
-    async function loadFavorites(userId){
-      const { data, error } = await supabase
-        .from('favorites')
-        .select('video_id,created_at,note')
-        .eq('user_id', userId)
-        .order('created_at', { ascending:false })
-        .limit(24);
-
-      if (error) console.error(error);
-      const nodes = (data||[]).map(v => card({video_id:v.video_id}, {
-        buttons:[
-          { text:'播放', action:'play', primary:true },
-          { text:'移除', action:'unfav', ghost:true }
-        ]
-      }));
-      mount(nodes, $('#sec-fav'), $('#empty-fav'));
-    }
-
-    // ===== 動作處理 =====
-    async function onClick(e){
-      const btn = e.target.closest('button[data-action]');
-      if(!btn) return;
-
-      const action = btn.dataset.action;
-      const videoId = btn.dataset.video;
-
-      switch(action){
-        case 'resume':
-        case 'play':
-        case 'review':
-          // 這裡導到你的播放器頁面，querystring 帶 videoId 與(可選) resume=1
-          // 例如：/player.html?video=...&resume=1
-          location.href = `./player.html?video=${encodeURIComponent(videoId)}${action==='resume' ? '&resume=1':''}`;
-          break;
-
-        case 'fav': {
-          const user = await getUser();
-          await supabase.from('favorites').upsert({
-            user_id: user.id, video_id: videoId
-          }, { onConflict: 'user_id,video_id' });
-          await loadFavorites(user.id);
-          break;
-        }
-
-        case 'unfav': {
-          const user = await getUser();
-          await supabase.from('favorites')
-            .delete()
-            .eq('user_id', user.id)
-            .eq('video_id', videoId);
-          await loadFavorites(user.id);
-          break;
-        }
+      const counts = {};
+      for(const r of data){
+        const day = new Date(r.updated_at).toISOString().split('T')[0];
+        counts[day] = (counts[day] || 0) + 1;
       }
+      const keys = Object.keys(counts).sort();
+      const labels = keys.slice(-7);
+      const values = labels.map(d=>counts[d]);
+
+      new Chart(chartEl.getContext('2d'), {
+        type:'line',
+        data:{ labels, datasets:[{ label:'每日觀看次數', data:values, borderColor:'#0b53ff', tension:.2, fill:false }] },
+        options:{ scales:{ y:{ beginAtZero:true, ticks:{ stepSize:1 }}}}
+      });
     }
 
-    // ===== 啟動 =====
-    document.addEventListener('click', onClick);
-
-    (async () => {
-      const user = await getUser();
-      if(!user){ location.href = './login.html'; return; }
-
-      await Promise.all([
-        loadContinue(user.id),
-        loadReview(user.id),
-        loadHistory(user.id),
-        loadFavorites(user.id)
-      ]);
+    // 啟動
+    (async function(){
+      await loadContinue();
+      await loadRecent();
+      loadFavorites();
+      await loadCurve();
     })();
   </script>
 </body>
 </html>
+
+
