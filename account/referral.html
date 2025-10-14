@@ -2,202 +2,203 @@
 <html lang="zh-Hant">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>推廣分潤｜BookWide</title>
-  <link rel="icon" href="../assets/favicon.svg">
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>推廣分潤</title>
+  <link rel="icon" href="../../img/favicon.png" />
   <style>
-    :root {
-      --bg: #0b1320;
-      --panel: #0f172a;
-      --card: #0f172a;
-      --text: #e5ebff;
-      --muted: #8fa1c7;
-      --brand: #448aff;
-      --brand-2: #1e60ff;
-      --ring: rgba(68,138,255,.25);
-      --border: #20304f;
-      --white: #fff;
+    :root{
+      --fg:#111;
+      --bg:#fff;
+      --muted:#666;
+      --primary:#111;
+      --primary-fg:#fff;
+      --border:#ddd;
+      --radius:12px;
     }
-    html,body{background:#0b1320;color:var(--text);margin:0}
-    .wrap{max-width:1000px;margin:0 auto;padding:28px 20px 56px}
-    .page-title{font-size:28px;font-weight:800;letter-spacing:.02em;margin:0 0 16px}
-    .lead{color:var(--muted);margin:0 0 22px;font-size:16px;line-height:1.7}
-    .card{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:18px 18px}
-    .row{display:flex;gap:12px;align-items:center}
+    *{box-sizing:border-box}
+    body{
+      margin:0;
+      background:var(--bg);
+      color:var(--fg);
+      font-family: system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,'Noto Sans TC',sans-serif;
+      line-height:1.65;
+    }
+    .wrap{max-width:980px;margin:40px auto;padding:0 20px}
+    h1{font-size:32px;margin:0 0 20px}
+    .lead{color:var(--muted);margin:0 0 24px}
+    .row{display:flex;gap:16px;align-items:center}
+    .box{
+      border:1px solid var(--border);
+      border-radius:var(--radius);
+      padding:20px;
+      margin:24px 0;
+      background:#fff;
+    }
+    label{display:block;margin-bottom:8px;font-weight:600}
     .input{
-      flex:1;background:#0b1320;border:1px solid var(--border);color:var(--text);
-      border-radius:12px;padding:14px 14px;font-size:15px;outline:none;
+      width:100%;
+      height:48px;
+      padding:0 14px;
+      border:1px solid var(--border);
+      border-radius:10px;
+      font-size:16px;
+      color:var(--fg);
+      background:#fff;
     }
-    .input:focus{border-color:var(--brand);box-shadow:0 0 0 6px var(--ring)}
     .btn{
-      background:linear-gradient(180deg,var(--brand),var(--brand-2));
-      border:0;color:#fff;padding:12px 16px;border-radius:12px;
-      font-weight:700;letter-spacing:.02em;cursor:pointer;min-width:112px
+      padding:12px 18px;
+      border-radius:10px;
+      border:0;
+      background:var(--primary);
+      color:var(--primary-fg);
+      font-size:16px;
+      cursor:pointer;
+      white-space:nowrap;
     }
-    .btn.secondary{background:#19233a}
+    .btn:disabled{opacity:.6;cursor:wait}
     .muted{color:var(--muted)}
-    .code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
-    .section{margin-top:28px}
-    .faq h3{margin:18px 0 8px;font-size:18px}
-    .faq p{margin:0 0 10px;color:var(--muted);line-height:1.8}
-    .badge{display:inline-block;background:#142244;border:1px solid var(--border);
-      color:#a7c0ff;font-weight:700;border-radius:999px;padding:6px 10px;font-size:12px;margin-left:10px}
-    .toast{position:fixed;right:16px;bottom:18px;background:#101a33;border:1px solid var(--border);
-      color:#d2e2ff;padding:12px 14px;border-radius:12px;opacity:0;transform:translateY(8px);
-      transition:.25s;pointer-events:none}
-    .toast.show{opacity:1;transform:translateY(0)}
-    .grid{display:grid;grid-template-columns:1fr;gap:16px}
-    @media (min-width:760px){
-      .grid{grid-template-columns:1fr 1fr}
-    }
-    a, a:visited{color:#a7c0ff;text-decoration:none}
-    .small{font-size:13px}
-    .header{
-      display:flex;justify-content:space-between;align-items:center;margin-bottom:12px
-    }
+    .code{font-weight:700;letter-spacing:.5px}
+    .grid{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+    @media (max-width:880px){.grid{grid-template-columns:1fr}}
+    a{text-decoration:none;color:#0b57d0}
+    /* toast */
+    .toast{position:fixed;right:20px;bottom:20px;background:#111;color:#fff;
+      padding:10px 14px;border-radius:8px;opacity:.95;transform:translateY(10px);
+      transition:all .25s ease;pointer-events:none}
+    .toast.hide{opacity:0;transform:translateY(20px)}
+    .topbar{display:flex;align-items:center;gap:12px;margin-bottom:10px}
+    .back{color:#0b57d0}
   </style>
 </head>
 <body>
   <div class="wrap">
-    <div class="header">
-      <h1 class="page-title">推廣分潤</h1>
-      <a class="small muted" href="../index.html">← 回首頁</a>
+    <div class="topbar">
+      <a class="back" href="../index.html">← 回首頁</a>
+    </div>
+    <h1>推廣分潤</h1>
+    <p class="lead">將專屬連結分享給朋友，每當他們註冊並訂閱課程，你都能獲得分潤獎勵 🎉</p>
+
+    <div class="box">
+      <label for="refLink">我的推廣連結</label>
+      <div class="row">
+        <input id="refLink" class="input" readonly value="載入中…" />
+        <button id="btnCopy" class="btn" disabled>複製</button>
+      </div>
+      <p class="muted" style="margin:10px 0 0">推薦碼：<span id="refCode" class="code">—</span></p>
     </div>
 
-    <p class="lead">
-      將專屬連結分享給朋友，每當他們註冊並訂閱課程，你都能獲得分潤獎勵 🎉
-      <span id="who" class="badge">載入中…</span>
-    </p>
-
-    <div class="card">
-      <div class="referral-box">
-  <label>我的推廣連結</label>
-  <input id="refLink" class="input" readonly />
-  <button id="btnCopy" class="btn">複製</button>
-  <p>推薦碼：<span id="refCode" class="code">—</span></p>
-</div>
-
-<div id="toast" class="toast hidden">已複製到剪貼簿</div>
-
-<script type="module">
-  const refLink = document.querySelector('#refLink');
-  const refCode = document.querySelector('#refCode');
-  const btnCopy = document.querySelector('#btnCopy');
-  const toast = document.querySelector('#toast');
-
-  const showToast = (msg='已複製到剪貼簿') => {
-    toast.textContent = msg;
-    toast.classList.remove('hidden');
-    setTimeout(()=>toast.classList.add('hidden'),1500);
-  };
-
-  btnCopy.addEventListener('click', async ()=>{
-    const text = `${refLink.value}\n推薦碼：${refCode.textContent}`;
-    await navigator.clipboard.writeText(text);
-    showToast('連結與推薦碼已複製');
-  });
-</script>
-
-<style>
-.toast{
-  position:fixed;right:20px;bottom:20px;
-  background:#111;color:#fff;padding:10px 14px;
-  border-radius:8px;opacity:.9;
-}
-.toast.hidden{display:none}
-</style>
-
-    <div class="section grid">
-      <div class="card faq">
+    <div class="grid">
+      <div class="box">
         <h3>如何推薦朋友？</h3>
-        <p>使用「專屬連結」公開分享或是複製貼給朋友，邀請朋友使用你提供的連結、推薦碼以 9 折優惠購買。</p>
-
-        <h3>怎麼才算推薦成功？</h3>
-        <p>當朋友透過您的「專屬連結」成功購買（且訂單未退款），即算推薦成功。訂單成立後，14 天後算推薦成功。</p>
-
-        <h3>什麼是推薦金？</h3>
-        <p>推薦金就是現金回饋唷！每成功推薦一位朋友，您即可獲得推薦金。推薦一筆可以獲得 200 元推薦金。</p>
-
-        <h3>如何領取？</h3>
-        <p>當每次「未領取推薦金」滿足 1,000 元即可領取，BookWide 團隊會審核您的資料，審核完成後，將於申請的「次月」將推薦金匯入您提供的帳戶中。</p>
+        <ol>
+          <li>使用上方的「推廣連結」分享給朋友，或把「推薦碼」貼給朋友使用。</li>
+          <li>朋友透過連結進站（網址上會帶著 <code>?ref=推薦碼</code>），或在結帳時輸入推薦碼。</li>
+          <li>成功訂閱且未退款後，系統會把這筆訂單與你的推薦碼關聯起來。</li>
+        </ol>
       </div>
-
-      <div class="card">
-        <h3 style="margin:0 0 8px">使用小提醒</h3>
-        <p class="muted small" style="line-height:1.8">
-          • 專屬連結的固定入口：<br>
-          <span class="code">https://bookwide.github.io/EduEnglish/index.html</span><br><br>
-          • 我們會在連結後面帶上你的推薦碼（<span class="code">?ref=你的ID</span>）。<br>
-          • 好友透過你的連結完成訂閱後，系統會自動歸屬給你。<br>
-          • 如需協助，歡迎寄信至 <a href="mailto:support@bookwide.com">support@bookwide.com</a>。
-        </p>
+      <div class="box">
+        <h3>使用小提醒</h3>
+        <ul>
+          <li>你的推廣連結固定為：<br>
+            <code>https://bookwide.github.io/EduEnglish/index.html?ref=你的推薦碼</code></li>
+          <li>好友從連結進站後，我們會自動記住推薦碼並帶到結帳。</li>
+          <li>若需要協助，請來信 <a href="mailto:support@bookwide.com">support@bookwide.com</a>。</li>
+        </ul>
       </div>
     </div>
   </div>
 
-  <div id="toast" class="toast">已複製</div>
+  <div id="toast" class="toast hide">已複製到剪貼簿</div>
 
   <script type="module">
-  import { supabase } from '../supa.js';
+    /***********************
+     * 依你的專案實際路徑
+     ***********************/
+    import { supabase } from '../supa.js';
 
-  const REF_BASE = 'https://bookwide.github.io/EduEnglish/index.html';
+    // 你的固定推廣入口（依你要求）
+    const REF_BASE = 'https://bookwide.github.io/EduEnglish/index.html';
 
-  const linkInput = document.querySelector('#refLink');
-  const codeText  = document.querySelector('#refCode');
-  const btnCopyLink = document.querySelector('#btnCopyLink');
-  const btnCopyCode = document.querySelector('#btnCopyCode');
-  const pageBadge   = document.querySelector('#pageBadge');
+    const refLinkEl = document.querySelector('#refLink');
+    const refCodeEl = document.querySelector('#refCode');
+    const btnCopy   = document.querySelector('#btnCopy');
+    const toast     = document.querySelector('#toast');
 
-  function genCodeFromUid(uid) { return uid.replace(/-/g, '').slice(0, 10); }
+    const showToast = (text='已複製到剪貼簿')=>{
+      toast.textContent = text;
+      toast.classList.remove('hide');
+      setTimeout(()=>toast.classList.add('hide'), 1600);
+    };
 
-  async function ensureLogin() {
-    const { data: { session } } = await supabase.auth.getSession();
-    if (!session) { alert('請先登入'); location.href = '../login-test.html'; return null; }
-    return session.user;
-  }
-
-  async function loadReferral() {
-    const user = await ensureLogin(); if (!user) return;
-    const { data: profile, error } = await supabase
-      .from('profiles')
-      .select('id, referral_code, referral_url')
-      .eq('id', user.id)
-      .single();
-    if (error) { console.error(error); alert('讀取資料失敗'); return; }
-
-    if (!profile.referral_code || !profile.referral_url) {
-      const code = genCodeFromUid(user.id);
-      const url  = `${REF_BASE}?ref=${encodeURIComponent(code)}`;
-      const { error: upErr } = await supabase
-        .from('profiles')
-        .update({ referral_code: code, referral_url: url })
-        .eq('id', user.id);
-      if (upErr) { console.error(upErr); alert('建立專屬連結失敗'); return; }
-      profile.referral_code = code;
-      profile.referral_url  = url;
+    // 取得當前登入者
+    async function getUser() {
+      const { data: { user }, error } = await supabase.auth.getUser();
+      if (error) throw error;
+      return user;
     }
 
-    linkInput.value = profile.referral_url;
-    codeText.textContent = `推薦碼：${profile.referral_code}`;
-    pageBadge.textContent = '推廣分潤';
-  }
+    // 讀/寫 profiles.referral_code / referral_url
+    async function ensureReferral(userId){
+      // 先讀
+      const { data: prof, error } = await supabase
+        .from('profiles')
+        .select('id, referral_code, referral_url')
+        .eq('id', userId)
+        .single();
+      if (error) throw error;
 
-  function copy(str) {
-    navigator.clipboard.writeText(str).then(
-      () => alert('已複製到剪貼簿'),
-      () => alert('複製失敗，請手動選取')
-    );
-  }
-  btnCopyLink?.addEventListener('click', () => copy(linkInput.value || ''));
-  btnCopyCode?.addEventListener('click', () =>
-    copy((codeText.textContent || '').replace('推薦碼：',''))
-  );
+      let code = prof?.referral_code;
+      if (!code) {
+        // 用 UID 取 8 碼，或你要改成 crypto 隨機也行
+        code = userId.replace(/-/g,'').slice(0,8);
+      }
+      const url = `${REF_BASE}?ref=${code}`;
 
-  loadReferral();
-</script>
+      // 若 DB 沒資料就補上
+      if (!prof?.referral_code || !prof?.referral_url){
+        const { error: upErr } = await supabase
+          .from('profiles')
+          .update({ referral_code: code, referral_url: url })
+          .eq('id', userId);
+        if (upErr) throw upErr;
+      }
+      return { code, url };
+    }
 
+    // 初始化
+    (async()=>{
+      try{
+        const user = await getUser();
+        if (!user) {
+          // 未登入導去登入頁
+          location.href = '../../login.html?next=' + encodeURIComponent(location.pathname);
+          return;
+        }
+        const { code, url } = await ensureReferral(user.id);
+        refCodeEl.textContent = code;
+        refLinkEl.value = url;
+        btnCopy.disabled = false;
+      }catch(err){
+        console.error(err);
+        refLinkEl.value = '載入失敗，請重新整理';
+      }
+    })();
+
+    // 一顆按鈕：同時複製「連結 + 推薦碼」
+    btnCopy.addEventListener('click', async ()=>{
+      const text = `${refLinkEl.value}\n推薦碼：${refCodeEl.textContent}`;
+      try{
+        await navigator.clipboard.writeText(text);
+        showToast('連結與推薦碼已複製');
+      }catch{
+        showToast('無法複製，請手動選取文字');
+      }
+    });
+  </script>
 </body>
 </html>
+
+
 
 
 
