@@ -118,64 +118,66 @@
   <div id="toast" class="toast">已複製</div>
 
   <script type="module">
-    /* 若此檔案放在 english-videos/account/ 底下，supa.js 在專案根目錄 */
-    import { supabase } from '../../supa.js'; // ← 路徑請依你的專案而定
+  import { supabase } from '../../supa.js';
 
-    const BASE_LANDING = 'https://bookwide.github.io/EduEnglish/index.html';
+  const REF_BASE = 'https://bookwide.github.io/EduEnglish/index.html';
 
-    const $ = (s, el=document) => el.querySelector(s);
-    const toast = (msg='已複製') => {
-      const el = $('#toast');
-      el.textContent = msg;
-      el.classList.add('show');
-      setTimeout(() => el.classList.remove('show'), 1400);
-    };
+  const linkInput = document.querySelector('#refLink');
+  const codeText  = document.querySelector('#refCode');
+  const btnCopyLink = document.querySelector('#btnCopyLink');
+  const btnCopyCode = document.querySelector('#btnCopyCode');
+  const pageBadge   = document.querySelector('#pageBadge');
 
-    async function ensureSignedIn() {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session || !session.user) {
-        // 未登入：導去登入頁（從 account/ 回到上一層 login.html）
-        const back = encodeURIComponent(location.pathname + location.search);
-        location.href = `../login.html?next=${back}`;
-        return null;
-      }
-      return session.user;
+  function genCodeFromUid(uid) { return uid.replace(/-/g, '').slice(0, 10); }
+
+  async function ensureLogin() {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) { alert('請先登入'); location.href = '../login-test.html'; return null; }
+    return session.user;
+  }
+
+  async function loadReferral() {
+    const user = await ensureLogin(); if (!user) return;
+    const { data: profile, error } = await supabase
+      .from('profiles')
+      .select('id, referral_code, referral_url')
+      .eq('id', user.id)
+      .single();
+    if (error) { console.error(error); alert('讀取資料失敗'); return; }
+
+    if (!profile.referral_code || !profile.referral_url) {
+      const code = genCodeFromUid(user.id);
+      const url  = `${REF_BASE}?ref=${encodeURIComponent(code)}`;
+      const { error: upErr } = await supabase
+        .from('profiles')
+        .update({ referral_code: code, referral_url: url })
+        .eq('id', user.id);
+      if (upErr) { console.error(upErr); alert('建立專屬連結失敗'); return; }
+      profile.referral_code = code;
+      profile.referral_url  = url;
     }
 
-    function buildLink(userId){
-      return `${BASE_LANDING}?ref=${encodeURIComponent(userId)}`;
-    }
+    linkInput.value = profile.referral_url;
+    codeText.textContent = `推薦碼：${profile.referral_code}`;
+    pageBadge.textContent = '推廣分潤';
+  }
 
-    async function main(){
-      const user = await ensureSignedIn();
-      if(!user) return;
+  function copy(str) {
+    navigator.clipboard.writeText(str).then(
+      () => alert('已複製到剪貼簿'),
+      () => alert('複製失敗，請手動選取')
+    );
+  }
+  btnCopyLink?.addEventListener('click', () => copy(linkInput.value || ''));
+  btnCopyCode?.addEventListener('click', () =>
+    copy((codeText.textContent || '').replace('推薦碼：',''))
+  );
 
-      // 顯示使用者資訊
-      const email = user.email ?? '已登入';
-      $('#who').textContent = email;
+  loadReferral();
+</script>
 
-      // 用 user.id 當推薦碼
-      const refCode = user.id;
-      const link = buildLink(refCode);
-
-      $('#refCode').textContent = refCode;
-      $('#refLink').value = link;
-
-      // 複製按鈕
-      $('#btnCopy').addEventListener('click', async () => {
-        await navigator.clipboard.writeText($('#refLink').value);
-        toast('已複製推廣連結');
-      });
-
-      $('#btnCopyCode').addEventListener('click', async () => {
-        await navigator.clipboard.writeText(refCode);
-        toast('已複製推薦碼');
-      });
-    }
-
-    main();
-  </script>
 </body>
 </html>
+
 
 
