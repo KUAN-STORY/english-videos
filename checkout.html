@@ -128,7 +128,26 @@ document.getElementById('btnPay').addEventListener('click', ()=>{
   alert(`將支付 ${fmt(amount)}（${planName}｜${document.getElementById('pillTerm').textContent.replace('週期：','')}）\n（此為示意按鈕，串接金流後即可正式啟用）`);
 });
 </script>
+  <!-- 建議放在 body 的最底部，checkout-referral.js 前面 -->
+<script>
+  // 你也可以用後端或前頁傳來的 querystring 來覆蓋
+  const u = new URL(location.href);
+  window.CHECKOUT = {
+    plan:   u.searchParams.get('plan')   || 'story',   // 你的方案 key
+    period: u.searchParams.get('period') || 'month',   // month / year ...
+    price:  Number(u.searchParams.get('price') || 200),
+    currency: 'TWD'
+  };
+</script>
+<script type="module" src="./checkout-referral.js"></script>
+<script type="module">
+  import { wireConfirmButton } from './checkout-referral.js';
+  // 接上「確認付款」按鈕（自動用文字找）
+  wireConfirmButton();
+</script>
+
 </body>
 </html>
+
 
 
