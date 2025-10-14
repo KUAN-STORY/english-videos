@@ -171,7 +171,7 @@
         const user = await getUser();
         if (!user) {
           // 未登入導去登入頁
-          location.href = '../../login.html?next=' + encodeURIComponent(location.pathname);
+          location.href = '../login.html?next=' + encodeURIComponent(location.pathname);
           return;
         }
         const { code, url } = await ensureReferral(user.id);
@@ -197,6 +197,7 @@
   </script>
 </body>
 </html>
+
 
 
 
