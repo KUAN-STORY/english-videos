@@ -1,88 +1,74 @@
-// ===============================
-// account-menu.js (最新版 2025.10)
-// ===============================
+// account-menu.js
+// 帳號選單：個人資料 / 學習控制台 / 我的訂閱 / 推廣分潤 / 登出
 
-// 版本顯示（可省略）
-const VERSION = 'v1.2';
+import { supabase } from '../supa.js';
 
-// 顯示登入狀態選擇器（可根據實際邏輯調整）
-const HIDE_LOGIN_SEL = '.hide-when-login';
-const HIDE_LOGOUT_SEL = '.hide-when-logout';
+const VERSION = 'v1.0.0';
+const root = document.getElementById('accountMenu');
 
-function mountUI(client) {
-  if (HIDE_LOGIN_SEL)
-    document.querySelectorAll(HIDE_LOGIN_SEL).forEach(el => (el.style.display = 'none'));
-  if (HIDE_LOGOUT_SEL)
-    document.querySelectorAll(HIDE_LOGOUT_SEL).forEach(el => (el.style.display = 'block'));
-
-  // === 主根節點 ===
-  const root = document.createElement('div');
-  root.id = 'accMenuRoot';
+if (root) {
   root.innerHTML = `
     <span class="acc-badge">${VERSION}</span>
     <button class="acc-avatar" id="accAvatarBtn" aria-label="account">
       <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
-        <path d="M12 12c2.67 0 8 1.34 8 4v2H4v-2c0-2.66 5.33-4 8-4zM12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8z"></path>
+        <path d="M12 12c2.7 0 4.8-2.1 4.8-4.8S14.7 2.4 12 2.4 7.2 4.5 7.2 7.2 9.3 12 12 12zm0 2.4c-3.2 0-9.6 1.6-9.6 4.8v2.4h19.2v-2.4c0-3.2-6.4-4.8-9.6-4.8z"/>
       </svg>
-      <span id="accAvatarText" class="muted">未登入</span>
     </button>
 
     <div class="acc-menu" id="accDropdown">
       <div class="acc-item" data-link="./account/profile.html">個人資料</div>
-      <div class="acc-item" data-link="./account/learning-dashboard.html">我的學習</div>
-      <div class="acc-item" data-link="./account/learning.html">學習曲線</div>
-      <div class="acc-item" data-link="./account/subscription.html">我的訂閱</div>
+      <div class="acc-item" data-link="./account/learning-dashboard.html">學習控制台</div>
+      <div class="acc-item" data-link="./account/subscriptions.html">我的訂閱</div>
+      <div class="acc-item" data-link="./account/referrals.html">推廣分潤</div>
       <div class="split"></div>
       <div class="acc-item" id="accLogout" style="display:none">登出</div>
     </div>
   `;
-  document.body.appendChild(root);
 
-  // === 快速選取 ===
   const avatarBtn = root.querySelector('#accAvatarBtn');
-  const menu = root.querySelector('#accDropdown');
-  const txt = root.querySelector('#accAvatarText');
-  const btnLogout = root.querySelector('#accLogout');
+  const dropdown = root.querySelector('#accDropdown');
+  const logoutBtn = root.querySelector('#accLogout');
 
-  // === 展開/收合選單 ===
+  // 開關選單
   avatarBtn.addEventListener('click', () => {
-    menu.classList.toggle('open');
+    dropdown.classList.toggle('show');
   });
 
-  // === 點擊整列跳轉 ===
-  menu.addEventListener('click', e => {
-    const item = e.target.closest('.acc-item[data-link]');
-    if (!item) return;
-    const link = item.getAttribute('data-link');
-    if (link) location.href = link;
+  // 點擊外部關閉
+  document.addEventListener('click', (e) => {
+    if (!root.contains(e.target)) dropdown.classList.remove('show');
   });
 
-  // === 登出動作 ===
-  btnLogout.addEventListener('click', async () => {
-    if (window.supabase) await supabase.auth.signOut();
-    localStorage.removeItem('sb-auth-token');
+  // 登出
+  logoutBtn.addEventListener('click', async () => {
+    await supabase.auth.signOut();
     location.reload();
   });
 
-  // === 自動高亮目前頁 ===
-  const current = location.pathname.replace(/\/+$/, '');
-  menu.querySelectorAll('.acc-item[data-link]').forEach(el => {
-    const to = new URL(el.dataset.link, location.origin).pathname;
-    if (current.endsWith(to)) el.classList.add('active');
+  // 點擊導頁
+  dropdown.addEventListener('click', (e) => {
+    const item = e.target.closest('.acc-item');
+    if (!item || !item.dataset.link) return;
+    location.href = item.dataset.link;
+  });
+
+  // 登入狀態判斷
+  supabase.auth.getUser().then(({ data }) => {
+    logoutBtn.style.display = data.user ? 'block' : 'none';
   });
 }
 
-// === CSS: active 狀態 ===
+// 樣式
 const style = document.createElement('style');
 style.textContent = `
-  .acc-menu { display:none; flex-direction:column; position:absolute; background:#0e1624; border:1px solid #223; padding:6px 0; border-radius:8px; }
-  .acc-menu.open { display:flex; }
-  .acc-item { padding:8px 16px; cursor:pointer; color:#bbb; }
-  .acc-item:hover { background:#1e2533; color:#fff; }
-  .acc-item.active { color:#4da3ff; font-weight:600; }
-  .split { border-bottom:1px solid #223; margin:4px 0; }
+  .acc-badge { font-size:10px; color:#666; position:absolute; top:2px; right:4px; }
+  .acc-avatar { background:none; border:none; cursor:pointer; color:#333; }
+  .acc-menu { display:none; position:absolute; right:0; top:40px; background:#fff;
+    border:1px solid #ccc; border-radius:8px; box-shadow:0 2px 10px rgba(0,0,0,0.1);
+    min-width:150px; z-index:1000; }
+  .acc-menu.show { display:block; }
+  .acc-item { padding:8px 14px; cursor:pointer; }
+  .acc-item:hover { background:#f1f5ff; }
+  .split { border-top:1px solid #eee; margin:4px 0; }
 `;
 document.head.appendChild(style);
-
-// === 初始化 ===
-mountUI();
