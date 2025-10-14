@@ -145,7 +145,18 @@
       <span style="font-size:12px;color:#777">（金額為示意，實際以結帳頁顯示為準）</span>
     </div>
   </div>
+  <script>
+  (function storeReferralFromUrl() {
+    const url = new URL(location.href);
+    const ref = url.searchParams.get('ref');
+    if (ref) {
+      localStorage.setItem('bw_referral_code', ref);
+    }
+  })();
+</script>
+
 </body>
 </html>
+
 
 
