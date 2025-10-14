@@ -3,204 +3,200 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>推廣分潤｜BookWide</title>
-  <link rel="icon" href="../img/favicon.png" />
+  <title>推廣分潤</title>
+  <link rel="icon" href="../../img/favicon.png" />
   <style>
     :root{
-      --bg:#ffffff;
-      --fg:#111111;
+      --fg:#111;
+      --bg:#fff;
       --muted:#666;
-      --accent:#1e66ff;
-      --accent-2:#0f52ff;
-      --border:#e9eaee;
-      --card:#fafafa;
-      --ok:#0a7c2f;
+      --primary:#111;
+      --primary-fg:#fff;
+      --border:#ddd;
+      --radius:12px;
     }
     *{box-sizing:border-box}
-    html,body{margin:0;padding:0;background:var(--bg);color:var(--fg);font:16px/1.6 system-ui,-apple-system,Segoe UI,Roboto,Noto Sans TC,Helvetica,Arial,"Apple Color Emoji","Segoe UI Emoji";}
-    a{color:var(--accent);text-decoration:none}
-    .wrap{max-width:960px;margin:48px auto;padding:0 20px}
-    h1{font-size:28px;margin:0 0 18px}
-    .sub{color:var(--muted);margin-bottom:24px}
-    .card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:20px}
+    body{
+      margin:0;
+      background:var(--bg);
+      color:var(--fg);
+      font-family: system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,'Noto Sans TC',sans-serif;
+      line-height:1.65;
+    }
+    .wrap{max-width:980px;margin:40px auto;padding:0 20px}
+    h1{font-size:32px;margin:0 0 20px}
+    .lead{color:var(--muted);margin:0 0 24px}
     .row{display:flex;gap:16px;align-items:center}
-    .row + .row{margin-top:16px}
-    .label{min-width:7em;color:#333}
+    .box{
+      border:1px solid var(--border);
+      border-radius:var(--radius);
+      padding:20px;
+      margin:24px 0;
+      background:#fff;
+    }
+    label{display:block;margin-bottom:8px;font-weight:600}
     .input{
-      flex:1;display:flex;align-items:center;background:#fff;border:1px solid var(--border);
-      border-radius:10px;padding:12px 14px;min-height:48px;overflow:auto
+      width:100%;
+      height:48px;
+      padding:0 14px;
+      border:1px solid var(--border);
+      border-radius:10px;
+      font-size:16px;
+      color:var(--fg);
+      background:#fff;
     }
-    .mono{font-family: ui-monospace,SFMono-Regular,Menlo,Monaco,"Liberation Mono","Courier New",monospace}
     .btn{
-      background:var(--accent);color:#fff;border:0;border-radius:12px;padding:12px 18px;font-weight:600;
-      cursor:pointer;transition:filter .15s ease,transform .02s ease;min-width:120px;text-align:center
+      padding:12px 18px;
+      border-radius:10px;
+      border:0;
+      background:var(--primary);
+      color:var(--primary-fg);
+      font-size:16px;
+      cursor:pointer;
+      white-space:nowrap;
     }
-    .btn:active{transform:translateY(1px)}
-    .btn:hover{filter:brightness(1.02)}
-    .btn:disabled{opacity:.55;cursor:not-allowed}
-    .pill{display:inline-block;background:#eef3ff;color:#2d5bff;border:1px solid #dbe6ff;border-radius:999px;padding:4px 10px;font-size:12px;margin-left:8px}
-    .hint{font-size:14px;color:var(--muted)}
-    .faq{display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-top:28px}
-    .toast{
-      position:fixed;left:50%;bottom:28px;transform:translateX(-50%);
-      background:#111;color:#fff;padding:10px 14px;border-radius:10px;opacity:0;pointer-events:none;
-      transition:opacity .18s ease, transform .18s ease;
-    }
-    .toast.show{opacity:1;transform:translateX(-50%) translateY(-4px)}
-    .back{display:inline-flex;align-items:center;gap:6px;color:var(--muted);margin-bottom:16px}
-    @media (max-width:920px){.faq{grid-template-columns:1fr}}
+    .btn:disabled{opacity:.6;cursor:wait}
+    .muted{color:var(--muted)}
+    .code{font-weight:700;letter-spacing:.5px}
+    .grid{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+    @media (max-width:880px){.grid{grid-template-columns:1fr}}
+    a{text-decoration:none;color:#0b57d0}
+    /* toast */
+    .toast{position:fixed;right:20px;bottom:20px;background:#111;color:#fff;
+      padding:10px 14px;border-radius:8px;opacity:.95;transform:translateY(10px);
+      transition:all .25s ease;pointer-events:none}
+    .toast.hide{opacity:0;transform:translateY(20px)}
+    .topbar{display:flex;align-items:center;gap:12px;margin-bottom:10px}
+    .back{color:#0b57d0}
   </style>
 </head>
 <body>
   <div class="wrap">
-    <a class="back" href="../index.html">← 回首頁</a>
-    <h1>推廣分潤 <span id="loadingPill" class="pill">載入中…</span></h1>
-    <p class="sub">將你的專屬連結分享給朋友，只要他們透過連結加入並訂閱，你就能獲得推薦獎勵 🎉</p>
+    <div class="topbar">
+      <a class="back" href="../index.html">← 回首頁</a>
+    </div>
+    <h1>推廣分潤</h1>
+    <p class="lead">將專屬連結分享給朋友，每當他們註冊並訂閱課程，你都能獲得分潤獎勵 🎉</p>
 
-    <div class="card">
+    <div class="box">
+      <label for="refLink">我的推廣連結</label>
       <div class="row">
-        <div class="label">我的推廣連結</div>
-        <div id="refLinkBox" class="input mono" contenteditable="false">產生中…</div>
-        <button id="btnCopyLink" class="btn" disabled>複製連結</button>
+        <input id="refLink" class="input" readonly value="載入中…" />
+        <button id="btnCopy" class="btn" disabled>複製</button>
       </div>
-
-      <div class="row">
-        <div class="label">推薦碼</div>
-        <div id="refCodeBox" class="input mono" style="max-width:320px">—</div>
-        <button id="btnCopyCode" class="btn" disabled>複製推薦碼</button>
-      </div>
-
-      <p class="hint" style="margin-top:10px">
-        推廣入口固定為：<span class="mono">https://bookwide.github.io/EduEnglish/index.html</span>，系統會自動在網址後面加上你的
-        <span class="mono">?ref=推薦碼</span>。
-      </p>
+      <p class="muted" style="margin:10px 0 0">推薦碼：<span id="refCode" class="code">—</span></p>
     </div>
 
-    <div class="faq">
-      <div class="card">
+    <div class="grid">
+      <div class="box">
         <h3>如何推薦朋友？</h3>
         <ol>
-          <li>按「複製連結」或「複製推薦碼」。</li>
-          <li>把連結/推薦碼分享給朋友（公開貼文或私訊皆可）。</li>
-          <li>朋友點連結或在結帳時帶著推薦碼完成訂閱，即算推薦成功。</li>
+          <li>使用上方的「推廣連結」分享給朋友，或把「推薦碼」貼給朋友使用。</li>
+          <li>朋友透過連結進站（網址上會帶著 <code>?ref=推薦碼</code>），或在結帳時輸入推薦碼。</li>
+          <li>成功訂閱且未退款後，系統會把這筆訂單與你的推薦碼關聯起來。</li>
         </ol>
       </div>
-
-      <div class="card">
+      <div class="box">
         <h3>使用小提醒</h3>
         <ul>
-          <li>朋友從你的連結進站後，系統會記住推薦碼（網址上的 <span class="mono">?ref=</span>）。</li>
-          <li>若有任何問題，歡迎來信 <a href="mailto:support@bookwide.com">support@bookwide.com</a>。</li>
+          <li>你的推廣連結固定為：<br>
+            <code>https://bookwide.github.io/EduEnglish/index.html?ref=你的推薦碼</code></li>
+          <li>好友從連結進站後，我們會自動記住推薦碼並帶到結帳。</li>
+          <li>若需要協助，請來信 <a href="mailto:support@bookwide.com">support@bookwide.com</a>。</li>
         </ul>
       </div>
     </div>
   </div>
 
-  <div id="toast" class="toast">已複製</div>
+  <div id="toast" class="toast hide">已複製到剪貼簿</div>
 
   <script type="module">
-    // 依你的專案實際路徑：account/ → 到根目錄 supa.js 只要上一層
+    /***********************
+     * 依你的專案實際路徑
+     ***********************/
     import { supabase } from '../supa.js';
 
-    // 固定推廣入口（你指定的）
+    // 你的固定推廣入口（依你要求）
     const REF_BASE = 'https://bookwide.github.io/EduEnglish/index.html';
 
-    const $ = s => document.querySelector(s);
-    const toast = (msg='已複製') => {
-      const el = $('#toast');
-      el.textContent = msg;
-      el.classList.add('show');
-      setTimeout(()=> el.classList.remove('show'), 1400);
+    const refLinkEl = document.querySelector('#refLink');
+    const refCodeEl = document.querySelector('#refCode');
+    const btnCopy   = document.querySelector('#btnCopy');
+    const toast     = document.querySelector('#toast');
+
+    const showToast = (text='已複製到剪貼簿')=>{
+      toast.textContent = text;
+      toast.classList.remove('hide');
+      setTimeout(()=>toast.classList.add('hide'), 1600);
     };
 
-    // 未登入 → 導回登入頁，next 回到本頁
-    async function requireLogin() {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) {
-        const next = encodeURIComponent(location.pathname);
-        location.href = `../login.html?next=${next}`;
-        return null;
-      }
-      return session.user;
+    // 取得當前登入者
+    async function getUser() {
+      const { data: { user }, error } = await supabase.auth.getUser();
+      if (error) throw error;
+      return user;
     }
 
-    // 取得或建立推薦碼
-    async function getOrCreateReferral(userId) {
-      // 讀取 profiles
+    // 讀/寫 profiles.referral_code / referral_url
+    async function ensureReferral(userId){
+      // 先讀
       const { data: prof, error } = await supabase
         .from('profiles')
-        .select('id, referral_code')
+        .select('id, referral_code, referral_url')
         .eq('id', userId)
         .single();
+      if (error) throw error;
 
-      if (error) {
-        console.error(error);
-        throw error;
+      let code = prof?.referral_code;
+      if (!code) {
+        // 用 UID 取 8 碼，或你要改成 crypto 隨機也行
+        code = userId.replace(/-/g,'').slice(0,8);
       }
+      const url = `${REF_BASE}?ref=${code}`;
 
-      // 若已有推薦碼，直接回傳
-      if (prof && prof.referral_code) {
-        return prof.referral_code;
+      // 若 DB 沒資料就補上
+      if (!prof?.referral_code || !prof?.referral_url){
+        const { error: upErr } = await supabase
+          .from('profiles')
+          .update({ referral_code: code, referral_url: url })
+          .eq('id', userId);
+        if (upErr) throw upErr;
       }
-
-      // 產生穩定碼（以 userId 的雜湊/截取，這裡用簡易版：取前後各5碼）
-      const safe = (userId || 'u').replace(/[^a-zA-Z0-9]/g,'');
-      const code = (safe.slice(0,5) + safe.slice(-5)).toLowerCase() || cryptoRandom(10);
-
-      const { error: upErr } = await supabase
-        .from('profiles')
-        .update({ referral_code: code })
-        .eq('id', userId);
-
-      if (upErr) {
-        console.error(upErr);
-        throw upErr;
-      }
-      return code;
-    }
-
-    function cryptoRandom(n=10){
-      const arr = new Uint8Array(n);
-      crypto.getRandomValues(arr);
-      return Array.from(arr, v => ('0'+(v%36).toString(36)).slice(-1)).join('');
+      return { code, url };
     }
 
     // 初始化
-    (async () => {
-      const user = await requireLogin();
-      if (!user) return;
-
-      try {
-        const code = await getOrCreateReferral(user.id);
-        const link = `${REF_BASE}?ref=${encodeURIComponent(code)}`;
-
-        $('#refCodeBox').textContent = code;
-        $('#refLinkBox').textContent = link;
-
-        $('#btnCopyLink').disabled = false;
-        $('#btnCopyCode').disabled = false;
-        $('#loadingPill').style.display = 'none';
-
-        $('#btnCopyLink').addEventListener('click', async () => {
-          await navigator.clipboard.writeText(link);
-          toast('已複製連結到剪貼簿');
-        });
-
-        $('#btnCopyCode').addEventListener('click', async () => {
-          await navigator.clipboard.writeText(code);
-          toast('已複製推薦碼到剪貼簿');
-        });
-      } catch (e) {
-        console.error(e);
-        toast('載入失敗，請稍後再試');
+    (async()=>{
+      try{
+        const user = await getUser();
+        if (!user) {
+          // 未登入導去登入頁
+          location.href = '../login.html?next=' + encodeURIComponent(location.pathname);
+          return;
+        }
+        const { code, url } = await ensureReferral(user.id);
+        refCodeEl.textContent = code;
+        refLinkEl.value = url;
+        btnCopy.disabled = false;
+      }catch(err){
+        console.error(err);
+        refLinkEl.value = '載入失敗，請重新整理';
       }
     })();
+
+    // 一顆按鈕：同時複製「連結 + 推薦碼」
+    btnCopy.addEventListener('click', async ()=>{
+      const text = `${refLinkEl.value}\n推薦碼：${refCodeEl.textContent}`;
+      try{
+        await navigator.clipboard.writeText(text);
+        showToast('連結與推薦碼已複製');
+      }catch{
+        showToast('無法複製，請手動選取文字');
+      }
+    });
   </script>
 </body>
 </html>
-
-
-
 
 
 
