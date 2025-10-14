@@ -1,162 +1,181 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="zh-Hant">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>推廣分潤 | Learn English with Stories</title>
-  <script type="module" src="../supa.js"></script>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>推廣分潤｜BookWide</title>
+  <link rel="icon" href="../assets/favicon.svg">
   <style>
-    body {
-      font-family: "Noto Sans TC", sans-serif;
-      background: #fafafa;
-      color: #222;
-      margin: 0;
-      padding: 0;
+    :root {
+      --bg: #0b1320;
+      --panel: #0f172a;
+      --card: #0f172a;
+      --text: #e5ebff;
+      --muted: #8fa1c7;
+      --brand: #448aff;
+      --brand-2: #1e60ff;
+      --ring: rgba(68,138,255,.25);
+      --border: #20304f;
+      --white: #fff;
     }
-    header {
-      background: #fff;
-      border-bottom: 1px solid #ddd;
-      padding: 1rem;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
+    html,body{background:#0b1320;color:var(--text);margin:0}
+    .wrap{max-width:1000px;margin:0 auto;padding:28px 20px 56px}
+    .page-title{font-size:28px;font-weight:800;letter-spacing:.02em;margin:0 0 16px}
+    .lead{color:var(--muted);margin:0 0 22px;font-size:16px;line-height:1.7}
+    .card{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:18px 18px}
+    .row{display:flex;gap:12px;align-items:center}
+    .input{
+      flex:1;background:#0b1320;border:1px solid var(--border);color:var(--text);
+      border-radius:12px;padding:14px 14px;font-size:15px;outline:none;
     }
-    .referral-container {
-      max-width: 800px;
-      margin: 2rem auto;
-      background: #fff;
-      border-radius: 12px;
-      box-shadow: 0 4px 10px rgba(0,0,0,0.05);
-      padding: 2rem;
+    .input:focus{border-color:var(--brand);box-shadow:0 0 0 6px var(--ring)}
+    .btn{
+      background:linear-gradient(180deg,var(--brand),var(--brand-2));
+      border:0;color:#fff;padding:12px 16px;border-radius:12px;
+      font-weight:700;letter-spacing:.02em;cursor:pointer;min-width:112px
     }
-    h1 {
-      font-size: 1.5rem;
-      margin-bottom: 0.5rem;
+    .btn.secondary{background:#19233a}
+    .muted{color:var(--muted)}
+    .code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+    .section{margin-top:28px}
+    .faq h3{margin:18px 0 8px;font-size:18px}
+    .faq p{margin:0 0 10px;color:var(--muted);line-height:1.8}
+    .badge{display:inline-block;background:#142244;border:1px solid var(--border);
+      color:#a7c0ff;font-weight:700;border-radius:999px;padding:6px 10px;font-size:12px;margin-left:10px}
+    .toast{position:fixed;right:16px;bottom:18px;background:#101a33;border:1px solid var(--border);
+      color:#d2e2ff;padding:12px 14px;border-radius:12px;opacity:0;transform:translateY(8px);
+      transition:.25s;pointer-events:none}
+    .toast.show{opacity:1;transform:translateY(0)}
+    .grid{display:grid;grid-template-columns:1fr;gap:16px}
+    @media (min-width:760px){
+      .grid{grid-template-columns:1fr 1fr}
     }
-    .link-box {
-      background: #f7f9fc;
-      border: 1px dashed #aaa;
-      padding: 1rem;
-      margin-top: 1rem;
-      word-break: break-all;
-      border-radius: 8px;
-    }
-    .btn {
-      background: #0078ff;
-      color: white;
-      border: none;
-      border-radius: 6px;
-      padding: 8px 14px;
-      cursor: pointer;
-    }
-    .btn:hover { background: #005ec9; }
-
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      margin-top: 2rem;
-    }
-    th, td {
-      border-bottom: 1px solid #eee;
-      padding: 8px;
-      text-align: left;
-    }
-    th {
-      background: #f5f5f5;
-    }
-    .summary {
-      margin-top: 1rem;
-      font-weight: bold;
+    a, a:visited{color:#a7c0ff;text-decoration:none}
+    .small{font-size:13px}
+    .header{
+      display:flex;justify-content:space-between;align-items:center;margin-bottom:12px
     }
   </style>
 </head>
 <body>
+  <div class="wrap">
+    <div class="header">
+      <h1 class="page-title">推廣分潤</h1>
+      <a class="small muted" href="../index.html">← 回首頁</a>
+    </div>
 
-<header>
-  <h2>推廣分潤</h2>
-  <a href="../index.html" class="btn">返回首頁</a>
-</header>
+    <p class="lead">
+      將專屬連結分享給朋友，每當他們註冊並訂閱課程，你都能獲得分潤獎勵 🎉
+      <span id="who" class="badge">載入中…</span>
+    </p>
 
-<main class="referral-container">
-  <h1>我的推廣連結</h1>
-  <p>將此連結分享給朋友，每當他們註冊並訂閱課程，你都能獲得分潤獎勵 🎉</p>
-  <div class="link-box" id="referralLink">載入中...</div>
-  <button class="btn" id="copyBtn">複製連結</button>
+    <div class="card">
+      <div class="row" style="margin-bottom:10px">
+        <strong>我的推廣連結</strong>
+      </div>
+      <div class="row">
+        <input id="refLink" class="input" type="text" readonly value="載入中…">
+        <button id="btnCopy" class="btn">複製連結</button>
+      </div>
 
-  <div class="summary" id="summaryBox">統計載入中...</div>
+      <div class="row" style="margin-top:14px">
+        <div class="muted small">
+          推薦碼：<span id="refCode" class="code">—</span>
+        </div>
+        <div style="flex:1"></div>
+        <button id="btnCopyCode" class="btn secondary">複製推薦碼</button>
+      </div>
+    </div>
 
-  <table>
-    <thead>
-      <tr><th>受邀者 Email</th><th>註冊日期</th><th>狀態</th></tr>
-    </thead>
-    <tbody id="referralTable">
-      <tr><td colspan="3">載入中...</td></tr>
-    </tbody>
-  </table>
-</main>
+    <div class="section grid">
+      <div class="card faq">
+        <h3>如何推薦朋友？</h3>
+        <p>使用「專屬連結」公開分享或是複製貼給朋友，邀請朋友使用你提供的連結、推薦碼以 9 折優惠購買。</p>
 
-<script type="module">
-  import { supabase } from '../supa.js';
+        <h3>怎麼才算推薦成功？</h3>
+        <p>當朋友透過您的「專屬連結」成功購買（且訂單未退款），即算推薦成功。訂單成立後，14 天後算推薦成功。</p>
 
-  const linkBox = document.getElementById('referralLink');
-  const table = document.getElementById('referralTable');
-  const summary = document.getElementById('summaryBox');
-  const copyBtn = document.getElementById('copyBtn');
+        <h3>什麼是推薦金？</h3>
+        <p>推薦金就是現金回饋唷！每成功推薦一位朋友，您即可獲得推薦金。推薦一筆可以獲得 200 元推薦金。</p>
 
-  let referralLink = '';
+        <h3>如何領取？</h3>
+        <p>當每次「未領取推薦金」滿足 1,000 元即可領取，BookWide 團隊會審核您的資料，審核完成後，將於申請的「次月」將推薦金匯入您提供的帳戶中。</p>
+      </div>
 
-  async function initReferral() {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) {
-      linkBox.textContent = '請先登入帳號';
-      table.innerHTML = '<tr><td colspan="3">請登入後查看資料</td></tr>';
-      return;
+      <div class="card">
+        <h3 style="margin:0 0 8px">使用小提醒</h3>
+        <p class="muted small" style="line-height:1.8">
+          • 專屬連結的固定入口：<br>
+          <span class="code">https://bookwide.github.io/EduEnglish/index.html</span><br><br>
+          • 我們會在連結後面帶上你的推薦碼（<span class="code">?ref=你的ID</span>）。<br>
+          • 好友透過你的連結完成訂閱後，系統會自動歸屬給你。<br>
+          • 如需協助，歡迎寄信至 <a href="mailto:support@bookwide.com">support@bookwide.com</a>。
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <div id="toast" class="toast">已複製</div>
+
+  <script type="module">
+    /* 若此檔案放在 english-videos/account/ 底下，supa.js 在專案根目錄 */
+    import { supabase } from '../../supa.js'; // ← 路徑請依你的專案而定
+
+    const BASE_LANDING = 'https://bookwide.github.io/EduEnglish/index.html';
+
+    const $ = (s, el=document) => el.querySelector(s);
+    const toast = (msg='已複製') => {
+      const el = $('#toast');
+      el.textContent = msg;
+      el.classList.add('show');
+      setTimeout(() => el.classList.remove('show'), 1400);
+    };
+
+    async function ensureSignedIn() {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session || !session.user) {
+        // 未登入：導去登入頁（從 account/ 回到上一層 login.html）
+        const back = encodeURIComponent(location.pathname + location.search);
+        location.href = `../login.html?next=${back}`;
+        return null;
+      }
+      return session.user;
     }
 
-    // 建立推薦連結
-    const baseUrl = location.origin + '/index.html';
-    referralLink = `${baseUrl}?ref=${encodeURIComponent(user.id)}`;
-    linkBox.textContent = referralLink;
-
-    // 模擬查詢 referral 表
-    const { data, error } = await supabase
-      .from('referrals')
-      .select('*')
-      .eq('referrer_id', user.id)
-      .order('created_at', { ascending: false });
-
-    if (error) {
-      console.error(error);
-      table.innerHTML = '<tr><td colspan="3">無法讀取資料</td></tr>';
-      summary.textContent = '載入失敗';
-      return;
+    function buildLink(userId){
+      return `${BASE_LANDING}?ref=${encodeURIComponent(userId)}`;
     }
 
-    if (!data || data.length === 0) {
-      table.innerHTML = '<tr><td colspan="3">尚無推廣紀錄</td></tr>';
-      summary.textContent = '尚無分潤資料';
-      return;
+    async function main(){
+      const user = await ensureSignedIn();
+      if(!user) return;
+
+      // 顯示使用者資訊
+      const email = user.email ?? '已登入';
+      $('#who').textContent = email;
+
+      // 用 user.id 當推薦碼
+      const refCode = user.id;
+      const link = buildLink(refCode);
+
+      $('#refCode').textContent = refCode;
+      $('#refLink').value = link;
+
+      // 複製按鈕
+      $('#btnCopy').addEventListener('click', async () => {
+        await navigator.clipboard.writeText($('#refLink').value);
+        toast('已複製推廣連結');
+      });
+
+      $('#btnCopyCode').addEventListener('click', async () => {
+        await navigator.clipboard.writeText(refCode);
+        toast('已複製推薦碼');
+      });
     }
 
-    table.innerHTML = data.map(r => `
-      <tr>
-        <td>${r.invitee_email || '(未知)'}</td>
-        <td>${new Date(r.created_at).toLocaleDateString()}</td>
-        <td>${r.status || '已註冊'}</td>
-      </tr>
-    `).join('');
-
-    summary.textContent = `目前共有 ${data.length} 筆推薦，累積分潤 ${data.length * 100} 元`;
-  }
-
-  copyBtn.addEventListener('click', () => {
-    navigator.clipboard.writeText(referralLink);
-    copyBtn.textContent = '✅ 已複製';
-    setTimeout(() => copyBtn.textContent = '複製連結', 2000);
-  });
-
-  initReferral();
-</script>
-
+    main();
+  </script>
 </body>
 </html>
+
+
