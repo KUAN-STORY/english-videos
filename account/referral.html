@@ -70,22 +70,42 @@
     </p>
 
     <div class="card">
-      <div class="row" style="margin-bottom:10px">
-        <strong>我的推廣連結</strong>
-      </div>
-      <div class="row">
-        <input id="refLink" class="input" type="text" readonly value="載入中…">
-        <button id="btnCopy" class="btn">複製連結</button>
-      </div>
+      <div class="referral-box">
+  <label>我的推廣連結</label>
+  <input id="refLink" class="input" readonly />
+  <button id="btnCopy" class="btn">複製</button>
+  <p>推薦碼：<span id="refCode" class="code">—</span></p>
+</div>
 
-      <div class="row" style="margin-top:14px">
-        <div class="muted small">
-          推薦碼：<span id="refCode" class="code">—</span>
-        </div>
-        <div style="flex:1"></div>
-        <button id="btnCopyCode" class="btn secondary">複製推薦碼</button>
-      </div>
-    </div>
+<div id="toast" class="toast hidden">已複製到剪貼簿</div>
+
+<script type="module">
+  const refLink = document.querySelector('#refLink');
+  const refCode = document.querySelector('#refCode');
+  const btnCopy = document.querySelector('#btnCopy');
+  const toast = document.querySelector('#toast');
+
+  const showToast = (msg='已複製到剪貼簿') => {
+    toast.textContent = msg;
+    toast.classList.remove('hidden');
+    setTimeout(()=>toast.classList.add('hidden'),1500);
+  };
+
+  btnCopy.addEventListener('click', async ()=>{
+    const text = `${refLink.value}\n推薦碼：${refCode.textContent}`;
+    await navigator.clipboard.writeText(text);
+    showToast('連結與推薦碼已複製');
+  });
+</script>
+
+<style>
+.toast{
+  position:fixed;right:20px;bottom:20px;
+  background:#111;color:#fff;padding:10px 14px;
+  border-radius:8px;opacity:.9;
+}
+.toast.hidden{display:none}
+</style>
 
     <div class="section grid">
       <div class="card faq">
@@ -178,6 +198,7 @@
 
 </body>
 </html>
+
 
 
 
